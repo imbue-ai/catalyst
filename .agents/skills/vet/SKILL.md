@@ -54,7 +54,7 @@ vet "goal" --history-loader "python3 ~/.claude/skills/vet/scripts/export_claude_
 
 **Gemini CLI:**
 ```bash
-vet "goal"
+vet "goal" --history-loader "python3 ~/.gemini/skills/vet/scripts/export_gemini_cli_session.py --session-file <path-to-session.json>"
 ```
 
 **Without Conversation History**
@@ -84,7 +84,11 @@ You should only search for sessions from your coding harness. If a user requests
     - IMPORTANT: Verify the conversation you found matches the current conversation and that it is not another conversation with the same search string.
 3. Pass the matched file path as `--session-file`.
 
-**Gemini CLI:** Since we're not passing in a conversation history, you don't need to find the session.
+**Gemini CLI:** Session files are stored in `~/.gemini/tmp/<project-name>/chats/`. To find the correct session file:
+1. Find the most unique sentence / question / string in the current conversation.
+2. Run: `grep -rl "UNIQUE_MESSAGE" ~/.gemini/tmp/` to find the matching session file.
+    - IMPORTANT: Verify the conversation you found matches the current conversation and that it is not another conversation with the same search string.
+3. Pass the matched file path as `--session-file`.
 
 NOTE: The examples in the standard usage section assume the user installed the vet skill at the user level, not the project level. Prior to trying to run vet, check if it was installed at the project level which should take precedence over the user level. If it is installed at the project level, ensure the history-loader option points to the correct location.
 
