@@ -22,3 +22,6 @@ ai-scientist = "framework.coordinator:main"
 
 [tool.setuptools.packages.find]
 include = ["shallow_mlps*", "framework*"]
+
+[tool.uv]
+exclude-newer = "2 week"
