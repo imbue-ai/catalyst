@@ -67,6 +67,139 @@ def cmd_run(args: argparse.Namespace) -> None:
     print(f"Output written to {output_dir}")
 
 
+def _scatter_one_frame(ax, W_i, a_i, step_i, p, vmax_a, wlims, plt, np):
+    """Draw a single scatterplot frame onto ax."""
+    if p.d >= 2:
+        sc = ax.scatter(
+            W_i[:, 0], W_i[:, 1],
+            c=a_i, cmap="RdBu", edgecolors="k", linewidths=0.3,
+            s=20, alpha=0.7, vmin=-vmax_a, vmax=vmax_a,
+        )
+        ax.set_xlim(-wlims[0], wlims[0])
+        ax.set_ylim(-wlims[1], wlims[1])
+        ax.set_aspect("equal")
+        ax.set_xlabel("w[0]")
+        ax.set_ylabel("w[1]")
+    else:
+        sc = ax.scatter(
+            W_i[:, 0], a_i,
+            c=a_i, cmap="RdBu", edgecolors="k", linewidths=0.3,
+            s=20, alpha=0.7, vmin=-vmax_a, vmax=vmax_a,
+        )
+        ax.set_xlabel("w")
+        ax.set_ylabel("a")
+    ax.axhline(0, color="gray", linewidth=0.5)
+    ax.axvline(0, color="gray", linewidth=0.5)
+    ax.set_title(f"step {step_i}")
+    return sc
+
+
+def _compute_scatter_limits(snapshots, p, np):
+    """Compute shared axis/color limits across all snapshots."""
+    all_a = np.concatenate([s[2] for s in snapshots])
+    vmax_a = float(np.max(np.abs(all_a))) or 1.0
+    wlims = (1.0, 1.0)
+    if p.d >= 2:
+        all_w0 = np.concatenate([s[1][:, 0] for s in snapshots])
+        all_w1 = np.concatenate([s[1][:, 1] for s in snapshots])
+        wlims = (
+            max(abs(all_w0.min()), abs(all_w0.max())) * 1.1,
+            max(abs(all_w1.min()), abs(all_w1.max())) * 1.1,
+        )
+    return vmax_a, wlims
+
+
+def _plot_scatter_frames(sim, snapshots, plots_dir, plt, np):
+    """Save individual PNG per snapshot + stitch into video."""
+    p = sim.params
+    vmax_a, wlims = _compute_scatter_limits(snapshots, p, np)
+
+    frames_dir = plots_dir / "frames"
+    frames_dir.mkdir(exist_ok=True)
+
+    frame_paths = []
+    for idx, (step_i, W_i, a_i) in enumerate(snapshots):
+        fig, ax = plt.subplots(figsize=(6, 6))
+        sc = _scatter_one_frame(ax, W_i, a_i, step_i, p, vmax_a, wlims, plt, np)
+        fig.colorbar(sc, ax=ax, label="a_i")
+        fig.suptitle(f"Neuron Weights (n={p.n})", fontsize=12)
+        fig.tight_layout()
+        frame_path = frames_dir / f"frame_{idx:04d}_step{step_i}.png"
+        fig.savefig(frame_path, dpi=120)
+        plt.close(fig)
+        frame_paths.append(frame_path)
+
+    print(f"  {len(frame_paths)} scatter frames saved to {frames_dir}/")
+
+    # Stitch into video
+    _stitch_video(frame_paths, plots_dir / "scatterplot.mp4", fps=4)
+
+
+def _stitch_video(frame_paths, output_path, fps=4):
+    """Stitch PNGs into mp4 (ffmpeg) or gif (pillow fallback)."""
+    import subprocess
+    import shutil
+
+    # Try ffmpeg first
+    if shutil.which("ffmpeg"):
+        # ffmpeg expects a glob pattern — symlink or use concat
+        frames_dir = frame_paths[0].parent
+        try:
+            subprocess.run(
+                [
+                    "ffmpeg", "-y", "-framerate", str(fps),
+                    "-pattern_type", "glob", "-i", str(frames_dir / "frame_*.png"),
+                    "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2",
+                    "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                    str(output_path),
+                ],
+                capture_output=True, timeout=30,
+            )
+            if output_path.exists():
+                print(f"  Video saved to {output_path}")
+                return
+        except (subprocess.TimeoutExpired, FileNotFoundError):
+            pass
+
+    # Fallback: animated gif via pillow
+    try:
+        from PIL import Image
+        gif_path = output_path.with_suffix(".gif")
+        imgs = [Image.open(p) for p in frame_paths]
+        imgs[0].save(
+            gif_path, save_all=True, append_images=imgs[1:],
+            duration=int(1000 / fps), loop=0,
+        )
+        print(f"  GIF saved to {gif_path}")
+    except ImportError:
+        print("  (Install Pillow or ffmpeg to generate video/gif)")
+
+
+def _plot_scatter_grid(sim, snapshots, plots_dir, plt, np):
+    """Save the multi-panel grid overview (scatterplot.png)."""
+    p = sim.params
+    vmax_a, wlims = _compute_scatter_limits(snapshots, p, np)
+
+    n_snaps = len(snapshots)
+    n_cols = min(4, n_snaps)
+    n_rows = (n_snaps + n_cols - 1) // n_cols
+
+    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 5 * n_rows),
+                              squeeze=False)
+    for idx, (step_i, W_i, a_i) in enumerate(snapshots):
+        row, col = divmod(idx, n_cols)
+        _scatter_one_frame(axes[row][col], W_i, a_i, step_i, p, vmax_a, wlims, plt, np)
+
+    for idx in range(n_snaps, n_rows * n_cols):
+        row, col = divmod(idx, n_cols)
+        axes[row][col].set_visible(False)
+
+    fig.suptitle(f"Neuron Weights Over Time (n={p.n})", fontsize=14)
+    fig.tight_layout()
+    fig.savefig(plots_dir / "scatterplot.png", dpi=150)
+    plt.close(fig)
+
+
 def _plot_simulation(sim, plots_dir: Path) -> None:
     """Generate PNG plots from a completed simulation."""
     import matplotlib
@@ -146,56 +279,8 @@ def _plot_simulation(sim, plots_dir: Path) -> None:
 
     # 5) Neuron weight scatterplot — time evolution
     snapshots = getattr(sim, "snapshots", [(sim.iteration, sim.W, sim.a)])
-    n_snaps = len(snapshots)
-    n_cols = min(4, n_snaps)
-    n_rows = (n_snaps + n_cols - 1) // n_cols
-
-    # Compute shared color/axis limits across all snapshots
-    all_a = np.concatenate([s[2] for s in snapshots])
-    vmax_a = float(np.max(np.abs(all_a))) or 1.0
-    if p.d >= 2:
-        all_w0 = np.concatenate([s[1][:, 0] for s in snapshots])
-        all_w1 = np.concatenate([s[1][:, 1] for s in snapshots])
-        wlim0 = max(abs(all_w0.min()), abs(all_w0.max())) * 1.1
-        wlim1 = max(abs(all_w1.min()), abs(all_w1.max())) * 1.1
-
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 5 * n_rows),
-                              squeeze=False)
-    for idx, (step_i, W_i, a_i) in enumerate(snapshots):
-        row, col = divmod(idx, n_cols)
-        ax = axes[row][col]
-        if p.d >= 2:
-            sc = ax.scatter(
-                W_i[:, 0], W_i[:, 1],
-                c=a_i, cmap="RdBu", edgecolors="k", linewidths=0.3,
-                s=20, alpha=0.7, vmin=-vmax_a, vmax=vmax_a,
-            )
-            ax.set_xlim(-wlim0, wlim0)
-            ax.set_ylim(-wlim1, wlim1)
-            ax.set_aspect("equal")
-            ax.set_xlabel("w[0]")
-            ax.set_ylabel("w[1]")
-        else:
-            sc = ax.scatter(
-                W_i[:, 0], a_i,
-                c=a_i, cmap="RdBu", edgecolors="k", linewidths=0.3,
-                s=20, alpha=0.7, vmin=-vmax_a, vmax=vmax_a,
-            )
-            ax.set_xlabel("w")
-            ax.set_ylabel("a")
-        ax.axhline(0, color="gray", linewidth=0.5)
-        ax.axvline(0, color="gray", linewidth=0.5)
-        ax.set_title(f"step {step_i}")
-
-    # Hide unused axes
-    for idx in range(n_snaps, n_rows * n_cols):
-        row, col = divmod(idx, n_cols)
-        axes[row][col].set_visible(False)
-
-    fig.suptitle(f"Neuron Weights Over Time (n={p.n})", fontsize=14)
-    fig.tight_layout()
-    fig.savefig(plots_dir / "scatterplot.png", dpi=150)
-    plt.close(fig)
+    _plot_scatter_frames(sim, snapshots, plots_dir, plt, np)
+    _plot_scatter_grid(sim, snapshots, plots_dir, plt, np)
 
     # 6) Coefficient evolution
     if sim.coeff_history:
