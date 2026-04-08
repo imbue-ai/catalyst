@@ -68,7 +68,12 @@ def cmd_run(args: argparse.Namespace) -> None:
 
 
 def _scatter_one_frame(ax, W_i, a_i, step_i, p, vmax_a, wlims, plt, np):
-    """Draw a single scatterplot frame onto ax."""
+    """Draw a single scatterplot frame onto ax.
+
+    For d>=2: plots W[:,0] vs W[:,1] (first two weight directions per neuron),
+    colored by readout weight a_i.
+    For d==1: plots W[:,0] vs a_i since there's only one weight direction.
+    """
     if p.d >= 2:
         sc = ax.scatter(
             W_i[:, 0], W_i[:, 1],
@@ -78,16 +83,18 @@ def _scatter_one_frame(ax, W_i, a_i, step_i, p, vmax_a, wlims, plt, np):
         ax.set_xlim(-wlims[0], wlims[0])
         ax.set_ylim(-wlims[1], wlims[1])
         ax.set_aspect("equal")
-        ax.set_xlabel("w[0]")
-        ax.set_ylabel("w[1]")
+        ax.set_xlabel("$W_{:,1}$")
+        ax.set_ylabel("$W_{:,2}$")
     else:
         sc = ax.scatter(
             W_i[:, 0], a_i,
             c=a_i, cmap="RdBu", edgecolors="k", linewidths=0.3,
             s=20, alpha=0.7, vmin=-vmax_a, vmax=vmax_a,
         )
-        ax.set_xlabel("w")
-        ax.set_ylabel("a")
+        ax.set_xlim(-wlims[0], wlims[0])
+        ax.set_ylim(-wlims[1], wlims[1])
+        ax.set_xlabel("$w_i$")
+        ax.set_ylabel("$a_i$")
     ax.axhline(0, color="gray", linewidth=0.5)
     ax.axvline(0, color="gray", linewidth=0.5)
     ax.set_title(f"step {step_i}")
@@ -95,18 +102,23 @@ def _scatter_one_frame(ax, W_i, a_i, step_i, p, vmax_a, wlims, plt, np):
 
 
 def _compute_scatter_limits(snapshots, p, np):
-    """Compute shared axis/color limits across all snapshots."""
+    """Compute shared axis/color limits across all snapshots.
+
+    Returns (vmax_a, wlims) where wlims = (xlim, ylim) are symmetric
+    bounds for the scatter axes, fixed across all frames so the
+    bifurcation is visible as growth rather than rescaling.
+    """
     all_a = np.concatenate([s[2] for s in snapshots])
     vmax_a = float(np.max(np.abs(all_a))) or 1.0
-    wlims = (1.0, 1.0)
+    all_w0 = np.concatenate([s[1][:, 0] for s in snapshots])
+    xlim = max(abs(all_w0.min()), abs(all_w0.max())) * 1.1 or 1.0
     if p.d >= 2:
-        all_w0 = np.concatenate([s[1][:, 0] for s in snapshots])
         all_w1 = np.concatenate([s[1][:, 1] for s in snapshots])
-        wlims = (
-            max(abs(all_w0.min()), abs(all_w0.max())) * 1.1,
-            max(abs(all_w1.min()), abs(all_w1.max())) * 1.1,
-        )
-    return vmax_a, wlims
+        ylim = max(abs(all_w1.min()), abs(all_w1.max())) * 1.1 or 1.0
+    else:
+        # d==1: y-axis shows a_i
+        ylim = vmax_a * 1.1 or 1.0
+    return vmax_a, (xlim, ylim)
 
 
 def _plot_scatter_frames(sim, snapshots, plots_dir, plt, np):
