@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "ai-scientist"
 version = "0.1.0"
 description = "AI-driven scientific investigation framework for shallow MLP bifurcation"
-requires-python = ">=3.9"
+requires-python = ">=3.11"
 dependencies = [
     "torch>=2.0",
     "matplotlib>=3.7",
@@ -25,3 +25,8 @@ include = ["shallow_mlps*", "framework*"]
 
 [tool.uv]
 exclude-newer = "2 week"
+
+[dependency-groups]
+dev = [
+    "verify-everything>=0.2.7",
+]
