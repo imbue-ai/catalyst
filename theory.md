@@ -189,8 +189,40 @@ Again, the ratio is constant at $0.76 \pm 0.01$ across a $16\times$ range of lea
 | 100 | 8,700 | 11,338 | 0.77 |
 | 500 | 8,580 | 11,338 | 0.76 |
 | 1,000 | 8,700 | 11,338 | 0.77 |
+| 5,000 | 8,580 | 11,338 | 0.76 |
 
-The bifurcation time is independent of width (all within $\pm 1\%$), confirming that this is a **mean-field** phenomenon — each neuron's dynamics are governed by the population-level loss landscape, not by finite-width fluctuations.
+The bifurcation time is independent of width (all within $\pm 1\%$ across a $50\times$ range), confirming that this is a **mean-field** phenomenon — each neuron's dynamics are governed by the population-level loss landscape, not by finite-width fluctuations.
+
+### 6.4 Statistical reproducibility
+
+Over 10 random seeds ($\alpha = 10^{-6}$, $\eta = 0.002$, $n = 1000$):
+
+$$t_{\text{bif}} = 8635 \pm 59 \text{ steps} \quad (\text{CV} = 0.7\%)$$
+
+The predicted value is $0.76 \times 11338 = 8617$, matching the mean to within one standard deviation. The remarkably low coefficient of variation ($< 1\%$) confirms this is a deterministic mean-field phenomenon, not a stochastic event.
+
+### 6.5 Direct measurement of the transverse Lyapunov exponent
+
+Fitting $\log(\delta_{\text{rms}})$ vs. step in the pre-bifurcation regime:
+
+| Quantity | Value |
+|----------|-------|
+| Measured $\lambda_\perp$ | 0.001247 per step |
+| Predicted $(2/\pi)\eta$ | 0.001273 per step |
+| Ratio | **0.980** |
+
+The measured transverse growth rate matches the theoretical prediction to within 2%, directly validating the $2/\pi$ Lyapunov exponent derivation.
+
+### 6.6 Conservation law $a \approx R$
+
+| Step | $a_{\text{rms}}$ | $R_{\text{rms}}$ | $a/R$ | Phase |
+|------|-------------------|-------------------|-------|-------|
+| 2,550 | 0.0000 | 0.0000 | 1.030 | Handle (early) |
+| 7,550 | 0.189 | 0.189 | 1.000 | Handle (late) |
+| 10,050 | 1.85 | 1.85 | 1.001 | Fork onset |
+| 15,050 | 2.20 | 1.50 | 1.46 | Prongs |
+
+During the handle phase, $a/R \to 1.000$ as predicted by $a = \alpha\sinh(\lambda t)$, $R = \alpha\cosh(\lambda t)$. After bifurcation, $a/R$ grows as neurons redistribute from the diagonal to the prong directions (reducing $R_{\text{rms}}$ while $a$ continues to grow).
 
 ## 7. Necessary Conditions for Pitchfork Bifurcation
 
