@@ -6,6 +6,10 @@
     "allow": [
       "Bash(uv run:*)",
       "Bash(mktemp:*)",
+      "Bash(ls:*)",
+      "Read(*)",
+      "Write(tmp/*)",
+      "Edit(tmp/*)",
       "Agent(*)",
       "TeamCreate(*)",
       "SendMessage(*)",
