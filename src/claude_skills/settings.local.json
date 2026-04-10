@@ -1,8 +1,18 @@
 {
+  "env": {
+    "CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS": "1"
+  },
   "permissions": {
     "allow": [
       "Bash(uv run:*)",
-      "Bash(mktemp:*)"
+      "Bash(mktemp:*)",
+      "Agent(*)",
+      "TeamCreate(*)",
+      "SendMessage(*)",
+      "TaskCreate(*)",
+      "TaskUpdate(*)",
+      "TaskList(*)",
+      "TaskGet(*)"
     ]
   }
 }
