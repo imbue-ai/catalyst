@@ -4,7 +4,7 @@ description: "Attempt to falsify a given hypothesis"
 context: fork
 agent: general-purpose
 model: inherit
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Read(*) Write(tmp/*) Edit(tmp/*)
+allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Read(*) Write(tmp/*) Edit(tmp/*)
 argument-hint: The hypothesis to falsify.
 ---
 

@@ -16,7 +16,8 @@
       "TaskCreate(*)",
       "TaskUpdate(*)",
       "TaskList(*)",
-      "TaskGet(*)"
+      "TaskGet(*)",
+      "Bash(mkdir -p tmp/*)"
     ]
   }
 }
