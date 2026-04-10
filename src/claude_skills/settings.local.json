@@ -17,7 +17,8 @@
       "TaskUpdate(*)",
       "TaskList(*)",
       "TaskGet(*)",
-      "Bash(mkdir -p tmp/*)"
+      "Bash(mkdir -p tmp/*)",
+      "Skill(falsify-hypothesis)"
     ]
   }
 }
