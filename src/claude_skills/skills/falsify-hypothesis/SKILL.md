@@ -20,7 +20,7 @@ Instead of seeking confirmation, adopt a "killer" mindset to identify cases wher
 Hypothesis to falsify: $ARGUMENTS
 
 ## Temporary folder
-Place all scripts, plots, and other files your write only in this temporary folder: !`mktemp -d -p ./tmp falsify-hypothesis-XXXX`
+Place all scripts, plots, and other files you're writing only in this temporary folder: !`mktemp -d -p ./tmp falsify-hypothesis-XXXX`
 
 ## Falsification Strategies
 Consider these approaches to generate falsification ideas:
