@@ -82,7 +82,7 @@ ai-scientist/
 - `sweep_parameter(target_fn, param_name, param_values, fixed_params, seeds)` → `SweepResult`: Trains multiple MLPs across a parameter sweep (e.g., varying width from 2 to 64). For each parameter value, trains `len(seeds)` replicates. Returns a `SweepResult` with all `TrainResult` objects organized by parameter value and seed.
 
 **`shallow_mlps/targets.py`**: Target function definitions.
-- `parse_target(spec_string)` → callable: Parses a target function specification. Supports named presets (e.g., `"abs"`, `"step"`, `"sine"`) and custom expressions using a safe eval with numpy functions. The custom expression format matches the demo: `"abs(x[1]) + x[1] + abs(x[2]) + x[2] - .2 * (abs(x[1] + x[2]) + x[1] + x[2])"` where `x[1]`, `x[2]` are input dimensions (1-indexed to match the demo's convention).
+- `parse_target(spec_string)` → callable: Parses a target function specification. Supports named presets (e.g., `"abs"`, `"step"`, `"sine"`) and custom expressions using a safe eval with numpy functions. The custom expression format matches the demo: `"sin(x[1]) + x[1] + x[2] - .2 * sin(x[1] + x[2])"` where `x[1]`, `x[2]` are input dimensions (1-indexed to match the demo's convention).
 - `PRESET_TARGETS`: Dict mapping names to `(callable, description)` tuples. Includes targets known to exhibit bifurcation and ones that don't, for calibration.
 
 **`shallow_mlps/plot.py`**: Visualization.

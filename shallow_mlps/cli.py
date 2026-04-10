@@ -36,14 +36,20 @@ def cmd_run(args: argparse.Namespace) -> None:
     )
 
     print(f"Running simulation: {params.target_type} (T={params.num_terms})")
-    print(f"  width={params.n}, d={params.d}, alpha={params.alpha}, "
-          f"eta={params.eta}, batch={params.batch_size}")
+    print(
+        f"  width={params.n}, d={params.d}, alpha={params.alpha}, "
+        f"eta={params.eta}, batch={params.batch_size}"
+    )
     print(f"  activation={params.activation}, seed={params.seed}")
     print(f"  steps={args.steps}")
 
     sim = Simulation(params)
-    sim.run(args.steps, log_interval=max(1, args.steps // 20), verbose=True,
-            snapshot_interval=args.snapshot_interval)
+    sim.run(
+        args.steps,
+        log_interval=max(1, args.steps // 20),
+        verbose=True,
+        snapshot_interval=args.snapshot_interval,
+    )
 
     # Save JSON results
     data = sim.to_json()
@@ -76,9 +82,16 @@ def _scatter_one_frame(ax, W_i, a_i, step_i, p, vmax_a, wlims, plt, np):
     """
     if p.d >= 2:
         sc = ax.scatter(
-            W_i[:, 0], W_i[:, 1],
-            c=a_i, cmap="RdBu", edgecolors="k", linewidths=0.3,
-            s=20, alpha=0.7, vmin=-vmax_a, vmax=vmax_a,
+            W_i[:, 0],
+            W_i[:, 1],
+            c=a_i,
+            cmap="RdBu",
+            edgecolors="k",
+            linewidths=0.3,
+            s=20,
+            alpha=0.7,
+            vmin=-vmax_a,
+            vmax=vmax_a,
         )
         ax.set_xlim(-wlims[0], wlims[0])
         ax.set_ylim(-wlims[1], wlims[1])
@@ -87,9 +100,16 @@ def _scatter_one_frame(ax, W_i, a_i, step_i, p, vmax_a, wlims, plt, np):
         ax.set_ylabel("$W_{:,2}$")
     else:
         sc = ax.scatter(
-            W_i[:, 0], a_i,
-            c=a_i, cmap="RdBu", edgecolors="k", linewidths=0.3,
-            s=20, alpha=0.7, vmin=-vmax_a, vmax=vmax_a,
+            W_i[:, 0],
+            a_i,
+            c=a_i,
+            cmap="RdBu",
+            edgecolors="k",
+            linewidths=0.3,
+            s=20,
+            alpha=0.7,
+            vmin=-vmax_a,
+            vmax=vmax_a,
         )
         ax.set_xlim(-wlims[0], wlims[0])
         ax.set_ylim(-wlims[1], wlims[1])
@@ -159,13 +179,24 @@ def _stitch_video(frame_paths, output_path, fps=4):
         try:
             subprocess.run(
                 [
-                    "ffmpeg", "-y", "-framerate", str(fps),
-                    "-pattern_type", "glob", "-i", str(frames_dir / "frame_*.png"),
-                    "-vf", "pad=ceil(iw/2)*2:ceil(ih/2)*2",
-                    "-c:v", "libx264", "-pix_fmt", "yuv420p",
+                    "ffmpeg",
+                    "-y",
+                    "-framerate",
+                    str(fps),
+                    "-pattern_type",
+                    "glob",
+                    "-i",
+                    str(frames_dir / "frame_*.png"),
+                    "-vf",
+                    "pad=ceil(iw/2)*2:ceil(ih/2)*2",
+                    "-c:v",
+                    "libx264",
+                    "-pix_fmt",
+                    "yuv420p",
                     str(output_path),
                 ],
-                capture_output=True, timeout=30,
+                capture_output=True,
+                timeout=30,
             )
             if output_path.exists():
                 print(f"  Video saved to {output_path}")
@@ -176,11 +207,15 @@ def _stitch_video(frame_paths, output_path, fps=4):
     # Fallback: animated gif via pillow
     try:
         from PIL import Image
+
         gif_path = output_path.with_suffix(".gif")
         imgs = [Image.open(p) for p in frame_paths]
         imgs[0].save(
-            gif_path, save_all=True, append_images=imgs[1:],
-            duration=int(1000 / fps), loop=0,
+            gif_path,
+            save_all=True,
+            append_images=imgs[1:],
+            duration=int(1000 / fps),
+            loop=0,
         )
         print(f"  GIF saved to {gif_path}")
     except ImportError:
@@ -196,8 +231,9 @@ def _plot_scatter_grid(sim, snapshots, plots_dir, plt, np):
     n_cols = min(4, n_snaps)
     n_rows = (n_snaps + n_cols - 1) // n_cols
 
-    fig, axes = plt.subplots(n_rows, n_cols, figsize=(5 * n_cols, 5 * n_rows),
-                              squeeze=False)
+    fig, axes = plt.subplots(
+        n_rows, n_cols, figsize=(5 * n_cols, 5 * n_rows), squeeze=False
+    )
     for idx, (step_i, W_i, a_i) in enumerate(snapshots):
         row, col = divmod(idx, n_cols)
         _scatter_one_frame(axes[row][col], W_i, a_i, step_i, p, vmax_a, wlims, plt, np)
@@ -215,6 +251,7 @@ def _plot_scatter_grid(sim, snapshots, plots_dir, plt, np):
 def _plot_simulation(sim, plots_dir: Path) -> None:
     """Generate PNG plots from a completed simulation."""
     import matplotlib
+
     matplotlib.use("Agg")
     import matplotlib.pyplot as plt
     import matplotlib.cm as cm
@@ -231,15 +268,22 @@ def _plot_simulation(sim, plots_dir: Path) -> None:
     n_neurons = contributions.shape[1]
     colors = cm.tab20(np.linspace(0, 1, max(n_neurons, 1)))
     for i in range(n_neurons):
-        ax.plot(grid_x, contributions[:, i], color=colors[i % len(colors)],
-                alpha=0.4, linewidth=0.8)
+        ax.plot(
+            grid_x,
+            contributions[:, i],
+            color=colors[i % len(colors)],
+            alpha=0.4,
+            linewidth=0.8,
+        )
     ax.plot(grid_x, learned_y, "k-", linewidth=2, label="Learned")
     ax.plot(grid_x, target_y, "k--", linewidth=2, label="Target")
     ax.set_xlabel("x[0]")
     ax.set_ylabel("y")
     p = sim.params
-    ax.set_title(f"n={p.n}, d={p.d}, α={p.alpha}, η={p.eta}, "
-                 f"{p.activation}, {p.target_type}(T={p.num_terms})")
+    ax.set_title(
+        f"n={p.n}, d={p.d}, α={p.alpha}, η={p.eta}, "
+        f"{p.activation}, {p.target_type}(T={p.num_terms})"
+    )
     ax.legend(fontsize=8)
     fig.tight_layout()
     fig.savefig(plots_dir / "function.png", dpi=150)
@@ -318,6 +362,7 @@ def _plot_simulation(sim, plots_dir: Path) -> None:
 def cmd_train(args: argparse.Namespace) -> None:
     """Run a single MLP training."""
     from . import train, plot
+
     target_fn = targets.parse_target(args.target, args.input_dim)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -353,6 +398,7 @@ def cmd_train(args: argparse.Namespace) -> None:
     fig = plot.plot_neuron_contributions(result)
     fig.savefig(plots_dir / "neurons.png", dpi=150)
     import matplotlib.pyplot as plt
+
     plt.close(fig)
     print(f"Output written to {output_dir}")
 
@@ -360,6 +406,7 @@ def cmd_train(args: argparse.Namespace) -> None:
 def cmd_sweep(args: argparse.Namespace) -> None:
     """Run a parameter sweep."""
     from . import train, plot, analyze
+
     target_fn = targets.parse_target(args.target, args.input_dim)
     output_dir = Path(args.output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -417,6 +464,7 @@ def cmd_sweep(args: argparse.Namespace) -> None:
 def cmd_analyze(args: argparse.Namespace) -> None:
     """Run bifurcation detection on saved sweep results."""
     from . import train, analyze
+
     results_path = Path(args.results_file)
     with open(results_path) as f:
         data = json.load(f)
@@ -424,7 +472,7 @@ def cmd_analyze(args: argparse.Namespace) -> None:
     # Reconstruct SweepResult from JSON
     sweep = _load_sweep_from_json(data)
 
-    for method in (args.method if args.method != "all" else analyze._METHODS.keys()):
+    for method in args.method if args.method != "all" else analyze._METHODS.keys():
         report = analyze.detect_bifurcation(sweep, method=method)
         print(f"\n--- {method} ---")
         print(report.summary)
@@ -448,12 +496,12 @@ def cmd_list_targets(args: argparse.Namespace) -> None:
         print(f"  {name:12s}  {desc}")
     print("\nCustom expressions also supported, e.g.:")
     print('  --target "abs(x) + sin(2*pi*x)"')
-    print('  --target "abs(x[1]) + x[2]"  (for 2D)')
 
 
 def cmd_interactive(args: argparse.Namespace) -> None:
     """Launch the interactive training gym."""
     from .interactive import launch
+
     launch()
 
 
@@ -477,6 +525,7 @@ def _parse_sweep_range(range_str: str, param_name: str) -> list:
 def _load_sweep_from_json(data: dict) -> train.SweepResult:
     """Reconstruct a SweepResult from JSON data."""
     import numpy as np
+
     results = {}
     for pval_str, seed_dict in data["results"].items():
         seed_results = {}
@@ -515,28 +564,44 @@ def main() -> None:
     subparsers = parser.add_subparsers(dest="command", required=True)
 
     # -- run (simulation engine, faithful JS port) --
-    p_run = subparsers.add_parser("run", help="Run simulation (faithful port of JS demo)")
-    p_run.add_argument("--target-type", default="staircase",
-                       choices=["staircase", "hermite", "monomial", "custom"])
+    p_run = subparsers.add_parser(
+        "run", help="Run simulation (faithful port of JS demo)"
+    )
+    p_run.add_argument(
+        "--target-type",
+        default="staircase",
+        choices=["staircase", "hermite", "monomial", "custom"],
+    )
     p_run.add_argument("--num-terms", type=int, default=2, help="Order T")
     p_run.add_argument("--width", type=int, default=100, help="Number of neurons n")
     p_run.add_argument("--input-dim", type=int, default=10, help="Input dimension d")
     p_run.add_argument("--alpha", type=float, default=1.0, help="Init scale")
     p_run.add_argument("--lr", type=float, default=0.01, help="Learning rate eta")
     p_run.add_argument("--batch-size", type=int, default=200)
-    p_run.add_argument("--activation", default="relu",
-                       choices=["relu", "tanh", "gelu", "linear"])
-    p_run.add_argument("--custom-expr", default="", help="Custom target expression, e.g. 'abs(x[1]) + x[2]'")
+    p_run.add_argument(
+        "--activation", default="relu", choices=["relu", "tanh", "gelu", "linear"]
+    )
+    p_run.add_argument(
+        "--custom-expr",
+        default="",
+        help="Custom target expression, e.g. 'x[1] + sin(x[2])'",
+    )
     p_run.add_argument("--steps", type=int, default=1000)
-    p_run.add_argument("--snapshot-interval", type=int, default=None,
-                       help="Steps between scatterplot snapshots (default: steps/8)")
+    p_run.add_argument(
+        "--snapshot-interval",
+        type=int,
+        default=None,
+        help="Steps between scatterplot snapshots (default: steps/8)",
+    )
     p_run.add_argument("--seed", type=int, default=42)
     p_run.add_argument("--output-dir", required=True)
     p_run.set_defaults(func=cmd_run)
 
     # -- train --
     p_train = subparsers.add_parser("train", help="Train a single MLP (batch mode)")
-    p_train.add_argument("--target", required=True, help="Target function (preset name or expression)")
+    p_train.add_argument(
+        "--target", required=True, help="Target function (preset name or expression)"
+    )
     p_train.add_argument("--width", type=int, default=16)
     p_train.add_argument("--lr", type=float, default=0.01)
     p_train.add_argument("--steps", type=int, default=5000)
@@ -549,9 +614,17 @@ def main() -> None:
     # -- sweep --
     p_sweep = subparsers.add_parser("sweep", help="Run parameter sweep")
     p_sweep.add_argument("--target", required=True)
-    p_sweep.add_argument("--sweep-param", required=True, choices=["width", "lr", "steps"])
-    p_sweep.add_argument("--sweep-range", required=True, help="Comma-separated values, e.g. 2,4,8,16,32,64")
-    p_sweep.add_argument("--seeds", type=int, default=1, help="Number of seed replicates")
+    p_sweep.add_argument(
+        "--sweep-param", required=True, choices=["width", "lr", "steps"]
+    )
+    p_sweep.add_argument(
+        "--sweep-range",
+        required=True,
+        help="Comma-separated values, e.g. 2,4,8,16,32,64",
+    )
+    p_sweep.add_argument(
+        "--seeds", type=int, default=1, help="Number of seed replicates"
+    )
     p_sweep.add_argument("--width", type=int, default=16)
     p_sweep.add_argument("--lr", type=float, default=0.01)
     p_sweep.add_argument("--steps", type=int, default=5000)
@@ -561,14 +634,27 @@ def main() -> None:
     p_sweep.set_defaults(func=cmd_sweep)
 
     # -- analyze --
-    p_analyze = subparsers.add_parser("analyze", help="Run bifurcation detection on saved results")
+    p_analyze = subparsers.add_parser(
+        "analyze", help="Run bifurcation detection on saved results"
+    )
     p_analyze.add_argument("results_file", help="Path to results.json from a sweep")
-    p_analyze.add_argument("--method", default="all", choices=["all", "weight_discontinuity", "representation_clustering", "loss_landscape"])
+    p_analyze.add_argument(
+        "--method",
+        default="all",
+        choices=[
+            "all",
+            "weight_discontinuity",
+            "representation_clustering",
+            "loss_landscape",
+        ],
+    )
     p_analyze.add_argument("--output-dir", default=None)
     p_analyze.set_defaults(func=cmd_analyze)
 
     # -- list-targets --
-    p_list = subparsers.add_parser("list-targets", help="Show available preset target functions")
+    p_list = subparsers.add_parser(
+        "list-targets", help="Show available preset target functions"
+    )
     p_list.set_defaults(func=cmd_list_targets)
 
     # -- interactive --
