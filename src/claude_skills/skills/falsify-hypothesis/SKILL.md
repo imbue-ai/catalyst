@@ -20,7 +20,7 @@ Instead of seeking confirmation, adopt a "killer" mindset to identify cases wher
 Hypothesis to falsify: $ARGUMENTS
 
 ## Temporary folder
-Place all scripts, plots, and other files your write only in this temporary folder: !`mkdir -p ./tmp/falsify-hypothesis && mktemp -d -p ./tmp/falsify-hypothesis/`
+Place all scripts, plots, and other files your write only in this temporary folder: !`mktemp -d -p ./tmp falsify-hypothesis-XXXX`
 
 ## Falsification Strategies
 Consider these approaches to generate falsification ideas:
@@ -33,7 +33,7 @@ Consider these approaches to generate falsification ideas:
 ## Execution Steps
 1. **Research**: Read the provided context and analyze the target hypothesis. Generate ideas using the strategies above.
 2. **Implementation**: Test your ideas using the available tools.
-   - **Experiment**: Write and run Python scripts in the workspace (e.g., in the temporary folder mentioned above or using existing project modules like `shallow_mlps`) to simulate or test on real data.
+   - **Experiment**: Write and run Python scripts in the workspace (either in the temporary folder mentioned above or using existing project modules like `shallow_mlps`) to simulate or test on real data.
    - **Proof**: If applicable, use mathematical derivations.
 3. **Reporting**: Produce a final Markdown report and return it as your ONLY output.
 

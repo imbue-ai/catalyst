@@ -1,7 +1,8 @@
 {
   "permissions": {
     "allow": [
-      "Bash(uv run:*)"
+      "Bash(uv run:*)",
+      "Bash(mktemp:*)"
     ]
   }
 }
