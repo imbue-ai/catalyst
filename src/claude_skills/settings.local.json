@@ -7,6 +7,8 @@
       "Bash(uv run:*)",
       "Bash(mktemp:*)",
       "Bash(ls:*)",
+      "Bash(wait)",
+      "Bash(awk:*)",
       "Read(*)",
       "Write(tmp/*)",
       "Edit(tmp/*)",
@@ -19,7 +21,8 @@
       "TaskGet(*)",
       "Bash(mkdir -p tmp/*)",
       "Skill(falsify-hypothesis)",
-      "Bash(mkdir:*)"
+      "Skill(refine-hypothesis)",
+      "Skill(write-theory)"
     ]
   }
 }
