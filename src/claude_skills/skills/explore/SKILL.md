@@ -4,7 +4,7 @@ description: Team of explorers that investigate whatever the project is about fr
 model: inherit
 context: fork
 allowed-tools: Read Bash Glob Grep Write Edit Agent TeamCreate TaskCreate TaskUpdate TaskList SendMessage
-argument-hint: [optional direction to explore]
+argument-hint: optional direction to explore
 ---
 
 You are the **team lead** for an open-ended exploration team. Read `CLAUDE.md` first, then design and launch a team to investigate it.
