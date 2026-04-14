@@ -29,6 +29,7 @@ from pydantic import BaseModel, Field
 AGENT_TYPE_MAP: dict[str, tuple[str, str]] = {
     # agent_type -> (database_category, expected_primary_md)
     "explorer": ("exploration", "report.md"),
+    "literature-review": ("literature", "summary.md"),
     "write-theory": ("theory", "theory.md"),
     "refine-hypothesis": ("theory", "theory.md"),
     "falsify-hypothesis": ("review", "review.md"),
@@ -36,6 +37,7 @@ AGENT_TYPE_MAP: dict[str, tuple[str, str]] = {
 
 ID_PREFIXES: dict[str, str] = {
     "exploration": "E",
+    "literature": "L",
     "theory": "T",
     "review": "R",
 }
@@ -205,8 +207,8 @@ def store_results(
         new_id = generate_id(category)
 
         # --- determine target directory ---
-        if category == "exploration":
-            target_dir = db_root / "exploration" / new_id
+        if category in ("exploration", "literature"):
+            target_dir = db_root / category / new_id
         elif category == "theory":
             target_dir = db_root / "theory" / new_id
         else:  # review
@@ -271,6 +273,7 @@ def create_context(
     for_agent_type: str,
     target_folder: Path,
     from_exploration: str | None = None,
+    from_literature: str | None = None,
     from_theory: str | None = None,
     from_reviews: list[str] | None = None,
 ) -> None:
@@ -314,6 +317,14 @@ def create_context(
                     f"(expected {exploration_dir})"
                 )
 
+        if from_literature:
+            literature_dir = db_root / "literature" / from_literature
+            if not literature_dir.is_dir():
+                raise ValueError(
+                    f"Literature review {from_literature!r} not found in database "
+                    f"(expected {literature_dir})"
+                )
+
         if from_theory:
             theory_dir = db_root / "theory" / from_theory
             if not theory_dir.is_dir():
@@ -343,6 +354,10 @@ def create_context(
                 dst,
             )
             _make_writable(dst)
+            if from_literature:
+                ldst = target_folder / "literature"
+                shutil.copytree(literature_dir, ldst)  # type: ignore[possibly-undefined]
+                _make_writable(ldst)
 
         elif for_agent_type == "falsify-hypothesis":
             dst = target_folder / "theory"
@@ -372,7 +387,7 @@ def create_context(
 
 def list_entries(entry_type: str) -> list[dict]:
     """List stored entries of the given type, sorted by creation time."""
-    valid = ("exploration", "theory", "review")
+    valid = ("exploration", "literature", "theory", "review")
     if entry_type not in valid:
         raise ValueError(
             f"Unknown entry type {entry_type!r}. Must be one of: {', '.join(valid)}"
@@ -385,8 +400,8 @@ def list_entries(entry_type: str) -> list[dict]:
     results: list[dict] = []
 
     with DatabaseLock(db_root):
-        if entry_type == "exploration":
-            pattern = db_root / "exploration" / "*" / "metadata.json"
+        if entry_type in ("exploration", "literature"):
+            pattern = db_root / entry_type / "*" / "metadata.json"
         elif entry_type == "theory":
             pattern = db_root / "theory" / "*" / "metadata.json"
         else:  # review
@@ -457,6 +472,7 @@ def main(argv: list[str] | None = None) -> None:
         help="Folder to populate with upstream artifacts",
     )
     sp_ctx.add_argument("--from_exploration", default=None, help="Exploration ID")
+    sp_ctx.add_argument("--from_literature", default=None, help="Literature review ID")
     sp_ctx.add_argument("--from_theory", default=None, help="Theory ID")
     sp_ctx.add_argument(
         "--from_review",
@@ -471,7 +487,7 @@ def main(argv: list[str] | None = None) -> None:
     sp_list.add_argument(
         "--type",
         required=True,
-        choices=["exploration", "theory", "review"],
+        choices=["exploration", "literature", "theory", "review"],
         dest="entry_type",
         help="Type of entries to list",
     )
@@ -508,6 +524,7 @@ def main(argv: list[str] | None = None) -> None:
                 for_agent_type=args.for_agent_type,
                 target_folder=args.target_folder.resolve(),
                 from_exploration=args.from_exploration,
+                from_literature=args.from_literature,
                 from_theory=args.from_theory,
                 from_reviews=args.from_reviews or None,
             )

@@ -26,7 +26,10 @@
       "Skill(swarm)",
       "Skill(unify)",
       "Skill(consensus)",
-      "Skill(explore)"
+      "Skill(explore)",
+      "Skill(literature-review)",
+      "WebSearch",
+      "WebFetch(domain:arxiv.org)"
     ]
   }
 }

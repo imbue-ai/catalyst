@@ -8,3 +8,4 @@ logs/
 /output/
 /organisms/org_*
 /bifurcation_gym/tmp/*
+/tmp/

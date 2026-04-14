@@ -20,8 +20,6 @@ Task to swarm (and optionally N): $ARGUMENTS
 4. Spawn all agents **in parallel** via `Agent`. In each agent's prompt: state the shared task, assign their specific approach, and list the other agents' approaches so they know to diverge. Each agent must `SendMessage` back with their result.
 5. Wait for all to report back, then shut down teammates
 
-## Final Output Format
-
 ## Swarm Results
 
 ### Agent 1 — [Approach Name]
