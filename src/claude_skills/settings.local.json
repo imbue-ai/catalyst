@@ -22,7 +22,11 @@
       "Bash(mkdir -p tmp/*)",
       "Skill(falsify-hypothesis)",
       "Skill(refine-hypothesis)",
-      "Skill(write-theory)"
+      "Skill(write-theory)",
+      "Skill(swarm)",
+      "Skill(unify)",
+      "Skill(consensus)",
+      "Skill(explore)"
     ]
   }
 }

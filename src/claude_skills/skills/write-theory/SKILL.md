@@ -2,15 +2,15 @@
 name: write-theory
 description: "Write a theory to explain a given phenomenon."
 model: inherit
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Read(*) Write(tmp/*) Edit(tmp/*)
-argument-hint: The phenomenon to explain, and any relevant context folders or files.
+allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*)
+argument-hint: "exploration ID (e.g. E_20260414_143052_a1b2c3) and the phenomenon to explain"
 ---
 
 You are an expert scientific agent. Your goal is to develop a comprehensive theory to explain a given phenomenon.
 
 ## Mandate
 - Focus on the phenomenon given below.
-- You might also be given some relevant context, such as previous experiments that have been performed, or a log of previous exploration that has been done around the phenomenon. Use this context to inform your theory development, but don't be limited by it - you can propose new experiments or lines of inquiry that haven't been explored yet.
+- You will be given an exploration ID that references prior exploration results. Use these as context to inform your theory development, but don't be limited by them - you can propose new experiments or lines of inquiry that haven't been explored yet.
 - Be thorough in developing the theory. Make sure you verify every hypothesis in your theory. Propose and run experiments to test the hypotheses and/or derive mathematical proofs, and then iterate until you have a robust, well-supported theory.
 - You must write and execute code (usually Python) to run experiments, or derive mathematical proofs.
 
@@ -25,21 +25,38 @@ You are an expert scientific agent. Your goal is to develop a comprehensive theo
 - Use empirical experiments to build intuition and to test hypotheses. Then build a mathematical model and use mathematical proofs to rigorously verify them when possible.
 
 ## Input
-Phenomenon to explain and relevant context: $ARGUMENTS
+Arguments: $ARGUMENTS
 
-## Temporary folder
-Place all scripts, plots, and other files you're writing only in this temporary folder: !`mktemp -d -p ./tmp write-theory-XXXX`
+The arguments contain an exploration ID (like `E_20260414_...`) and a description of the phenomenon. Parse the exploration ID from the arguments.
+
+## Folder setup
+
+Set up two folders — one for input context, one for your own output:
+```bash
+CONTEXT_DIR=$(mktemp -d -p ./tmp write-theory-context-XXXX)
+OUTPUT_DIR=$(mktemp -d -p ./tmp write-theory-output-XXXX)
+uv run python src/context_manager.py create_context --for_agent_type write-theory --target_folder "$CONTEXT_DIR" --from_exploration <EXPLORATION_ID>
+```
+
+- `$CONTEXT_DIR/exploration/` — prior exploration results (read-only input). Read `$CONTEXT_DIR/exploration/report.md` and any artifacts.
+- `$OUTPUT_DIR/` — write all your own scripts, plots, and output files here. Only this folder gets stored.
 
 ## Execution Steps
-1. **Hypothesis Generation**: Read the provided phenomenon and context. Generate different hypotheses that could explain the phenomenon. Try to generate at least 2-3 *alternative* explanations for every aspect of the phenomenon, and think about how you can test and differentiate between these explanations.
-2. **Validation**: Test your ideas using the available tools.
-   - **Experiment**: Write and run Python scripts in the workspace (either in the temporary folder mentioned above or using existing project modules like `shallow_mlps`) to simulate or test on real data.
+1. **Context Review**: Read `$CONTEXT_DIR/exploration/report.md` and any other files in `$CONTEXT_DIR/exploration/` to understand prior findings.
+2. **Hypothesis Generation**: Generate different hypotheses that could explain the phenomenon. Try to generate at least 2-3 *alternative* explanations for every aspect of the phenomenon, and think about how you can test and differentiate between these explanations.
+3. **Validation**: Test your ideas using the available tools.
+   - **Experiment**: Write and run Python scripts in `$OUTPUT_DIR` (or using existing project modules like `shallow_mlps`) to simulate or test on real data.
    - **Proof**: If applicable, use mathematical derivations.
-3. **Iteration**: Based on the results of your validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process. Continue iterating until you have a robust set of hypotheses that are well-supported by evidence.
-4. **Reporting**: Produce the final theory Markdown (see below) and return it as your ONLY output.
+4. **Iteration**: Based on the results of your validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process. Continue iterating until you have a robust set of hypotheses that are well-supported by evidence.
+5. **Reporting**: Write the final theory to `$OUTPUT_DIR/theory.md` (this exact filename is required).
+6. **Store results**: Persist your output and report the theory ID:
+   ```bash
+   uv run python src/context_manager.py store_results --from_agent_type write-theory --from_folder "$OUTPUT_DIR"
+   ```
+   Print the returned theory ID (e.g. `T_20260414_143100_d4e5f6`) — downstream skills need it.
 
 ## Final Output Format
-Your final response must be a Markdown file that contains your theory:
+Your `theory.md` file must contain your theory:
 - Start with a brief definition of the phenomenon and provide any necessary context.
 - Structure your theory into a set of precise definitions, lemmas, theorems (collectively referred to as "hypotheses" in the following). Later hypotheses can build on earlier ones.
 - Explicitly state ANY assumptions you're making for each hypothesis and list them out clearly.
