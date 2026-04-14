@@ -53,9 +53,9 @@ uv run python scripts/context_manager.py create_context --for_agent_type write-t
    ```bash
    uv run python scripts/context_manager.py store_results --from_agent_type write-theory --from_folder "$OUTPUT_DIR"
    ```
-   Print the returned theory ID (e.g. `T_20260414_143100_d4e5f6`) — downstream skills need it.
+   Report the returned theory ID (e.g. `T_20260414_143100_d4e5f6`) as the final output of this skill.
 
-## Final Output Format
+## Theory Output Format
 Your `theory.md` file must contain your theory:
 - Start with a brief definition of the phenomenon and provide any necessary context.
 - Structure your theory into a set of precise definitions, lemmas, theorems (collectively referred to as "hypotheses" in the following). Later hypotheses can build on earlier ones.

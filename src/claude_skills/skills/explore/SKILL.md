@@ -33,4 +33,4 @@ All exploration artifacts go under this folder. Swarm agents should write to `{o
    ```bash
    uv run python scripts/context_manager.py store_results --from_agent_type explorer --from_folder {output_folder}
    ```
-   Print the returned exploration ID (e.g. `E_20260414_143052_a1b2c3`) — downstream skills need it.
+   Return the returned exploration ID (e.g. `E_20260414_143052_a1b2c3`) as the final output of this skill.

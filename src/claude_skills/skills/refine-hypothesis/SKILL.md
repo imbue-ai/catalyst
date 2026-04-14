@@ -43,9 +43,9 @@ uv run python scripts/context_manager.py create_context --for_agent_type refine-
    ```bash
    uv run python scripts/context_manager.py store_results --from_agent_type refine-hypothesis --from_folder "$OUTPUT_DIR" --metadata original_theory=<THEORY_ID>
    ```
-   Print the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) — this is a new, independent theory entry.
+   Report the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the final output of this skill.
 
-## Final Output Format
+## Theory Output Format
 Your `theory.md` file must be either:
 1. A revised theory that contains your refined hypothesis.
 2. or, if refinement failed, do not write `theory.md` — instead return a statement that the refinement attempt has failed.
