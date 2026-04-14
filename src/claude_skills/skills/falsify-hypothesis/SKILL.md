@@ -28,7 +28,7 @@ Set up two folders — one for input context, one for your own output:
 ```bash
 CONTEXT_DIR=$(mktemp -d -p ./tmp falsify-hypothesis-context-XXXX)
 OUTPUT_DIR=$(mktemp -d -p ./tmp falsify-hypothesis-output-XXXX)
-uv run python src/context_manager.py create_context --for_agent_type falsify-hypothesis --target_folder "$CONTEXT_DIR" --from_theory <THEORY_ID>
+uv run python scripts/context_manager.py create_context --for_agent_type falsify-hypothesis --target_folder "$CONTEXT_DIR" --from_theory <THEORY_ID>
 ```
 
 - `$CONTEXT_DIR/theory/` — the theory to falsify (read-only input). Read `$CONTEXT_DIR/theory/theory.md` and any artifacts.
@@ -51,7 +51,7 @@ Consider these approaches to generate falsification ideas:
 4. **Reporting**: Write your falsification report to `$OUTPUT_DIR/review.md` (this exact filename is required). See the output format below.
 5. **Store results**: Persist your output and report the review ID:
    ```bash
-   uv run python src/context_manager.py store_results --from_agent_type falsify-hypothesis --from_folder "$OUTPUT_DIR" --parent_theory <THEORY_ID>
+   uv run python scripts/context_manager.py store_results --from_agent_type falsify-hypothesis --from_folder "$OUTPUT_DIR" --parent_theory <THEORY_ID>
    ```
    Print the returned review ID (e.g. `R_20260414_143200_g7h8i9`) — downstream skills need it.
 

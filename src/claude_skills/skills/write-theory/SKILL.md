@@ -35,7 +35,7 @@ Set up two folders — one for input context, one for your own output:
 ```bash
 CONTEXT_DIR=$(mktemp -d -p ./tmp write-theory-context-XXXX)
 OUTPUT_DIR=$(mktemp -d -p ./tmp write-theory-output-XXXX)
-uv run python src/context_manager.py create_context --for_agent_type write-theory --target_folder "$CONTEXT_DIR" --from_exploration <EXPLORATION_ID>
+uv run python scripts/context_manager.py create_context --for_agent_type write-theory --target_folder "$CONTEXT_DIR" --from_exploration <EXPLORATION_ID>
 ```
 
 - `$CONTEXT_DIR/exploration/` — prior exploration results (read-only input). Read `$CONTEXT_DIR/exploration/report.md` and any artifacts.
@@ -51,7 +51,7 @@ uv run python src/context_manager.py create_context --for_agent_type write-theor
 5. **Reporting**: Write the final theory to `$OUTPUT_DIR/theory.md` (this exact filename is required).
 6. **Store results**: Persist your output and report the theory ID:
    ```bash
-   uv run python src/context_manager.py store_results --from_agent_type write-theory --from_folder "$OUTPUT_DIR"
+   uv run python scripts/context_manager.py store_results --from_agent_type write-theory --from_folder "$OUTPUT_DIR"
    ```
    Print the returned theory ID (e.g. `T_20260414_143100_d4e5f6`) — downstream skills need it.
 

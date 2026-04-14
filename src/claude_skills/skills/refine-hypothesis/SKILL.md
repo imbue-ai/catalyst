@@ -25,7 +25,7 @@ Set up two folders — one for input context, one for your own output:
 ```bash
 CONTEXT_DIR=$(mktemp -d -p ./tmp refine-hypothesis-context-XXXX)
 OUTPUT_DIR=$(mktemp -d -p ./tmp refine-hypothesis-output-XXXX)
-uv run python src/context_manager.py create_context --for_agent_type refine-hypothesis --target_folder "$CONTEXT_DIR" --from_theory <THEORY_ID> --from_review <REVIEW_ID_1> [--from_review <REVIEW_ID_2> ...]
+uv run python scripts/context_manager.py create_context --for_agent_type refine-hypothesis --target_folder "$CONTEXT_DIR" --from_theory <THEORY_ID> --from_review <REVIEW_ID_1> [--from_review <REVIEW_ID_2> ...]
 ```
 
 - `$CONTEXT_DIR/theory/` — the original theory (read-only input). Read `$CONTEXT_DIR/theory/theory.md` and any artifacts.
@@ -41,7 +41,7 @@ uv run python src/context_manager.py create_context --for_agent_type refine-hypo
 4. **Reporting**: Write the final revised theory to `$OUTPUT_DIR/theory.md` (this exact filename is required), or decide to abort.
 5. **Store results** (only if refinement succeeded): Persist your output and report the new theory ID:
    ```bash
-   uv run python src/context_manager.py store_results --from_agent_type refine-hypothesis --from_folder "$OUTPUT_DIR" --metadata original_theory=<THEORY_ID>
+   uv run python scripts/context_manager.py store_results --from_agent_type refine-hypothesis --from_folder "$OUTPUT_DIR" --metadata original_theory=<THEORY_ID>
    ```
    Print the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) — this is a new, independent theory entry.
 
