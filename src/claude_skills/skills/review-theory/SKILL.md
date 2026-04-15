@@ -26,8 +26,9 @@ uv run python scripts/context_manager.py create_context --for_agent_type review-
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to retrieve the `theory.md` file using `context_manager.py`.
 2. **Review & Extraction**: Read `$CONTEXT_DIR/theory.md` to determine a list of lemmas and theorems within the `theory.md` file.
-3. **Spawn Agents**: For each theorem and lemma, spawn a background agent instructed to invoke the `falsify-hypothesis` skill.
-   - Use the available tools to spawn independent agents (e.g., via `Agent`).
-   - Each subagent's prompt should instruct them to run the `falsify-hypothesis` skill for the specified lemma/theorem, passing the required `<THEORY_ID>` and theorem/lemma name.
+3. **Spawn Agents**: For each theorem and lemma, spawn **two** background agents:
+   - A `falsify-hypothesis` agent: instructed to invoke the `falsify-hypothesis` skill for the specified lemma/theorem, passing the required `<THEORY_ID>` and theorem/lemma name.
+   - An `expand-hypothesis` agent: instructed to invoke the `expand-hypothesis` skill for the specified lemma/theorem, passing the required `<THEORY_ID>` and theorem/lemma name.
+   - Use the available tools to spawn independent agents (e.g., via `Agent`). All agents for a given step can run in parallel.
 4. **Collection**: Wait for each subagent to finish and collect their result IDs.
-5. **Final Output**: Report the list of result IDs as the skill's final result.
+5. **Final Output**: Report the list of all result IDs (both falsification and expansion reviews) as the skill's final result.

@@ -19,16 +19,25 @@ Parse the initial theory ID (e.g., `T_20260414_...`) from the arguments.
    ```bash
    uv run python scripts/context_manager.py list --type review --parent_theory <INITIAL_THEORY_ID> --json
    ```
-   Parse the JSON output to extract the list of review IDs. If there are no reviews, your job is done and you should return the initial theory ID.
+   Parse the JSON output to extract the list of reviews. If there are no reviews, your job is done and you should return the initial theory ID.
 
-2. **Sequential Refinement**:
+2. **Classify Reviews**: Separate the reviews into two groups based on their `agent_type` field:
+   - **Falsification reviews**: entries where `agent_type` is `"falsify-hypothesis"` — these will be processed via `refine-hypothesis`.
+   - **Expansion reviews**: entries where `agent_type` is `"expand-hypothesis"` — these will be processed via `expand-theory`.
+
+3. **Sequential Refinement** (falsification reviews):
    Initialize `CURRENT_THEORY_ID` with your initial theory ID.
    
-   For each review ID in the list, *one at a time in sequence*:
+   For each falsification review ID in the list, *one at a time in sequence*:
      - Spawn a subagent instructed to invoke the `refine-hypothesis` skill.
      - Provide the subagent with the `CURRENT_THEORY_ID` and the specific review ID it needs to process. It should pass both as arguments to the `refine-hypothesis` skill.
      - Wait for the subagent to finish and retrieve the new theory ID it returns.
      - Update `CURRENT_THEORY_ID` to this new theory ID.
      - **CRITICAL**: Do not run these in parallel. The output of one refinement must be the input to the next.
 
-3. **Final Output**: After every review in the list has been processed sequentially, report the final `CURRENT_THEORY_ID` as the result of this skill.
+4. **Expansion** (expansion reviews):
+   If there are any expansion reviews, spawn a single subagent instructed to invoke the `expand-theory` skill.
+   - Provide the subagent with `CURRENT_THEORY_ID` (the latest theory after all refinements) and **all** expansion review IDs. It should pass these as arguments to the `expand-theory` skill.
+   - Wait for the subagent to finish and collect the returned expansion review ID.
+
+5. **Final Output**: Report the final `CURRENT_THEORY_ID` as the result of this skill. If an expansion review was produced in step 4, also report its review ID.

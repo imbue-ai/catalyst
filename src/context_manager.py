@@ -33,6 +33,8 @@ AGENT_TYPE_MAP: dict[str, tuple[str, str]] = {
     "write-theory": ("theory", "theory.md"),
     "refine-hypothesis": ("theory", "theory.md"),
     "falsify-hypothesis": ("review", "review.md"),
+    "expand-hypothesis": ("review", "review.md"),
+    "expand-theory": ("review", "review.md"),
 }
 
 ID_PREFIXES: dict[str, str] = {
@@ -198,11 +200,12 @@ def store_results(
 
     db_root = get_db_path()
 
-    # --- falsify-hypothesis requires a parent theory ---
-    if from_agent_type == "falsify-hypothesis":
+    # --- review-producing agents require a parent theory ---
+    review_agents = ("falsify-hypothesis", "expand-hypothesis", "expand-theory")
+    if from_agent_type in review_agents:
         if not parent_theory:
             raise ValueError(
-                "--parent_theory is required when storing falsify-hypothesis results"
+                f"--parent_theory is required when storing {from_agent_type} results"
             )
         theory_dir = db_root / "theory" / parent_theory
         if not theory_dir.is_dir():
@@ -237,7 +240,7 @@ def store_results(
             agent_type=from_agent_type,
             category=category,
             created_at=datetime.now(timezone.utc).isoformat(),
-            parent_theory=parent_theory if from_agent_type == "falsify-hypothesis" else None,
+            parent_theory=parent_theory if from_agent_type in review_agents else None,
             extra=metadata_extra or {},
         )
         (target_dir / "metadata.json").write_text(
@@ -265,15 +268,15 @@ def create_context(
     if for_agent_type == "write-theory":
         if not from_exploration:
             raise ValueError("--from_exploration is required for write-theory")
-    elif for_agent_type == "falsify-hypothesis":
+    elif for_agent_type in ("falsify-hypothesis", "expand-hypothesis"):
         if not from_theory:
-            raise ValueError("--from_theory is required for falsify-hypothesis")
-    elif for_agent_type == "refine-hypothesis":
+            raise ValueError(f"--from_theory is required for {for_agent_type}")
+    elif for_agent_type in ("refine-hypothesis", "expand-theory"):
         if not from_theory:
-            raise ValueError("--from_theory is required for refine-hypothesis")
+            raise ValueError(f"--from_theory is required for {for_agent_type}")
         if not from_reviews:
             raise ValueError(
-                "At least one --from_review is required for refine-hypothesis"
+                f"At least one --from_review is required for {for_agent_type}"
             )
     elif for_agent_type == "review-theory":
         if not from_theory:
@@ -281,7 +284,8 @@ def create_context(
     else:
         raise ValueError(
             f"Unknown target agent type {for_agent_type!r}. "
-            f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, review-theory"
+            f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, "
+            f"review-theory, expand-hypothesis, expand-theory"
         )
 
     with DatabaseLock(db_root):
@@ -334,7 +338,7 @@ def create_context(
                 shutil.copytree(literature_dir, ldst)  # type: ignore[possibly-undefined]
                 _make_writable(ldst)
 
-        elif for_agent_type == "falsify-hypothesis":
+        elif for_agent_type in ("falsify-hypothesis", "expand-hypothesis"):
             dst = target_folder / "theory"
             shutil.copytree(
                 theory_dir,  # type: ignore[possibly-undefined]
@@ -342,7 +346,7 @@ def create_context(
             )
             _make_writable(dst)
 
-        elif for_agent_type == "refine-hypothesis":
+        elif for_agent_type in ("refine-hypothesis", "expand-theory"):
             dst = target_folder / "theory"
             shutil.copytree(
                 theory_dir,  # type: ignore[possibly-undefined]
@@ -443,7 +447,7 @@ def main(argv: list[str] | None = None) -> None:
     sp_ctx.add_argument(
         "--for_agent_type",
         required=True,
-        choices=["write-theory", "falsify-hypothesis", "refine-hypothesis", "review-theory"],
+        choices=["write-theory", "falsify-hypothesis", "refine-hypothesis", "review-theory", "expand-hypothesis", "expand-theory"],
         help="Type of agent to prepare context for",
     )
     sp_ctx.add_argument(
