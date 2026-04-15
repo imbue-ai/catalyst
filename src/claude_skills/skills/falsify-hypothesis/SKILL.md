@@ -70,12 +70,9 @@ Your `review.md` file MUST be formatted exactly as follows:
 - **Strategy**: [e.g., Parameter Extremes]
 - **Description**: [How this idea aims to falsify]
 - **Method**: [Experiment / Proof]
-- **Implementation**:
-```python
-# [Relevant code or formula]
-```
+- **Implementation**: [Relevant script file name relative to `$OUTPUT_DIR`, command, or formula used to test this idea]
 - **Result**: [Successful / Failed to Falsify]
-- **Evidence**: [Summary of the data, plots, or proof steps]
+- **Evidence**: [Summary of the data, plots, or proof steps - include references to specific output files relative to `$OUTPUT_DIR` if applicable]
 
 ---
 
