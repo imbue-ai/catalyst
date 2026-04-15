@@ -43,7 +43,7 @@ uv run python scripts/context_manager.py create_context --for_agent_type refine-
 1. **Context Review**: Read `$CONTEXT_DIR/theory/theory.md` and all review files in `$CONTEXT_DIR/reviews/*/review.md` to understand the hypothesis and its identified flaws.
 2. **Research**: Analyze the falsification reports. Generate ideas for how to address the raised flaws or limitations.
 3. **Implementation**: Test your ideas using the available tools.
-   - **Experiment**: Write and run Python scripts in `$OUTPUT_DIR` (or using existing project modules like `shallow_mlps`) to simulate or test on real data.
+   - **Experiment**: Write and run Python scripts in `$OUTPUT_DIR` to simulate or test on real data.
    - **Proof**: If applicable, use mathematical derivations.
 4. **Reporting**: Write the final revised theory to `$OUTPUT_DIR/theory.md` (this exact filename is required), or decide to abort.
 5. **Store results** Persist your output and report the new theory ID:

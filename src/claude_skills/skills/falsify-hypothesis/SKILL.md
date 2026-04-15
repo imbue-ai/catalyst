@@ -44,7 +44,7 @@ Consider these approaches to generate falsification ideas:
 1. **Context Review**: Read `$CONTEXT_DIR/theory/theory.md` and any other files in `$CONTEXT_DIR/theory/` to understand the theory and its hypotheses.
 2. **Research**: Analyze the target hypothesis. Generate ideas using the falsification strategies above.
 3. **Implementation**: Test your ideas using the available tools.
-   - **Experiment**: Write and run Python scripts in `$OUTPUT_DIR` (or using existing project modules like `shallow_mlps`) to simulate or test on real data.
+   - **Experiment**: Write and run Python scripts in `$OUTPUT_DIR` to simulate or test on real data.
    - **Proof**: If applicable, use mathematical derivations.
 4. **Reporting**: Write your falsification report to `$OUTPUT_DIR/review.md` (this exact filename is required). See the output format below.
 5. **Store results**: Persist your output and report the review ID:

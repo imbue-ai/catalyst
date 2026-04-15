@@ -46,7 +46,7 @@ uv run python scripts/context_manager.py create_context --for_agent_type write-t
 1. **Context Review**: Read `$CONTEXT_DIR/exploration/report.md` and any other files in `$CONTEXT_DIR/exploration/` to understand prior findings. If a literature review is available, read `$CONTEXT_DIR/literature/summary.md` and relevant papers in `$CONTEXT_DIR/literature/papers/` to ground your theory in existing research.
 2. **Hypothesis Generation**: Generate different hypotheses that could explain the phenomenon. Try to generate at least 2-3 *alternative* explanations for every aspect of the phenomenon, and think about how you can test and differentiate between these explanations.
 3. **Validation**: Test your ideas using the available tools.
-   - **Experiment**: Write and run Python scripts in `$OUTPUT_DIR` (or using existing project modules like `shallow_mlps`) to simulate or test on real data.
+   - **Experiment**: Write and run Python scripts in `$OUTPUT_DIR` to simulate or test on real data.
    - **Proof**: If applicable, use mathematical derivations.
 4. **Iteration**: Based on the results of your validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process. Continue iterating until you have a robust set of hypotheses that are well-supported by evidence.
 5. **Reporting**: Write the final theory to `$OUTPUT_DIR/theory.md` (this exact filename is required).
