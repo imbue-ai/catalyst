@@ -33,8 +33,8 @@ AGENT_TYPE_MAP: dict[str, tuple[str, str]] = {
     "write-theory": ("theory", "theory.md"),
     "refine-hypothesis": ("theory", "theory.md"),
     "falsify-hypothesis": ("review", "review.md"),
-    "expand-hypothesis": ("review", "review.md"),
-    "expand-theory": ("review", "review.md"),
+    "suggest-expansions": ("review", "review.md"),
+    "expand-theory": ("theory", "theory.md"),
 }
 
 ID_PREFIXES: dict[str, str] = {
@@ -193,7 +193,7 @@ def store_results(
     db_root = get_db_path()
 
     # --- review-producing agents require a parent theory ---
-    review_agents = ("falsify-hypothesis", "expand-hypothesis", "expand-theory")
+    review_agents = ("falsify-hypothesis", "suggest-expansions")
     if from_agent_type in review_agents:
         if not parent_theory:
             raise ValueError(
@@ -287,7 +287,7 @@ def create_context(
     if for_agent_type == "write-theory":
         if not from_exploration:
             raise ValueError("--from_exploration is required for write-theory")
-    elif for_agent_type in ("falsify-hypothesis", "expand-hypothesis"):
+    elif for_agent_type in ("falsify-hypothesis", "suggest-expansions"):
         if not from_theory:
             raise ValueError(f"--from_theory is required for {for_agent_type}")
     elif for_agent_type in ("refine-hypothesis", "expand-theory"):
@@ -304,7 +304,7 @@ def create_context(
         raise ValueError(
             f"Unknown target agent type {for_agent_type!r}. "
             f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, "
-            f"review-theory, expand-hypothesis, expand-theory"
+            f"review-theory, suggest-expansions, expand-theory"
         )
 
     def _ignore_review_dir(directory: str, contents: list[str]) -> set[str]:
@@ -366,7 +366,7 @@ def create_context(
                 shutil.copytree(literature_dir, ldst)  # type: ignore[possibly-undefined]
                 _make_writable(ldst)
 
-        elif for_agent_type in ("falsify-hypothesis", "expand-hypothesis"):
+        elif for_agent_type in ("falsify-hypothesis", "suggest-expansions"):
             dst = target_folder / "theory"
             shutil.copytree(
                 theory_dir,  # type: ignore[possibly-undefined]
@@ -478,7 +478,7 @@ def main(argv: list[str] | None = None) -> None:
     sp_ctx.add_argument(
         "--for_agent_type",
         required=True,
-        choices=["write-theory", "falsify-hypothesis", "refine-hypothesis", "review-theory", "expand-hypothesis", "expand-theory"],
+        choices=["write-theory", "falsify-hypothesis", "refine-hypothesis", "review-theory", "suggest-expansions", "expand-theory"],
         help="Type of agent to prepare context for",
     )
     sp_ctx.add_argument(

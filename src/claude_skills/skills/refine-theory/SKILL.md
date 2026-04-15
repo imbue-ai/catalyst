@@ -23,7 +23,7 @@ Parse the initial theory ID (e.g., `T_20260414_...`) from the arguments.
 
 2. **Classify Reviews**: Separate the reviews into two groups based on their `agent_type` field:
    - **Falsification reviews**: entries where `agent_type` is `"falsify-hypothesis"` — these will be processed via `refine-hypothesis`.
-   - **Expansion reviews**: entries where `agent_type` is `"expand-hypothesis"` — these will be processed via `expand-theory`.
+   - **Expansion reviews**: entries where `agent_type` is `"suggest-expansions"` — these will be processed via `expand-theory`.
 
 3. **Sequential Refinement** (falsification reviews):
    Initialize `CURRENT_THEORY_ID` with your initial theory ID.
@@ -38,6 +38,7 @@ Parse the initial theory ID (e.g., `T_20260414_...`) from the arguments.
 4. **Expansion** (expansion reviews):
    If there are any expansion reviews, spawn a single subagent instructed to invoke the `expand-theory` skill.
    - Provide the subagent with `CURRENT_THEORY_ID` (the latest theory after all refinements) and **all** expansion review IDs. It should pass these as arguments to the `expand-theory` skill.
-   - Wait for the subagent to finish and collect the returned expansion review ID.
+   - Wait for the subagent to finish and retrieve the new theory ID it returns.
+   - Update `CURRENT_THEORY_ID` to this new theory ID.
 
-5. **Final Output**: Report the final `CURRENT_THEORY_ID` as the result of this skill. If an expansion review was produced in step 4, also report its review ID.
+5. **Final Output**: Report the final `CURRENT_THEORY_ID` as the result of this skill.
