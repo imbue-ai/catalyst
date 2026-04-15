@@ -21,11 +21,12 @@ The arguments contain a theory ID (like `T_20260414_...`) and one or more review
 
 ## Folder setup
 
-Set up two folders — one for input context, one for your own output:
+Set up two folders — one for input context, one for your own output, and initialize the output folder with the original theory files:
 ```bash
 CONTEXT_DIR=$(mktemp -d -p ./tmp expand-theory-context-XXXX)
 OUTPUT_DIR=$(mktemp -d -p ./tmp expand-theory-output-XXXX)
 uv run python scripts/context_manager.py create_context --for_agent_type expand-theory --target_folder "$CONTEXT_DIR" --from_theory <THEORY_ID> --from_review <REVIEW_ID_1> [--from_review <REVIEW_ID_2> ...]
+cp -r "$CONTEXT_DIR/theory/"* "$OUTPUT_DIR/"
 ```
 
 - `$CONTEXT_DIR/theory/` — the current theory (read-only input). Read `$CONTEXT_DIR/theory/theory.md` and any artifacts.
