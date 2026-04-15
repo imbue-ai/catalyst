@@ -26,7 +26,7 @@ Parse the initial theory ID (e.g., `T_20260414_...`) from the arguments.
    
    For each review ID in the list, *one at a time in sequence*:
      - Spawn a subagent instructed to invoke the `refine-hypothesis` skill.
-     - Provide the subagent with the `CURRENT_THEORY_ID` and the specific review ID it needs to process.
+     - Provide the subagent with the `CURRENT_THEORY_ID` and the specific review ID it needs to process. It should pass both as arguments to the `refine-hypothesis` skill.
      - Wait for the subagent to finish and retrieve the new theory ID it returns.
      - Update `CURRENT_THEORY_ID` to this new theory ID.
      - **CRITICAL**: Do not run these in parallel. The output of one refinement must be the input to the next.
