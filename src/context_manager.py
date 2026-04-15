@@ -207,64 +207,37 @@ def store_results(
         new_id = generate_id(category)
 
         # --- determine target directory ---
-        if category in ("exploration", "literature"):
+        if category in ("exploration", "literature", "theory", "review"):
             target_dir = db_root / category / new_id
-        elif category == "theory":
-            target_dir = db_root / "theory" / new_id
-        else:  # review
-            target_dir = db_root / "theory" / parent_theory / "review" / new_id  # type: ignore[arg-type]
+        else:
+            raise RuntimeError(f"Unknown category {category!r}")
 
         if target_dir.exists():
             raise RuntimeError(
                 f"ID collision: {target_dir} already exists (this should be extremely rare)"
             )
 
-        # --- temporarily unlock parent dirs for nested review storage ---
-        dirs_to_relock: list[Path] = []
-        if category == "review":
-            # The parent theory dir (and its review/ subdir) are read-only;
-            # we need write access to create the new review entry.
-            theory_dir_path = db_root / "theory" / parent_theory  # type: ignore[arg-type]
-            dirs_to_relock.append(theory_dir_path)
-            review_parent = theory_dir_path / "review"
-            if review_parent.exists():
-                dirs_to_relock.append(review_parent)
-            for d in dirs_to_relock:
-                cur = d.stat().st_mode
-                os.chmod(d, cur | stat.S_IWUSR)
+        # --- ensure intermediate dirs exist ---
+        target_dir.parent.mkdir(parents=True, exist_ok=True)
 
-        try:
-            # --- ensure intermediate dirs exist (e.g. theory/<id>/review/) ---
-            target_dir.parent.mkdir(parents=True, exist_ok=True)
+        # --- copy files ---
+        shutil.copytree(from_folder, target_dir)
 
-            # --- copy files ---
-            shutil.copytree(from_folder, target_dir)
+        # --- write metadata ---
+        meta = StoredMetadata(
+            id=new_id,
+            agent_type=from_agent_type,
+            category=category,
+            created_at=datetime.now(timezone.utc).isoformat(),
+            parent_theory=parent_theory if from_agent_type == "falsify-hypothesis" else None,
+            extra=metadata_extra or {},
+        )
+        (target_dir / "metadata.json").write_text(
+            json.dumps(meta.model_dump(), indent=2) + "\n"
+        )
 
-            # --- write metadata ---
-            meta = StoredMetadata(
-                id=new_id,
-                agent_type=from_agent_type,
-                category=category,
-                created_at=datetime.now(timezone.utc).isoformat(),
-                parent_theory=parent_theory if from_agent_type == "falsify-hypothesis" else None,
-                extra=metadata_extra or {},
-            )
-            (target_dir / "metadata.json").write_text(
-                json.dumps(meta.model_dump(), indent=2) + "\n"
-            )
-
-            # --- make immutable ---
-            _make_readonly(target_dir)
-        finally:
-            # Re-lock parent dirs we temporarily unlocked, plus any new
-            # intermediate dirs (e.g. the review/ directory we just created).
-            if category == "review":
-                review_parent = target_dir.parent  # theory/<id>/review/
-                if review_parent.exists() and review_parent not in dirs_to_relock:
-                    dirs_to_relock.append(review_parent)
-            for d in dirs_to_relock:
-                cur = d.stat().st_mode
-                os.chmod(d, cur & ~(stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH))
+        # --- make immutable ---
+        _make_readonly(target_dir)
 
     return new_id
 
@@ -303,13 +276,6 @@ def create_context(
             f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, review-theory"
         )
 
-    def _ignore_review_dir(directory: str, contents: list[str]) -> set[str]:
-        """shutil.copytree ignore function: skip the database-level review/ subdir."""
-        if Path(directory).name in (from_theory,) and "review" in contents:
-            # Only ignore 'review' at the top level of the theory directory
-            return {"review"}
-        return set()
-
     with DatabaseLock(db_root):
         # --- resolve and validate paths ---
         if from_exploration:
@@ -337,13 +303,11 @@ def create_context(
                 )
 
         if from_reviews:
-            if not from_theory:
-                raise ValueError("--from_theory is required when using --from_review")
             for rid in from_reviews:
-                review_dir = db_root / "theory" / from_theory / "review" / rid
+                review_dir = db_root / "review" / rid
                 if not review_dir.is_dir():
                     raise ValueError(
-                        f"Review {rid!r} not found under theory {from_theory!r} "
+                        f"Review {rid!r} not found in database "
                         f"(expected {review_dir})"
                     )
 
@@ -366,8 +330,7 @@ def create_context(
             dst = target_folder / "theory"
             shutil.copytree(
                 theory_dir,  # type: ignore[possibly-undefined]
-                dst,
-                ignore=_ignore_review_dir,
+                dst
             )
             _make_writable(dst)
 
@@ -375,14 +338,13 @@ def create_context(
             dst = target_folder / "theory"
             shutil.copytree(
                 theory_dir,  # type: ignore[possibly-undefined]
-                dst,
-                ignore=_ignore_review_dir,
+                dst
             )
             _make_writable(dst)
             reviews_root = target_folder / "reviews"
             reviews_root.mkdir(exist_ok=True)
             for rid in from_reviews:  # type: ignore[union-attr]
-                src = db_root / "theory" / from_theory / "review" / rid  # type: ignore[arg-type]
+                src = db_root / "review" / rid
                 rdst = reviews_root / rid
                 shutil.copytree(src, rdst)
                 _make_writable(rdst)
@@ -395,7 +357,7 @@ def create_context(
                 _make_writable(dst)
 
 
-def list_entries(entry_type: str) -> list[dict]:
+def list_entries(entry_type: str, parent_theory: str | None = None) -> list[dict]:
     """List stored entries of the given type, sorted by creation time."""
     valid = ("exploration", "literature", "theory", "review")
     if entry_type not in valid:
@@ -410,16 +372,16 @@ def list_entries(entry_type: str) -> list[dict]:
     results: list[dict] = []
 
     with DatabaseLock(db_root):
-        if entry_type in ("exploration", "literature"):
+        if entry_type in ("exploration", "literature", "theory", "review"):
             pattern = db_root / entry_type / "*" / "metadata.json"
-        elif entry_type == "theory":
-            pattern = db_root / "theory" / "*" / "metadata.json"
-        else:  # review
-            pattern = db_root / "theory" / "*" / "review" / "*" / "metadata.json"
+        else:
+            raise ValueError(f"Unknown entry type: {entry_type}")
 
         for meta_path in sorted(db_root.glob(str(pattern.relative_to(db_root)))):
             try:
                 data = json.loads(meta_path.read_text())
+                if entry_type == "review" and parent_theory and data.get("parent_theory") != parent_theory:
+                    continue
                 results.append(data)
             except (json.JSONDecodeError, OSError):
                 continue
@@ -502,6 +464,11 @@ def main(argv: list[str] | None = None) -> None:
         help="Type of entries to list",
     )
     sp_list.add_argument(
+        "--parent_theory",
+        default=None,
+        help="Filter reviews by parent theory ID",
+    )
+    sp_list.add_argument(
         "--json",
         action="store_true",
         dest="json_output",
@@ -540,7 +507,7 @@ def main(argv: list[str] | None = None) -> None:
             )
 
         elif args.command == "list":
-            entries = list_entries(args.entry_type)
+            entries = list_entries(args.entry_type, parent_theory=getattr(args, "parent_theory", None))
             if args.json_output:
                 print(json.dumps(entries, indent=2))
             else:
