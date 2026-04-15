@@ -294,10 +294,13 @@ def create_context(
             raise ValueError(
                 "At least one --from_review is required for refine-hypothesis"
             )
+    elif for_agent_type == "review-theory":
+        if not from_theory:
+            raise ValueError("--from_theory is required for review-theory")
     else:
         raise ValueError(
             f"Unknown target agent type {for_agent_type!r}. "
-            f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis"
+            f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, review-theory"
         )
 
     def _ignore_review_dir(directory: str, contents: list[str]) -> set[str]:
@@ -384,6 +387,13 @@ def create_context(
                 shutil.copytree(src, rdst)
                 _make_writable(rdst)
 
+        elif for_agent_type == "review-theory":
+            dst = target_folder / "theory.md"
+            src_theory_md = theory_dir / "theory.md"  # type: ignore[possibly-undefined]
+            if src_theory_md.exists():
+                shutil.copy2(src_theory_md, dst)
+                _make_writable(dst)
+
 
 def list_entries(entry_type: str) -> list[dict]:
     """List stored entries of the given type, sorted by creation time."""
@@ -462,7 +472,7 @@ def main(argv: list[str] | None = None) -> None:
     sp_ctx.add_argument(
         "--for_agent_type",
         required=True,
-        choices=["write-theory", "falsify-hypothesis", "refine-hypothesis"],
+        choices=["write-theory", "falsify-hypothesis", "refine-hypothesis", "review-theory"],
         help="Type of agent to prepare context for",
     )
     sp_ctx.add_argument(
