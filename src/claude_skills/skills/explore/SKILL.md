@@ -2,7 +2,6 @@
 name: explore
 description: Team of explorers that investigate whatever the project is about from multiple angles simultaneously
 model: inherit
-context: fork
 allowed-tools: Read Bash Glob Grep Write Edit Skill(swarm)
 argument-hint: optional direction to explore
 ---

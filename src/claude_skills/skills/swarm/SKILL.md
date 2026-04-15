@@ -2,7 +2,6 @@
 name: swarm
 description: "Fan out a task to N independent agents with diverse approaches and collect all results"
 model: inherit
-context: fork
 allowed-tools: Read Bash Glob Grep Write Edit Agent TeamCreate TaskCreate TaskUpdate TaskList SendMessage
 argument-hint: The task to swarm. Optionally specify N (default 3).
 ---

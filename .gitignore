@@ -9,3 +9,4 @@ logs/
 /organisms/org_*
 /bifurcation_gym/tmp/*
 /tmp/
+.ai-scientist-db/

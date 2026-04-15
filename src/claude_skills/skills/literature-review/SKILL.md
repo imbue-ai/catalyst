@@ -66,7 +66,7 @@ For each search, use `WebSearch` to find papers. Target arXiv specifically (incl
 
 6. **Store results**: Persist your output and report the literature review ID:
    ```bash
-   uv run python src/context_manager.py store_results --from_agent_type literature-review --from_folder "$OUTPUT_DIR"
+   uv run python scripts/context_manager.py store_results --from_agent_type literature-review --from_folder "$OUTPUT_DIR"
    ```
    Print the returned literature ID (e.g. `L_20260414_143052_a1b2c3`) — downstream skills need it.
 

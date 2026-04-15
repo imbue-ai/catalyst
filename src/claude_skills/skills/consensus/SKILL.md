@@ -2,7 +2,6 @@
 name: consensus
 description: "Swarm a question to N agents and tally their agreement to produce a consensus answer with dissent noted"
 model: inherit
-context: fork
 allowed-tools: Read Write(tmp/*) Skill(swarm)
 argument-hint: The question or task to reach consensus on. Optionally specify N agents (default 5, odd preferred).
 ---
