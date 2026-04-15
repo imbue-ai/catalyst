@@ -59,22 +59,19 @@ For each search, use `WebSearch` to find papers. Target arXiv specifically (incl
    - Results relevant to the topic
    - Limitations noted by the authors
 
-5. **Synthesize**: Write `$OUTPUT_DIR/summary.md` containing:
-   - An overview of the research landscape
-   - Detailed per-paper summaries
-   - A synthesis section identifying themes, gaps, and open questions
+5. **Synthesize**: Write the file `$OUTPUT_DIR/summary.md`, according to the summary file format specified below.
 
 6. **Store results**: Persist your output and report the literature review ID:
    ```bash
    uv run python scripts/context_manager.py store_results --from_agent_type literature-review --from_folder "$OUTPUT_DIR"
    ```
-   Print the returned literature ID (e.g. `L_20260414_143052_a1b2c3`) — downstream skills need it.
+   Print the returned literature ID (e.g. `L_20260414_143052_a1b2c3`) as your final response — downstream skills need it.
 
-## Final Output Format
+## Summary File Format
 
 Your `summary.md` file must follow this structure:
 
-```markdown
+```
 # Literature Review: [Topic]
 
 ## Overview

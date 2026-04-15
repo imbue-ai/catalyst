@@ -56,6 +56,7 @@ Consider these approaches to generate falsification ideas:
 ## Falsification Report Format
 Your `review.md` file MUST be formatted exactly as follows:
 
+```
 # Falsification Report: [Hypothesis Name/Summary]
 
 ## Target Hypothesis
@@ -81,3 +82,4 @@ Your `review.md` file MUST be formatted exactly as follows:
 
 ## Synthesis and Conclusion
 [Summarize findings. Is the hypothesis falsified? What are its limits?]
+```
