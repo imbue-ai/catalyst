@@ -47,3 +47,11 @@ uv run python scripts/context_manager.py create_context --for_agent_type expand-
 
 ## Theory Output Format
 Your `theory.md` file must be a fully self-contained, updated version of the original theory with the new expansions integrated. Do NOT include notes about the expansion process. The file should read as a standalone scientific document presenting the expanded theory and all supporting evidence.
+
+Please maintain the following guidelines for the expanded theory:
+- Structure your theory into a set of precise definitions, lemmas, theorems (collectively referred to as "hypotheses" in the following). Later hypotheses can build on earlier ones.
+- Explicitly state ANY assumptions you're making for each hypothesis and list them out clearly.
+- Explicitly lay out the evidence you have for each hypothesis (either a mathematical proof/derivation, or empirical evidence from experiments).
+- Include helpful plots and specific data points from your experiments whenever they are helpful for providing intuition or illustrating the evidence for your hypotheses.
+
+As a general guideline, the overall theory should resemble a well-written main part of a scientific paper or textbook chapter. (excluding abstract, prior art etc.)

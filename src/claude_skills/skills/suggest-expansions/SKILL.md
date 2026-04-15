@@ -69,10 +69,7 @@ Your `review.md` file MUST be formatted exactly as follows:
 - **Strategy**: [e.g., Generalization / Missing Cases / Unproven Corollaries / etc.]
 - **Description**: [What the expansion would add or generalize]
 - **Motivation**: [Why this is worth pursuing — experimental evidence or mathematical argument]
-- **Evidence**:
-```python
-# [Relevant code or formula]
-```
+- **Evidence**: [Relevant script file name relative to `$OUTPUT_DIR`, command, or formula used to support this idea]
 - **Feasibility**: [High / Medium / Low]
 - **Impact**: [High / Medium / Low]
 
