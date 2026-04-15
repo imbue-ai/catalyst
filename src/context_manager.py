@@ -1,9 +1,10 @@
 """Agent Context Manager — filesystem-based persistence and context assembly for the Skills pipeline.
 
-Provides three CLI subcommands:
+Provides four CLI subcommands:
   store_results  — persist agent output into an immutable database
   create_context — assemble upstream artifacts into a working folder for the next agent
   list           — enumerate stored entries by type
+  init           — initialize a new database
 """
 
 from __future__ import annotations
@@ -319,8 +320,7 @@ def create_context(
                 review_dir = db_root / "review" / rid
                 if not review_dir.is_dir():
                     raise ValueError(
-                        f"Review {rid!r} not found in database "
-                        f"(expected {review_dir})"
+                        f"Review {rid!r} not found in database (expected {review_dir})"
                     )
 
         # --- create target and copy ---
@@ -342,7 +342,7 @@ def create_context(
             dst = target_folder / "theory"
             shutil.copytree(
                 theory_dir,  # type: ignore[possibly-undefined]
-                dst
+                dst,
             )
             _make_writable(dst)
 
@@ -350,7 +350,7 @@ def create_context(
             dst = target_folder / "theory"
             shutil.copytree(
                 theory_dir,  # type: ignore[possibly-undefined]
-                dst
+                dst,
             )
             _make_writable(dst)
             reviews_root = target_folder / "reviews"
@@ -390,7 +390,11 @@ def list_entries(entry_type: str, parent_theory: str | None = None) -> list[dict
         for meta_path in sorted(db_root.glob(str(pattern.relative_to(db_root)))):
             try:
                 data = json.loads(meta_path.read_text())
-                if entry_type == "review" and parent_theory and data.get("parent_theory") != parent_theory:
+                if (
+                    entry_type == "review"
+                    and parent_theory
+                    and data.get("parent_theory") != parent_theory
+                ):
                     continue
                 results.append(data)
             except (json.JSONDecodeError, OSError):
@@ -416,7 +420,9 @@ def main(argv: list[str] | None = None) -> None:
     sp_init = sub.add_parser("init", help="Initialize a new database")
 
     # -- store_results -------------------------------------------------------
-    sp_store = sub.add_parser("store_results", help="Persist agent output into the database")
+    sp_store = sub.add_parser(
+        "store_results", help="Persist agent output into the database"
+    )
     sp_store.add_argument(
         "--from_agent_type",
         required=True,
@@ -443,11 +449,20 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     # -- create_context ------------------------------------------------------
-    sp_ctx = sub.add_parser("create_context", help="Assemble context for the next agent")
+    sp_ctx = sub.add_parser(
+        "create_context", help="Assemble context for the next agent"
+    )
     sp_ctx.add_argument(
         "--for_agent_type",
         required=True,
-        choices=["write-theory", "falsify-hypothesis", "refine-hypothesis", "review-theory", "suggest-expansions", "expand-theory"],
+        choices=[
+            "write-theory",
+            "falsify-hypothesis",
+            "refine-hypothesis",
+            "review-theory",
+            "suggest-expansions",
+            "expand-theory",
+        ],
         help="Type of agent to prepare context for",
     )
     sp_ctx.add_argument(
@@ -527,7 +542,9 @@ def main(argv: list[str] | None = None) -> None:
             )
 
         elif args.command == "list":
-            entries = list_entries(args.entry_type, parent_theory=getattr(args, "parent_theory", None))
+            entries = list_entries(
+                args.entry_type, parent_theory=getattr(args, "parent_theory", None)
+            )
             if args.json_output:
                 print(json.dumps(entries, indent=2))
             else:
