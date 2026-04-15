@@ -51,12 +51,20 @@ LOCK_FILENAME = ".lock"
 # ---------------------------------------------------------------------------
 
 
-def get_db_path() -> Path:
+def get_db_path(ensure_exists: bool = True) -> Path:
     """Return the resolved database root path."""
     env = os.environ.get(ENV_DB_PATH)
     if env:
-        return Path(env).resolve()
-    return Path.cwd() / DEFAULT_DB_DIR
+        path = Path(env).resolve()
+    else:
+        path = Path.cwd() / DEFAULT_DB_DIR
+
+    if ensure_exists and not path.is_dir():
+        raise RuntimeError(
+            f"Database path does not exist: {path}\n"
+            "Please initialize it first by running: context_manager init"
+        )
+    return path
 
 
 def generate_id(category: str) -> str:
@@ -366,8 +374,6 @@ def list_entries(entry_type: str, parent_theory: str | None = None) -> list[dict
         )
 
     db_root = get_db_path()
-    if not db_root.is_dir():
-        return []
 
     results: list[dict] = []
 
@@ -401,6 +407,9 @@ def main(argv: list[str] | None = None) -> None:
         description="Agent Context Manager — store, assemble, and list pipeline artifacts.",
     )
     sub = parser.add_subparsers(dest="command", required=True)
+
+    # -- init ----------------------------------------------------------------
+    sp_init = sub.add_parser("init", help="Initialize a new database")
 
     # -- store_results -------------------------------------------------------
     sp_store = sub.add_parser("store_results", help="Persist agent output into the database")
@@ -478,7 +487,14 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     try:
-        if args.command == "store_results":
+        if args.command == "init":
+            db_path = get_db_path(ensure_exists=False)
+            if db_path.exists():
+                raise RuntimeError(f"Database path already exists: {db_path}")
+            db_path.mkdir(parents=True)
+            print(f"Initialized database at {db_path}")
+
+        elif args.command == "store_results":
             extra: dict[str, str] = {}
             for item in args.metadata:
                 if "=" not in item:
