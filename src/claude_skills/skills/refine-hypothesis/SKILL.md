@@ -11,8 +11,15 @@ You are an expert scientific agent. You've previously developed a hypothesis for
 ## Mandate
 - Focus on exactly the hypothesis (theorem or lemma) targeted by the review provided.
 - Be thorough in refining the hypothesis. Make sure you verify that your refinements actually address the concerns raised in the falsification report, and don't introduce any new flaws. Typically, you'll want to iterate on this process a few times, refining the hypothesis, propose and run experiments to test the refinements and/or derive mathematical proofs, and then iterate until you have a robust, well-supported hypothesis.
-- If you find that the hypothesis is fundamentally flawed or you're unable to find a way to incrementally improve it, please abort and state that the refinement attempt has failed. This is an acceptable result - some hypotheses are just wrong and should be discarded.
+- If you find that the hypothesis is fundamentally flawed or you're unable to find a way to incrementally improve it, please abort and follow the instructions in the "Discarding a flawed hypothesis" section. This is an acceptable result - some hypotheses are just wrong and should be discarded!
 - You must write and execute code (usually Python) to run experiments, or derive mathematical proofs.
+
+## Discarding a flawed hypothesis
+IF you determine that the hypothesis is fundamentally flawed and cannot be reasonably refined, you should remove it from the theory, along with any other hypotheses or sections that were dependent on it, either directly or indirectly:
+1. Carefully review the theory and identify all corollaries, lemmas, theorems, or other sections that either mention the flawed hypothesis, or were clearly relying on it.
+2. Repeat this process recursively until you've identified all hypotheses and sections that are dependent on the flawed hypothesis *either directly or indirectly*.
+3. Remove the flawed hypothesis itself from the theory
+4. For each dependent hypothesis and section, check if there's a straight-forward edit to that hypothesis/section that you can make to avoid the dependency. Otherwise, remove the dependent hypotheses/section from the theory alltogether. Repeat for each dependent hypothesis/section until you've either removed or edited all of them.
 
 ## Input
 Arguments: $ARGUMENTS
@@ -39,15 +46,13 @@ uv run python scripts/context_manager.py create_context --for_agent_type refine-
    - **Experiment**: Write and run Python scripts in `$OUTPUT_DIR` (or using existing project modules like `shallow_mlps`) to simulate or test on real data.
    - **Proof**: If applicable, use mathematical derivations.
 4. **Reporting**: Write the final revised theory to `$OUTPUT_DIR/theory.md` (this exact filename is required), or decide to abort.
-5. **Store results** (only if refinement succeeded): Persist your output and report the new theory ID:
+5. **Store results** Persist your output and report the new theory ID:
    ```bash
    uv run python scripts/context_manager.py store_results --from_agent_type refine-hypothesis --from_folder "$OUTPUT_DIR" --metadata original_theory=<THEORY_ID>
    ```
    Report the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the final output of this skill.
 
 ## Theory Output Format
-Your `theory.md` file must be either:
-1. A revised theory that contains your refined hypothesis.
-2. or, if refinement failed, do not write `theory.md` — instead return a statement that the refinement attempt has failed.
+Your `theory.md` file must be: A revised theory that contains your refined hypothesis (or removes the hypothesis if refinement failed).
 
 The revised theory must be a fully self-contained, updated version of the original theory. Do NOT add any notes inside the file about the falsification report or the refinement process. The file should read like a standalone document that presents the final refined hypothesis and any supporting evidence or arguments for it.
