@@ -29,7 +29,16 @@
       "Skill(explore)",
       "Skill(literature-review)",
       "WebSearch",
-      "WebFetch(domain:arxiv.org)"
+      "WebFetch(domain:arxiv.org)",
+      "Read(//Users/catherinekim/ai-scientist/src/claude_skills/**)",
+      "Read(//Users/catherinekim/ai-scientist/src/claude_skills/skills/**)",
+      "Bash(git show *)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(mkdir -p /Users/catherinekim/ai-scientist/bifurcation_gym/src)",
+      "Bash(git -C /Users/catherinekim/ai-scientist/bifurcation_gym show e4ffa57:src/context_manager.py)",
+      "Bash(git -C /Users/catherinekim/ai-scientist/bifurcation_gym show e6af4b2 -- src/context_manager.py)",
+      "Bash(git *)",
+      "Bash(grep *)"
     ]
   }
 }

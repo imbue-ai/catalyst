@@ -31,6 +31,7 @@ AGENT_TYPE_MAP: dict[str, tuple[str, str]] = {
     # agent_type -> (database_category, expected_primary_md)
     "explorer": ("exploration", "report.md"),
     "literature-review": ("literature", "summary.md"),
+    "search-literature": ("literature", "summary.md"),
     "write-theory": ("theory", "theory.md"),
     "refine-hypothesis": ("theory", "theory.md"),
     "falsify-hypothesis": ("review", "review.md"),
@@ -258,7 +259,7 @@ def create_context(
     for_agent_type: str,
     target_folder: Path,
     from_exploration: str | None = None,
-    from_literature: str | None = None,
+    from_literatures: list[str] | None = None,
     from_theory: str | None = None,
     from_reviews: list[str] | None = None,
 ) -> None:
@@ -269,6 +270,11 @@ def create_context(
     if for_agent_type == "write-theory":
         if not from_exploration:
             raise ValueError("--from_exploration is required for write-theory")
+        if from_literatures and len(from_literatures) > 1:
+            raise ValueError(
+                "write-theory accepts at most one --from_literature "
+                "(refine-hypothesis and expand-theory support multiple)"
+            )
     elif for_agent_type in ("falsify-hypothesis", "suggest-expansions"):
         if not from_theory:
             raise ValueError(f"--from_theory is required for {for_agent_type}")
@@ -299,13 +305,16 @@ def create_context(
                     f"(expected {exploration_dir})"
                 )
 
-        if from_literature:
-            literature_dir = db_root / "literature" / from_literature
-            if not literature_dir.is_dir():
-                raise ValueError(
-                    f"Literature review {from_literature!r} not found in database "
-                    f"(expected {literature_dir})"
-                )
+        literature_dirs: list[tuple[str, Path]] = []
+        if from_literatures:
+            for lid in from_literatures:
+                lit_dir = db_root / "literature" / lid
+                if not lit_dir.is_dir():
+                    raise ValueError(
+                        f"Literature review {lid!r} not found in database "
+                        f"(expected {lit_dir})"
+                    )
+                literature_dirs.append((lid, lit_dir))
 
         if from_theory:
             theory_dir = db_root / "theory" / from_theory
@@ -333,9 +342,11 @@ def create_context(
                 dst,
             )
             _make_writable(dst)
-            if from_literature:
+            if literature_dirs:
+                # write-theory uses flat layout (single literature review).
+                _, lit_dir = literature_dirs[0]
                 ldst = target_folder / "literature"
-                shutil.copytree(literature_dir, ldst)  # type: ignore[possibly-undefined]
+                shutil.copytree(lit_dir, ldst)
                 _make_writable(ldst)
 
         elif for_agent_type in ("falsify-hypothesis", "suggest-expansions"):
@@ -360,6 +371,16 @@ def create_context(
                 rdst = reviews_root / rid
                 shutil.copytree(src, rdst)
                 _make_writable(rdst)
+            if literature_dirs:
+                # refine-hypothesis / expand-theory use nested layout so
+                # multiple literature reviews (including ones added mid-run
+                # via `add_literature`) can coexist.
+                lit_root = target_folder / "literature"
+                lit_root.mkdir(exist_ok=True)
+                for lid, lit_dir in literature_dirs:
+                    ldst = lit_root / lid
+                    shutil.copytree(lit_dir, ldst)
+                    _make_writable(ldst)
 
         elif for_agent_type == "review-theory":
             dst = target_folder / "theory.md"
@@ -367,6 +388,37 @@ def create_context(
             if src_theory_md.exists():
                 shutil.copy2(src_theory_md, dst)
                 _make_writable(dst)
+
+
+def add_literature(target_folder: Path, literature_id: str) -> None:
+    """Add a literature review to an existing context folder under
+    ``literature/<literature_id>/``.
+
+    Intended for mid-run integration: a writing skill invokes
+    ``search-literature``, receives a new ``L_...`` ID, and merges its
+    contents into its own context via this command without having to
+    rebuild the whole context folder.
+    """
+    db_root = get_db_path()
+    lit_dir = db_root / "literature" / literature_id
+    if not lit_dir.is_dir():
+        raise ValueError(
+            f"Literature review {literature_id!r} not found in database "
+            f"(expected {lit_dir})"
+        )
+    if not target_folder.is_dir():
+        raise ValueError(f"Target folder does not exist: {target_folder}")
+
+    with DatabaseLock(db_root):
+        dst_root = target_folder / "literature"
+        dst_root.mkdir(exist_ok=True)
+        dst = dst_root / literature_id
+        if dst.exists():
+            raise ValueError(
+                f"Literature {literature_id!r} already present at {dst}"
+            )
+        shutil.copytree(lit_dir, dst)
+        _make_writable(dst)
 
 
 def list_entries(entry_type: str, parent_theory: str | None = None) -> list[dict]:
@@ -472,7 +524,17 @@ def main(argv: list[str] | None = None) -> None:
         help="Folder to populate with upstream artifacts",
     )
     sp_ctx.add_argument("--from_exploration", default=None, help="Exploration ID")
-    sp_ctx.add_argument("--from_literature", default=None, help="Literature review ID")
+    sp_ctx.add_argument(
+        "--from_literature",
+        action="append",
+        default=[],
+        dest="from_literatures",
+        help=(
+            "Literature review ID. Repeatable for refine-hypothesis and "
+            "expand-theory (each lands in literature/<L_ID>/); write-theory "
+            "accepts at most one and uses a flat literature/ layout."
+        ),
+    )
     sp_ctx.add_argument("--from_theory", default=None, help="Theory ID")
     sp_ctx.add_argument(
         "--from_review",
@@ -480,6 +542,27 @@ def main(argv: list[str] | None = None) -> None:
         default=[],
         dest="from_reviews",
         help="Review ID (repeatable)",
+    )
+
+    # -- add_literature ------------------------------------------------------
+    sp_add_lit = sub.add_parser(
+        "add_literature",
+        help=(
+            "Add a literature review to an existing context folder. "
+            "Use this to fold a mid-run search-literature result into a "
+            "writing skill's existing context."
+        ),
+    )
+    sp_add_lit.add_argument(
+        "--target_folder",
+        required=True,
+        type=Path,
+        help="Existing context folder produced by a prior create_context call",
+    )
+    sp_add_lit.add_argument(
+        "--from_literature",
+        required=True,
+        help="Literature review ID to add (nested under literature/<L_ID>/)",
     )
 
     # -- list ----------------------------------------------------------------
@@ -536,9 +619,15 @@ def main(argv: list[str] | None = None) -> None:
                 for_agent_type=args.for_agent_type,
                 target_folder=args.target_folder.resolve(),
                 from_exploration=args.from_exploration,
-                from_literature=args.from_literature,
+                from_literatures=args.from_literatures or None,
                 from_theory=args.from_theory,
                 from_reviews=args.from_reviews or None,
+            )
+
+        elif args.command == "add_literature":
+            add_literature(
+                target_folder=args.target_folder.resolve(),
+                literature_id=args.from_literature,
             )
 
         elif args.command == "list":
