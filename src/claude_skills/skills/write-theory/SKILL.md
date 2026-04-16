@@ -2,7 +2,7 @@
 name: write-theory
 description: "Write a theory to explain a given phenomenon."
 model: inherit
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*)
+allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*) Skill
 argument-hint: "exploration ID (e.g. E_20260414_...), optional literature ID (e.g. L_20260414_...), and the phenomenon to explain"
 ---
 
@@ -12,7 +12,7 @@ You are an expert scientific agent. Your goal is to develop a comprehensive theo
 - Focus on the phenomenon given below.
 - You will be given an exploration ID that references prior exploration results, and optionally a literature review ID that references relevant papers. Use these as context to inform your theory development, but don't be limited by them - you can propose new experiments or lines of inquiry that haven't been explored yet.
 - Be thorough in developing the theory. Make sure you verify every hypothesis in your theory. Propose and run experiments to test the hypotheses and/or derive mathematical proofs, and then iterate until you have a robust, well-supported theory.
-- You must write and execute code (usually Python) to run experiments, or derive mathematical proofs.
+- All experiment execution must go through the `run-experiment` skill — never run experiment scripts directly. See the "Running experiments" section below. You may still write mathematical derivations/proofs inline.
 
 ## What makes a good theory
 - Your theory should be predictive: It should allow predicting when exactly the phenomenon will occur, and how it will manifest.
@@ -40,13 +40,40 @@ uv run python scripts/context_manager.py create_context --for_agent_type write-t
 
 - `$CONTEXT_DIR/exploration/` — prior exploration results (read-only input). Read `$CONTEXT_DIR/exploration/report.md` and any artifacts.
 - `$CONTEXT_DIR/literature/` — (if literature ID provided) literature review with paper summaries and downloaded PDFs. Always read `$CONTEXT_DIR/literature/summary.md`, and read individual PDFs in `$CONTEXT_DIR/literature/papers/` when relevant.
-- `$OUTPUT_DIR/` — write all your own scripts, plots, and output files here. Only this folder gets stored.
+- `$OUTPUT_DIR/` — write your theory and any supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `$CONTEXT_DIR/experiments/` via `add_experiment`.
+
+## Running experiments
+
+You must not execute experiment scripts directly. Every experiment goes through the `run-experiment` skill, which runs the script in an isolated environment, captures all artifacts, and persists the bundle to the shared experiment database so other agents can find and reuse it.
+
+**Before writing a new experiment**, search the database for prior experiments that may already answer your question:
+```bash
+uv run python scripts/context_manager.py search_experiments --query "<short description of what you want to test>"
+```
+If a prior experiment matches closely, fold it into your context and reuse it instead of re-running:
+```bash
+uv run python scripts/context_manager.py add_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
+```
+Then inspect `$CONTEXT_DIR/experiments/<X_ID>/` — read its `description.md`, `stdout.log`, and `results/`.
+
+**To run a new experiment**, write a self-contained Python script under `$OUTPUT_DIR` (e.g. `$OUTPUT_DIR/exp_bifurcation_onset.py`), then invoke the `run-experiment` skill via the Skill tool with arguments formatted like:
+```
+Description: <what this experiment tests, in 1–3 sentences>
+Script: <absolute path to $OUTPUT_DIR/exp_bifurcation_onset.py>
+Parent skill: write-theory
+Tags: <comma-separated short tokens>
+```
+`Parent theory` is not set for `write-theory` — no stored theory exists yet. The skill returns an experiment ID (`X_...`). Fold the results into your context:
+```bash
+uv run python scripts/context_manager.py add_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
+```
+Then read `$CONTEXT_DIR/experiments/<X_ID>/stdout.log` and `results/` to see the output. Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audit the supporting evidence.
 
 ## Execution Steps
 1. **Context Review**: Read `$CONTEXT_DIR/exploration/report.md` and any other files in `$CONTEXT_DIR/exploration/` to understand prior findings. If a literature review is available, read `$CONTEXT_DIR/literature/summary.md` and relevant papers in `$CONTEXT_DIR/literature/papers/` to ground your theory in existing research.
 2. **Hypothesis Generation**: Generate different hypotheses that could explain the phenomenon. Try to generate at least 2-3 *alternative* explanations for every aspect of the phenomenon, and think about how you can test and differentiate between these explanations.
 3. **Validation**: Test your ideas using the available tools.
-   - **Experiment**: Write and run Python scripts in `$OUTPUT_DIR` to simulate or test on real data.
+   - **Experiment**: Per the "Running experiments" section above, search for prior experiments or invoke `run-experiment` with a self-contained script. Reference each experiment's `X_ID` in your notes and theory.
    - **Proof**: If applicable, use mathematical derivations.
 4. **Iteration**: Based on the results of your validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process. Continue iterating until you have a robust set of hypotheses that are well-supported by evidence.
 5. **Reporting**: Write the final theory to `$OUTPUT_DIR/theory.md` (this exact filename is required).

@@ -13,7 +13,7 @@ You are an expert scientific agent. You've previously developed a hypothesis for
 - Be thorough in refining the hypothesis. Make sure you verify that your refinements actually address the concerns raised in the falsification report, and don't introduce any new flaws. Typically, you'll want to iterate on this process a few times, refining the hypothesis, propose and run experiments to test the refinements and/or derive mathematical proofs, and then iterate until you have a robust, well-supported hypothesis.
 - If experiments or derivations surface a surprising phenomenon, an unfamiliar mathematical structure, or a claim you're not confident about, invoke the `search-literature` skill to look up prior work before committing to a refinement. See the "Literature grounding" section below.
 - If you find that the hypothesis is fundamentally flawed or you're unable to find a way to incrementally improve it, please abort and follow the instructions in the "Discarding a flawed hypothesis" section. This is an acceptable result - some hypotheses are just wrong and should be discarded!
-- You must write and execute code (usually Python) to run experiments, or derive mathematical proofs.
+- All experiment execution must go through the `run-experiment` skill — never run experiment scripts directly. See the "Running experiments" section below. You may still write mathematical derivations/proofs inline.
 
 ## Discarding a flawed hypothesis
 IF you determine that the hypothesis is fundamentally flawed and cannot be reasonably refined, you should remove it from the theory, along with any other hypotheses or sections that were dependent on it, either directly or indirectly:
@@ -45,7 +45,36 @@ cp -r "$CONTEXT_DIR/theory/"* "$OUTPUT_DIR/"
 - `$CONTEXT_DIR/theory/` — the original theory (read-only input). Read `$CONTEXT_DIR/theory/theory.md` and any artifacts.
 - `$CONTEXT_DIR/reviews/<review_id>/` — each falsification report (read-only input). Read each `review.md`.
 - `$CONTEXT_DIR/literature/<literature_id>/` — (if any literature IDs provided, or added mid-run) each literature review, with `summary.md` and downloaded PDFs in `papers/`. Read each `summary.md` and consult individual PDFs when relevant.
-- `$OUTPUT_DIR/` — write all your own scripts, plots, and output files here. Only this folder gets stored.
+- `$OUTPUT_DIR/` — write your refined theory and any supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `$CONTEXT_DIR/experiments/` via `add_experiment`.
+
+## Running experiments
+
+You must not execute experiment scripts directly. Every experiment goes through the `run-experiment` skill, which runs the script in an isolated environment, captures all artifacts, and persists the bundle to the shared experiment database so other agents can find and reuse it.
+
+**Before writing a new experiment**, search the database for prior experiments that may already answer your question. Prefer filtering by the theory you are refining:
+```bash
+uv run python scripts/context_manager.py search_experiments --query "<short description>" --parent_theory <THEORY_ID>
+```
+If a prior experiment matches, fold it into your context and reuse it:
+```bash
+uv run python scripts/context_manager.py add_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
+```
+Then inspect `$CONTEXT_DIR/experiments/<X_ID>/` — read `description.md`, `stdout.log`, and `results/`.
+
+**To run a new experiment**, write a self-contained Python script under `$OUTPUT_DIR` (e.g. `$OUTPUT_DIR/exp_refinement_check.py`), then invoke the `run-experiment` skill via the Skill tool with arguments like:
+```
+Description: <what this experiment tests, in 1–3 sentences>
+Script: <absolute path to the .py file under $OUTPUT_DIR>
+Parent theory: <THEORY_ID>
+Parent review: <REVIEW_ID>
+Parent skill: refine-hypothesis
+Tags: <comma-separated short tokens>
+```
+The skill returns an experiment ID (`X_...`). Fold the results into your context:
+```bash
+uv run python scripts/context_manager.py add_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
+```
+Cite each experiment by its `X_ID` in your refined `theory.md` so reviewers can audit the evidence.
 
 ## Literature grounding
 
@@ -63,7 +92,7 @@ Then read `$CONTEXT_DIR/literature/<NEW_L_ID>/summary.md` and incorporate its fi
 1. **Context Review**: Read `$CONTEXT_DIR/theory/theory.md`, all review files in `$CONTEXT_DIR/reviews/*/review.md`, and (if present) each `$CONTEXT_DIR/literature/*/summary.md` to understand the hypothesis, its identified flaws, and any prior literature grounding.
 2. **Research**: Analyze the falsification reports. Generate ideas for how to address the raised flaws or limitations.
 3. **Implementation**: Test your ideas using the available tools.
-   - **Experiment**: Write and run Python scripts in `$OUTPUT_DIR` to simulate or test on real data.
+   - **Experiment**: Per the "Running experiments" section above, search the database for prior experiments or invoke `run-experiment` with a self-contained script. Reference each experiment's `X_ID` in your notes and refined theory.
    - **Proof**: If applicable, use mathematical derivations.
    - **Literature check (optional)**: If something surprising surfaces, invoke `search-literature` per the "Literature grounding" section and integrate its findings before finalizing the refinement.
 4. **Reporting**: Write the final revised theory to `$OUTPUT_DIR/theory.md` (this exact filename is required), or decide to abort.

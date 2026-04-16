@@ -37,6 +37,7 @@ AGENT_TYPE_MAP: dict[str, tuple[str, str]] = {
     "falsify-hypothesis": ("review", "review.md"),
     "suggest-expansions": ("review", "review.md"),
     "expand-theory": ("theory", "theory.md"),
+    "run-experiment": ("experiment", "description.md"),
 }
 
 ID_PREFIXES: dict[str, str] = {
@@ -44,7 +45,16 @@ ID_PREFIXES: dict[str, str] = {
     "literature": "L",
     "theory": "T",
     "review": "R",
+    "experiment": "X",
 }
+
+VALID_CATEGORIES: tuple[str, ...] = (
+    "exploration",
+    "literature",
+    "theory",
+    "review",
+    "experiment",
+)
 
 DEFAULT_DB_DIR = ".ai-scientist-db"
 ENV_DB_PATH = "AI_SCIENTIST_DB_PATH"
@@ -202,13 +212,15 @@ def store_results(
 
     db_root = get_db_path()
 
-    # --- review-producing agents require a parent theory ---
+    # --- agents allowed to attach a parent_theory ---
     review_agents = ("falsify-hypothesis", "suggest-expansions")
-    if from_agent_type in review_agents:
-        if not parent_theory:
-            raise ValueError(
-                f"--parent_theory is required when storing {from_agent_type} results"
-            )
+    parent_theory_agents = review_agents + ("run-experiment",)
+
+    if from_agent_type in review_agents and not parent_theory:
+        raise ValueError(
+            f"--parent_theory is required when storing {from_agent_type} results"
+        )
+    if parent_theory and from_agent_type in parent_theory_agents:
         theory_dir = db_root / "theory" / parent_theory
         if not theory_dir.is_dir():
             raise ValueError(
@@ -220,7 +232,7 @@ def store_results(
         new_id = generate_id(category)
 
         # --- determine target directory ---
-        if category in ("exploration", "literature", "theory", "review"):
+        if category in VALID_CATEGORIES:
             target_dir = db_root / category / new_id
         else:
             raise RuntimeError(f"Unknown category {category!r}")
@@ -242,7 +254,7 @@ def store_results(
             agent_type=from_agent_type,
             category=category,
             created_at=datetime.now(timezone.utc).isoformat(),
-            parent_theory=parent_theory if from_agent_type in review_agents else None,
+            parent_theory=parent_theory if from_agent_type in parent_theory_agents else None,
             extra=metadata_extra or {},
         )
         (target_dir / "metadata.json").write_text(
@@ -390,6 +402,121 @@ def create_context(
                 _make_writable(dst)
 
 
+def add_experiment(target_folder: Path, experiment_id: str) -> None:
+    """Add an experiment to an existing context folder under
+    ``experiments/<experiment_id>/``.
+
+    Intended for mid-run integration: a writing skill invokes
+    ``run-experiment``, receives a new ``X_...`` ID, and merges its
+    contents into its own context via this command without having to
+    rebuild the whole context folder.
+    """
+    db_root = get_db_path()
+    exp_dir = db_root / "experiment" / experiment_id
+    if not exp_dir.is_dir():
+        raise ValueError(
+            f"Experiment {experiment_id!r} not found in database "
+            f"(expected {exp_dir})"
+        )
+    if not target_folder.is_dir():
+        raise ValueError(f"Target folder does not exist: {target_folder}")
+
+    with DatabaseLock(db_root):
+        dst_root = target_folder / "experiments"
+        dst_root.mkdir(exist_ok=True)
+        dst = dst_root / experiment_id
+        if dst.exists():
+            raise ValueError(
+                f"Experiment {experiment_id!r} already present at {dst}"
+            )
+        shutil.copytree(exp_dir, dst)
+        _make_writable(dst)
+
+
+def search_experiments(
+    query: str | None = None,
+    tags: list[str] | None = None,
+    parent_theory: str | None = None,
+    parent_review: str | None = None,
+    parent_skill: str | None = None,
+    limit: int = 20,
+) -> list[dict]:
+    """Search stored experiments by substring match on description + metadata.
+
+    This is intentionally simple (token-presence scoring) — it is meant to
+    help callers discover prior experiments relevant to their current task,
+    not to replace a real search index. Results are sorted by descending
+    score, then by recency.
+    """
+    db_root = get_db_path()
+    tag_filters = [t.strip().lower() for t in (tags or []) if t.strip()]
+    query_tokens = [
+        t.lower() for t in (query or "").split() if len(t) >= 3
+    ]
+
+    results: list[tuple[int, str, dict]] = []
+
+    with DatabaseLock(db_root):
+        exp_root = db_root / "experiment"
+        if not exp_root.is_dir():
+            return []
+
+        for meta_path in sorted(exp_root.glob("*/metadata.json")):
+            try:
+                data = json.loads(meta_path.read_text())
+            except (json.JSONDecodeError, OSError):
+                continue
+
+            extra = data.get("extra") or {}
+
+            if parent_theory and data.get("parent_theory") != parent_theory:
+                continue
+            if parent_review and extra.get("parent_review") != parent_review:
+                continue
+            if parent_skill and extra.get("parent_skill") != parent_skill:
+                continue
+
+            entry_tags = [
+                t.strip().lower()
+                for t in (extra.get("tags", "").split(",") if extra.get("tags") else [])
+                if t.strip()
+            ]
+            if tag_filters and not all(t in entry_tags for t in tag_filters):
+                continue
+
+            description = ""
+            desc_path = meta_path.parent / "description.md"
+            if desc_path.is_file():
+                try:
+                    description = desc_path.read_text().lower()
+                except OSError:
+                    description = ""
+
+            if query_tokens:
+                score = sum(1 for tok in query_tokens if tok in description)
+                score += sum(
+                    1 for tok in query_tokens if tok in " ".join(entry_tags)
+                )
+                if score == 0:
+                    continue
+            else:
+                score = 0
+
+            # include a short preview to help the caller skim results
+            preview = ""
+            if desc_path.is_file():
+                try:
+                    raw = desc_path.read_text()
+                    preview = " ".join(raw.split())[:240]
+                except OSError:
+                    preview = ""
+            data["preview"] = preview
+            results.append((score, data.get("created_at", ""), data))
+
+    results.sort(key=lambda t: (t[0], t[1]), reverse=True)
+    return [d for _, _, d in results[:limit]]
+
+
 def add_literature(target_folder: Path, literature_id: str) -> None:
     """Add a literature review to an existing context folder under
     ``literature/<literature_id>/``.
@@ -423,10 +550,10 @@ def add_literature(target_folder: Path, literature_id: str) -> None:
 
 def list_entries(entry_type: str, parent_theory: str | None = None) -> list[dict]:
     """List stored entries of the given type, sorted by creation time."""
-    valid = ("exploration", "literature", "theory", "review")
-    if entry_type not in valid:
+    if entry_type not in VALID_CATEGORIES:
         raise ValueError(
-            f"Unknown entry type {entry_type!r}. Must be one of: {', '.join(valid)}"
+            f"Unknown entry type {entry_type!r}. Must be one of: "
+            f"{', '.join(VALID_CATEGORIES)}"
         )
 
     db_root = get_db_path()
@@ -434,16 +561,13 @@ def list_entries(entry_type: str, parent_theory: str | None = None) -> list[dict
     results: list[dict] = []
 
     with DatabaseLock(db_root):
-        if entry_type in ("exploration", "literature", "theory", "review"):
-            pattern = db_root / entry_type / "*" / "metadata.json"
-        else:
-            raise ValueError(f"Unknown entry type: {entry_type}")
+        pattern = db_root / entry_type / "*" / "metadata.json"
 
         for meta_path in sorted(db_root.glob(str(pattern.relative_to(db_root)))):
             try:
                 data = json.loads(meta_path.read_text())
                 if (
-                    entry_type == "review"
+                    entry_type in ("review", "experiment")
                     and parent_theory
                     and data.get("parent_theory") != parent_theory
                 ):
@@ -565,12 +689,82 @@ def main(argv: list[str] | None = None) -> None:
         help="Literature review ID to add (nested under literature/<L_ID>/)",
     )
 
+    # -- add_experiment ------------------------------------------------------
+    sp_add_exp = sub.add_parser(
+        "add_experiment",
+        help=(
+            "Add an experiment to an existing context folder. "
+            "Use this to fold a mid-run run-experiment result (or a prior "
+            "experiment surfaced via search_experiments) into a writing "
+            "skill's existing context."
+        ),
+    )
+    sp_add_exp.add_argument(
+        "--target_folder",
+        required=True,
+        type=Path,
+        help="Existing context folder produced by a prior create_context call",
+    )
+    sp_add_exp.add_argument(
+        "--from_experiment",
+        required=True,
+        help="Experiment ID to add (nested under experiments/<X_ID>/)",
+    )
+
+    # -- search_experiments --------------------------------------------------
+    sp_search = sub.add_parser(
+        "search_experiments",
+        help=(
+            "Search stored experiments by substring match on description "
+            "and tags. Returns matching experiment IDs with short previews."
+        ),
+    )
+    sp_search.add_argument(
+        "--query",
+        default=None,
+        help="Free-text query (tokens >=3 chars are matched against description + tags)",
+    )
+    sp_search.add_argument(
+        "--tag",
+        action="append",
+        default=[],
+        dest="tags",
+        help="Require a specific tag on the experiment (repeatable)",
+    )
+    sp_search.add_argument(
+        "--parent_theory",
+        default=None,
+        help="Filter to experiments run in support of a specific theory",
+    )
+    sp_search.add_argument(
+        "--parent_review",
+        default=None,
+        help="Filter to experiments run in support of a specific review",
+    )
+    sp_search.add_argument(
+        "--parent_skill",
+        default=None,
+        help="Filter to experiments invoked by a specific skill name",
+    )
+    sp_search.add_argument(
+        "--limit",
+        type=int,
+        default=20,
+        help="Maximum number of results to return",
+    )
+    sp_search.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="Output as JSON instead of a table",
+    )
+
     # -- list ----------------------------------------------------------------
     sp_list = sub.add_parser("list", help="List stored entries")
     sp_list.add_argument(
         "--type",
         required=True,
-        choices=["exploration", "literature", "theory", "review"],
+        choices=list(VALID_CATEGORIES),
         dest="entry_type",
         help="Type of entries to list",
     )
@@ -629,6 +823,39 @@ def main(argv: list[str] | None = None) -> None:
                 target_folder=args.target_folder.resolve(),
                 literature_id=args.from_literature,
             )
+
+        elif args.command == "add_experiment":
+            add_experiment(
+                target_folder=args.target_folder.resolve(),
+                experiment_id=args.from_experiment,
+            )
+
+        elif args.command == "search_experiments":
+            hits = search_experiments(
+                query=args.query,
+                tags=args.tags or None,
+                parent_theory=args.parent_theory,
+                parent_review=args.parent_review,
+                parent_skill=args.parent_skill,
+                limit=args.limit,
+            )
+            if args.json_output:
+                print(json.dumps(hits, indent=2))
+            else:
+                if not hits:
+                    print("No matching experiments found.")
+                else:
+                    print(f"{'ID':<40} {'Created At':<28} {'Parent Theory':<40}")
+                    print("-" * 108)
+                    for h in hits:
+                        print(
+                            f"{h.get('id', '?'):<40} "
+                            f"{h.get('created_at', '?'):<28} "
+                            f"{(h.get('parent_theory') or '-'):<40}"
+                        )
+                        preview = h.get("preview")
+                        if preview:
+                            print(f"  {preview}")
 
         elif args.command == "list":
             entries = list_entries(
