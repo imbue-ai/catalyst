@@ -68,7 +68,7 @@ Target arXiv specifically (include `arxiv` or `site:arxiv.org` in queries). Goog
    ```bash
    uv run python scripts/context_manager.py store_results --from_agent_type search-literature --from_folder "$OUTPUT_DIR"
    ```
-   Print the returned literature ID (e.g. `L_20260416_143052_a1b2c3`) as your final response — the calling writing skill will pass it to `context_manager.py add_literature` to fold the results into its own context.
+   Print the returned literature ID (e.g. `L_20260416_143052_a1b2c3`) as your final response — the calling writing skill will pass it to `context_manager.py fetch_literature` to fold the results into its own context.
 
 ## Summary File Format
 

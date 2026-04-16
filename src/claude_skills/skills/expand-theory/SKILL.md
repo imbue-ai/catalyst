@@ -39,7 +39,7 @@ cp -r "$CONTEXT_DIR/theory/"* "$OUTPUT_DIR/"
 - `$CONTEXT_DIR/theory/` — the current theory (read-only input). Read `$CONTEXT_DIR/theory/theory.md` and any artifacts.
 - `$CONTEXT_DIR/reviews/<review_id>/` — each expansion review (read-only input). Read each `review.md`.
 - `$CONTEXT_DIR/literature/<literature_id>/` — (if any literature IDs provided, or added mid-run) each literature review, with `summary.md` and downloaded PDFs in `papers/`. Read each `summary.md` and consult individual PDFs when relevant.
-- `$OUTPUT_DIR/` — write your expanded theory and any supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `$CONTEXT_DIR/experiments/` via `add_experiment`.
+- `$OUTPUT_DIR/` — write your expanded theory and any supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `$CONTEXT_DIR/experiments/` via `fetch_experiment`.
 
 ## Running experiments
 
@@ -51,7 +51,7 @@ uv run python scripts/context_manager.py search_experiments --query "<short desc
 ```
 If a prior experiment matches, fold it into your context and reuse it:
 ```bash
-uv run python scripts/context_manager.py add_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
+uv run python scripts/context_manager.py fetch_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
 ```
 Then inspect `$CONTEXT_DIR/experiments/<X_ID>/` — read `description.md`, `stdout.log`, and `results/`.
 
@@ -61,12 +61,12 @@ Description: <what this experiment tests, in 1–3 sentences>
 Script: <absolute path to the .py file under $OUTPUT_DIR>
 Parent theory: <THEORY_ID>
 Parent review: <REVIEW_ID>
-Parent skill: expand-theory
+Parent agent type: expand-theory
 Tags: <comma-separated short tokens>
 ```
 The skill returns an experiment ID (`X_...`). Fold the results into your context:
 ```bash
-uv run python scripts/context_manager.py add_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
+uv run python scripts/context_manager.py fetch_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
 ```
 Cite each experiment by its `X_ID` in your expanded `theory.md` so reviewers can audit the evidence.
 
@@ -75,7 +75,7 @@ Cite each experiment by its `X_ID` in your expanded `theory.md` so reviewers can
 You may start with zero, one, or many literature reviews already in `$CONTEXT_DIR/literature/`. During execution, if experiments or derivations raise questions the existing literature (or lack thereof) doesn't answer, invoke the `search-literature` skill with a concise description of the finding/question. It will return a new literature ID (`L_...`). Fold it into your context without rebuilding the folder:
 
 ```bash
-uv run python scripts/context_manager.py add_literature \
+uv run python scripts/context_manager.py fetch_literature \
     --target_folder "$CONTEXT_DIR" \
     --from_literature <NEW_L_ID>
 ```

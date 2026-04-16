@@ -1,10 +1,6 @@
 """Agent Context Manager — filesystem-based persistence and context assembly for the Skills pipeline.
 
-Provides four CLI subcommands:
-  store_results  — persist agent output into an immutable database
-  create_context — assemble upstream artifacts into a working folder for the next agent
-  list           — enumerate stored entries by type
-  init           — initialize a new database
+Run with ``--help`` to see the available CLI subcommands.
 """
 
 from __future__ import annotations
@@ -386,7 +382,7 @@ def create_context(
             if literature_dirs:
                 # refine-hypothesis / expand-theory use nested layout so
                 # multiple literature reviews (including ones added mid-run
-                # via `add_literature`) can coexist.
+                # via `fetch_literature`) can coexist.
                 lit_root = target_folder / "literature"
                 lit_root.mkdir(exist_ok=True)
                 for lid, lit_dir in literature_dirs:
@@ -402,14 +398,9 @@ def create_context(
                 _make_writable(dst)
 
 
-def add_experiment(target_folder: Path, experiment_id: str) -> None:
-    """Add an experiment to an existing context folder under
+def fetch_experiment(target_folder: Path, experiment_id: str) -> None:
+    """Fetch an experiment into an existing context folder under
     ``experiments/<experiment_id>/``.
-
-    Intended for mid-run integration: a writing skill invokes
-    ``run-experiment``, receives a new ``X_...`` ID, and merges its
-    contents into its own context via this command without having to
-    rebuild the whole context folder.
     """
     db_root = get_db_path()
     exp_dir = db_root / "experiment" / experiment_id
@@ -438,7 +429,7 @@ def search_experiments(
     tags: list[str] | None = None,
     parent_theory: str | None = None,
     parent_review: str | None = None,
-    parent_skill: str | None = None,
+    parent_agent_type: str | None = None,
     limit: int = 20,
 ) -> list[dict]:
     """Search stored experiments by substring match on description + metadata.
@@ -473,7 +464,7 @@ def search_experiments(
                 continue
             if parent_review and extra.get("parent_review") != parent_review:
                 continue
-            if parent_skill and extra.get("parent_skill") != parent_skill:
+            if parent_agent_type and extra.get("parent_agent_type") != parent_agent_type:
                 continue
 
             entry_tags = [
@@ -517,14 +508,9 @@ def search_experiments(
     return [d for _, _, d in results[:limit]]
 
 
-def add_literature(target_folder: Path, literature_id: str) -> None:
-    """Add a literature review to an existing context folder under
+def fetch_literature(target_folder: Path, literature_id: str) -> None:
+    """Fetch a literature review into an existing context folder under
     ``literature/<literature_id>/``.
-
-    Intended for mid-run integration: a writing skill invokes
-    ``search-literature``, receives a new ``L_...`` ID, and merges its
-    contents into its own context via this command without having to
-    rebuild the whole context folder.
     """
     db_root = get_db_path()
     lit_dir = db_root / "literature" / literature_id
@@ -668,14 +654,10 @@ def main(argv: list[str] | None = None) -> None:
         help="Review ID (repeatable)",
     )
 
-    # -- add_literature ------------------------------------------------------
+    # -- fetch_literature ----------------------------------------------------
     sp_add_lit = sub.add_parser(
-        "add_literature",
-        help=(
-            "Add a literature review to an existing context folder. "
-            "Use this to fold a mid-run search-literature result into a "
-            "writing skill's existing context."
-        ),
+        "fetch_literature",
+        help="Fetch a literature review into an existing context folder.",
     )
     sp_add_lit.add_argument(
         "--target_folder",
@@ -689,15 +671,10 @@ def main(argv: list[str] | None = None) -> None:
         help="Literature review ID to add (nested under literature/<L_ID>/)",
     )
 
-    # -- add_experiment ------------------------------------------------------
+    # -- fetch_experiment ----------------------------------------------------
     sp_add_exp = sub.add_parser(
-        "add_experiment",
-        help=(
-            "Add an experiment to an existing context folder. "
-            "Use this to fold a mid-run run-experiment result (or a prior "
-            "experiment surfaced via search_experiments) into a writing "
-            "skill's existing context."
-        ),
+        "fetch_experiment",
+        help="Fetch an experiment into an existing context folder.",
     )
     sp_add_exp.add_argument(
         "--target_folder",
@@ -742,9 +719,9 @@ def main(argv: list[str] | None = None) -> None:
         help="Filter to experiments run in support of a specific review",
     )
     sp_search.add_argument(
-        "--parent_skill",
+        "--parent_agent_type",
         default=None,
-        help="Filter to experiments invoked by a specific skill name",
+        help="Filter to experiments invoked by a specific agent type",
     )
     sp_search.add_argument(
         "--limit",
@@ -818,14 +795,14 @@ def main(argv: list[str] | None = None) -> None:
                 from_reviews=args.from_reviews or None,
             )
 
-        elif args.command == "add_literature":
-            add_literature(
+        elif args.command == "fetch_literature":
+            fetch_literature(
                 target_folder=args.target_folder.resolve(),
                 literature_id=args.from_literature,
             )
 
-        elif args.command == "add_experiment":
-            add_experiment(
+        elif args.command == "fetch_experiment":
+            fetch_experiment(
                 target_folder=args.target_folder.resolve(),
                 experiment_id=args.from_experiment,
             )
@@ -836,7 +813,7 @@ def main(argv: list[str] | None = None) -> None:
                 tags=args.tags or None,
                 parent_theory=args.parent_theory,
                 parent_review=args.parent_review,
-                parent_skill=args.parent_skill,
+                parent_agent_type=args.parent_agent_type,
                 limit=args.limit,
             )
             if args.json_output:

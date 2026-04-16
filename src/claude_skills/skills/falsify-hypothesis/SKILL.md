@@ -30,7 +30,7 @@ uv run python scripts/context_manager.py create_context --for_agent_type falsify
 ```
 
 - `$CONTEXT_DIR/theory/` — the theory to falsify (read-only input). Read `$CONTEXT_DIR/theory/theory.md` and any artifacts.
-- `$OUTPUT_DIR/` — write your falsification report and supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `$CONTEXT_DIR/experiments/` via `add_experiment`.
+- `$OUTPUT_DIR/` — write your falsification report and supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `$CONTEXT_DIR/experiments/` via `fetch_experiment`.
 
 ## Running experiments
 
@@ -42,7 +42,7 @@ uv run python scripts/context_manager.py search_experiments --query "<short desc
 ```
 If a prior experiment matches, fold it into your context and reuse it:
 ```bash
-uv run python scripts/context_manager.py add_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
+uv run python scripts/context_manager.py fetch_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
 ```
 Then inspect `$CONTEXT_DIR/experiments/<X_ID>/` — `description.md`, `stdout.log`, and `results/`.
 
@@ -51,12 +51,12 @@ Then inspect `$CONTEXT_DIR/experiments/<X_ID>/` — `description.md`, `stdout.lo
 Description: <what this experiment tests, in 1–3 sentences>
 Script: <absolute path to the .py file under $OUTPUT_DIR>
 Parent theory: <THEORY_ID>
-Parent skill: falsify-hypothesis
+Parent agent type: falsify-hypothesis
 Tags: <comma-separated short tokens, e.g. boundary,counter_example>
 ```
 The skill returns an experiment ID (`X_...`). Fold the results into your context:
 ```bash
-uv run python scripts/context_manager.py add_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
+uv run python scripts/context_manager.py fetch_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
 ```
 Cite each experiment by its `X_ID` in your `review.md` under the relevant falsification idea.
 

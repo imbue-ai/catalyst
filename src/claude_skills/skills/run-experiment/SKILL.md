@@ -3,7 +3,7 @@ name: run-experiment
 description: "Run a single experiment, capture its artifacts, and persist it to the shared experiment database. All experiment execution in the pipeline must go through this skill."
 model: inherit
 allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(mkdir:*) Bash(ls:*) Bash(cp:*) Bash(chmod:*) Read(*) Write(tmp/*) Edit(tmp/*)
-argument-hint: "description, path to runnable script, and optional parent_theory / parent_review / parent_skill / tags"
+argument-hint: "description, path to runnable script, and optional parent_theory / parent_review / parent_agent_type / tags"
 ---
 
 You are the **Experiment Runner**. You are the *only* skill in the pipeline that may execute experiment scripts. Every other skill that wants to run an experiment must invoke you and consume the returned experiment ID (`X_...`). Your job is narrow: take a runnable script plus a human-readable description, execute it in an isolated directory, capture every artifact it produces, and persist the whole bundle to the shared database so that later agents can search for, retrieve, and reuse it.
@@ -16,7 +16,7 @@ You are the **Experiment Runner**. You are the *only* skill in the pipeline that
 - **Never improvise the experiment.** The caller hands you a self-contained script path and a short description of what the script tests. Your role is to run it faithfully, not to redesign it. If the script is broken, report the failure back via `stderr.log` and the exit code — do not patch the script.
 - **Capture everything.** stdout, stderr, every file the script writes, and the input script itself all go into the experiment bundle.
 - **Isolate the run.** The script executes with its working directory set to a `results/` folder inside a temporary output directory, so any file it writes relative to `cwd` lands in `results/` automatically.
-- **Record provenance.** Every experiment records the calling skill, the parent theory (if any), the parent review (if any), and any caller-supplied tags. This lets future agents filter experiments by context.
+- **Record provenance.** Every experiment records the calling agent type, the parent theory (if any), the parent review (if any), and any caller-supplied tags. This lets future agents filter experiments by context.
 - **Be terse.** Your final message is just the experiment ID. No narration.
 
 ## Input
@@ -27,10 +27,10 @@ The arguments are free-form text from the calling skill but must specify the fol
 ```
 Description: <one-to-three sentence human description of what the experiment tests>
 Script: <path to a self-contained python script, relative to the repo root or absolute>
-Parent theory: <T_... or none>        # optional
-Parent review: <R_... or none>        # optional
-Parent skill: <invoking skill name>   # required — e.g. write-theory
-Tags: <comma-separated short tokens>  # optional
+Parent theory: <T_... or none>             # optional
+Parent review: <R_... or none>             # optional
+Parent agent type: <invoking agent type>   # required — e.g. write-theory
+Tags: <comma-separated short tokens>       # optional
 ```
 
 If `Description` or `Script` is missing, abort with a clear error message — do not guess.
@@ -58,7 +58,7 @@ $OUTPUT_DIR/
 
 ## Execution Steps
 
-1. **Parse arguments**: Extract `Description`, `Script` path, and any optional `Parent theory`, `Parent review`, `Parent skill`, `Tags`. Validate that the script path exists and is readable.
+1. **Parse arguments**: Extract `Description`, `Script` path, and any optional `Parent theory`, `Parent review`, `Parent agent type`, `Tags`. Validate that the script path exists and is readable.
 
 2. **Write description**: Put the parsed description verbatim into `$OUTPUT_DIR/description.md`. Prefix with a one-line title header so the file renders cleanly:
    ```
@@ -86,7 +86,7 @@ $OUTPUT_DIR/
    # parent_theory is a first-class field:
    [ -n "<PARENT_THEORY>" ] && STORE_ARGS+=( --parent_theory "<PARENT_THEORY>" )
    # everything else goes into metadata:
-   STORE_ARGS+=( --metadata "parent_skill=<PARENT_SKILL>" )
+   STORE_ARGS+=( --metadata "parent_agent_type=<PARENT_AGENT_TYPE>" )
    [ -n "<PARENT_REVIEW>" ] && STORE_ARGS+=( --metadata "parent_review=<PARENT_REVIEW>" )
    [ -n "<TAGS>" ]          && STORE_ARGS+=( --metadata "tags=<TAGS>" )
    STORE_ARGS+=( --metadata "exit_code=$EXIT_CODE" )
@@ -94,9 +94,9 @@ $OUTPUT_DIR/
    ```
    The command prints a new experiment ID (e.g. `X_20260416_150000_a1b2c3`).
 
-6. **Final response**: Print *only* the experiment ID as your final message. The calling skill will parse it and then invoke `context_manager.py add_experiment --target_folder <its context dir> --from_experiment <X_ID>` to fold the results into its own context. If the exit code was non-zero, also print a single line like `exit_code=1` after the ID so the caller knows to inspect `stderr.log` before trusting the results.
+6. **Final response**: Print *only* the experiment ID as your final message. The calling agent will parse it and then invoke `context_manager.py fetch_experiment --target_folder <its context dir> --from_experiment <X_ID>` to fold the results into its own context. If the exit code was non-zero, also print a single line like `exit_code=1` after the ID so the caller knows to inspect `stderr.log` before trusting the results.
 
 ## Failure modes
 - **Script does not exist**: abort before running. Do not create the experiment bundle.
 - **Script runs but exits non-zero**: still store the bundle. A failed experiment is itself a data point, and the logs are valuable to future agents. Report the exit code.
-- **Missing `Parent skill`**: abort. Every experiment must record which skill invoked it — this is how the database stays filterable.
+- **Missing `Parent agent type`**: abort. Every experiment must record which agent type invoked it — this is how the database stays filterable.

@@ -40,7 +40,7 @@ uv run python scripts/context_manager.py create_context --for_agent_type write-t
 
 - `$CONTEXT_DIR/exploration/` — prior exploration results (read-only input). Read `$CONTEXT_DIR/exploration/report.md` and any artifacts.
 - `$CONTEXT_DIR/literature/` — (if literature ID provided) literature review with paper summaries and downloaded PDFs. Always read `$CONTEXT_DIR/literature/summary.md`, and read individual PDFs in `$CONTEXT_DIR/literature/papers/` when relevant.
-- `$OUTPUT_DIR/` — write your theory and any supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `$CONTEXT_DIR/experiments/` via `add_experiment`.
+- `$OUTPUT_DIR/` — write your theory and any supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `$CONTEXT_DIR/experiments/` via `fetch_experiment`.
 
 ## Running experiments
 
@@ -52,7 +52,7 @@ uv run python scripts/context_manager.py search_experiments --query "<short desc
 ```
 If a prior experiment matches closely, fold it into your context and reuse it instead of re-running:
 ```bash
-uv run python scripts/context_manager.py add_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
+uv run python scripts/context_manager.py fetch_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
 ```
 Then inspect `$CONTEXT_DIR/experiments/<X_ID>/` — read its `description.md`, `stdout.log`, and `results/`.
 
@@ -60,12 +60,12 @@ Then inspect `$CONTEXT_DIR/experiments/<X_ID>/` — read its `description.md`, `
 ```
 Description: <what this experiment tests, in 1–3 sentences>
 Script: <absolute path to $OUTPUT_DIR/exp_bifurcation_onset.py>
-Parent skill: write-theory
+Parent agent type: write-theory
 Tags: <comma-separated short tokens>
 ```
 `Parent theory` is not set for `write-theory` — no stored theory exists yet. The skill returns an experiment ID (`X_...`). Fold the results into your context:
 ```bash
-uv run python scripts/context_manager.py add_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
+uv run python scripts/context_manager.py fetch_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
 ```
 Then read `$CONTEXT_DIR/experiments/<X_ID>/stdout.log` and `results/` to see the output. Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audit the supporting evidence.
 
