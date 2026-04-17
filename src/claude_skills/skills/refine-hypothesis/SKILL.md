@@ -99,7 +99,7 @@ Then read `$CONTEXT_DIR/literature/<NEW_L_ID>/summary.md` and incorporate its fi
    ```bash
    uv run python scripts/context_manager.py store_results --from_agent_type refine-hypothesis --from_folder "$OUTPUT_DIR" --metadata original_theory=<THEORY_ID>
    ```
-   Report the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the final output of this skill.
+   Report the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the final output of this skill, together with a brief note on whether you've made significant changes or only very minor refinements to the original theory.
 
 ## Theory Output Format
 Your `theory.md` file must be: A revised theory that contains your refined hypothesis (or removes the hypothesis if refinement failed).

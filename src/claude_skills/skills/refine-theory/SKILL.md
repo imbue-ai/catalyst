@@ -35,7 +35,8 @@ Parse the initial theory ID (e.g., `T_20260414_...`) from the arguments.
      - **CRITICAL**: Do not run these in parallel. The output of one refinement must be the input to the next.
 
 4. **Expansion** (expansion reviews):
-   If there are any expansion reviews, spawn a single subagent instructed to invoke the `expand-theory` skill.
+   Skip this step if ANY of the `refine-hypothesis` subagents reported that they've made significant changes to the theory. Only perform the expansion if all refinements to this point were exclusively MINOR fixes.
+   If there are any expansion reviews, and all refinements so far were minor, spawn a single subagent instructed to invoke the `expand-theory` skill.
    - Provide the subagent with `CURRENT_THEORY_ID` (the latest theory after all refinements) and **all** expansion review IDs. It should pass these as arguments to the `expand-theory` skill.
    - Wait for the subagent to finish and retrieve the new theory ID it returns.
    - Update `CURRENT_THEORY_ID` to this new theory ID.
