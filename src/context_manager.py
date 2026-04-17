@@ -34,6 +34,7 @@ AGENT_TYPE_MAP: dict[str, tuple[str, str]] = {
     "suggest-expansions": ("review", "review.md"),
     "expand-theory": ("theory", "theory.md"),
     "run-experiment": ("experiment", "description.md"),
+    "predict-experiments": ("prediction", "predictions.md"),
 }
 
 ID_PREFIXES: dict[str, str] = {
@@ -42,6 +43,7 @@ ID_PREFIXES: dict[str, str] = {
     "theory": "T",
     "review": "R",
     "experiment": "X",
+    "prediction": "P",
 }
 
 VALID_CATEGORIES: tuple[str, ...] = (
@@ -50,6 +52,7 @@ VALID_CATEGORIES: tuple[str, ...] = (
     "theory",
     "review",
     "experiment",
+    "prediction",
 )
 
 DEFAULT_DB_DIR = ".ai-scientist-db"
@@ -90,6 +93,9 @@ def generate_id(category: str) -> str:
 # ---------------------------------------------------------------------------
 
 
+_db_lock_held_count = 0
+
+
 class DatabaseLock:
     """Context manager that acquires an exclusive advisory lock on the DB."""
 
@@ -99,12 +105,18 @@ class DatabaseLock:
         self._fd: int | None = None
 
     def __enter__(self) -> "DatabaseLock":
+        global _db_lock_held_count
+        if _db_lock_held_count > 0:
+            _db_lock_held_count += 1
+            return self
+
         self.lock_path.parent.mkdir(parents=True, exist_ok=True)
         self._fd = os.open(str(self.lock_path), os.O_CREAT | os.O_RDWR)
         deadline = time.monotonic() + self.timeout
         while True:
             try:
                 fcntl.flock(self._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                _db_lock_held_count += 1
                 return self
             except OSError:
                 if time.monotonic() >= deadline:
@@ -116,10 +128,13 @@ class DatabaseLock:
                 time.sleep(0.05)
 
     def __exit__(self, *_exc: object) -> None:
-        if self._fd is not None:
-            fcntl.flock(self._fd, fcntl.LOCK_UN)
-            os.close(self._fd)
-            self._fd = None
+        global _db_lock_held_count
+        if _db_lock_held_count > 0:
+            _db_lock_held_count -= 1
+            if _db_lock_held_count == 0 and self._fd is not None:
+                fcntl.flock(self._fd, fcntl.LOCK_UN)
+                os.close(self._fd)
+                self._fd = None
 
 
 # ---------------------------------------------------------------------------
@@ -208,15 +223,19 @@ def store_results(
 
     db_root = get_db_path()
 
-    # --- agents allowed to attach a parent_theory ---
-    review_agents = ("falsify-hypothesis", "suggest-expansions")
-    parent_theory_agents = review_agents + ("run-experiment",)
+    # --- agents required/allowed to attach a parent_theory ---
+    parent_theory_required_agents = (
+        "falsify-hypothesis",
+        "suggest-expansions",
+        "predict-experiments",
+    )
+    parent_theory_allowed_agents = parent_theory_required_agents + ("run-experiment",)
 
-    if from_agent_type in review_agents and not parent_theory:
+    if from_agent_type in parent_theory_required_agents and not parent_theory:
         raise ValueError(
             f"--parent_theory is required when storing {from_agent_type} results"
         )
-    if parent_theory and from_agent_type in parent_theory_agents:
+    if parent_theory and from_agent_type in parent_theory_allowed_agents:
         theory_dir = db_root / "theory" / parent_theory
         if not theory_dir.is_dir():
             raise ValueError(
@@ -251,7 +270,7 @@ def store_results(
             category=category,
             created_at=datetime.now(timezone.utc).isoformat(),
             parent_theory=parent_theory
-            if from_agent_type in parent_theory_agents
+            if from_agent_type in parent_theory_allowed_agents
             else None,
             extra=metadata_extra or {},
         )
@@ -272,6 +291,7 @@ def create_context(
     from_literatures: list[str] | None = None,
     from_theories: list[str] | None = None,
     from_reviews: list[str] | None = None,
+    from_experiments: list[str] | None = None,
 ) -> None:
     """Assemble upstream artifacts into *target_folder* for the next agent."""
     db_root = get_db_path()
@@ -307,12 +327,21 @@ def create_context(
             raise ValueError(
                 f"At least one --from_theory is required for {for_agent_type}"
             )
+    elif for_agent_type == "predict-experiments":
+        if not from_theories or len(from_theories) != 1:
+            raise ValueError(
+                "Exactly one --from_theory is required for predict-experiments"
+            )
+        if not from_experiments:
+            raise ValueError(
+                "At least one --from_experiment is required for predict-experiments"
+            )
     else:
         raise ValueError(
             f"Unknown target agent type {for_agent_type!r}. "
             f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, "
             f"review-theory, suggest-expansions, expand-theory, "
-            f"rank-theories, rank-theories-on-experiment"
+            f"rank-theories, rank-theories-on-experiment, predict-experiments"
         )
 
     with DatabaseLock(db_root):
@@ -433,6 +462,16 @@ def create_context(
                                     _make_writable(rdst)
                         except (json.JSONDecodeError, OSError):
                             continue
+
+        elif for_agent_type == "predict-experiments":
+            dst = target_folder / "theory"
+            shutil.copytree(
+                theory_dirs[0][1],
+                dst,
+            )
+            _make_writable(dst)
+            for exp_id in from_experiments:  # type: ignore[union-attr]
+                fetch_experiment(target_folder, exp_id, exclude_results=True)
 
 
 def fetch_experiment(
@@ -700,6 +739,13 @@ def main(argv: list[str] | None = None) -> None:
         dest="from_reviews",
         help="Review ID (repeatable)",
     )
+    sp_ctx.add_argument(
+        "--from_experiment",
+        action="append",
+        default=[],
+        dest="from_experiments",
+        help="Experiment ID (repeatable, used by predict-experiments)",
+    )
 
     # -- fetch_literature ----------------------------------------------------
     sp_fetch_lit = sub.add_parser(
@@ -845,6 +891,7 @@ def main(argv: list[str] | None = None) -> None:
                 from_literatures=args.from_literatures or None,
                 from_theories=args.from_theories or None,
                 from_reviews=args.from_reviews or None,
+                from_experiments=args.from_experiments or None,
             )
 
         elif args.command == "fetch_literature":

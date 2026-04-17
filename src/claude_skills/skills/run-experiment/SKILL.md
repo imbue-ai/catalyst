@@ -1,7 +1,6 @@
 ---
 name: run-experiment
 description: "Run a single experiment, capture its artifacts, and persist it to the shared experiment database. All experiment execution in the pipeline must go through this skill."
-model: inherit
 allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(mkdir:*) Bash(ls:*) Bash(cp:*) Bash(chmod:*) Read(*) Write(tmp/*) Edit(tmp/*)
 argument-hint: "description, path to runnable script, and optional parent_theory / parent_review / parent_agent_type / tags"
 ---

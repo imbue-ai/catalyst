@@ -1,7 +1,6 @@
 ---
 name: suggest-expansions
 description: "Review an entire theory and suggest concrete areas for expansion"
-model: inherit
 allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*) Skill
 argument-hint: "theory ID (e.g. T_20260414_143100_d4e5f6)"
 ---
@@ -86,6 +85,7 @@ Consider these approaches across the whole theory:
 ## Expansion Review Format
 Your `review.md` file MUST be formatted exactly as follows:
 
+```
 # Expansion Review
 
 ## Theory Summary
@@ -97,7 +97,7 @@ Your `review.md` file MUST be formatted exactly as follows:
 - **Strategy**: [e.g., Generalization / Missing Cases / Unproven Corollaries / etc.]
 - **Description**: [What the expansion would add or generalize]
 - **Motivation**: [Why this is worth pursuing — experimental evidence or mathematical argument]
-- **Evidence**: [Relevant script file name relative to `$OUTPUT_DIR`, command, or formula used to support this idea]
+- **Evidence**: [Relevant experiment ID or formula used to support this idea]
 - **Feasibility**: [High / Medium / Low]
 - **Impact**: [High / Medium / Low]
 
@@ -108,3 +108,4 @@ Your `review.md` file MUST be formatted exactly as follows:
 
 ## Prioritized Roadmap
 [Rank expansion opportunities by expected impact and feasibility. List the top 3 most important next steps.]
+```

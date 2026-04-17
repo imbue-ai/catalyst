@@ -1,7 +1,6 @@
 ---
 name: refine-theory
 description: "Refine a theory by sequentially applying all its available reviews"
-model: inherit
 allowed-tools: Bash(uv run:*) Bash(jq:*) Agent TeamCreate TaskCreate TaskUpdate TaskList SendMessage
 argument-hint: "theory ID (e.g. T_20260414_143100_d4e5f6)"
 ---

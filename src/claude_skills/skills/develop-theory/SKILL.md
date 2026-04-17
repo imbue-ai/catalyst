@@ -1,7 +1,6 @@
 ---
 name: develop-theory
 description: "Autonomously develop a theory to explain a given phenomenon."
-model: inherit
 allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*)
 argument-hint: The phenomenon to develop a theory for.
 ---

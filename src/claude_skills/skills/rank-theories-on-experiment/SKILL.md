@@ -1,7 +1,6 @@
 ---
 name: rank-theories-on-experiment
 description: "Rank different theories based on how well they predict the results of a specific experiment"
-model: inherit
 allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*) Agent TeamCreate TaskCreate TaskUpdate TaskList SendMessage
 argument-hint: "the theory IDs to rank (e.g. T_20260414_143100_d4e5f6 T_20260414_143200_g7h8i9) and a detailed description of the experiment (how to reproduce it and where to find its raw results)"
 ---
