@@ -435,7 +435,9 @@ def create_context(
                             continue
 
 
-def fetch_experiment(target_folder: Path, experiment_id: str) -> None:
+def fetch_experiment(
+    target_folder: Path, experiment_id: str, exclude_results: bool = False
+) -> None:
     """Fetch an experiment into an existing context folder under
     ``experiments/<experiment_id>/``.
     """
@@ -454,7 +456,13 @@ def fetch_experiment(target_folder: Path, experiment_id: str) -> None:
         dst = dst_root / experiment_id
         if dst.exists():
             raise ValueError(f"Experiment {experiment_id!r} already present at {dst}")
-        shutil.copytree(exp_dir, dst)
+        if exclude_results:
+            ignore_pattern = shutil.ignore_patterns(
+                "results", "stdout.log", "stderr.log"
+            )
+        else:
+            ignore_pattern = None
+        shutil.copytree(exp_dir, dst, ignore=ignore_pattern)
         _make_writable(dst)
 
 
@@ -726,6 +734,11 @@ def main(argv: list[str] | None = None) -> None:
         required=True,
         help="Experiment ID to add (nested under experiments/<X_ID>/)",
     )
+    sp_fetch_exp.add_argument(
+        "--exclude_results",
+        action="store_true",
+        help="Exclude experiment results (only fetch description and script)",
+    )
 
     # -- search_experiments --------------------------------------------------
     sp_search_exp = sub.add_parser(
@@ -844,6 +857,7 @@ def main(argv: list[str] | None = None) -> None:
             fetch_experiment(
                 target_folder=args.target_folder.resolve(),
                 experiment_id=args.from_experiment,
+                exclude_results=args.exclude_results,
             )
 
         elif args.command == "search_experiments":
