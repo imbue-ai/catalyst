@@ -1,0 +1,57 @@
+---
+name: predict-experiments
+description: "Use the given theory to predict the results of a given set of experiments."
+allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*)
+argument-hint: "the theory ID (e.g. T_20260414_143100_d4e5f6) and the experiment IDs to predict (e.g. X_20260414_143500_a1b2c3 X_20260414_143600_d4e5f6)"
+---
+
+You are the **Experiment Predictor**. Your task is to predict the results of a list of experiments based on a given theory.
+
+## Input
+Arguments: $ARGUMENTS
+
+The arguments contain a theory ID (like `T_20260414_...`) and multiple experiment IDs (like `X_20260414_...`). Parse the theory ID and experiment details from the arguments.
+
+## Folder setup
+Set up a context folder for your input, passing all theory IDs from the input arguments:
+```bash
+CONTEXT_DIR=$(mktemp -d -p ./tmp predict-experiments-context-XXXX)
+OUTPUT_DIR=$(mktemp -d -p ./tmp predict-experiments-output-XXXX)
+uv run python scripts/context_manager.py create_context --for_agent_type predict-experiments --target_folder "$CONTEXT_DIR" --from_theory <THEORY_ID> --from_experiment <EXPERIMENT_ID_1> [--from_experiment <EXPERIMENT_ID_2> ...]
+```
+
+- `$CONTEXT_DIR/theory.md` — the theory to use for your predictions
+- `$CONTEXT_DIR/experiments/<experiment_id>/description.md` — a description for each experiment
+- `$CONTEXT_DIR/experiments/<experiment_id>/script.py` — a script containing the code for each experiment
+- `$OUTPUT_DIR/` — write your predictions here
+
+## Performing calculations
+The execution steps below may involve numeric calculations. Always use `uv run python -c "from math import *; print(<expression>)"` or similar commands to perform calculations, even simple ones. Do not perform calculations manually or in your head.
+
+## Execution Steps
+1. **Context Checkout**: Run the bash command above to obtain the theory and experiment files using `context_manager.py`.
+2. **Carefully Read the Theory**: Carefully read the `theory.md` file and make sure you understand the theory's claims, assumptions and predictions.
+2. **Generate Predictions**: For each experiment, read its `description.md` and `script.py` files. Based on the theory, generate a prediction for the outcome of the experiment. This prediction should be as specific as possible. Whenever the theory makes quantitative predictions, include approximate predicted values for key variables measured in the experiment. If the theory does not make any specific prediction for this experiment (e.g. because the experiment setup does not fulfil a prerequisite posed by the theory, or the theory does not describe the variables and/or outcomes measured by the experiment), note that down.
+3. **Reporting**: Write the prediction for each experiment to `$OUTPUT_DIR/predictions.md` (this exact filename is required). See the output format below.
+4. **Store results**: Persist your output and report the prediction ID:
+   ```bash
+   uv run python scripts/context_manager.py store_results --from_agent_type predict-experiments --from_folder "$OUTPUT_DIR" --parent_theory <THEORY_ID>
+   ```
+   Report the returned prediction ID (e.g. `P_20260414_143200_g7h8i9`) as the final output of this skill.
+
+## Prediction Report Format
+Your `predictions.md` file MUST be formatted exactly as follows:
+
+```
+# Experiment Predictions
+Theory used: [The ID of the theory used]
+
+## [Experiment ID 1]
+[The full prediction made for this experiment, or "NO_PREDICTION" if the theory does not make a prediction for this experiment]
+
+### Reasoning
+[List of theorems and/or sections from the theory used to make this prediction. Or an explanation for why the theory does make a prediction for this experiment.]
+
+## [Experiment ID 2]
+...
+```
