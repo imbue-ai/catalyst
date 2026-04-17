@@ -56,7 +56,7 @@ uv run python scripts/context_manager.py fetch_experiment --target_folder "$CONT
 ```
 Then inspect `$CONTEXT_DIR/experiments/<X_ID>/` — read its `description.md`, `stdout.log`, and `results/`.
 
-**To run a new experiment**, write a self-contained Python script under `$OUTPUT_DIR` (e.g. `$OUTPUT_DIR/exp_bifurcation_onset.py`), then invoke the `run-experiment` skill via the Skill tool with arguments formatted like:
+**To run a new experiment**, write a self-contained Python script under `$OUTPUT_DIR` (e.g. `$OUTPUT_DIR/exp_bifurcation_onset.py`). Make sure that the experiment script writes all result files into the directory it runs in (cwd). Then invoke the `run-experiment` skill via the Skill tool with arguments formatted like:
 ```
 Description: <what this experiment tests, in 1–3 sentences>
 Script: <absolute path to $OUTPUT_DIR/exp_bifurcation_onset.py>
