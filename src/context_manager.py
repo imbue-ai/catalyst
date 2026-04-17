@@ -268,7 +268,7 @@ def create_context(
     target_folder: Path,
     from_exploration: str | None = None,
     from_literatures: list[str] | None = None,
-    from_theory: str | None = None,
+    from_theories: list[str] | None = None,
     from_reviews: list[str] | None = None,
 ) -> None:
     """Assemble upstream artifacts into *target_folder* for the next agent."""
@@ -284,23 +284,27 @@ def create_context(
                 "(refine-hypothesis and expand-theory support multiple)"
             )
     elif for_agent_type in ("falsify-hypothesis", "suggest-expansions"):
-        if not from_theory:
-            raise ValueError(f"--from_theory is required for {for_agent_type}")
+        if not from_theories or len(from_theories) != 1:
+            raise ValueError(f"Exactly one --from_theory is required for {for_agent_type}")
     elif for_agent_type in ("refine-hypothesis", "expand-theory"):
-        if not from_theory:
-            raise ValueError(f"--from_theory is required for {for_agent_type}")
+        if not from_theories or len(from_theories) != 1:
+            raise ValueError(f"Exactly one --from_theory is required for {for_agent_type}")
         if not from_reviews:
             raise ValueError(
                 f"At least one --from_review is required for {for_agent_type}"
             )
     elif for_agent_type == "review-theory":
-        if not from_theory:
-            raise ValueError("--from_theory is required for review-theory")
+        if not from_theories or len(from_theories) != 1:
+            raise ValueError("Exactly one --from_theory is required for review-theory")
+    elif for_agent_type in ("rank-theories", "rank-theories-on-experiment"):
+        if not from_theories:
+            raise ValueError(f"At least one --from_theory is required for {for_agent_type}")
     else:
         raise ValueError(
             f"Unknown target agent type {for_agent_type!r}. "
             f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, "
-            f"review-theory, suggest-expansions, expand-theory"
+            f"review-theory, suggest-expansions, expand-theory, "
+            f"rank-theories, rank-theories-on-experiment"
         )
 
     with DatabaseLock(db_root):
@@ -324,13 +328,16 @@ def create_context(
                     )
                 literature_dirs.append((lid, lit_dir))
 
-        if from_theory:
-            theory_dir = db_root / "theory" / from_theory
-            if not theory_dir.is_dir():
-                raise ValueError(
-                    f"Theory {from_theory!r} not found in database "
-                    f"(expected {theory_dir})"
-                )
+        theory_dirs: list[tuple[str, Path]] = []
+        if from_theories:
+            for tid in from_theories:
+                theory_dir = db_root / "theory" / tid
+                if not theory_dir.is_dir():
+                    raise ValueError(
+                        f"Theory {tid!r} not found in database "
+                        f"(expected {theory_dir})"
+                    )
+                theory_dirs.append((tid, theory_dir))
 
         if from_reviews:
             for rid in from_reviews:
@@ -360,7 +367,7 @@ def create_context(
         elif for_agent_type in ("falsify-hypothesis", "suggest-expansions"):
             dst = target_folder / "theory"
             shutil.copytree(
-                theory_dir,  # type: ignore[possibly-undefined]
+                theory_dirs[0][1],
                 dst,
             )
             _make_writable(dst)
@@ -368,7 +375,7 @@ def create_context(
         elif for_agent_type in ("refine-hypothesis", "expand-theory"):
             dst = target_folder / "theory"
             shutil.copytree(
-                theory_dir,  # type: ignore[possibly-undefined]
+                theory_dirs[0][1],
                 dst,
             )
             _make_writable(dst)
@@ -392,10 +399,33 @@ def create_context(
 
         elif for_agent_type == "review-theory":
             dst = target_folder / "theory.md"
-            src_theory_md = theory_dir / "theory.md"  # type: ignore[possibly-undefined]
+            src_theory_md = theory_dirs[0][1] / "theory.md"
             if src_theory_md.exists():
                 shutil.copy2(src_theory_md, dst)
                 _make_writable(dst)
+
+        elif for_agent_type in ("rank-theories", "rank-theories-on-experiment"):
+            for tid, tdir in theory_dirs:
+                dst = target_folder / tid
+                shutil.copytree(tdir, dst)
+                _make_writable(dst)
+                reviews_root = dst / "reviews"
+                reviews_root.mkdir(exist_ok=True)
+                
+                review_root_dir = db_root / "review"
+                if review_root_dir.is_dir():
+                    for meta_path in sorted(review_root_dir.glob("*/metadata.json")):
+                        try:
+                            data = json.loads(meta_path.read_text())
+                            if data.get("parent_theory") == tid:
+                                rid = data.get("id")
+                                if rid:
+                                    src_review = review_root_dir / rid
+                                    rdst = reviews_root / rid
+                                    shutil.copytree(src_review, rdst)
+                                    _make_writable(rdst)
+                        except (json.JSONDecodeError, OSError):
+                            continue
 
 
 def fetch_experiment(target_folder: Path, experiment_id: str) -> None:
@@ -624,6 +654,8 @@ def main(argv: list[str] | None = None) -> None:
             "review-theory",
             "suggest-expansions",
             "expand-theory",
+            "rank-theories",
+            "rank-theories-on-experiment",
         ],
         help="Type of agent to prepare context for",
     )
@@ -645,7 +677,13 @@ def main(argv: list[str] | None = None) -> None:
             "accepts at most one and uses a flat literature/ layout."
         ),
     )
-    sp_ctx.add_argument("--from_theory", default=None, help="Theory ID")
+    sp_ctx.add_argument(
+        "--from_theory",
+        action="append",
+        default=[],
+        dest="from_theories",
+        help="Theory ID (repeatable)",
+    )
     sp_ctx.add_argument(
         "--from_review",
         action="append",
@@ -791,7 +829,7 @@ def main(argv: list[str] | None = None) -> None:
                 target_folder=args.target_folder.resolve(),
                 from_exploration=args.from_exploration,
                 from_literatures=args.from_literatures or None,
-                from_theory=args.from_theory,
+                from_theories=args.from_theories or None,
                 from_reviews=args.from_reviews or None,
             )
 
