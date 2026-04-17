@@ -292,6 +292,7 @@ def create_context(
     from_theories: list[str] | None = None,
     from_reviews: list[str] | None = None,
     from_experiments: list[str] | None = None,
+    from_predictions: list[str] | None = None,
 ) -> None:
     """Assemble upstream artifacts into *target_folder* for the next agent."""
     db_root = get_db_path()
@@ -336,12 +337,22 @@ def create_context(
             raise ValueError(
                 "At least one --from_experiment is required for predict-experiments"
             )
+    elif for_agent_type == "rank-predictions":
+        if not from_experiments or len(from_experiments) != 1:
+            raise ValueError(
+                "Exactly one --from_experiment is required for rank-predictions"
+            )
+        if not from_predictions:
+            raise ValueError(
+                "At least one --from_prediction is required for rank-predictions"
+            )
     else:
         raise ValueError(
             f"Unknown target agent type {for_agent_type!r}. "
             f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, "
             f"review-theory, suggest-expansions, expand-theory, "
-            f"rank-theories, rank-theories-on-experiment, predict-experiments"
+            f"rank-theories, rank-theories-on-experiment, predict-experiments, "
+            f"rank-predictions"
         )
 
     with DatabaseLock(db_root):
@@ -381,6 +392,14 @@ def create_context(
                 if not review_dir.is_dir():
                     raise ValueError(
                         f"Review {rid!r} not found in database (expected {review_dir})"
+                    )
+
+        if from_predictions:
+            for pid in from_predictions:
+                pred_dir = db_root / "prediction" / pid
+                if not pred_dir.is_dir():
+                    raise ValueError(
+                        f"Prediction {pid!r} not found in database (expected {pred_dir})"
                     )
 
         # --- create target and copy ---
@@ -472,6 +491,21 @@ def create_context(
             _make_writable(dst)
             for exp_id in from_experiments:  # type: ignore[union-attr]
                 fetch_experiment(target_folder, exp_id, exclude_results=True)
+
+        elif for_agent_type == "rank-predictions":
+            preds_root = target_folder / "predictions"
+            preds_root.mkdir(exist_ok=True)
+            for pid in from_predictions:  # type: ignore[union-attr]
+                src = db_root / "prediction" / pid
+                pdst = preds_root / pid
+                shutil.copytree(src, pdst)
+                _make_writable(pdst)
+            
+            exp_id = from_experiments[0]  # type: ignore[index]
+            exp_src = db_root / "experiment" / exp_id
+            exp_dst = target_folder / "experiment"
+            shutil.copytree(exp_src, exp_dst)
+            _make_writable(exp_dst)
 
 
 def fetch_experiment(
@@ -704,6 +738,8 @@ def main(argv: list[str] | None = None) -> None:
             "expand-theory",
             "rank-theories",
             "rank-theories-on-experiment",
+            "predict-experiments",
+            "rank-predictions",
         ],
         help="Type of agent to prepare context for",
     )
@@ -745,6 +781,13 @@ def main(argv: list[str] | None = None) -> None:
         default=[],
         dest="from_experiments",
         help="Experiment ID (repeatable, used by predict-experiments)",
+    )
+    sp_ctx.add_argument(
+        "--from_prediction",
+        action="append",
+        default=[],
+        dest="from_predictions",
+        help="Prediction ID (repeatable, used by rank-predictions)",
     )
 
     # -- fetch_literature ----------------------------------------------------
@@ -892,6 +935,7 @@ def main(argv: list[str] | None = None) -> None:
                 from_theories=args.from_theories or None,
                 from_reviews=args.from_reviews or None,
                 from_experiments=args.from_experiments or None,
+                from_predictions=args.from_predictions or None,
             )
 
         elif args.command == "fetch_literature":
