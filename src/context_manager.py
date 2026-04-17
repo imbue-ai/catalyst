@@ -158,8 +158,13 @@ class StoredMetadata(BaseModel):
 # ---------------------------------------------------------------------------
 
 
+MAKE_READONLY = False
+
+
 def _make_readonly(path: Path) -> None:
     """Recursively remove write permissions from *path*."""
+    if not MAKE_READONLY:
+        return
     for root, dirs, files in os.walk(path):
         for name in files:
             fp = os.path.join(root, name)
@@ -541,7 +546,10 @@ def create_context(
                 for meta_path in sorted(review_root_dir.glob("*/metadata.json")):
                     try:
                         data = json.loads(meta_path.read_text())
-                        if data.get("parent_theory") == tid and data.get("agent_type") == "falsify-hypothesis":
+                        if (
+                            data.get("parent_theory") == tid
+                            and data.get("agent_type") == "falsify-hypothesis"
+                        ):
                             rid = data.get("id")
                             if rid:
                                 src_review = review_root_dir / rid
@@ -567,7 +575,10 @@ def create_context(
                     try:
                         data = json.loads(meta_path.read_text())
                         # from_theories is guaranteed to be non-empty and accessible here.
-                        if data.get("parent_theory") in from_theories and data.get("agent_type") == "suggest-expansions":
+                        if (
+                            data.get("parent_theory") in from_theories
+                            and data.get("agent_type") == "suggest-expansions"
+                        ):
                             rid = data.get("id")
                             if rid:
                                 src_review = review_root_dir / rid
