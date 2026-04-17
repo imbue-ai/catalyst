@@ -323,11 +323,6 @@ def create_context(
     elif for_agent_type == "review-theory":
         if not from_theories or len(from_theories) != 1:
             raise ValueError("Exactly one --from_theory is required for review-theory")
-    elif for_agent_type == "rank-theories":
-        if not from_theories:
-            raise ValueError(
-                f"At least one --from_theory is required for {for_agent_type}"
-            )
     elif for_agent_type == "predict-experiments":
         if not from_theories or len(from_theories) != 1:
             raise ValueError(
@@ -346,13 +341,22 @@ def create_context(
             raise ValueError(
                 "At least one --from_prediction is required for rank-predictions"
             )
+    elif for_agent_type == "score-theories":
+        if not from_theories:
+            raise ValueError(
+                f"At least one --from_theory is required for {for_agent_type}"
+            )
+    elif for_agent_type == "score-soundness":
+        if not from_theories or len(from_theories) != 1:
+            raise ValueError(
+                "Exactly one --from_theory is required for score-soundness"
+            )
     else:
         raise ValueError(
             f"Unknown target agent type {for_agent_type!r}. "
             f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, "
             f"review-theory, suggest-expansions, expand-theory, "
-            f"rank-theories, predict-experiments, "
-            f"rank-predictions"
+            f"predict-experiments, rank-predictions, score-theories, score-soundness"
         )
 
     with DatabaseLock(db_root):
@@ -459,29 +463,6 @@ def create_context(
                 shutil.copy2(src_theory_md, dst)
                 _make_writable(dst)
 
-        elif for_agent_type == "rank-theories":
-            for tid, tdir in theory_dirs:
-                dst = target_folder / tid
-                shutil.copytree(tdir, dst)
-                _make_writable(dst)
-                reviews_root = dst / "reviews"
-                reviews_root.mkdir(exist_ok=True)
-
-                review_root_dir = db_root / "review"
-                if review_root_dir.is_dir():
-                    for meta_path in sorted(review_root_dir.glob("*/metadata.json")):
-                        try:
-                            data = json.loads(meta_path.read_text())
-                            if data.get("parent_theory") == tid:
-                                rid = data.get("id")
-                                if rid:
-                                    src_review = review_root_dir / rid
-                                    rdst = reviews_root / rid
-                                    shutil.copytree(src_review, rdst)
-                                    _make_writable(rdst)
-                        except (json.JSONDecodeError, OSError):
-                            continue
-
         elif for_agent_type == "predict-experiments":
             dst = target_folder / "theory"
             shutil.copytree(
@@ -500,12 +481,69 @@ def create_context(
                 pdst = preds_root / pid
                 shutil.copytree(src, pdst)
                 _make_writable(pdst)
-            
+
             exp_id = from_experiments[0]  # type: ignore[index]
             exp_src = db_root / "experiment" / exp_id
             exp_dst = target_folder / "experiment"
             shutil.copytree(exp_src, exp_dst)
             _make_writable(exp_dst)
+
+        elif for_agent_type == "score-theories":
+            theories_root = target_folder / "theories"
+            theories_root.mkdir(exist_ok=True)
+            for tid, tdir in theory_dirs:
+                dst = theories_root / tid
+                shutil.copytree(tdir, dst)
+                _make_writable(dst)
+
+            matched_experiments: list[tuple[str, str]] = []
+            exp_root = db_root / "experiment"
+            if exp_root.is_dir():
+                for meta_path in exp_root.glob("*/metadata.json"):
+                    try:
+                        data = json.loads(meta_path.read_text())
+                        if from_theories and data.get("parent_theory") in from_theories:
+                            eid = data.get("id")
+                            created_at = data.get("created_at", "")
+                            if eid:
+                                matched_experiments.append((created_at, eid))
+                    except (json.JSONDecodeError, OSError):
+                        continue
+
+            matched_experiments.sort(key=lambda x: x[0], reverse=True)
+            num_experiments_to_include = 20
+            top_exp_ids = [
+                eid for _, eid in matched_experiments[:num_experiments_to_include]
+            ]
+
+            for exp_id in top_10_exp_ids:
+                fetch_experiment(target_folder, exp_id, exclude_results=True)
+
+        elif for_agent_type == "score-soundness":
+            dst = target_folder / "theory"
+            shutil.copytree(
+                theory_dirs[0][1],
+                dst,
+            )
+            _make_writable(dst)
+
+            reviews_root = target_folder / "reviews"
+            reviews_root.mkdir(exist_ok=True)
+            review_root_dir = db_root / "review"
+            tid = theory_dirs[0][0]
+            if review_root_dir.is_dir():
+                for meta_path in sorted(review_root_dir.glob("*/metadata.json")):
+                    try:
+                        data = json.loads(meta_path.read_text())
+                        if data.get("parent_theory") == tid and data.get("agent_type") == "falsify-hypothesis":
+                            rid = data.get("id")
+                            if rid:
+                                src_review = review_root_dir / rid
+                                rdst = reviews_root / rid
+                                shutil.copytree(src_review, rdst)
+                                _make_writable(rdst)
+                    except (json.JSONDecodeError, OSError):
+                        continue
 
 
 def fetch_experiment(
@@ -736,9 +774,10 @@ def main(argv: list[str] | None = None) -> None:
             "review-theory",
             "suggest-expansions",
             "expand-theory",
-            "rank-theories",
             "predict-experiments",
             "rank-predictions",
+            "score-theories",
+            "score-soundness",
         ],
         help="Type of agent to prepare context for",
     )
