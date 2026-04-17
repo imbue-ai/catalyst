@@ -250,7 +250,9 @@ def store_results(
             agent_type=from_agent_type,
             category=category,
             created_at=datetime.now(timezone.utc).isoformat(),
-            parent_theory=parent_theory if from_agent_type in parent_theory_agents else None,
+            parent_theory=parent_theory
+            if from_agent_type in parent_theory_agents
+            else None,
             extra=metadata_extra or {},
         )
         (target_dir / "metadata.json").write_text(
@@ -285,10 +287,14 @@ def create_context(
             )
     elif for_agent_type in ("falsify-hypothesis", "suggest-expansions"):
         if not from_theories or len(from_theories) != 1:
-            raise ValueError(f"Exactly one --from_theory is required for {for_agent_type}")
+            raise ValueError(
+                f"Exactly one --from_theory is required for {for_agent_type}"
+            )
     elif for_agent_type in ("refine-hypothesis", "expand-theory"):
         if not from_theories or len(from_theories) != 1:
-            raise ValueError(f"Exactly one --from_theory is required for {for_agent_type}")
+            raise ValueError(
+                f"Exactly one --from_theory is required for {for_agent_type}"
+            )
         if not from_reviews:
             raise ValueError(
                 f"At least one --from_review is required for {for_agent_type}"
@@ -298,7 +304,9 @@ def create_context(
             raise ValueError("Exactly one --from_theory is required for review-theory")
     elif for_agent_type in ("rank-theories", "rank-theories-on-experiment"):
         if not from_theories:
-            raise ValueError(f"At least one --from_theory is required for {for_agent_type}")
+            raise ValueError(
+                f"At least one --from_theory is required for {for_agent_type}"
+            )
     else:
         raise ValueError(
             f"Unknown target agent type {for_agent_type!r}. "
@@ -334,8 +342,7 @@ def create_context(
                 theory_dir = db_root / "theory" / tid
                 if not theory_dir.is_dir():
                     raise ValueError(
-                        f"Theory {tid!r} not found in database "
-                        f"(expected {theory_dir})"
+                        f"Theory {tid!r} not found in database (expected {theory_dir})"
                     )
                 theory_dirs.append((tid, theory_dir))
 
@@ -411,7 +418,7 @@ def create_context(
                 _make_writable(dst)
                 reviews_root = dst / "reviews"
                 reviews_root.mkdir(exist_ok=True)
-                
+
                 review_root_dir = db_root / "review"
                 if review_root_dir.is_dir():
                     for meta_path in sorted(review_root_dir.glob("*/metadata.json")):
@@ -436,8 +443,7 @@ def fetch_experiment(target_folder: Path, experiment_id: str) -> None:
     exp_dir = db_root / "experiment" / experiment_id
     if not exp_dir.is_dir():
         raise ValueError(
-            f"Experiment {experiment_id!r} not found in database "
-            f"(expected {exp_dir})"
+            f"Experiment {experiment_id!r} not found in database (expected {exp_dir})"
         )
     if not target_folder.is_dir():
         raise ValueError(f"Target folder does not exist: {target_folder}")
@@ -447,9 +453,7 @@ def fetch_experiment(target_folder: Path, experiment_id: str) -> None:
         dst_root.mkdir(exist_ok=True)
         dst = dst_root / experiment_id
         if dst.exists():
-            raise ValueError(
-                f"Experiment {experiment_id!r} already present at {dst}"
-            )
+            raise ValueError(f"Experiment {experiment_id!r} already present at {dst}")
         shutil.copytree(exp_dir, dst)
         _make_writable(dst)
 
@@ -471,9 +475,7 @@ def search_experiments(
     """
     db_root = get_db_path()
     tag_filters = [t.strip().lower() for t in (tags or []) if t.strip()]
-    query_tokens = [
-        t.lower() for t in (query or "").split() if len(t) >= 3
-    ]
+    query_tokens = [t.lower() for t in (query or "").split() if len(t) >= 3]
 
     results: list[tuple[int, str, dict]] = []
 
@@ -494,7 +496,10 @@ def search_experiments(
                 continue
             if parent_review and extra.get("parent_review") != parent_review:
                 continue
-            if parent_agent_type and extra.get("parent_agent_type") != parent_agent_type:
+            if (
+                parent_agent_type
+                and extra.get("parent_agent_type") != parent_agent_type
+            ):
                 continue
 
             entry_tags = [
@@ -515,9 +520,7 @@ def search_experiments(
 
             if query_tokens:
                 score = sum(1 for tok in query_tokens if tok in description)
-                score += sum(
-                    1 for tok in query_tokens if tok in " ".join(entry_tags)
-                )
+                score += sum(1 for tok in query_tokens if tok in " ".join(entry_tags))
                 if score == 0:
                     continue
             else:
@@ -557,9 +560,7 @@ def fetch_literature(target_folder: Path, literature_id: str) -> None:
         dst_root.mkdir(exist_ok=True)
         dst = dst_root / literature_id
         if dst.exists():
-            raise ValueError(
-                f"Literature {literature_id!r} already present at {dst}"
-            )
+            raise ValueError(f"Literature {literature_id!r} already present at {dst}")
         shutil.copytree(lit_dir, dst)
         _make_writable(dst)
 
@@ -693,81 +694,81 @@ def main(argv: list[str] | None = None) -> None:
     )
 
     # -- fetch_literature ----------------------------------------------------
-    sp_add_lit = sub.add_parser(
+    sp_fetch_lit = sub.add_parser(
         "fetch_literature",
         help="Fetch a literature review into an existing context folder.",
     )
-    sp_add_lit.add_argument(
+    sp_fetch_lit.add_argument(
         "--target_folder",
         required=True,
         type=Path,
         help="Existing context folder produced by a prior create_context call",
     )
-    sp_add_lit.add_argument(
+    sp_fetch_lit.add_argument(
         "--from_literature",
         required=True,
         help="Literature review ID to add (nested under literature/<L_ID>/)",
     )
 
     # -- fetch_experiment ----------------------------------------------------
-    sp_add_exp = sub.add_parser(
+    sp_fetch_exp = sub.add_parser(
         "fetch_experiment",
         help="Fetch an experiment into an existing context folder.",
     )
-    sp_add_exp.add_argument(
+    sp_fetch_exp.add_argument(
         "--target_folder",
         required=True,
         type=Path,
         help="Existing context folder produced by a prior create_context call",
     )
-    sp_add_exp.add_argument(
+    sp_fetch_exp.add_argument(
         "--from_experiment",
         required=True,
         help="Experiment ID to add (nested under experiments/<X_ID>/)",
     )
 
     # -- search_experiments --------------------------------------------------
-    sp_search = sub.add_parser(
+    sp_search_exp = sub.add_parser(
         "search_experiments",
         help=(
             "Search stored experiments by substring match on description "
             "and tags. Returns matching experiment IDs with short previews."
         ),
     )
-    sp_search.add_argument(
+    sp_search_exp.add_argument(
         "--query",
         default=None,
         help="Free-text query (tokens >=3 chars are matched against description + tags)",
     )
-    sp_search.add_argument(
+    sp_search_exp.add_argument(
         "--tag",
         action="append",
         default=[],
         dest="tags",
         help="Require a specific tag on the experiment (repeatable)",
     )
-    sp_search.add_argument(
+    sp_search_exp.add_argument(
         "--parent_theory",
         default=None,
         help="Filter to experiments run in support of a specific theory",
     )
-    sp_search.add_argument(
+    sp_search_exp.add_argument(
         "--parent_review",
         default=None,
         help="Filter to experiments run in support of a specific review",
     )
-    sp_search.add_argument(
+    sp_search_exp.add_argument(
         "--parent_agent_type",
         default=None,
         help="Filter to experiments invoked by a specific agent type",
     )
-    sp_search.add_argument(
+    sp_search_exp.add_argument(
         "--limit",
         type=int,
         default=20,
         help="Maximum number of results to return",
     )
-    sp_search.add_argument(
+    sp_search_exp.add_argument(
         "--json",
         action="store_true",
         dest="json_output",
