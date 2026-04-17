@@ -22,6 +22,7 @@ Arguments: $ARGUMENTS
 Create a separate output folder for your artifacts:
 ```bash
 OUTPUT_DIR=$(mktemp -d -p ./tmp literature-review-XXXX)
+echo OUTPUT_DIR="$OUTPUT_DIR";
 mkdir -p "$OUTPUT_DIR/papers"
 ```
 

@@ -26,6 +26,8 @@ Set up two folders — one for input context, one for your own output, and initi
 ```bash
 CONTEXT_DIR=$(mktemp -d -p ./tmp expand-theory-context-XXXX)
 OUTPUT_DIR=$(mktemp -d -p ./tmp expand-theory-output-XXXX)
+echo CONTEXT_DIR="$CONTEXT_DIR";
+echo OUTPUT_DIR="$OUTPUT_DIR";
 uv run python scripts/context_manager.py create_context \
     --for_agent_type expand-theory \
     --target_folder "$CONTEXT_DIR" \

@@ -32,6 +32,8 @@ Set up two folders — one for input context, one for your own output:
 ```bash
 CONTEXT_DIR=$(mktemp -d -p ./tmp write-theory-context-XXXX)
 OUTPUT_DIR=$(mktemp -d -p ./tmp write-theory-output-XXXX)
+echo CONTEXT_DIR="$CONTEXT_DIR";
+echo OUTPUT_DIR="$OUTPUT_DIR";
 uv run python scripts/context_manager.py create_context --for_agent_type write-theory --target_folder "$CONTEXT_DIR" --from_exploration <EXPLORATION_ID> [--from_literature <LITERATURE_ID>]
 ```
 

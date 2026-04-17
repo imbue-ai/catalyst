@@ -19,6 +19,8 @@ Set up a context folder for your input, passing all theory IDs from the input ar
 ```bash
 CONTEXT_DIR=$(mktemp -d -p ./tmp predict-experiments-context-XXXX)
 OUTPUT_DIR=$(mktemp -d -p ./tmp predict-experiments-output-XXXX)
+echo CONTEXT_DIR="$CONTEXT_DIR";
+echo OUTPUT_DIR="$OUTPUT_DIR";
 uv run python scripts/context_manager.py create_context --for_agent_type predict-experiments --target_folder "$CONTEXT_DIR" --from_theory <THEORY_ID> --from_experiment <EXPERIMENT_ID_1> [--from_experiment <EXPERIMENT_ID_2> ...]
 ```
 

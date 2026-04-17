@@ -28,6 +28,7 @@ The arguments describe the findings or questions to investigate. They may embed 
 Create a separate output folder for your artifacts:
 ```bash
 OUTPUT_DIR=$(mktemp -d -p ./tmp search-literature-XXXX)
+echo OUTPUT_DIR="$OUTPUT_DIR";
 mkdir -p "$OUTPUT_DIR/papers"
 ```
 

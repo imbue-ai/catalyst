@@ -25,6 +25,8 @@ Set up two folders — one for input context, one for your own output:
 ```bash
 CONTEXT_DIR=$(mktemp -d -p ./tmp falsify-hypothesis-context-XXXX)
 OUTPUT_DIR=$(mktemp -d -p ./tmp falsify-hypothesis-output-XXXX)
+echo CONTEXT_DIR="$CONTEXT_DIR";
+echo OUTPUT_DIR="$OUTPUT_DIR";
 uv run python scripts/context_manager.py create_context --for_agent_type falsify-hypothesis --target_folder "$CONTEXT_DIR" --from_theory <THEORY_ID>
 ```
 

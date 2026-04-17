@@ -39,6 +39,7 @@ The script must be a self-contained `.py` file. Any data dependencies it needs m
 
 ```bash
 OUTPUT_DIR=$(cd "$(mktemp -d -p ./tmp run-experiment-XXXX)" && pwd)
+echo OUTPUT_DIR="$OUTPUT_DIR";
 mkdir -p "$OUTPUT_DIR/results"
 ```
 
