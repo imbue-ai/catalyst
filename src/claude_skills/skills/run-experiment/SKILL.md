@@ -16,7 +16,6 @@ You are the **Experiment Runner**. You are the *only* skill in the pipeline that
 - **Capture everything.** stdout, stderr, every file the script writes, and the input script itself all go into the experiment bundle.
 - **Isolate the run.** The script executes with its working directory set to a `results/` folder inside a temporary output directory, so any file it writes relative to `cwd` lands in `results/` automatically.
 - **Record provenance.** Every experiment records the calling agent type, the parent theory (if any), the parent review (if any), and any caller-supplied tags. This lets future agents filter experiments by context.
-- **Be terse.** Your final message is just the experiment ID. No narration.
 
 ## Input
 Arguments: $ARGUMENTS
@@ -61,7 +60,7 @@ $OUTPUT_DIR/
 
 2. **Write description**: Put the parsed description verbatim into `$OUTPUT_DIR/description.md`. Prefix with a one-line title header so the file renders cleanly:
    ```
-   # Experiment: <first ~80 chars of description, as a title>
+   # Experiment: <few-word summary of the description, as a title>
    
    <full description>
    ```
@@ -93,7 +92,7 @@ $OUTPUT_DIR/
    ```
    The command prints a new experiment ID (e.g. `X_20260416_150000_a1b2c3`).
 
-6. **Final response**: Print *only* the experiment ID as your final message. The calling agent will parse it and then invoke `context_manager.py fetch_experiment --target_folder <its context dir> --from_experiment <X_ID>` to fold the results into its own context. If the exit code was non-zero, also print a single line like `exit_code=1` after the ID so the caller knows to inspect `stderr.log` before trusting the results.
+6. **Final response**: Print *only* the experiment ID as your final message. The calling agent will parse it and then invoke `context_manager.py fetch_experiment --target_folder <its context dir> --from_experiment <X_ID>` to fold the results into its own context. If the exit code was non-zero, also print a single line like `exit_code=1 - check stderr.log` after the ID so the caller knows to inspect `stderr.log` before trusting the results.
 
 ## Failure modes
 - **Script does not exist**: abort before running. Do not create the experiment bundle.

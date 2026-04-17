@@ -56,7 +56,7 @@ Then inspect `$CONTEXT_DIR/experiments/<X_ID>/` — read `description.md`, `stdo
 
 **To run a new experiment**, write a self-contained Python script under `$OUTPUT_DIR` (e.g. `$OUTPUT_DIR/exp_expansion_probe.py`). Make sure that the experiment script writes all result files into the directory it runs in (cwd). Then invoke the `run-experiment` skill via the Skill tool with arguments like:
 ```
-Description: <what this experiment tests, in 1–3 sentences>
+Description: <complete explanation of what this experiment tests - include the motivation and summary of the setup. Do NOT reference sections from the theory just by their title or theorem number. Instead, summarize the relevant claim being tested. The reader of the description might not have the theory available.>
 Script: <absolute path to the .py file under $OUTPUT_DIR>
 Parent theory: <THEORY_ID>
 Parent review: <REVIEW_ID>

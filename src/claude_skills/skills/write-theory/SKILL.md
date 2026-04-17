@@ -57,12 +57,12 @@ Then inspect `$CONTEXT_DIR/experiments/<X_ID>/` — read its `description.md`, `
 
 **To run a new experiment**, write a self-contained Python script under `$OUTPUT_DIR` (e.g. `$OUTPUT_DIR/exp_bifurcation_onset.py`). Make sure that the experiment script writes all result files into the directory it runs in (cwd). Then invoke the `run-experiment` skill via the Skill tool with arguments formatted like:
 ```
-Description: <what this experiment tests, in 1–3 sentences>
+Description: <complete explanation of what this experiment tests - include the motivation and summary of the setup. Do NOT reference sections from the theory just by their title or theorem number. Instead, summarize the relevant claim being tested. The reader of the description might not have the theory available.>
 Script: <absolute path to $OUTPUT_DIR/exp_bifurcation_onset.py>
 Parent agent type: write-theory
 Tags: <comma-separated short tokens>
 ```
-`Parent theory` is not set for `write-theory` — no stored theory exists yet. The skill returns an experiment ID (`X_...`). Fold the results into your context:
+The skill returns an experiment ID (`X_...`). Fold the results into your context:
 ```bash
 uv run python scripts/context_manager.py fetch_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
 ```
