@@ -323,7 +323,7 @@ def create_context(
     elif for_agent_type == "review-theory":
         if not from_theories or len(from_theories) != 1:
             raise ValueError("Exactly one --from_theory is required for review-theory")
-    elif for_agent_type in ("rank-theories", "rank-theories-on-experiment"):
+    elif for_agent_type == "rank-theories":
         if not from_theories:
             raise ValueError(
                 f"At least one --from_theory is required for {for_agent_type}"
@@ -351,7 +351,7 @@ def create_context(
             f"Unknown target agent type {for_agent_type!r}. "
             f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, "
             f"review-theory, suggest-expansions, expand-theory, "
-            f"rank-theories, rank-theories-on-experiment, predict-experiments, "
+            f"rank-theories, predict-experiments, "
             f"rank-predictions"
         )
 
@@ -459,7 +459,7 @@ def create_context(
                 shutil.copy2(src_theory_md, dst)
                 _make_writable(dst)
 
-        elif for_agent_type in ("rank-theories", "rank-theories-on-experiment"):
+        elif for_agent_type == "rank-theories":
             for tid, tdir in theory_dirs:
                 dst = target_folder / tid
                 shutil.copytree(tdir, dst)
@@ -737,7 +737,6 @@ def main(argv: list[str] | None = None) -> None:
             "suggest-expansions",
             "expand-theory",
             "rank-theories",
-            "rank-theories-on-experiment",
             "predict-experiments",
             "rank-predictions",
         ],
