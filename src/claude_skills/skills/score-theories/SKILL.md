@@ -27,8 +27,8 @@ The execution steps below involve several numeric calculations. Always use `uv r
 
 ## Converting Ranks to Scores
 We will use the following methods for converting from a rank `r` (1...n) to a score:
-- **Linear score**: `s = (n-r)/(n-1)`
-- **Normalized reciprocal score**: `s = (n-r) / (r*(n-1))`
+- **Linear score**: `s = (n-r+1)/(n)`
+- **Normalized reciprocal score**: `s = (n-r+1) / (r*n)`
 
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the theories and experiment files using `context_manager.py`.
