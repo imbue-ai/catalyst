@@ -351,12 +351,18 @@ def create_context(
             raise ValueError(
                 "Exactly one --from_theory is required for score-soundness"
             )
+    elif for_agent_type == "rank-predictive-power":
+        if not from_theories:
+            raise ValueError(
+                f"At least one --from_theory is required for {for_agent_type}"
+            )
     else:
         raise ValueError(
             f"Unknown target agent type {for_agent_type!r}. "
             f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, "
             f"review-theory, suggest-expansions, expand-theory, "
-            f"predict-experiments, rank-predictions, score-theories, score-soundness"
+            f"predict-experiments, rank-predictions, score-theories, score-soundness, "
+            f"rank-predictive-power"
         )
 
     with DatabaseLock(db_root):
@@ -516,7 +522,7 @@ def create_context(
                 eid for _, eid in matched_experiments[:num_experiments_to_include]
             ]
 
-            for exp_id in top_10_exp_ids:
+            for exp_id in top_exp_ids:
                 fetch_experiment(target_folder, exp_id, exclude_results=True)
 
         elif for_agent_type == "score-soundness":
@@ -536,6 +542,32 @@ def create_context(
                     try:
                         data = json.loads(meta_path.read_text())
                         if data.get("parent_theory") == tid and data.get("agent_type") == "falsify-hypothesis":
+                            rid = data.get("id")
+                            if rid:
+                                src_review = review_root_dir / rid
+                                rdst = reviews_root / rid
+                                shutil.copytree(src_review, rdst)
+                                _make_writable(rdst)
+                    except (json.JSONDecodeError, OSError):
+                        continue
+
+        elif for_agent_type == "rank-predictive-power":
+            theories_root = target_folder / "theories"
+            theories_root.mkdir(exist_ok=True)
+            for tid, tdir in theory_dirs:
+                dst = theories_root / tid
+                shutil.copytree(tdir, dst)
+                _make_writable(dst)
+
+            reviews_root = target_folder / "reviews"
+            reviews_root.mkdir(exist_ok=True)
+            review_root_dir = db_root / "review"
+            if review_root_dir.is_dir():
+                for meta_path in sorted(review_root_dir.glob("*/metadata.json")):
+                    try:
+                        data = json.loads(meta_path.read_text())
+                        # from_theories is guaranteed to be non-empty and accessible here.
+                        if data.get("parent_theory") in from_theories and data.get("agent_type") == "suggest-expansions":
                             rid = data.get("id")
                             if rid:
                                 src_review = review_root_dir / rid
@@ -778,6 +810,7 @@ def main(argv: list[str] | None = None) -> None:
             "rank-predictions",
             "score-theories",
             "score-soundness",
+            "rank-predictive-power",
         ],
         help="Type of agent to prepare context for",
     )
