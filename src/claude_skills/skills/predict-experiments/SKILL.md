@@ -29,6 +29,8 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --
 - `<CONTEXT_DIR>/experiments/<experiment_id>/script.py` — a script containing the code for each experiment
 - `<OUTPUT_DIR>/` — write your predictions here
 
+Any temporary files (including intermediate results, etc.) must be stored only under `<OUTPUT_DIR>`.
+
 ## Performing calculations
 The execution steps below may involve numeric calculations. Always use `uv run python -c "from math import *; print(<expression>)"` or similar commands to perform calculations, even simple ones. Do not perform calculations manually or in your head.
 

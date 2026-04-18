@@ -41,6 +41,8 @@ cp -r "<CONTEXT_DIR>/theory/"* "<OUTPUT_DIR>/"
 - `<CONTEXT_DIR>/literature/<literature_id>/` — (if any literature IDs provided, or added mid-run) each literature review, with `summary.md` and downloaded PDFs in `papers/`. Read each `summary.md` and consult individual PDFs when relevant.
 - `<OUTPUT_DIR>/` — write your expanded theory and any supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `<CONTEXT_DIR>/experiments/` via `fetch_experiment`.
 
+Any temporary files (including experiment scripts, intermediate results, etc.) must be stored only under `<OUTPUT_DIR>`.
+
 ## Running experiments
 
 You must not execute experiment scripts directly. Every experiment goes through the `run-experiment` skill, which runs the script in an isolated environment, captures all artifacts, and persists the bundle to the shared experiment database so other agents can find and reuse it.

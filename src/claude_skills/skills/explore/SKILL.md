@@ -14,7 +14,7 @@ The phenomenon to explore is: $ARGUMENTS
 Create the output folder at the start:
 OUTPUT_DIR: `mktemp -d -p ./tmp explore-output-XXXX`
 
-All exploration artifacts go under this folder. Swarm agents should write to `<OUTPUT_DIR>/{agent-name}/` and append lab-notebook entries to `<OUTPUT_DIR>/explorer_log.md`.
+All exploration artifacts and temporary files go under this folder. Swarm agents should write to `<OUTPUT_DIR>/{agent-name}/` and append lab-notebook entries to `<OUTPUT_DIR>/explorer_log.md`.
 
 ## Workflow
 

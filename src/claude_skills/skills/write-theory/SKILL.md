@@ -40,6 +40,8 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --
 - `<CONTEXT_DIR>/literature/` — (if literature ID provided) literature review with paper summaries and downloaded PDFs. Always read `<CONTEXT_DIR>/literature/summary.md`, and read individual PDFs in `<CONTEXT_DIR>/literature/papers/` when relevant.
 - `<OUTPUT_DIR>/` — write your theory and any supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `<CONTEXT_DIR>/experiments/` via `fetch_experiment`.
 
+Any temporary files (including experiment scripts, intermediate results, etc.) must be stored only under `<OUTPUT_DIR>`.
+
 ## Running experiments
 
 You must not execute experiment scripts directly. Every experiment goes through the `run-experiment` skill, which runs the script in an isolated environment, captures all artifacts, and persists the bundle to the shared experiment database so other agents can find and reuse it.

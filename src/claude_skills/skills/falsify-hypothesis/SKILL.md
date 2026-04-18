@@ -32,6 +32,8 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --
 - `<CONTEXT_DIR>/theory/` — the theory to falsify (read-only input). Read `<CONTEXT_DIR>/theory/theory.md` and any artifacts.
 - `<OUTPUT_DIR>/` — write your falsification report and supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `<CONTEXT_DIR>/experiments/` via `fetch_experiment`.
 
+Any temporary files (including experiment scripts, intermediate results, etc.) must be stored only under `<OUTPUT_DIR>`.
+
 ## Running experiments
 
 You must not execute experiment scripts directly. Every experiment goes through the `run-experiment` skill, which runs the script in an isolated environment, captures all artifacts, and persists the bundle to the shared experiment database so other agents can find and reuse it.
