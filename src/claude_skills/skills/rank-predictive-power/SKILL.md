@@ -18,13 +18,15 @@ The arguments contain multiple theory IDs (like `T_20260414_...`). Parse the the
 
 ## Folder setup
 Set up a context folder for your input:
+CONTEXT_DIR: `mktemp -d -p ./tmp rank-predictive-power-context-XXXX`
+
+Run this command to populate the context:
 ```bash
-CONTEXT_DIR=$(mktemp -d -p ./tmp rank-predictive-power-context-XXXX)
-uv run python scripts/context_manager.py create_context --for_agent_type rank-predictive-power --target_folder "$CONTEXT_DIR" --from_theory <THEORY_ID_1> [--from_theory <THEORY_ID_2> ...]
+uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type rank-predictive-power --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID_1> [--from_theory <THEORY_ID_2> ...]
 ```
 
-- `$CONTEXT_DIR/theories/<theory_id>/theory.md` — the different theories that you're comparing
-- `$CONTEXT_DIR/reviews/<review_id>/review.md` — expansion reviews containing additional suggested areas for generalization or expansion of the theories
+- `<CONTEXT_DIR>/theories/<theory_id>/theory.md` — the different theories that you're comparing
+- `<CONTEXT_DIR>/reviews/<review_id>/review.md` — expansion reviews containing additional suggested areas for generalization or expansion of the theories
 
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the theories and review files using `context_manager.py`.

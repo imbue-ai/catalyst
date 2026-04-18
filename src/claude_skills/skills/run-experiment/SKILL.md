@@ -36,18 +36,18 @@ If `Description` or `Script` is missing, abort with a clear error message — do
 The script must be a self-contained `.py` file. Any data dependencies it needs must be referenced by absolute path or fetched by the script itself; do not rely on files that live only in the caller's temp folder, because the script is copied into the experiment bundle and must remain runnable in the future.
 
 ## Folder setup
+Set up a distinct output folder for just this experiment run and its results:
+OUTPUT_DIR: `mktemp -d -p "$PWD/tmp" run-experiment-output-XXXX`
 
 ```bash
-OUTPUT_DIR=$(cd "$(mktemp -d -p ./tmp run-experiment-XXXX)" && pwd)
-echo OUTPUT_DIR="$OUTPUT_DIR";
-mkdir -p "$OUTPUT_DIR/results"
+mkdir -p "<OUTPUT_DIR>/results"
 ```
 
-`$OUTPUT_DIR` must be **absolute** — step 4 changes directory into `results/` before running the script, so any relative path would resolve incorrectly there. The `cd ... && pwd` idiom above guarantees that.
+`<OUTPUT_DIR>` must be **absolute** — step 4 changes directory into `results/` before running the script, so any relative path would resolve incorrectly there. The `$PWD` in the mktemp command above guarantees that.
 
 The final bundle that gets stored looks like:
 ```
-$OUTPUT_DIR/
+<OUTPUT_DIR>/
   description.md     # the caller's description (required filename)
   script.py          # verbatim copy of the caller's script
   stdout.log         # captured stdout from the run
@@ -59,29 +59,29 @@ $OUTPUT_DIR/
 
 1. **Parse arguments**: Extract `Description`, `Script` path, and any optional `Parent theory`, `Parent review`, `Parent agent type`, `Tags`. Validate that the script path exists and is readable.
 
-2. **Write description**: Put the parsed description verbatim into `$OUTPUT_DIR/description.md`. Prefix with a one-line title header so the file renders cleanly:
+2. **Write description**: Put the parsed description verbatim into `<OUTPUT_DIR>/description.md`. Prefix with a one-line title header so the file renders cleanly:
    ```
    # Experiment: <few-word summary of the description, as a title>
    
    <full description>
    ```
 
-3. **Copy the script**: Copy the caller-supplied script into `$OUTPUT_DIR/script.py`.
+3. **Copy the script**: Copy the caller-supplied script into `<OUTPUT_DIR>/script.py`.
    ```bash
-   cp "<script-path>" "$OUTPUT_DIR/script.py"
+   cp "<script-path>" "<OUTPUT_DIR>/script.py"
    ```
 
-4. **Run the script**: Execute the copied script with `cwd` set to `$OUTPUT_DIR/results/` so any relative file writes (plots, csvs, logs) land inside the bundle:
+4. **Run the script**: Execute the copied script with `cwd` set to `<OUTPUT_DIR>/results/` so any relative file writes (plots, csvs, logs) land inside the bundle:
    ```bash
-   ( cd "$OUTPUT_DIR/results" && uv run python "$OUTPUT_DIR/script.py" ) \
-       >"$OUTPUT_DIR/stdout.log" 2>"$OUTPUT_DIR/stderr.log"
+   ( cd "<OUTPUT_DIR>/results" && uv run python "<OUTPUT_DIR>/script.py" ) \
+       >"<OUTPUT_DIR>/stdout.log" 2>"<OUTPUT_DIR>/stderr.log"
    EXIT_CODE=$?
    ```
    Record `$EXIT_CODE` — you will pass it through as a tag on the stored experiment.
 
 5. **Store results**: Persist the bundle to the database. Build the metadata arguments from whichever optional fields the caller provided:
    ```bash
-   STORE_ARGS=( store_results --from_agent_type run-experiment --from_folder "$OUTPUT_DIR" )
+   STORE_ARGS=( store_results --from_agent_type run-experiment --from_folder <OUTPUT_DIR> )
    # parent_theory is a first-class field:
    [ -n "<PARENT_THEORY>" ] && STORE_ARGS+=( --parent_theory "<PARENT_THEORY>" )
    # everything else goes into metadata:
@@ -89,7 +89,7 @@ $OUTPUT_DIR/
    [ -n "<PARENT_REVIEW>" ] && STORE_ARGS+=( --metadata "parent_review=<PARENT_REVIEW>" )
    [ -n "<TAGS>" ]          && STORE_ARGS+=( --metadata "tags=<TAGS>" )
    STORE_ARGS+=( --metadata "exit_code=$EXIT_CODE" )
-   uv run python scripts/context_manager.py "${STORE_ARGS[@]}"
+   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" "${STORE_ARGS[@]}"
    ```
    The command prints a new experiment ID (e.g. `X_20260416_150000_a1b2c3`).
 

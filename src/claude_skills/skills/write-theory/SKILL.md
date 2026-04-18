@@ -27,19 +27,18 @@ Arguments: $ARGUMENTS
 The arguments contain an exploration ID (like `E_20260414_...`), an optional literature review ID (like `L_20260414_...`), and a description of the phenomenon. Parse all IDs from the arguments.
 
 ## Folder setup
-
 Set up two folders — one for input context, one for your own output:
+CONTEXT_DIR: `mktemp -d -p ./tmp write-theory-context-XXXX`
+OUTPUT_DIR: `mktemp -d -p ./tmp write-theory-output-XXXX`
+
+Run this command to populate the context:
 ```bash
-CONTEXT_DIR=$(mktemp -d -p ./tmp write-theory-context-XXXX)
-OUTPUT_DIR=$(mktemp -d -p ./tmp write-theory-output-XXXX)
-echo CONTEXT_DIR="$CONTEXT_DIR";
-echo OUTPUT_DIR="$OUTPUT_DIR";
-uv run python scripts/context_manager.py create_context --for_agent_type write-theory --target_folder "$CONTEXT_DIR" --from_exploration <EXPLORATION_ID> [--from_literature <LITERATURE_ID>]
+uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type write-theory --target_folder <CONTEXT_DIR> --from_exploration <EXPLORATION_ID> [--from_literature <LITERATURE_ID>]
 ```
 
-- `$CONTEXT_DIR/exploration/` — prior exploration results (read-only input). Read `$CONTEXT_DIR/exploration/report.md` and any artifacts.
-- `$CONTEXT_DIR/literature/` — (if literature ID provided) literature review with paper summaries and downloaded PDFs. Always read `$CONTEXT_DIR/literature/summary.md`, and read individual PDFs in `$CONTEXT_DIR/literature/papers/` when relevant.
-- `$OUTPUT_DIR/` — write your theory and any supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `$CONTEXT_DIR/experiments/` via `fetch_experiment`.
+- `<CONTEXT_DIR>/exploration/` — prior exploration results (read-only input). Read `<CONTEXT_DIR>/exploration/report.md` and any artifacts.
+- `<CONTEXT_DIR>/literature/` — (if literature ID provided) literature review with paper summaries and downloaded PDFs. Always read `<CONTEXT_DIR>/literature/summary.md`, and read individual PDFs in `<CONTEXT_DIR>/literature/papers/` when relevant.
+- `<OUTPUT_DIR>/` — write your theory and any supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `<CONTEXT_DIR>/experiments/` via `fetch_experiment`.
 
 ## Running experiments
 
@@ -47,39 +46,39 @@ You must not execute experiment scripts directly. Every experiment goes through 
 
 **Before writing a new experiment**, search the database for prior experiments that may already answer your question:
 ```bash
-uv run python scripts/context_manager.py search_experiments --query "<short description of what you want to test>"
+uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" search_experiments --query "<short description of what you want to test>"
 ```
 If a prior experiment matches closely, fold it into your context and reuse it instead of re-running:
 ```bash
-uv run python scripts/context_manager.py fetch_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
+uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <X_ID>
 ```
-Then inspect `$CONTEXT_DIR/experiments/<X_ID>/` — read its `description.md`, `stdout.log`, and `results/`.
+Then inspect `<CONTEXT_DIR>/experiments/<X_ID>/` — read its `description.md`, `stdout.log`, and `results/`.
 
-**To run a new experiment**, write a self-contained Python script under `$OUTPUT_DIR` (e.g. `$OUTPUT_DIR/exp_bifurcation_onset.py`). Make sure that the experiment script writes all result files into the directory it runs in (cwd). Then invoke the `run-experiment` skill via the Skill tool with arguments formatted like:
+**To run a new experiment**, write a self-contained Python script under `<OUTPUT_DIR>` (e.g. `<OUTPUT_DIR>/exp_bifurcation_onset.py`). Make sure that the experiment script writes all result files into the directory it runs in (cwd). Then invoke the `run-experiment` skill via the Skill tool with arguments formatted like:
 ```
 Description: <complete explanation of what this experiment tests - include the motivation and summary of the setup. Do NOT reference sections from the theory just by their title or theorem number. Instead, summarize the relevant claim being tested. The reader of the description might not have the theory available.>
-Script: <absolute path to $OUTPUT_DIR/exp_bifurcation_onset.py>
+Script: <absolute path to <OUTPUT_DIR>/exp_bifurcation_onset.py>
 Parent agent type: write-theory
 Tags: <comma-separated short tokens>
 ```
 The skill returns an experiment ID (`X_...`). Fold the results into your context:
 ```bash
-uv run python scripts/context_manager.py fetch_experiment --target_folder "$CONTEXT_DIR" --from_experiment <X_ID>
+uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <X_ID>
 ```
-Then read `$CONTEXT_DIR/experiments/<X_ID>/stdout.log` and `results/` to see the output. Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audit the supporting evidence.
+Then read `<CONTEXT_DIR>/experiments/<X_ID>/stdout.log` and `results/` to see the output. Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audit the supporting evidence.
 
 ## Execution Steps
-1. **Context Review**: Read `$CONTEXT_DIR/exploration/report.md` and any other files in `$CONTEXT_DIR/exploration/` to understand prior findings. If a literature review is available, read `$CONTEXT_DIR/literature/summary.md` and relevant papers in `$CONTEXT_DIR/literature/papers/` to ground your theory in existing research.
+1. **Context Review**: Read `<CONTEXT_DIR>/exploration/report.md` and any other files in `<CONTEXT_DIR>/exploration/` to understand prior findings. If a literature review is available, read `<CONTEXT_DIR>/literature/summary.md` and relevant papers in `<CONTEXT_DIR>/literature/papers/` to ground your theory in existing research.
 2. **Focus Area Selection**: Based on your review of the context, identify specific aspects of the phenomenon that are not well-understood yet in the literature and that you find particularly interesting. These will be the focus areas for your theory development. It's better to focus on a more narrow aspect and develop a really solid theory for it, than to try to explain a lot all at once. Typically, you will only want to focus on 1-2 specific aspects at this stage.
 3. **Hypothesis Generation**: Generate different hypotheses that could explain the selected aspects. Try to generate at least 2-3 *alternative* explanations for every aspect, and think about how you can test and differentiate between these explanations.
 4. **Validation**: Test your ideas using the available tools.
    - **Experiment**: Per the "Running experiments" section above, search for prior experiments or invoke `run-experiment` with a self-contained script. Reference each experiment's `X_ID` in your notes and theory.
    - **Proof**: If applicable, use mathematical derivations.
 5. **Iteration**: Based on the results of your validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process. Oftentimes, it can be helpful to initially narrow your focus down even further, e.g. to a restricted or simplified scenarios within the broader phenomenon. Continue iterating until you have a robust theory for the selected aspects that are well-supported by thorough mathematical derivation and experimental evidence.
-6. **Reporting**: Write the final theory to `$OUTPUT_DIR/theory.md` (this exact filename is required).
+6. **Reporting**: Write the final theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required).
 7. **Store results**: Persist your output and report the theory ID:
    ```bash
-   uv run python scripts/context_manager.py store_results --from_agent_type write-theory --from_folder "$OUTPUT_DIR"
+   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type write-theory --from_folder <OUTPUT_DIR>
    ```
    Report the returned theory ID (e.g. `T_20260414_143100_d4e5f6`) as the final output of this skill.
 

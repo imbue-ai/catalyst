@@ -14,13 +14,15 @@ The arguments contain a single theory ID (like `T_20260414_...`). Parse the theo
 
 ## Folder setup
 Set up a context folder for your input:
+CONTEXT_DIR: `mktemp -d -p ./tmp score-soundness-context-XXXX`
+
+Run this command to populate the context:
 ```bash
-CONTEXT_DIR=$(mktemp -d -p ./tmp score-soundness-context-XXXX)
-uv run python scripts/context_manager.py create_context --for_agent_type score-soundness --target_folder "$CONTEXT_DIR" --from_theory <THEORY_ID>
+uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type score-soundness --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
 ```
 
-- `$CONTEXT_DIR/theory.md` — the theory that you're scoring
-- `$CONTEXT_DIR/reviews/<review_id>/review.md` — falsification reviews for this theory. Each one will focus on a different hypothesis from the theory.
+- `<CONTEXT_DIR>/theory.md` — the theory that you're scoring
+- `<CONTEXT_DIR>/reviews/<review_id>/review.md` — falsification reviews for this theory. Each one will focus on a different hypothesis from the theory.
 
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the theory and review files using `context_manager.py`.

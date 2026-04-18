@@ -16,7 +16,7 @@ Parse the initial theory ID (e.g., `T_20260414_...`) from the arguments.
 
 1. **Find Reviews**: Use the bash tool to list all reviews associated with the initial theory:
    ```bash
-   uv run python scripts/context_manager.py list --type review --parent_theory <INITIAL_THEORY_ID> --json
+   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" list --type review --parent_theory <INITIAL_THEORY_ID> --json
    ```
    Parse the JSON output to extract the list of reviews. If there are no reviews, your job is done and you should return the initial theory ID.
 

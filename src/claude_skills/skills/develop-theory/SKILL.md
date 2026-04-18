@@ -14,7 +14,7 @@ Phenomenon to explain: $ARGUMENTS
 
 Make sure that the context manager database is set up and initialized:
 ```bash
-uv run python scripts/context_manager.py init
+uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" init
 ```
 If the database already exists, the init command will fail and no further setup step is needed.
 

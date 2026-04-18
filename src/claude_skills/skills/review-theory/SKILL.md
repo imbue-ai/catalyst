@@ -13,18 +13,19 @@ Arguments: $ARGUMENTS
 The arguments contain a theory ID (like `T_20260414_...`). Parse the theory ID from the arguments.
 
 ## Folder setup
-
 Set up a context folder for your input:
+CONTEXT_DIR: `mktemp -d -p ./tmp review-theory-context-XXXX`
+
+Run this command to populate the context:
 ```bash
-CONTEXT_DIR=$(mktemp -d -p ./tmp review-theory-context-XXXX)
-uv run python scripts/context_manager.py create_context --for_agent_type review-theory --target_folder "$CONTEXT_DIR" --from_theory <THEORY_ID>
+uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type review-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
 ```
 
-- `$CONTEXT_DIR/theory.md` — the theory file to review (read-only input).
+- `<CONTEXT_DIR>/theory.md` — the theory file to review (read-only input).
 
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to retrieve the `theory.md` file using `context_manager.py`.
-2. **Review & Extraction**: Read `$CONTEXT_DIR/theory.md` to determine a list of lemmas and theorems within the `theory.md` file.
+2. **Review & Extraction**: Read `<CONTEXT_DIR>/theory.md` to determine a list of lemmas and theorems within the `theory.md` file.
 3. **Spawn Agents**: Launch the following agents in parallel:
    - For each theorem and lemma, spawn a `falsify-hypothesis` agent instructed to invoke the `falsify-hypothesis` skill, passing the required `<THEORY_ID>` and theorem/lemma name.
    - Spawn **one** `suggest-expansions` agent instructed to invoke the `suggest-expansions` skill, passing only `<THEORY_ID>`. This agent reviews the entire theory at once.

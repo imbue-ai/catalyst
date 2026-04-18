@@ -24,16 +24,15 @@ Arguments: $ARGUMENTS
 The arguments describe the findings or questions to investigate. They may embed references to a prior theory ID (`T_...`), review ID (`R_...`), or exploration ID (`E_...`) for background — treat these as informational pointers, not required inputs. If useful, you can inspect the referenced artifacts in `${AI_SCIENTIST_DB_PATH:-.ai-scientist-db}/{theory,review,exploration}/<ID>/` to better frame your searches. Do not require these IDs; the skill must work from a plain-text query alone.
 
 ## Folder setup
+Set up an output folder for your artifacts:
+OUTPUT_DIR: `mktemp -d -p ./tmp search-literature-output-XXXX`
 
-Create a separate output folder for your artifacts:
 ```bash
-OUTPUT_DIR=$(mktemp -d -p ./tmp search-literature-XXXX)
-echo OUTPUT_DIR="$OUTPUT_DIR";
-mkdir -p "$OUTPUT_DIR/papers"
+mkdir -p "<OUTPUT_DIR>/papers"
 ```
 
-- `$OUTPUT_DIR/papers/` — downloaded PDFs go here
-- `$OUTPUT_DIR/summary.md` — your final structured summary (required filename)
+- `<OUTPUT_DIR>/papers/` — downloaded PDFs go here
+- `<OUTPUT_DIR>/summary.md` — your final structured summary (required filename)
 
 ## Search Strategy
 
@@ -56,17 +55,17 @@ Target arXiv specifically (include `arxiv` or `site:arxiv.org` in queries). Goog
 
 4. **Download PDFs**: For each kept paper:
    ```bash
-   curl -sL "https://arxiv.org/pdf/XXXX.XXXXX" -o "$OUTPUT_DIR/papers/XXXX.XXXXX.pdf"
+   curl -sL "https://arxiv.org/pdf/XXXX.XXXXX" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
    ```
    Use the arXiv ID as filename. Verify each download succeeded (file >10KB).
 
 5. **Read and extract**: Read each PDF with the `Read` tool. For each paper, note only the content that speaks to the query — the specific finding, the relevant method, the directly applicable result or bound. Skip the rest.
 
-6. **Synthesize**: Write `$OUTPUT_DIR/summary.md` per the format below. Frame the synthesis around the query, not as a general landscape survey.
+6. **Synthesize**: Write `<OUTPUT_DIR>/summary.md` per the format below. Frame the synthesis around the query, not as a general landscape survey.
 
 7. **Store results**: Persist your output and report the literature ID:
    ```bash
-   uv run python scripts/context_manager.py store_results --from_agent_type search-literature --from_folder "$OUTPUT_DIR"
+   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type search-literature --from_folder <OUTPUT_DIR>
    ```
    Print the returned literature ID (e.g. `L_20260416_143052_a1b2c3`) as your final response — the calling writing skill will pass it to `context_manager.py fetch_literature` to fold the results into its own context.
 

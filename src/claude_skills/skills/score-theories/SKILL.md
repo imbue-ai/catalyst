@@ -14,13 +14,15 @@ The arguments contain multiple theory IDs (like `T_20260414_...`). Parse the the
 
 ## Folder setup
 Set up a context folder for your input:
+CONTEXT_DIR: `mktemp -d -p ./tmp score-theories-context-XXXX`
+
+Run this command to populate the context:
 ```bash
-CONTEXT_DIR=$(mktemp -d -p ./tmp score-theories-context-XXXX)
-uv run python scripts/context_manager.py create_context --for_agent_type score-theories --target_folder "$CONTEXT_DIR" --from_theory <THEORY_ID_1> [--from_theory <THEORY_ID_2> ...]
+uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type score-theories --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID_1> [--from_theory <THEORY_ID_2> ...]
 ```
 
-- `$CONTEXT_DIR/theories/<theory_id>/theory.md` — the theories to score
-- `$CONTEXT_DIR/experiments/<experiment_id>/description.md` — descriptions for select experiments that are relevant for scoring these theories
+- `<CONTEXT_DIR>/theories/<theory_id>/theory.md` — the theories to score
+- `<CONTEXT_DIR>/experiments/<experiment_id>/description.md` — descriptions for select experiments that are relevant for scoring these theories
 
 ## Performing calculations
 The execution steps below involve several numeric calculations. Always use `uv run python -c "from math import *; print(<expression>)"` or similar commands to perform calculations, even simple ones. Do not perform calculations manually or in your head.

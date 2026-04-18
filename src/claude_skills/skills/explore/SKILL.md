@@ -11,10 +11,10 @@ You are the **Exploration Lead**. You will be given a scientific phenomenon to e
 The phenomenon to explore is: $ARGUMENTS
 
 ## Output folder
+Create the output folder at the start:
+OUTPUT_DIR: `mktemp -d -p ./tmp explore-output-XXXX`
 
-Create the output folder at the start: !`mktemp -d -p ./tmp explore-XXXX`
-
-All exploration artifacts go under this folder. Swarm agents should write to `{output_folder}/{agent-name}/` and append lab-notebook entries to `{output_folder}/explorer_log.md`.
+All exploration artifacts go under this folder. Swarm agents should write to `<OUTPUT_DIR>/{agent-name}/` and append lab-notebook entries to `<OUTPUT_DIR>/explorer_log.md`.
 
 ## Workflow
 
@@ -22,17 +22,17 @@ All exploration artifacts go under this folder. Swarm agents should write to `{o
 2. Construct a detailed task string for swarm that includes:
    - What to explore (the phenomenon, the system, any specific direction from your inputs)
    - Available CLI tools and how to invoke them (if provided)
-   - Output conventions: put files under `{output_folder}/{agent-name}/`, append lab-notebook entries to `{output_folder}/explorer_log.md` (append only, never overwrite), actually read image outputs, run at least 3 experiments, follow up on surprises
-   - **Experiment discipline** (must be included verbatim or paraphrased in every swarm agent's task): "You must not execute experiment scripts directly. Every experiment goes through the `run-experiment` skill, which runs the script in an isolated environment and stores the resulting bundle (description, script, stdout/stderr, results) in the shared experiment database. Before writing a new experiment, call `uv run python scripts/context_manager.py search_experiments --query '<short description>'` to check for reusable prior experiments; if nothing matches, write a self-contained Python script, then invoke `run-experiment` with `Parent agent type: explore` and tags describing the approach. Record each resulting `X_...` experiment ID in your lab-notebook entry alongside a one-line summary of the finding."
+   - Output conventions: put files under `<OUTPUT_DIR>/<agent-name>/`, append lab-notebook entries to `<OUTPUT_DIR>/explorer_log.md` (append only, never overwrite), actually read image outputs, run at least 3 experiments, follow up on surprises
+   - **Experiment discipline** (must be included verbatim or paraphrased in every swarm agent's task): "You must not execute experiment scripts directly. Every experiment goes through the `run-experiment` skill, which runs the script in an isolated environment and stores the resulting bundle (description, script, stdout/stderr, results) in the shared experiment database. Before writing a new experiment, call `uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" search_experiments --query '<short description>'` to check for reusable prior experiments; if nothing matches, write a self-contained Python script, then invoke `run-experiment` with `Parent agent type: explore` and tags describing the approach. Record each resulting `X_...` experiment ID in your lab-notebook entry alongside a one-line summary of the finding."
 3. Call `/swarm "<task>" N=4` — swarm will assign diverse approaches (ensure at least one quantitative and one qualitative angle are covered by describing this in the task)
-4. When swarm returns all results, append a `## Synthesis` section to `{output_folder}/explorer_log.md` weaving findings together.
+4. When swarm returns all results, append a `## Synthesis` section to `<OUTPUT_DIR>/explorer_log.md` weaving findings together.
 5. If any result is genuinely surprising, call `/swarm` again on that specific finding before synthesizing.
-6. Copy the final `explorer_log.md` to `{output_folder}/report.md` (the context manager requires this filename):
+6. Copy the final `explorer_log.md` to `<OUTPUT_DIR>/report.md` (the context manager requires this filename):
    ```bash
-   cp {output_folder}/explorer_log.md {output_folder}/report.md
+   cp <OUTPUT_DIR>/explorer_log.md <OUTPUT_DIR>/report.md
    ```
 7. Store the exploration results in the database and report the ID:
    ```bash
-   uv run python scripts/context_manager.py store_results --from_agent_type explorer --from_folder {output_folder}
+   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type explorer --from_folder <OUTPUT_DIR>
    ```
    Return the returned exploration ID (e.g. `E_20260414_143052_a1b2c3`) as the final output of this skill.
