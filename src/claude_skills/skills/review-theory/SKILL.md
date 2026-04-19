@@ -1,7 +1,7 @@
 ---
 name: review-theory
 description: "Review a theory, extract theorems/lemmas, and spawn agents to refine them"
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*) Agent TeamCreate TaskCreate TaskUpdate TaskList SendMessage
+allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*) Agent
 argument-hint: "theory ID (e.g. T_20260414_143100_d4e5f6)"
 ---
 
