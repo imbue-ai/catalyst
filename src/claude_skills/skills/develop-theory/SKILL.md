@@ -23,7 +23,7 @@ If the database already exists, the init command will fail and no further setup 
 Each step is going to return one or multiple IDs that reference their results in the context manager database. You'll need to pass these IDs to the subsequent steps.
 
 1. **Literature research**: Spawn a background subagent to run the `literature-review` skill. The subagent needs to pass the phenomenon to explain as an argument to the skill. When the subagent is done, it will return a literature review ID (e.g. `L_20260414_143000_a1b2c3`). However, you can for now leave it running in the background.
-2. **Exploration**: Invoke the `explore` skill. You need to pass the phenomenon to explain as an argument. Keep note of the returned exploration ID (e.g. `E_20260414_143000_d4e5f6`) from the skill's outputs.
+2. **Exploration**: Invoke the `explore` skill (NOT in a subagent - the skill will spawn its own subagents). You need to pass the phenomenon to explain as an argument. Keep note of the returned exploration ID (e.g. `E_20260414_143000_d4e5f6`) from the skill's outputs.
 3. **Initial theory**: Invoke the `write-theory` skill. You need to pass it: 1. The exploration ID from the previous step, 2. The literature review ID from the literature research subagent (wait for it to complete if it hasn't yet), 3. The phenomenon to explain. Keep note of the returned theory ID (e.g. `T_20260414_143100_d4e5f6`) from the skill's output. This is our initial theory ID.
 4. **Theory review**: Invoke the `review-theory` skill. You need to pass it the the current theory ID.
 5. **Theory refinement**: Invoke the `refine-theory` skill to refine the theory. You need to pass it the current theory ID. The skill will return a new theory ID.
