@@ -36,7 +36,7 @@ Run this command to populate the context:
 uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type write-theory --target_folder <CONTEXT_DIR> --from_exploration <EXPLORATION_ID> [--from_literature <LITERATURE_ID>]
 ```
 
-- `<CONTEXT_DIR>/exploration/` — prior exploration results (read-only input). Read `<CONTEXT_DIR>/exploration/report.md` and any artifacts.
+- `<CONTEXT_DIR>/exploration/` — prior exploration results (read-only input). Read `<CONTEXT_DIR>/exploration/report.md` and any artifacts in the folder (images, plots, etc.).
 - `<CONTEXT_DIR>/literature/` — (if literature ID provided) literature review with paper summaries and downloaded PDFs. Always read `<CONTEXT_DIR>/literature/summary.md`, and read individual PDFs in `<CONTEXT_DIR>/literature/papers/` when relevant.
 - `<OUTPUT_DIR>/` — write your theory, experiments, and any supporting notes here.
 
