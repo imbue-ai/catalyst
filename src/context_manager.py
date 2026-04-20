@@ -612,9 +612,9 @@ def fetch_experiment(
             raise ValueError(f"Experiment {experiment_id!r} already present at {dst}")
         if exclude_results:
             # Ignore everything that's NOT either "script.py" or "description.md"
-            ignore_pattern = shutil.ignore_patterns(
-                "*", "!script.py", "!description.md"
-            )
+            ignore_pattern = lambda path, names: [  # noqa: E731
+                n for n in names if n not in ("script.py", "description.md")
+            ]
         else:
             ignore_pattern = None
         shutil.copytree(exp_dir, dst, ignore=ignore_pattern)
