@@ -13,7 +13,6 @@ import shutil
 import stat
 import sys
 import time
-from typing import Callable, Iterable
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -59,6 +58,7 @@ VALID_CATEGORIES: tuple[str, ...] = (
 DEFAULT_DB_DIR = ".ai-scientist-db"
 ENV_DB_PATH = "AI_SCIENTIST_DB_PATH"
 LOCK_FILENAME = ".lock"
+IGNORE_METADATA_PATTERN = shutil.ignore_patterns("metadata.json")
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -426,13 +426,14 @@ def create_context(
             shutil.copytree(
                 exploration_dir,  # type: ignore[possibly-undefined]
                 dst,
+                ignore=IGNORE_METADATA_PATTERN,
             )
             _make_writable(dst)
             if literature_dirs:
                 # write-theory uses flat layout (single literature review).
                 _, lit_dir = literature_dirs[0]
                 ldst = target_folder / "literature"
-                shutil.copytree(lit_dir, ldst)
+                shutil.copytree(lit_dir, ldst, ignore=IGNORE_METADATA_PATTERN)
                 _make_writable(ldst)
 
         elif for_agent_type in ("falsify-hypothesis", "suggest-expansions"):
@@ -440,6 +441,7 @@ def create_context(
             shutil.copytree(
                 theory_dirs[0][1],
                 dst,
+                ignore=IGNORE_METADATA_PATTERN,
             )
             _make_writable(dst)
 
@@ -448,6 +450,7 @@ def create_context(
             shutil.copytree(
                 theory_dirs[0][1],
                 dst,
+                ignore=IGNORE_METADATA_PATTERN,
             )
             _make_writable(dst)
             reviews_root = target_folder / "reviews"
@@ -455,7 +458,7 @@ def create_context(
             for rid in from_reviews:  # type: ignore[union-attr]
                 src = db_root / "review" / rid
                 rdst = reviews_root / rid
-                shutil.copytree(src, rdst)
+                shutil.copytree(src, rdst, ignore=IGNORE_METADATA_PATTERN)
                 _make_writable(rdst)
             if literature_dirs:
                 # refine-hypothesis / expand-theory use nested layout so
@@ -465,7 +468,7 @@ def create_context(
                 lit_root.mkdir(exist_ok=True)
                 for lid, lit_dir in literature_dirs:
                     ldst = lit_root / lid
-                    shutil.copytree(lit_dir, ldst)
+                    shutil.copytree(lit_dir, ldst, ignore=IGNORE_METADATA_PATTERN)
                     _make_writable(ldst)
 
         elif for_agent_type == "review-theory":
@@ -480,6 +483,7 @@ def create_context(
             shutil.copytree(
                 theory_dirs[0][1],
                 dst,
+                ignore=IGNORE_METADATA_PATTERN,
             )
             _make_writable(dst)
             for exp_id in from_experiments:  # type: ignore[union-attr]
@@ -491,13 +495,13 @@ def create_context(
             for pid in from_predictions:  # type: ignore[union-attr]
                 src = db_root / "prediction" / pid
                 pdst = preds_root / pid
-                shutil.copytree(src, pdst)
+                shutil.copytree(src, pdst, ignore=IGNORE_METADATA_PATTERN)
                 _make_writable(pdst)
 
             exp_id = from_experiments[0]  # type: ignore[index]
             exp_src = db_root / "experiment" / exp_id
             exp_dst = target_folder / "experiment"
-            shutil.copytree(exp_src, exp_dst)
+            shutil.copytree(exp_src, exp_dst, ignore=IGNORE_METADATA_PATTERN)
             _make_writable(exp_dst)
 
         elif for_agent_type == "score-theories":
@@ -505,7 +509,7 @@ def create_context(
             theories_root.mkdir(exist_ok=True)
             for tid, tdir in theory_dirs:
                 dst = theories_root / tid
-                shutil.copytree(tdir, dst)
+                shutil.copytree(tdir, dst, ignore=IGNORE_METADATA_PATTERN)
                 _make_writable(dst)
 
             matched_experiments: list[tuple[str, str]] = []
@@ -555,7 +559,9 @@ def create_context(
                             if rid:
                                 src_review = review_root_dir / rid
                                 rdst = reviews_root / rid
-                                shutil.copytree(src_review, rdst)
+                                shutil.copytree(
+                                    src_review, rdst, ignore=IGNORE_METADATA_PATTERN
+                                )
                                 _make_writable(rdst)
                     except (json.JSONDecodeError, OSError):
                         continue
@@ -565,7 +571,7 @@ def create_context(
             theories_root.mkdir(exist_ok=True)
             for tid, tdir in theory_dirs:
                 dst = theories_root / tid
-                shutil.copytree(tdir, dst)
+                shutil.copytree(tdir, dst, ignore=IGNORE_METADATA_PATTERN)
                 _make_writable(dst)
 
             reviews_root = target_folder / "reviews"
@@ -584,7 +590,9 @@ def create_context(
                             if rid:
                                 src_review = review_root_dir / rid
                                 rdst = reviews_root / rid
-                                shutil.copytree(src_review, rdst)
+                                shutil.copytree(
+                                    src_review, rdst, ignore=IGNORE_METADATA_PATTERN
+                                )
                                 _make_writable(rdst)
                     except (json.JSONDecodeError, OSError):
                         continue
@@ -611,7 +619,7 @@ def fetch_experiment(
         dst = dst_root / experiment_id
         if dst.exists():
             raise ValueError(f"Experiment {experiment_id!r} already present at {dst}")
-        ignore_pattern: Callable[[str, list[str]], Iterable[str]] | None = None
+        ignore_pattern = IGNORE_METADATA_PATTERN
         if exclude_results:
             # Ignore everything that's NOT either "script.py" or "description.md"
             ignore_pattern = lambda _, names: [  # noqa: E731
@@ -724,7 +732,7 @@ def fetch_literature(target_folder: Path, literature_id: str) -> None:
         dst = dst_root / literature_id
         if dst.exists():
             raise ValueError(f"Literature {literature_id!r} already present at {dst}")
-        shutil.copytree(lit_dir, dst)
+        shutil.copytree(lit_dir, dst, ignore=IGNORE_METADATA_PATTERN)
         _make_writable(dst)
 
 
