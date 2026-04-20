@@ -987,7 +987,10 @@ def main(argv: list[str] | None = None) -> None:
         if args.command == "init":
             db_path = get_db_path(ensure_exists=False)
             if db_path.exists():
-                raise RuntimeError(f"Database path already exists: {db_path}")
+                print(
+                    f"Database path already exists: {db_path}. Initialization not needed."
+                )
+                return
             db_path.mkdir(parents=True)
             print(f"Initialized database at {db_path}")
 
