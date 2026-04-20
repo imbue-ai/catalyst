@@ -10,7 +10,7 @@ You are the **Theory Refinement Coordinator**. Your task is to systematically im
 ## Input
 Arguments: $ARGUMENTS
 
-Parse the initial theory ID (e.g., `T_20260414_...`) from the arguments.
+Parse the initial theory ID (e.g., `T_20260414_...`) from the arguments. You might also receive one or multiple literature review IDs (e.g., `L_20260414_...`) as part of your arguments.
 
 ## Execution Steps
 
@@ -29,7 +29,7 @@ Parse the initial theory ID (e.g., `T_20260414_...`) from the arguments.
    
    For each falsification review ID in the list, *one at a time in sequence*:
      - Spawn a subagent instructed to invoke the `refine-hypothesis` skill.
-     - Provide the subagent with the `CURRENT_THEORY_ID` and the specific review ID it needs to process. It should pass both as arguments to the `refine-hypothesis` skill.
+     - Provide the subagent with the `CURRENT_THEORY_ID` and the specific review ID it needs to process. Also pass any literature review IDs you might have. It should pass both as arguments to the `refine-hypothesis` skill.
      - Wait for the subagent to finish and retrieve the new theory ID it returns.
      - Update `CURRENT_THEORY_ID` to this new theory ID.
      - **CRITICAL**: Do not run these in parallel. The output of one refinement must be the input to the next.
@@ -37,7 +37,7 @@ Parse the initial theory ID (e.g., `T_20260414_...`) from the arguments.
 4. **Expansion** (expansion reviews):
    Skip this step if ANY of the `refine-hypothesis` subagents reported that they've made significant changes to the theory. Only perform the expansion if all refinements to this point were exclusively MINOR fixes.
    If there are any expansion reviews, and all refinements so far were minor, spawn a single subagent instructed to invoke the `expand-theory` skill.
-   - Provide the subagent with `CURRENT_THEORY_ID` (the latest theory after all refinements) and **all** expansion review IDs. It should pass these as arguments to the `expand-theory` skill.
+   - Provide the subagent with `CURRENT_THEORY_ID` (the latest theory after all refinements) and **all** expansion review IDs. Also pass any literature review IDs you might have. It should pass these as arguments to the `expand-theory` skill.
    - Wait for the subagent to finish and retrieve the new theory ID it returns.
    - Update `CURRENT_THEORY_ID` to this new theory ID.
 

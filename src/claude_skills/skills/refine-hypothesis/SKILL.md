@@ -77,7 +77,7 @@ Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its f
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type refine-hypothesis --from_folder <OUTPUT_DIR> --metadata original_theory=<THEORY_ID>
    ```
-   Report the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the final output of this skill, together with a brief note on whether you've made significant changes or only very minor refinements to the original theory.
+   Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the final result of this skill, together with a brief note on whether you've made significant changes or only very minor refinements to the original theory.
 
 ## Theory Output Format
 Your `theory.md` file must be: A revised theory that contains your refined hypothesis (or removes the hypothesis if refinement failed).
@@ -90,5 +90,6 @@ Stylistic guidelines for the `theory.md` file:
 - Explicitly lay out the evidence you have for each statement, either a mathematical proof/derivation, or empirical evidence from experiments. Perform thorough mathematical derivations and proofs when possible. You can also cite prior literature to support your statements.
 - Include plots, figures and specific data points from your experiments to provide intuition and illustrate the evidence for your statements. Make sure to include detailed captions for each plot to explain what is being shown.
 - Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. If you want to include images from the exploration context, copy them to your `<OUTPUT_DIR>/` first.
+- Cite literature where applicable
 
 As a general guideline, write your theory in a way that resembles a well-written main part of a scientific paper or textbook chapter.

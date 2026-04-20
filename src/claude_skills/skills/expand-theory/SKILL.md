@@ -70,7 +70,7 @@ Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its f
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type expand-theory --from_folder <OUTPUT_DIR> --metadata original_theory=<THEORY_ID>
    ```
-   Report the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the final output of this skill.
+   Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the final result of this skill.
 
 ## Theory Output Format
 Your `theory.md` file must be a fully self-contained, updated version of the original theory with the new expansions integrated. Do NOT include notes about the expansion process. The file should read as a standalone scientific document presenting the expanded theory and all supporting evidence.
@@ -81,5 +81,6 @@ Please maintain the following guidelines for the expanded theory:
 - Explicitly lay out the evidence you have for each statement, either a mathematical proof/derivation, or empirical evidence from experiments. Perform thorough mathematical derivations and proofs when possible. You can also cite prior literature to support your statements.
 - Include plots, figures and specific data points from your experiments to provide intuition and illustrate the evidence for your statements. Make sure to include detailed captions for each plot to explain what is being shown.
 - Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. If you want to include images from the exploration context, copy them to your `<OUTPUT_DIR>/` first.
+- Cite literature where applicable
 
 As a general guideline, the overall theory should resemble a well-written main part of a scientific paper or textbook chapter.

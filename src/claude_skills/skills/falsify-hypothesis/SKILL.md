@@ -57,7 +57,7 @@ Consider these approaches to generate falsification ideas:
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type falsify-hypothesis --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
-   Report the returned review ID (e.g. `R_20260414_143200_g7h8i9`) as the final output of this skill.
+   Note down the returned review ID (e.g. `R_20260414_143200_g7h8i9`) as the final result of this skill.
 
 ## Falsification Report Format
 Your `review.md` file MUST be formatted exactly as follows:

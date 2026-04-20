@@ -59,7 +59,7 @@ Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audi
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type write-theory --from_folder <OUTPUT_DIR>
    ```
-   Report the returned theory ID (e.g. `T_20260414_143100_d4e5f6`) as the final output of this skill.
+   Note down the returned theory ID (e.g. `T_20260414_143100_d4e5f6`) as the final result of this skill.
 
 ## Theory Output Format
 Your `theory.md` file must contain your theory:
@@ -69,5 +69,6 @@ Your `theory.md` file must contain your theory:
 - Explicitly lay out the evidence you have for each statement, either a mathematical proof/derivation, or empirical evidence from experiments. Perform thorough mathematical derivations and proofs when possible. You can also cite prior literature to support your statements.
 - Include plots, figures and specific data points from your experiments to provide intuition and illustrate the evidence for your statements. Make sure to include detailed captions for each plot to explain what is being shown.
 - Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. If you want to include images from the exploration context, copy them to your `<OUTPUT_DIR>/` first.
+- Cite literature where applicable
 
 As a general guideline, write your theory in a way that resembles a well-written main part of a scientific paper or textbook chapter.
