@@ -12,7 +12,7 @@ Instead of seeking confirmation, adopt a "killer" mindset to identify cases wher
 ## Mandate
 - Focus on exactly the **ONE** hypothesis given below.
 - Do whatever is needed to test falsification ideas and try to produce empirical or logical evidence of the falsification. 
-- All experiment execution must go through the `run-experiment` skill — never run experiment scripts directly. See the "Running experiments" section below. You may still write mathematical derivations/proofs inline.
+- All experiment execution must go through the `run-experiment` skill. See the "Running experiments" section below.
 
 ## Input
 Arguments: $ARGUMENTS
@@ -30,36 +30,12 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --
 ```
 
 - `<CONTEXT_DIR>/theory/` — the theory to falsify (read-only input). Read `<CONTEXT_DIR>/theory/theory.md` and any artifacts.
-- `<OUTPUT_DIR>/` — write your falsification report and supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `<CONTEXT_DIR>/experiments/` via `fetch_experiment`.
+- `<OUTPUT_DIR>/` — write your falsification report, experiments, and supporting notes here.
 
 Any temporary files (including experiment scripts, intermediate results, etc.) must be stored only under `<OUTPUT_DIR>`.
 
 ## Running experiments
-
-You must not execute experiment scripts directly. Every experiment goes through the `run-experiment` skill, which runs the script in an isolated environment, captures all artifacts, and persists the bundle to the shared experiment database so other agents can find and reuse it.
-
-**Before writing a new experiment**, search the database for prior experiments that may already stress-test the same boundary. Prefer filtering by the theory under attack:
-```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" search_experiments --query "<short description>" --parent_theory <THEORY_ID>
-```
-If a prior experiment matches, fold it into your context and reuse it:
-```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <X_ID>
-```
-Then inspect `<CONTEXT_DIR>/experiments/<X_ID>/` — `description.md`, `stdout.log`, and `results/`.
-
-**To run a new experiment**, write a self-contained Python script under `<OUTPUT_DIR>` (e.g. `<OUTPUT_DIR>/exp_boundary_case.py`). Make sure that the experiment script writes all result files into the directory it runs in (cwd). Then invoke the `run-experiment` skill via the Skill tool with arguments like:
-```
-Description: <complete explanation of what this experiment tests - include the motivation and summary of the setup. Do NOT reference sections from the theory just by their title or theorem number. Instead, summarize the relevant claim being tested. The reader of the description might not have the theory available.>
-Script: <absolute path to the .py file under <OUTPUT_DIR>>
-Parent theory: <THEORY_ID>
-Parent agent type: falsify-hypothesis
-Tags: <comma-separated short tokens, e.g. boundary,counter_example>
-```
-The skill returns an experiment ID (`X_...`). Fold the results into your context:
-```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <X_ID>
-```
+Every experiment must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `falsify-hypothesis`.
 Cite each experiment by its `X_ID` in your `review.md` under the relevant falsification idea.
 
 ## Falsification Strategies
@@ -74,7 +50,7 @@ Consider these approaches to generate falsification ideas:
 1. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md` and any other files in `<CONTEXT_DIR>/theory/` to understand the theory and its hypotheses.
 2. **Research**: Analyze the target hypothesis. Generate ideas using the falsification strategies above.
 3. **Implementation**: Test your ideas using the available tools.
-   - **Experiment**: Per the "Running experiments" section above, search the database for prior experiments or invoke `run-experiment` with a self-contained script. Reference each experiment's `X_ID` under the corresponding falsification idea in your `review.md`.
+   - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` under the corresponding falsification idea in your `review.md`.
    - **Proof**: If applicable, use mathematical derivations.
 4. **Reporting**: Write your falsification report to `<OUTPUT_DIR>/review.md` (this exact filename is required). See the output format below.
 5. **Store results**: Persist your output and report the review ID:
@@ -101,7 +77,7 @@ Your `review.md` file MUST be formatted exactly as follows:
 - **Strategy**: [e.g., Parameter Extremes]
 - **Description**: [How this idea aims to falsify]
 - **Method**: [Experiment / Proof]
-- **Implementation**: [Experiment ID (`X_...`) and the description you passed to `run-experiment`, or the formula/derivation used to test this idea]
+- **Implementation**: [Experiment ID (`X_...`) and the experiment description, or the formula/derivation used to test this idea]
 - **Result**: [Successful / Failed to Falsify]
 - **Evidence**: [Summary of the data, plots, or proof steps - include references to specific output files relative to `<OUTPUT_DIR>` if applicable]
 

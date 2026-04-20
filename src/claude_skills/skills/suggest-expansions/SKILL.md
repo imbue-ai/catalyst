@@ -12,7 +12,7 @@ You do NOT rewrite or fix the theory. You SOLELY suggest areas for expansion and
 ## Mandate
 - Work on the **entire theory** holistically.
 - Identify concrete, actionable expansion opportunities backed by exploratory experiments or mathematical reasoning.
-- All experiment execution must go through the `run-experiment` skill — never run experiment scripts directly. See the "Running experiments" section below. You may still derive mathematical arguments inline.
+- All experiment execution must go through the `run-experiment` skill. See the "Running experiments" section below. You may still derive mathematical arguments inline.
 - Your output is a review of expansion opportunities, NOT a revised theory.
 
 ## Input
@@ -31,36 +31,12 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --
 ```
 
 - `<CONTEXT_DIR>/theory/` — the full theory (read-only input). Read `<CONTEXT_DIR>/theory/theory.md` and any artifacts.
-- `<OUTPUT_DIR>/` — write your expansion review and supporting notes here. Experiment scripts live here only long enough to be handed to `run-experiment`; the script and its results are then stored separately in the experiment database and can be pulled back into `<CONTEXT_DIR>/experiments/` via `fetch_experiment`.
+- `<OUTPUT_DIR>/` — write your expansion review, experiments, and supporting notes here.
 
 Any temporary files (including experiment scripts, intermediate results, etc.) must be stored only under `<OUTPUT_DIR>`.
 
 ## Running experiments
-
-You must not execute experiment scripts directly. Every experiment goes through the `run-experiment` skill, which runs the script in an isolated environment, captures all artifacts, and persists the bundle to the shared experiment database so other agents can find and reuse it.
-
-**Before writing a new experiment**, search the database for prior experiments that may already have probed the regime you're thinking about. Prefer filtering by the parent theory:
-```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" search_experiments --query "<short description>" --parent_theory <THEORY_ID>
-```
-If a prior experiment matches, fold it into your context and reuse it:
-```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <X_ID>
-```
-Then inspect `<CONTEXT_DIR>/experiments/<X_ID>/` — `description.md`, `stdout.log`, and `results/`.
-
-**To run a new experiment**, write a self-contained Python script under `<OUTPUT_DIR>` (e.g. `<OUTPUT_DIR>/exp_expansion_probe.py`). Make sure that the experiment script writes all result files into the directory it runs in (cwd). Then invoke the `run-experiment` skill via the Skill tool with arguments like:
-```
-Description: <complete explanation of what this experiment tests - include the motivation and summary of the setup. Do NOT reference sections from the theory just by their title or theorem number. Instead, summarize the relevant claim being tested. The reader of the description might not have the theory available.>
-Script: <absolute path to the .py file under <OUTPUT_DIR>>
-Parent theory: <THEORY_ID>
-Parent agent type: suggest-expansions
-Tags: <comma-separated short tokens>
-```
-The skill returns an experiment ID (`X_...`). Fold the results into your context:
-```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <X_ID>
-```
+Every experiment must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `suggest-expansions`.
 Cite each experiment by its `X_ID` under the corresponding expansion suggestion in your `review.md`.
 
 ## Expansion Strategies
@@ -76,7 +52,7 @@ Consider these approaches across the whole theory:
 1. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md` and any other files in `<CONTEXT_DIR>/theory/` to understand the full theory.
 2. **Research**: Analyze the theory holistically. Generate expansion ideas using the strategies above.
 3. **Implementation**: Support your suggestions with evidence.
-   - **Experiment**: Per the "Running experiments" section above, search the database for prior experiments or invoke `run-experiment` with a self-contained script. Reference each experiment's `X_ID` under the corresponding expansion suggestion.
+   - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` under the corresponding expansion suggestion.
    - **Analysis**: If applicable, derive mathematical arguments motivating the expansion.
 4. **Reporting**: Write your expansion review to `<OUTPUT_DIR>/review.md` (this exact filename is required). See the output format below.
 5. **Store results**: Persist your output and report the review ID:

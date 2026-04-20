@@ -1,101 +1,20 @@
 ---
 name: run-experiment
-description: "Run a single experiment, capture its artifacts, and persist it to the shared experiment database. All experiment execution in the pipeline must go through this skill."
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(mkdir:*) Bash(ls:*) Bash(cp:*) Bash(chmod:*) Read(*) Write(tmp/*) Edit(tmp/*)
-argument-hint: "description, path to runnable script, and optional parent_theory / parent_review / parent_agent_type / tags"
+description: "Set up and run a single experiment. Experiments can be arbitrary Python scripts. All experiment execution must go through this skill."
+allowed-tools: Bash(uv run:*) Bash(mkdir:*) Bash(ls:*) Read(*) Write(tmp/*) Edit(tmp/*)
+user-invocable: false
 ---
 
-You are the **Experiment Runner**. You are the *only* skill in the pipeline that may execute experiment scripts. Every other skill that wants to run an experiment must invoke you and consume the returned experiment ID (`X_...`). Your job is narrow: take a runnable script plus a human-readable description, execute it in an isolated directory, capture every artifact it produces, and persist the whole bundle to the shared database so that later agents can search for, retrieve, and reuse it.
-
-## When to use this skill
-- A writing, review, or exploration skill (e.g. `write-theory`, `refine-hypothesis`, `expand-theory`, `falsify-hypothesis`, `suggest-expansions`, `explore`) needs to run a Python experiment to test or support a hypothesis.
-- A coordinator wants to re-run a specific experiment and store it alongside prior ones.
-
-## Mandate
-- **Never improvise the experiment.** The caller hands you a self-contained script path and a short description of what the script tests. Your role within this skill is to run it faithfully, not to redesign it. If the script is broken, report the failure back via `stderr.log` and the exit code — do not patch the script.
-- **Capture everything.** stdout, stderr, every file the script writes, and the input script itself all go into the experiment bundle.
-- **Isolate the run.** The script executes with its working directory set to a `results/` folder inside a temporary output directory, so any file it writes relative to `cwd` lands in `results/` automatically.
-- **Record provenance.** Every experiment records the calling agent type, the parent theory (if any), the parent review (if any), and any caller-supplied tags. This lets future agents filter experiments by context.
-
-## Input
-Arguments: $ARGUMENTS
-
-The arguments are free-form text from the calling skill but must specify the following fields (labels are case-insensitive; one per line):
-
-```
-Description: <one-to-three sentence human description of what the experiment tests>
-Script: <path to a self-contained python script, relative to the repo root or absolute>
-Parent theory: <T_... or none>             # optional
-Parent review: <R_... or none>             # optional
-Parent agent type: <invoking agent type>   # required — e.g. write-theory
-Tags: <comma-separated short tokens>       # optional
-```
-
-If `Description` or `Script` is missing, abort with a clear error message — do not guess.
-
-The script must be a self-contained `.py` file. Any data dependencies it needs must be referenced by absolute path or fetched by the script itself; do not rely on files that live only in the caller's temp folder, because the script is copied into the experiment bundle and must remain runnable in the future.
-
-## Folder setup
-Set up a distinct output folder for just this experiment run and its results:
-OUTPUT_DIR: `mktemp -d -p "$PWD/tmp" run-experiment-output-XXXX`
-
+## Experiment setup & execution steps
+1. Create a new folder within your output directory for this experiment (e.g. `mkdir <OUTPUT_DIR>/experiment-<title>`).
+2. Write a single, self-contained Python script called `script.py` that runs the experiment into the experiment folder.
+  - The script should hard-code all parameters inside of it. It must not rely on any command-line arguments or environment variables.
+  - It should and write all outputs (plots, csvs, logs, etc.) to its current working directory
+  - It is fine for the script to import and/or delegate to shared libraries and scripts that exist in the workspace, but it should not rely on any other files that only exist in the caller's temp folder, context folder, or output folder.
+3. Also write a `description.md` file in the experiment folder. The `description.md` must contain a complete description of what the experiment tests, its hard-coded parameter values (if any), and what outputs it produces.
+4. Determine the context you're running the experiment in: Do you know the theory ID (e.g. `T_20260416_150000_a1b2c3`) that this experiment is motivated by (fine if not)? You should also have been given an AGENT_TYPE.
+5. Execute the script through the following wrapper, passing the experiment folder and the parent theory ID if you have it:
 ```bash
-mkdir -p "<OUTPUT_DIR>/results"
+uv run python ${CLAUDE_SKILL_DIR}/scripts/run_experiment.py --experiment_folder <EXPERIMENT_FOLDER_PATH> --agent_type <AGENT_TYPE> [--parent_theory <T_ID>]
 ```
-
-`<OUTPUT_DIR>` must be **absolute** — step 4 changes directory into `results/` before running the script, so any relative path would resolve incorrectly there. The `$PWD` in the mktemp command above guarantees that.
-
-The final bundle that gets stored looks like:
-```
-<OUTPUT_DIR>/
-  description.md     # the caller's description (required filename)
-  script.py          # verbatim copy of the caller's script
-  stdout.log         # captured stdout from the run
-  stderr.log         # captured stderr from the run
-  results/           # any files the script wrote relative to its cwd
-```
-
-## Execution Steps
-
-1. **Parse arguments**: Extract `Description`, `Script` path, and any optional `Parent theory`, `Parent review`, `Parent agent type`, `Tags`. Validate that the script path exists and is readable.
-
-2. **Write description**: Put the parsed description verbatim into `<OUTPUT_DIR>/description.md`. Prefix with a one-line title header so the file renders cleanly:
-   ```
-   # Experiment: <few-word summary of the description, as a title>
-   
-   <full description>
-   ```
-
-3. **Copy the script**: Copy the caller-supplied script into `<OUTPUT_DIR>/script.py`.
-   ```bash
-   cp "<script-path>" "<OUTPUT_DIR>/script.py"
-   ```
-
-4. **Run the script**: Execute the copied script with `cwd` set to `<OUTPUT_DIR>/results/` so any relative file writes (plots, csvs, logs) land inside the bundle:
-   ```bash
-   ( cd "<OUTPUT_DIR>/results" && uv run python "<OUTPUT_DIR>/script.py" ) \
-       >"<OUTPUT_DIR>/stdout.log" 2>"<OUTPUT_DIR>/stderr.log"
-   EXIT_CODE=$?
-   ```
-   Record `$EXIT_CODE` — you will pass it through as a tag on the stored experiment.
-
-5. **Store results**: Persist the bundle to the database. Build the metadata arguments from whichever optional fields the caller provided:
-   ```bash
-   STORE_ARGS=( store_results --from_agent_type run-experiment --from_folder <OUTPUT_DIR> )
-   # parent_theory is a first-class field:
-   [ -n "<PARENT_THEORY>" ] && STORE_ARGS+=( --parent_theory "<PARENT_THEORY>" )
-   # everything else goes into metadata:
-   STORE_ARGS+=( --metadata "parent_agent_type=<PARENT_AGENT_TYPE>" )
-   [ -n "<PARENT_REVIEW>" ] && STORE_ARGS+=( --metadata "parent_review=<PARENT_REVIEW>" )
-   [ -n "<TAGS>" ]          && STORE_ARGS+=( --metadata "tags=<TAGS>" )
-   STORE_ARGS+=( --metadata "exit_code=$EXIT_CODE" )
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" "${STORE_ARGS[@]}"
-   ```
-   The command prints a new experiment ID (e.g. `X_20260416_150000_a1b2c3`).
-
-6. **Final response**: Print *only* the experiment ID as your final message. The calling agent will parse it and then invoke `context_manager.py fetch_experiment --target_folder <its context dir> --from_experiment <X_ID>` to fold the results into its own context. If the exit code was non-zero, also print a single line like `exit_code=1 - check stderr.log` after the ID so the caller knows to inspect `stderr.log` before trusting the results.
-
-## Failure modes
-- **Script does not exist**: abort before running. Do not create the experiment bundle.
-- **Script runs but exits non-zero**: still store the bundle. A failed experiment is itself a data point, and the logs are valuable to future agents. Report the exit code.
-- **Missing `Parent agent type`**: abort. Every experiment must record which agent type invoked it — this is how the database stays filterable.
+6. The wrapper will execute the script, passing through its stdout and stderr. It will capture all experiment outputs and persist them to a database for later retrieval. It will finish its output by printing a unique experiment ID (e.g. `X_20260416_150000_a1b2c3`) that can be used to retrieve the results later.

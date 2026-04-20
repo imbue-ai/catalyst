@@ -611,8 +611,9 @@ def fetch_experiment(
         if dst.exists():
             raise ValueError(f"Experiment {experiment_id!r} already present at {dst}")
         if exclude_results:
+            # Ignore everything that's NOT either "script.py" or "description.md"
             ignore_pattern = shutil.ignore_patterns(
-                "results", "stdout.log", "stderr.log"
+                "*", "!script.py", "!description.md"
             )
         else:
             ignore_pattern = None

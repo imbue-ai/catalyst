@@ -22,11 +22,11 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --
 ```
 
 - `<CONTEXT_DIR>/predictions/<prediction_id>/prediction.md` — the predictions to rank. The file may contain predictions for multiple experiments. You only need to look at the predictions for the one experiment specified in the input arguments.
+- `<CONTEXT_DIR>/experiment/` — contains any result files from the experiment (e.g. plots, numeric results)
 - `<CONTEXT_DIR>/experiment/description.md` — the description of the experiment (for context)
 - `<CONTEXT_DIR>/experiment/script.py` — the script used to run the experiment (for context)
-- `<CONTEXT_DIR>/experiment/stdout.log` — the output from running the experiment
+- `<CONTEXT_DIR>/experiment/stdout.log` — the standard output from running the experiment
 - `<CONTEXT_DIR>/experiment/stderr.log` — the error output from running the experiment
-- `<CONTEXT_DIR>/experiment/results/` — any result files from the experiment (e.g. plots, numeric results)
 
 
 ## Performing calculations
