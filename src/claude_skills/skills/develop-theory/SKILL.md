@@ -19,8 +19,14 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" init
 ```
 If the database already exists, the init command will fail and no further setup step is needed.
 
+## Task tracking
+Each individual execution step can be complex and take a long time to complete. Please maintain a task list using the appropriate tools to track your progress and any remaining steps.
+
+Check your task list after each step to see what is remaining!
+
 ## Execution Steps
 Each step is going to return one or multiple IDs that reference their results in the context manager database. You'll need to pass these IDs to the subsequent steps.
+Check your task list after each step to see what is remaining!
 
 1. **Literature research**: Spawn a background subagent to run the `literature-review` skill. The subagent needs to pass the phenomenon to explain as an argument to the skill. When the subagent is done, it will return a literature review ID (e.g. `L_20260414_143000_a1b2c3`). However, you can for now leave it running in the background.
 2. **Exploration**: Invoke the `explore` skill (NOT in a subagent - the skill will spawn its own subagents). You need to pass the phenomenon to explain as an argument. Keep note of the returned exploration ID (e.g. `E_20260414_143000_d4e5f6`) from the skill's outputs.

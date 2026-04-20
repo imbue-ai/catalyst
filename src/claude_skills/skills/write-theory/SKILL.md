@@ -67,6 +67,7 @@ Your `theory.md` file must contain your theory:
 - Structure your theory into a set of precise definitions, observations, lemmas and/or theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally proof it! Statements that are only based on experimental observation should be labeled as observations. Later lemmas/theorems can build on earlier ones.
 - Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
 - Explicitly lay out the evidence you have for each statement, either a mathematical proof/derivation, or empirical evidence from experiments. Perform thorough mathematical derivations and proofs when possible. You can also cite prior literature to support your statements.
-- Include plots, figures and specific data points from your experiments whenever they are helpful for providing intuition or illustrating the evidence for your statements. Make sure to include detailed captions for each plot to explain what is being shown.
+- Include plots, figures and specific data points from your experiments to provide intuition and illustrate the evidence for your statements. Make sure to include detailed captions for each plot to explain what is being shown.
+- Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. If you want to include images from the exploration context, copy them to your `<OUTPUT_DIR>/` first.
 
 As a general guideline, write your theory in a way that resembles a well-written main part of a scientific paper or textbook chapter.
