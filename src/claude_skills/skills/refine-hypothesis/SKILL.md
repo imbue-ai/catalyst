@@ -67,7 +67,7 @@ Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its f
 
 ## Execution Steps
 1. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md`, all review files in `<CONTEXT_DIR>/reviews/*/review.md`, and (if present) each `<CONTEXT_DIR>/literature/*/summary.md` to understand the hypothesis, its identified flaws, and any prior literature grounding.
-2. **Research**: Analyze the falsification reports. Generate ideas for how to address the raised flaws or limitations.
+2. **Research**: Analyze the falsification reports. Generate ideas for how to address the raised flaws or limitations. Exception: If the reviews didn't raise any flaws, you can stop here and just report back the original theory ID from your inputs.
 3. **Implementation**: Test your ideas using the available tools.
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your notes and refined theory.
    - **Proof**: If applicable, use mathematical derivations.
