@@ -65,7 +65,7 @@ Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its f
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your notes and expanded theory.
    - **Proof**: If applicable, derive a mathematical proof or supporting argument.
    - **Literature check (optional)**: If something surprising surfaces, invoke `search-literature` per the "Literature grounding" section and integrate its findings before finalizing the hypothesis.
-4. **Reporting**: Write the fully expanded theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required).
+4. **Reporting**: Write the fully expanded theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts.
 5. **Store results**: Persist your output and report the new theory ID:
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type expand-theory --from_folder <OUTPUT_DIR> --metadata original_theory=<THEORY_ID>
@@ -79,6 +79,7 @@ Please maintain the following guidelines for the expanded theory:
 - Structure your theory into a set of precise definitions, observations, lemmas and/or theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally proof it! Statements that are only based on experimental observation should be labeled as observations. Later lemmas/theorems can build on earlier ones.
 - Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
 - Explicitly lay out the evidence you have for each statement, either a mathematical proof/derivation, or empirical evidence from experiments. Perform thorough mathematical derivations and proofs when possible. You can also cite prior literature to support your statements.
-- Include plots and specific data points from your experiments whenever they are helpful for providing intuition or illustrating the evidence for your statements. Make sure to provide detailed captions for each plot to explain what is being shown.
+- Include plots, figures and specific data points from your experiments to provide intuition and illustrate the evidence for your statements. Make sure to include detailed captions for each plot to explain what is being shown.
+- Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. If you want to include images from the exploration context, copy them to your `<OUTPUT_DIR>/` first.
 
 As a general guideline, the overall theory should resemble a well-written main part of a scientific paper or textbook chapter.

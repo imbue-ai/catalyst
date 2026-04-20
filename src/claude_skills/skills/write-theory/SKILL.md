@@ -54,7 +54,7 @@ Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audi
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your notes and theory.
    - **Proof**: If applicable, use mathematical derivations.
 5. **Iteration**: Based on the results of your validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process. Oftentimes, it can be helpful to initially narrow your focus down even further, e.g. to a restricted or simplified scenarios within the broader phenomenon. Continue iterating until you have a robust theory for the selected aspects that are well-supported by thorough mathematical derivation and experimental evidence.
-6. **Reporting**: Write the final theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required).
+6. **Reporting**: Write the final theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts.
 7. **Store results**: Persist your output and report the theory ID:
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type write-theory --from_folder <OUTPUT_DIR>

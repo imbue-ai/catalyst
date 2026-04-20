@@ -72,7 +72,7 @@ Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its f
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your notes and refined theory.
    - **Proof**: If applicable, use mathematical derivations.
    - **Literature check (optional)**: If something surprising surfaces, invoke `search-literature` per the "Literature grounding" section and integrate its findings before finalizing the refinement.
-4. **Reporting**: Write the final revised theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required), or decide to abort.
+4. **Reporting**: Write the final revised theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts.
 5. **Store results** Persist your output and report the new theory ID:
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type refine-hypothesis --from_folder <OUTPUT_DIR> --metadata original_theory=<THEORY_ID>
@@ -83,3 +83,12 @@ Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its f
 Your `theory.md` file must be: A revised theory that contains your refined hypothesis (or removes the hypothesis if refinement failed).
 
 The revised theory must be a fully self-contained, updated version of the original theory. Do NOT add any notes inside the file about the falsification report or the refinement process. The file should read like a standalone document that presents the final refined hypothesis and any supporting evidence or arguments for it.
+
+Stylistic guidelines for the `theory.md` file:
+- Structure your theory into a set of precise definitions, observations, lemmas and/or theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally proof it! Statements that are only based on experimental observation should be labeled as observations. Later lemmas/theorems can build on earlier ones.
+- Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
+- Explicitly lay out the evidence you have for each statement, either a mathematical proof/derivation, or empirical evidence from experiments. Perform thorough mathematical derivations and proofs when possible. You can also cite prior literature to support your statements.
+- Include plots, figures and specific data points from your experiments to provide intuition and illustrate the evidence for your statements. Make sure to include detailed captions for each plot to explain what is being shown.
+- Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. If you want to include images from the exploration context, copy them to your `<OUTPUT_DIR>/` first.
+
+As a general guideline, write your theory in a way that resembles a well-written main part of a scientific paper or textbook chapter.
