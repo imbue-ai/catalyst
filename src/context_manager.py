@@ -13,6 +13,7 @@ import shutil
 import stat
 import sys
 import time
+from typing import Callable, Iterable
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -610,13 +611,12 @@ def fetch_experiment(
         dst = dst_root / experiment_id
         if dst.exists():
             raise ValueError(f"Experiment {experiment_id!r} already present at {dst}")
+        ignore_pattern: Callable[[str, list[str]], Iterable[str]] | None = None
         if exclude_results:
             # Ignore everything that's NOT either "script.py" or "description.md"
-            ignore_pattern = lambda path, names: [  # noqa: E731
+            ignore_pattern = lambda _, names: [  # noqa: E731
                 n for n in names if n not in ("script.py", "description.md")
             ]
-        else:
-            ignore_pattern = None
         shutil.copytree(exp_dir, dst, ignore=ignore_pattern)
         _make_writable(dst)
 
