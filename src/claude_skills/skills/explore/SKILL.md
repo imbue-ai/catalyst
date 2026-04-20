@@ -24,6 +24,7 @@ All exploration artifacts and temporary files go under this folder. Swarm agents
    - Available CLI tools and how to invoke them (if provided)
    - Output conventions: put files under `<OUTPUT_DIR>/<agent-name>/`, append lab-notebook entries to `<OUTPUT_DIR>/explorer_log.md` (append only, never overwrite), actually read image outputs, run at least 3 experiments, follow up on surprises
    - Experiment discipline: You must not execute experiment scripts directly. Every experiment goes through the `run-experiment` skill, using the AGENT_TYPE `explorer`. Record each resulting `X_...` experiment ID in your lab-notebook entry alongside a one-line summary of the finding.
+   - Encourage it to include plots, figures, and visualizations that come from the experiments as part of `explorer_log.md`. Markdown image references should be relative to `<OUTPUT_DIR>/`.
 3. Invoke the swarm skill `/swarm "<task>" N=4` — swarm will assign diverse approaches (ensure at least one quantitative and one qualitative angle are covered by describing this in the task)
 4. When swarm returns all results, append a `## Synthesis` section to `<OUTPUT_DIR>/explorer_log.md` weaving findings together.
 5. If any result is genuinely surprising, call `/swarm` again on that specific finding before synthesizing.
