@@ -230,8 +230,14 @@ def store_results(
         "falsify-hypothesis",
         "suggest-expansions",
         "predict-experiments",
+        "refine-hypothesis",
+        "polish-theory",
+        "expand-theory",
     )
-    parent_theory_allowed_agents = parent_theory_required_agents + ("run-experiment",)
+    parent_theory_allowed_agents = parent_theory_required_agents + (
+        "run-experiment",
+        "support-theory",
+    )
 
     if from_agent_type in parent_theory_required_agents and not parent_theory:
         raise ValueError(
@@ -284,6 +290,25 @@ def store_results(
         _make_readonly(target_dir)
 
     return new_id
+
+
+def _get_ancestor_theories(db_root: Path, base_theories: list[str]) -> set[str]:
+    """Recursively collect the given theories and all of their ancestors."""
+    target_theories = set(base_theories)
+    to_visit = list(target_theories)
+    while to_visit:
+        curr_tid = to_visit.pop()
+        curr_meta_path = db_root / "theory" / curr_tid / "metadata.json"
+        if curr_meta_path.is_file():
+            try:
+                tdata = json.loads(curr_meta_path.read_text())
+                parent_tid = tdata.get("parent_theory")
+                if parent_tid and parent_tid not in target_theories:
+                    target_theories.add(parent_tid)
+                    to_visit.append(parent_tid)
+            except (json.JSONDecodeError, OSError):
+                pass
+    return target_theories
 
 
 def create_context(
@@ -510,11 +535,12 @@ def create_context(
 
             matched_experiments: list[tuple[str, str]] = []
             exp_root = db_root / "experiment"
-            if exp_root.is_dir():
+            if exp_root.is_dir() and from_theories:
+                target_theories = _get_ancestor_theories(db_root, from_theories)
                 for meta_path in exp_root.glob("*/metadata.json"):
                     try:
                         data = json.loads(meta_path.read_text())
-                        if from_theories and data.get("parent_theory") in from_theories:
+                        if data.get("parent_theory") in target_theories:
                             eid = data.get("id")
                             created_at = data.get("created_at", "")
                             if eid:
@@ -776,7 +802,9 @@ def main(argv: list[str] | None = None) -> None:
         log_path = db_root / "access.log"
         actual_argv = sys.argv if argv is None else [sys.argv[0]] + argv
         with open(log_path, "a", encoding="utf-8") as f:
-            f.write(f"[{datetime.now(timezone.utc).isoformat()}] cwd={Path.cwd()} argv={actual_argv}\n")
+            f.write(
+                f"[{datetime.now(timezone.utc).isoformat()}] cwd={Path.cwd()} argv={actual_argv}\n"
+            )
 
     parser = argparse.ArgumentParser(
         prog="context_manager",

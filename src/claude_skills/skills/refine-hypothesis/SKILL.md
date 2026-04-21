@@ -75,7 +75,7 @@ Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its f
 4. **Reporting**: Write the final revised theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts.
 5. **Store results** Persist your output and report the new theory ID:
    ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type refine-hypothesis --from_folder <OUTPUT_DIR> --metadata original_theory=<THEORY_ID>
+   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type refine-hypothesis --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
    Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the final result of this skill, together with a brief note on whether you've made significant changes or only very minor refinements to the original theory.
 

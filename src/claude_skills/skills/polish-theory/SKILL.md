@@ -40,7 +40,7 @@ Any temporary files must be stored only under `<OUTPUT_DIR>`.
 3. **Writing**: Write a new version of the theory in `<OUTPUT_DIR>/theory.md`, restructuring and rewording as needed to improve clarity and readability, while preserving all original content and scientific rigor. Maintain helpful illustrations and plots from the original document.
 5. **Store results**: Persist your output and report the new theory ID:
    ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type polish-theory --from_folder <OUTPUT_DIR> --metadata original_theory=<THEORY_ID>
+   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type polish-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
    Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the final result of this skill.
 

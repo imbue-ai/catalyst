@@ -33,9 +33,9 @@ We will use the following methods for converting from a rank `r` (1...n) to a sc
 - **Normalized reciprocal score**: `s = (n-r+1) / (r*n)`
 
 ## Execution Steps
-1. **Context Checkout**: Run the bash command above to obtain the theories and experiment files using `context_manager.py`.
+1. **Folder setup**: Run the bash command above to obtain the theories and experiment files using `context_manager.py`.
 2. **Understand the Phenomenon**: Read the first sections of one of the theory files to understand the phenomenon that these theories are trying to explain. You can pick any of the theories for this step, as they should all be trying to explain the same phenomenon.
-3. **Rank the Experiments**: Read the `description.md` files for each experiment and rank them based on their importance for evaluating the theories. Experiments that validate key qualitative aspects of the phenomenon should rank before those that test peripheral aspects or minor details.
+3. **Rank the Experiments**: Read the `description.md` files for each experiment in `<CONTEXT_DIR>/experiments/` and rank them based on their importance for evaluating the theories. Experiments that validate key qualitative aspects of the phenomenon should rank before those that test peripheral aspects or minor details.
 4. **Select Top Experiments**: Select the 10 highest-ranking experiment IDs. Only these will be used in the following steps.
 5. **Calculate Experiment Importance Scores**: For each of the selected experiments, calculate an experiment importance score using the *linear score* method.
 6. **Generate Theory Predictions**: For each of the theory IDs:
