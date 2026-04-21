@@ -32,8 +32,8 @@ All exploration artifacts and temporary files go under this folder. Swarm agents
    ```bash
    cp <OUTPUT_DIR>/explorer_log.md <OUTPUT_DIR>/report.md
    ```
-7. Store the exploration results in the database and report the ID:
+7. Store the exploration results in the database and return the ID:
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type explorer --from_folder <OUTPUT_DIR>
    ```
-   Note down the printed exploration ID (e.g. `E_20260414_143052_a1b2c3`) as the final result of this skill.
+   Note down the printed exploration ID (e.g. `E_20260414_143052_a1b2c3`) as the result of this skill.

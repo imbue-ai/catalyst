@@ -66,11 +66,11 @@ Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its f
    - **Proof**: If applicable, derive a mathematical proof or supporting argument.
    - **Literature check (optional)**: If something surprising surfaces, invoke `search-literature` per the "Literature grounding" section and integrate its findings before finalizing the hypothesis.
 4. **Reporting**: Write the fully expanded theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts.
-5. **Store results**: Persist your output and report the new theory ID:
+5. **Store results**: Persist your output and return the new theory ID:
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type expand-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
-   Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the final result of this skill.
+   Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the result of this skill.
 
 ## Theory Output Format
 Your `theory.md` file must be a fully self-contained, updated version of the original theory with the new expansions integrated. Do NOT include notes about the expansion process. The file should read as a standalone scientific document presenting the expanded theory and all supporting evidence.

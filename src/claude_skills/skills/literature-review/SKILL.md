@@ -62,7 +62,7 @@ For each search, use `WebSearch` to find papers. Target arXiv specifically (incl
 
 5. **Synthesize**: Write the file `<OUTPUT_DIR>/summary.md`, according to the summary file format specified below.
 
-6. **Store results**: Persist your output and report the literature review ID:
+6. **Store results**: Persist your output and return the literature review ID:
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type literature-review --from_folder <OUTPUT_DIR>
    ```

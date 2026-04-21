@@ -55,11 +55,11 @@ Consider these approaches across the whole theory:
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` under the corresponding expansion suggestion.
    - **Analysis**: If applicable, derive mathematical arguments motivating the expansion.
 4. **Reporting**: Write your expansion review to `<OUTPUT_DIR>/review.md` (this exact filename is required). See the output format below.
-5. **Store results**: Persist your output and report the review ID:
+5. **Store results**: Persist your output and return the review ID:
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type suggest-expansions --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
-   Note down the returned review ID (e.g. `R_20260414_143200_g7h8i9`) as the final result of this skill.
+   Note down the returned review ID (e.g. `R_20260414_143200_g7h8i9`) as the result of this skill.
 
 ## Expansion Review Format
 Your `review.md` file MUST be formatted exactly as follows:

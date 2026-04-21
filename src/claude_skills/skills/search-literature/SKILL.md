@@ -63,7 +63,7 @@ Target arXiv specifically (include `arxiv` or `site:arxiv.org` in queries). Goog
 
 6. **Synthesize**: Write `<OUTPUT_DIR>/summary.md` per the format below. Frame the synthesis around the query, not as a general landscape survey.
 
-7. **Store results**: Persist your output and report the literature ID:
+7. **Store results**: Persist your output and return the literature ID:
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type search-literature --from_folder <OUTPUT_DIR>
    ```
