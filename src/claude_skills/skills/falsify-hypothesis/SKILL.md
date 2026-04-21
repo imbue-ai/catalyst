@@ -12,7 +12,7 @@ Instead of seeking confirmation, adopt a "killer" mindset to identify cases wher
 ## Mandate
 - Focus on exactly the **ONE** hypothesis given below.
 - Do whatever is needed to test falsification ideas and try to produce empirical or logical evidence of the falsification. 
-- All experiment execution must go through the `run-experiment` skill. See the "Running experiments" section below.
+- All experiment execution must go through the `run-experiment` skill. Never run a Python experiment script directly. See the "Running experiments" section below.
 
 ## Input
 Arguments: $ARGUMENTS
