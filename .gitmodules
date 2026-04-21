@@ -1,0 +1,3 @@
+[submodule "agents/multiverse/darwinian_evolver"]
+	path = agents/multiverse/darwinian_evolver
+	url = https://github.com/imbue-ai/darwinian_evolver.git
