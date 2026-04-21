@@ -14,6 +14,7 @@ dependencies = [
     "anthropic>=0.39",
     "pyyaml>=6.0",
     "pydantic>=2.0",
+    "darwinian-evolver",
 ]
 
 [project.scripts]
@@ -24,3 +25,6 @@ include = ["shallow_mlps*"]
 
 [tool.uv]
 exclude-newer = "2 week"
+
+[tool.uv.sources]
+darwinian-evolver = { path = "../agents/multiverse/darwinian_evolver", editable = true }
