@@ -835,6 +835,7 @@ def main(argv: list[str] | None = None) -> None:
             "score-theories",
             "score-soundness",
             "rank-predictive-power",
+            "polish-theory",
         ],
         help="Type of agent to prepare context for",
     )
@@ -1102,4 +1103,6 @@ def main(argv: list[str] | None = None) -> None:
 
 
 if __name__ == "__main__":
+    main()
+n__":
     main()

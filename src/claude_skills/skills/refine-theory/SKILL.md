@@ -41,4 +41,6 @@ Parse the initial theory ID (e.g., `T_20260414_...`) from the arguments. You mig
    - Wait for the subagent to finish and retrieve the new theory ID it returns.
    - Update `CURRENT_THEORY_ID` to this new theory ID.
 
-5. **Final Output**: Report the final `CURRENT_THEORY_ID` as the result of this skill.
+5. **Polish**: After all refinements and expansions are done, spawn a subagent to do a final polish of the theory. Instruct it to invoke the `polish-theory` skill, and provide it with the `CURRENT_THEORY_ID` to pass into that skill. Wait for it to finish and retrieve the new theory ID it returns. Update `CURRENT_THEORY_ID` to this new theory ID.
+
+6. **Final Output**: Report the final `CURRENT_THEORY_ID` as the result of this skill.
