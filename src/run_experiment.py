@@ -15,10 +15,12 @@ from context_manager import store_results
 
 def stream_output(pipe, sys_stream, log_file):
     with open(log_file, "wb") as f:
-        for line in iter(pipe.readline, b""):
-            sys_stream.buffer.write(line)
-            sys_stream.flush()
-            f.write(line)
+        for byte in iter(lambda: pipe.read(1), b""):
+            sys_stream.buffer.write(byte)
+            if byte == b"\n":
+                sys_stream.flush()
+            f.write(byte)
+        sys_stream.flush()
 
 
 def main():
@@ -28,7 +30,9 @@ def main():
     parser.add_argument("--experiment_folder", required=True, type=Path)
     parser.add_argument("--agent_type", required=True, type=str)
     parser.add_argument("--parent_theory", default=None, type=str)
-    parser.add_argument("--nice", default=10, type=int, help="Nice value for the subprocess")
+    parser.add_argument(
+        "--nice", default=10, type=int, help="Nice value for the subprocess"
+    )
     args = parser.parse_args()
 
     experiment_folder = args.experiment_folder.resolve()
