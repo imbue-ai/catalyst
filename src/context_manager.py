@@ -798,13 +798,14 @@ def list_entries(entry_type: str, parent_theory: str | None = None) -> list[dict
 
 def main(argv: list[str] | None = None) -> None:
     db_root = get_db_path(ensure_exists=False)
-    with DatabaseLock(db_root):
-        log_path = db_root / "access.log"
-        actual_argv = sys.argv if argv is None else [sys.argv[0]] + argv
-        with open(log_path, "a", encoding="utf-8") as f:
-            f.write(
-                f"[{datetime.now(timezone.utc).isoformat()}] cwd={Path.cwd()} argv={actual_argv}\n"
-            )
+    if db_root.exists():
+        with DatabaseLock(db_root):
+            log_path = db_root / "access.log"
+            actual_argv = sys.argv if argv is None else [sys.argv[0]] + argv
+            with open(log_path, "a", encoding="utf-8") as f:
+                f.write(
+                    f"[{datetime.now(timezone.utc).isoformat()}] cwd={Path.cwd()} argv={actual_argv}\n"
+                )
 
     parser = argparse.ArgumentParser(
         prog="context_manager",
