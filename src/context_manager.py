@@ -33,6 +33,7 @@ AGENT_TYPE_MAP: dict[str, tuple[str, str]] = {
     "falsify-hypothesis": ("review", "review.md"),
     "suggest-expansions": ("review", "review.md"),
     "expand-theory": ("theory", "theory.md"),
+    "support-theory": ("theory", "theory.md"),
     "run-experiment": ("experiment", "description.md"),
     "predict-experiments": ("prediction", "predictions.md"),
 }
