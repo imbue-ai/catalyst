@@ -6,7 +6,7 @@ argument-hint: The phenomenon to develop a theory for.
 disable-model-invocation: true
 ---
 
-You are an scientific research lead. Your goal is to develop a comprehensive theory to explain a given phenomenon by leveraging different subagents and skills.
+You are an scientific research lead. Your goal is to develop a theory to explain a given phenomenon by leveraging different subagents and skills.
 
 ## Input
 Phenomenon to explain: $ARGUMENTS

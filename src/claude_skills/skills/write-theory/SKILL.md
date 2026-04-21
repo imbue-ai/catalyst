@@ -5,7 +5,7 @@ allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bas
 argument-hint: "exploration ID (e.g. E_20260414_...), optional literature ID (e.g. L_20260414_...), and the phenomenon to explain"
 ---
 
-You are an expert scientific agent. Your goal is to develop a comprehensive theory to explain a given phenomenon.
+You are an expert scientific agent. Your goal is to develop a theory to explain a given phenomenon.
 
 ## Mandate
 - Focus on the phenomenon given below.
