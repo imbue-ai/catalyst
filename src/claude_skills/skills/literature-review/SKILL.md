@@ -28,6 +28,8 @@ mkdir -p "<OUTPUT_DIR>/papers"
 - `<OUTPUT_DIR>/papers/` — downloaded PDFs go here
 - `<OUTPUT_DIR>/summary.md` — your final structured summary (required filename)
 
+If you need to store any additional intermediate files (e.g. one-off Python scripts), do so under `<OUTPUT_DIR>/`. Do not write outside of this folder.
+
 ## Search Strategy
 
 Use multiple search queries to maximize coverage:
