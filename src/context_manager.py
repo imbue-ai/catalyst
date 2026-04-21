@@ -221,11 +221,6 @@ def store_results(
         raise ValueError(
             f"Source folder is missing the required file {expected_md!r}: {from_folder}"
         )
-    if (from_folder / "metadata.json").exists():
-        raise ValueError(
-            "Source folder must not contain a file named metadata.json "
-            "(it will be generated automatically)"
-        )
 
     db_root = get_db_path()
 
@@ -267,7 +262,7 @@ def store_results(
         target_dir.parent.mkdir(parents=True, exist_ok=True)
 
         # --- copy files ---
-        shutil.copytree(from_folder, target_dir)
+        shutil.copytree(from_folder, target_dir, ignore=IGNORE_METADATA_PATTERN)
 
         # --- write metadata ---
         meta = StoredMetadata(
@@ -540,6 +535,7 @@ def create_context(
             shutil.copytree(
                 theory_dirs[0][1],
                 dst,
+                ignore=IGNORE_METADATA_PATTERN,
             )
             _make_writable(dst)
 
