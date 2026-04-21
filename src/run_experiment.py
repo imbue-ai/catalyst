@@ -4,6 +4,7 @@ Run with ``--help`` to see the available CLI subcommands.
 """
 
 import argparse
+import os
 import subprocess
 import sys
 import threading
@@ -27,6 +28,7 @@ def main():
     parser.add_argument("--experiment_folder", required=True, type=Path)
     parser.add_argument("--agent_type", required=True, type=str)
     parser.add_argument("--parent_theory", default=None, type=str)
+    parser.add_argument("--nice", default=5, type=int, help="Nice value for the subprocess")
     args = parser.parse_args()
 
     experiment_folder = args.experiment_folder.resolve()
@@ -35,11 +37,15 @@ def main():
     stdout_log = experiment_folder / "stdout.log"
     stderr_log = experiment_folder / "stderr.log"
 
+    def set_nice():
+        os.nice(args.nice)
+
     process = subprocess.Popen(
         [sys.executable, str(script_path)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=str(experiment_folder),
+        preexec_fn=set_nice,
     )
 
     stdout_thread = threading.Thread(
