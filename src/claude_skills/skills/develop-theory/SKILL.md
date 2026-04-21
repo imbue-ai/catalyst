@@ -21,7 +21,7 @@ If the database already exists, the init command will fail and no further setup 
 
 ## Task tracking
 Each individual execution step can be complex and take a long time to complete. Please maintain a task list using the appropriate tools to track your progress and any remaining steps.
-(For agents who are not Claude Code: If you don't have any specialized task tracking tools available, write and maintain a `tmp/task_list.md` file with a checklist of remaining tasks.)
+(For agents who are not Claude Code: If you don't have any specialized task tracking tools available, write and maintain a `tmp/task_list.md` file with a checklist of remaining tasks. Make sure to reset the file at the beginning of your execution.)
 
 Check and update your task list after each step to see what is remaining!
 
