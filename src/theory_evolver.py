@@ -1,11 +1,7 @@
 """Domain-specific ``darwinian_evolver`` types for theory evolution.
 
-Concrete subclasses of ``darwinian_evolver``'s
-base types that wrap ai-scientist identifiers (theory IDs, review IDs).
-
-Unlike the multiverse model, ai-scientist evaluations do not (yet) decompose
-into segments, so ``TheoryEvaluationResult`` stores a single top-level ``score``
-plus a free-form ``subscores`` dict — no segment-score list.
+Concrete subclasses of ``darwinian_evolver``'s base types that wrap
+ai-scientist identifiers (theory IDs, review IDs).
 """
 
 from __future__ import annotations
@@ -58,13 +54,11 @@ class TheoryEvaluationResult(EvaluationResult):
     """Mutable evaluation result for a theory.
 
     We continually rescore theories as new evidence comes in, so this type
-    overrides the base's ``frozen=True`` config with ``frozen=False`` —
-    mirroring ``KnowledgeEvaluationResult`` on the multiverse branch.
+    overrides the base's ``frozen=True`` config with ``frozen=False``.
 
     Holds the inherited top-level ``score`` (used for parent sampling in the
     Population) and an open ``subscores`` dict for arbitrary named components
-    (e.g. ``{"prediction_accuracy": 0.72, "soundness": 0.9}``). No segment
-    score list — ai-scientist evaluations are single-shot for now.
+    (e.g. ``{"prediction_accuracy": 0.72, "soundness": 0.9}``).
     """
 
     model_config = ConfigDict(frozen=False)
