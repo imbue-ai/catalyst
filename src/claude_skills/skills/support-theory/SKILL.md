@@ -56,7 +56,7 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_literature 
 Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and consult individual PDFs under `papers/` when needed.
 
 ## Running experiments
-Every experiment must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `support-theory`.
+Every experiment, test, and validation must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `support-theory`.
 Cite each experiment by its `X_ID` in your final `theory.md` under the statement it supports, so reviewers can audit the evidence.
 
 Useful experiment patterns for this skill:

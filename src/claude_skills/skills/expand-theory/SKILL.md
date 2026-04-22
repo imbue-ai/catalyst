@@ -44,7 +44,7 @@ cp -r "<CONTEXT_DIR>/theory/"* "<OUTPUT_DIR>/"
 Any temporary files (including experiment scripts, intermediate results, etc.) must be stored only under `<OUTPUT_DIR>`.
 
 ## Running experiments
-Every experiment must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `expand-theory`.
+Every experiment, test, and validation must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `expand-theory`.
 Cite each experiment by its `X_ID` in your expanded `theory.md` so reviewers can audit the evidence.
 
 ## Literature grounding

@@ -42,7 +42,7 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --
 Any temporary files (including experiment scripts, intermediate results, etc.) must be stored only under `<OUTPUT_DIR>`.
 
 ## Running experiments
-Every experiment must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `write-theory`.
+Every experiment, test, and validation must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `write-theory`.
 Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audit the supporting evidence.
 
 ## Execution Steps
