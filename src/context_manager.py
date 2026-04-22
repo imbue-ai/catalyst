@@ -19,6 +19,13 @@ from pathlib import Path
 
 from pydantic import BaseModel, Field
 
+from darwinian_evolver.population import Population
+
+from theory_evolver import (
+    TheoryEvaluationResult,
+    TheoryOrganism,
+)
+
 # ---------------------------------------------------------------------------
 # Constants & configuration
 # ---------------------------------------------------------------------------
@@ -61,6 +68,9 @@ DEFAULT_DB_DIR = ".ai-scientist-db"
 ENV_DB_PATH = "AI_SCIENTIST_DB_PATH"
 LOCK_FILENAME = ".lock"
 IGNORE_METADATA_PATTERN = shutil.ignore_patterns("metadata.json")
+
+POPULATION_FILENAME = "population.json"
+INITIAL_ROOT_SCORE = 0.5
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -201,6 +211,140 @@ def _make_writable(path: Path) -> None:
             os.chmod(fp, current | stat.S_IWUSR)
 
 
+def _population_path(db_root: Path) -> Path:
+    return db_root / POPULATION_FILENAME
+
+
+def _save_population(population: Population, path: Path) -> None:
+    """Serialize the population to JSON at *path*.
+
+    Uses ``Population.log_to_json_dict()`` which emits an ID-based layout
+    (``parent_id`` + ``additional_parent_ids`` fields referencing other
+    organisms by their UUID hex). ``_load_population`` inverts this.
+    """
+    path.write_text(json.dumps(population.log_to_json_dict(), indent=2) + "\n")
+
+
+def _find_organism_by_theory_id(
+    population: Population, theory_id: str
+) -> tuple[TheoryOrganism, TheoryEvaluationResult] | None:
+    for organism, result in population.organisms:
+        if isinstance(organism, TheoryOrganism) and organism.theory_id == theory_id:
+            return organism, result  # type: ignore[return-value]
+    return None
+
+
+def _load_population(path: Path) -> Population | None:
+    """Reconstruct the population from its JSON serialization, or return None."""
+    if not path.is_file():
+        return None
+
+    data = json.loads(path.read_text())
+    entries = data.get("organisms", [])
+    if not entries:
+        return None
+
+    # First pass: build TheoryOrganism objects without parent refs and
+    # TheoryEvaluationResult objects, keyed by UUID hex.
+    organisms_by_hex: dict[str, TheoryOrganism] = {}
+    eval_results_by_hex: dict[str, TheoryEvaluationResult] = {}
+    for entry in entries:
+        org_raw = dict(entry["organism"])
+        parent_hex = org_raw.pop("parent_id", None)
+        org_raw.pop("additional_parent_ids", None)
+        org_raw.pop("visualizer_props", None)  # computed field
+        organism = TheoryOrganism(**org_raw)
+        organisms_by_hex[organism.id.hex] = organism
+
+        result_raw = dict(entry["evaluation_result"])
+        result_raw.pop("visualizer_props", None)
+        eval_results_by_hex[organism.id.hex] = TheoryEvaluationResult(**result_raw)
+
+        # Stash the parent_hex on the organism for second pass; we'll drop it
+        # after linking by setting organism.parent.
+        organism.__dict__["_pending_parent_hex"] = parent_hex
+
+    # Second pass: link parents by hex.
+    for hex_id, organism in organisms_by_hex.items():
+        parent_hex = organism.__dict__.pop("_pending_parent_hex", None)
+        if parent_hex is not None:
+            parent_org = organisms_by_hex.get(parent_hex)
+            if parent_org is None:
+                raise ValueError(
+                    f"population.json references unknown parent id {parent_hex!r} "
+                    f"for organism {hex_id!r}"
+                )
+            organism.parent = parent_org
+
+    # Choose any root as the initializer for Population (its __init__ asserts
+    # the initial organism has no parent); add everyone else via .add().
+    root_hexes = [
+        h for h, org in organisms_by_hex.items() if org.parent is None
+    ]
+    if not root_hexes:
+        raise ValueError("population.json has no root organism")
+
+    insertion_order = [uuid.UUID(entry["organism"]["id"]).hex for entry in entries]
+    first_root_hex = next(h for h in insertion_order if h in root_hexes)
+
+    population = Population(
+        organisms_by_hex[first_root_hex],
+        eval_results_by_hex[first_root_hex],
+    )
+    for hex_id in insertion_order:
+        if hex_id == first_root_hex:
+            continue
+        population.add(organisms_by_hex[hex_id], eval_results_by_hex[hex_id])
+
+    return population
+
+
+def _record_theory_in_population(
+    db_root: Path, theory_id: str, parent_theory_id: str | None
+) -> None:
+    """Add a newly-stored theory to population.json, initializing the file if needed.
+
+    Score policy: parentless theories get ``INITIAL_ROOT_SCORE``; theories
+    with a parent inherit the parent's current score. (This is a placeholder
+    heuristic — will be revisited.)
+    """
+    path = _population_path(db_root)
+    population = _load_population(path)
+
+    if population is None:
+        if parent_theory_id is not None:
+            raise RuntimeError(
+                f"Attempting to record child theory {theory_id!r} with parent "
+                f"{parent_theory_id!r} but no population exists yet. The parent "
+                f"theory must have been stored before the child."
+            )
+        organism = TheoryOrganism(theory_id=theory_id)
+        result = TheoryEvaluationResult(
+            score=INITIAL_ROOT_SCORE, trainable_failure_cases=[]
+        )
+        population = Population(organism, result)
+        _save_population(population, path)
+        return
+
+    parent_org: TheoryOrganism | None = None
+    parent_score: float | None = None
+    if parent_theory_id is not None:
+        found = _find_organism_by_theory_id(population, parent_theory_id)
+        if found is None:
+            raise RuntimeError(
+                f"Parent theory {parent_theory_id!r} is not in the population; "
+                f"refusing to add child {theory_id!r}"
+            )
+        parent_org, parent_result = found
+        parent_score = parent_result.score
+
+    score = parent_score if parent_score is not None else INITIAL_ROOT_SCORE
+    organism = TheoryOrganism(theory_id=theory_id, parent=parent_org)
+    result = TheoryEvaluationResult(score=score, trainable_failure_cases=[])
+    population.add(organism, result)
+    _save_population(population, path)
+
+
 def store_results(
     from_agent_type: str,
     from_folder: Path,
@@ -289,6 +433,14 @@ def store_results(
 
         # --- make immutable ---
         _make_readonly(target_dir)
+
+        # --- add to the theory population ---
+        if category == "theory":
+            _record_theory_in_population(
+                db_root=db_root,
+                theory_id=new_id,
+                parent_theory_id=meta.parent_theory,
+            )
 
     return new_id
 
