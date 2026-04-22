@@ -67,7 +67,8 @@ Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its f
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your notes and theory.
    - **Proof**: If applicable, use mathematical derivations.
    - **Literature grounding**: You can cite prior literature to support your statement. Always read the full paper before citing it. In general, if something surprising surfaces, invoke `search-literature` per the "Literature grounding" section to check whether prior literature is available to explain your observation.
-6. **Iteration**: Based on the results of your validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process. Continue iterating until your theory expansions are well-supported by thorough mathematical derivation and/or experimental evidence. KEEP ITERATING UNTIL YOU'RE COMPLETELY CONFIDENT IN YOUR EXPANSIONS AND HAVE RULED OUT ALL ALTERNATIVE EXPLANATIONS FOR THEM.
+6. **Iteration**: Keep iterating until you're COMPLETELY CONFIDENT in your expansions and have ruled out ALL alternative explanations for them.
+   - Based on the results of the validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process.
 7. **Reporting**: Write the expanded theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
 8. **Store results**: Persist your output and return the new theory ID:
    ```bash

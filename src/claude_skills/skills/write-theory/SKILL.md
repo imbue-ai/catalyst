@@ -55,7 +55,9 @@ Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audi
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your notes and theory.
    - **Proof**: If applicable, use mathematical derivations.
    - **Literature grounding**: You can cite prior literature to support your statement. Always read the full paper before citing it.
-7. **Iteration**: Based on the results of your validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process. Continue iterating until you have a robust theory that is well-supported by thorough mathematical derivation and/or experimental evidence. Only then, you can start to broaden the scope of your theory by checking if you can relax your assumptions or generalize your statements to cover a wider range of conditions. KEEP ITERATING UNTIL YOU'RE COMPLETELY CONFIDENT IN YOUR THEORY AND HAVE RULED OUT ALL ALTERNATIVE EXPLANATIONS.
+7. **Iteration**: Keep iterating until you're COMPLETELY CONFIDENT in your theory and have ruled out ALL alternative explanations.
+   - Based on the results of the validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process.
+   - Once you have a robust theory that is well-supported by thorough mathematical derivation or experimental evidence, you can start to broaden the scope of your theory by relaxing your assumptions or generalizing your statements to cover a wider range of conditions.
 8. **Reporting**: Write the final theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
 9. **Store results**: Persist your output and return the theory ID:
    ```bash

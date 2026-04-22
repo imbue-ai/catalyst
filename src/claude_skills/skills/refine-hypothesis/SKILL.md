@@ -73,7 +73,8 @@ Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its f
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your notes and refined theory.
    - **Proof**: If applicable, use mathematical derivations.
    - **Literature grounding**: You can cite prior literature to support the hypothesis. Always read the full paper before citing it. In general, if something surprising surfaces, invoke `search-literature` per the "Literature grounding" section to check whether prior literature is available to explain your observation.
-5. **Iteration**: Based on the results of your validation step, refine your ideas, generate new ones if necessary, and repeat the validation process. Continue iterating until your improvements to the hypothesis are well-supported by thorough mathematical derivation and/or experimental evidence. KEEP ITERATING UNTIL YOU'RE EITHER COMPLETELY CONFIDENT IN YOUR REVISED HYPTHESIS, OR CONCLUDE THAT THE HYPOTHESIS IS FUNDAMENTALLY FLAWED AND SHOULD BE DISCARDED.
+5. **Iteration**: Keep iterating until you're COMPLETELY CONFIDENT in your revised hypothesis, or conclude that the hypothesis is fundamentally flawed and should be discarded.
+   - Based on the results of the validation step, refine your ideas, generate new ones if necessary, and repeat the validation process.
 6. **Reporting**: Write the final revised theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
 7. **Store results** Persist your output and return the new theory ID:
    ```bash
