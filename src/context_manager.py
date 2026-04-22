@@ -33,6 +33,7 @@ AGENT_TYPE_MAP: dict[str, tuple[str, str]] = {
     "falsify-hypothesis": ("review", "review.md"),
     "suggest-expansions": ("review", "review.md"),
     "expand-theory": ("theory", "theory.md"),
+    "polish-theory": ("theory", "theory.md"),
     "support-theory": ("theory", "theory.md"),
     "run-experiment": ("experiment", "description.md"),
     "predict-experiments": ("prediction", "predictions.md"),
@@ -333,7 +334,7 @@ def create_context(
                 "write-theory accepts at most one --from_literature "
                 "(refine-hypothesis and expand-theory support multiple)"
             )
-    elif for_agent_type in ("falsify-hypothesis", "suggest-expansions"):
+    elif for_agent_type in ("falsify-hypothesis", "suggest-expansions", "polish-theory"):
         if not from_theories or len(from_theories) != 1:
             raise ValueError(
                 f"Exactly one --from_theory is required for {for_agent_type}"
@@ -457,7 +458,7 @@ def create_context(
                 shutil.copytree(lit_dir, ldst, ignore=IGNORE_METADATA_PATTERN)
                 _make_writable(ldst)
 
-        elif for_agent_type in ("falsify-hypothesis", "suggest-expansions"):
+        elif for_agent_type in ("falsify-hypothesis", "suggest-expansions", "polish-theory"):
             dst = target_folder / "theory"
             shutil.copytree(
                 theory_dirs[0][1],
