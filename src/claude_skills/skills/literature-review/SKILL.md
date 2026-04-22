@@ -66,7 +66,7 @@ For each search, use `WebSearch` to find papers. Target arXiv specifically (incl
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type literature-review --from_folder <OUTPUT_DIR>
    ```
-   Print the returned literature ID (e.g. `L_20260414_143052_a1b2c3`) as your final response — downstream skills need it.
+   Note down the returned literature ID (e.g. `L_20260414_143052_a1b2c3`) as the result of this skill.
 
 ## Summary File Format
 
