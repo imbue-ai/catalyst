@@ -66,14 +66,16 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_literature 
 Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its findings into your refinement. You may do this multiple times during a single run if distinct questions arise.
 
 ## Execution Steps
-1. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md`, all review files in `<CONTEXT_DIR>/reviews/*/review.md`, and (if present) each `<CONTEXT_DIR>/literature/*/summary.md` to understand the hypothesis, its identified flaws, and any prior literature grounding.
-2. **Research**: Analyze the falsification reports. Generate ideas for how to address the raised flaws or limitations. Exception: If the reviews didn't raise any flaws, you can stop here and just report back the original theory ID from your inputs.
-3. **Implementation**: Test your ideas using the available tools.
+1. **Context Checkout**: Run the bash command above to obtain the existing theory, the falsification reports, and literature review results using `context_manager.py`.
+2. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md`, all review files in `<CONTEXT_DIR>/reviews/*/review.md`, and (if present) each `<CONTEXT_DIR>/literature/*/summary.md` to understand the hypothesis, its identified flaws, and any prior literature grounding.
+3. **Refinement Idea Generation**: Analyze the falsification reports. Generate ideas for how to address the raised flaws in the current hypothesis. Generate at least 2-3 alternative solutions, such as: more rigid prerequisites or assumptions, localized fixes and modifications to the existing hypothesis, or even a full replacement of the hypothesis by an alternative explanation. Think about how each alternative could be tested and what evidence would support or refute it. Exception: If the reviews didn't raise any flaws, you can stop here and just report back the original theory ID from your inputs.
+4. **Validation**: Test your ideas using the available tools.
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your notes and refined theory.
    - **Proof**: If applicable, use mathematical derivations.
-   - **Literature check (optional)**: If something surprising surfaces, invoke `search-literature` per the "Literature grounding" section and integrate its findings before finalizing the refinement.
-4. **Reporting**: Write the final revised theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts.
-5. **Store results** Persist your output and return the new theory ID:
+   - **Literature grounding**: You can cite prior literature to support the hypothesis. Always read the full paper before citing it. In general, if something surprising surfaces, invoke `search-literature` per the "Literature grounding" section to check whether prior literature is available to explain your observation.
+5. **Iteration**: Based on the results of your validation step, refine your ideas, generate new ones if necessary, and repeat the validation process. Continue iterating until your improvements to the hypothesis are well-supported by thorough mathematical derivation and/or experimental evidence. KEEP ITERATING UNTIL YOU'RE EITHER COMPLETELY CONFIDENT IN YOUR REVISED HYPTHESIS, OR CONCLUDE THAT THE HYPOTHESIS IS FUNDAMENTALLY FLAWED AND SHOULD BE DISCARDED.
+6. **Reporting**: Write the final revised theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
+7. **Store results** Persist your output and return the new theory ID:
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type refine-hypothesis --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
@@ -86,6 +88,7 @@ The revised theory must be a fully self-contained, updated version of the origin
 
 Stylistic guidelines for the `theory.md` file:
 - Structure your theory into a set of precise definitions, observations, lemmas and/or theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally proof it! Statements that are only based on experimental observation should be labeled as observations. Later lemmas/theorems can build on earlier ones.
+- Provide intuition for the mechanisms behind each statement. Then follow up with rigorous mathematical definitions, proofs, and experimental evidence.
 - Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
 - Explicitly lay out the evidence you have for each statement, either a mathematical proof/derivation, or empirical evidence from experiments. Perform thorough mathematical derivations and proofs when possible. You can also cite prior literature to support your statements.
 - Include plots, figures and specific data points from your experiments to provide intuition and illustrate the evidence for your statements. Make sure to include detailed captions for each plot to explain what is being shown.

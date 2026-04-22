@@ -17,7 +17,6 @@ You are an expert scientific agent. Your goal is to develop a theory to explain 
 - Your theory should be predictive: It should allow predicting when exactly the phenomenon will occur, and how it will manifest.
 - The theory does not need to explain all instances of the phenomenon. It's best to start with a narrow scope, but be very precise, rigorous and thorough in your explanation and validation within that scope.
 - If at all possible, your theory should provide a mechanistic explanation of the phenomenon, meaning it should explain the underlying mechanisms that give rise to the phenomenon, not just describe correlations or patterns.
-- Structure your theory into a set of precise definitions, observations, lemmas, theorems (collectively referred to as "statements" in the following). Later lemmas/theorems can build on earlier ones.
 - Each statement must be falsifiable and testable.
 - Use empirical experiments to build intuition and to test statements. Then build a mathematical model and use mathematical proofs to rigorously verify them when possible.
 
@@ -47,15 +46,18 @@ Every experiment must be set up and run through the `run-experiment` skill, usin
 Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audit the supporting evidence.
 
 ## Execution Steps
-1. **Context Review**: Read `<CONTEXT_DIR>/exploration/report.md` and any other files in `<CONTEXT_DIR>/exploration/` to understand prior findings. If a literature review is available, read `<CONTEXT_DIR>/literature/summary.md` and relevant papers in `<CONTEXT_DIR>/literature/papers/` to ground your theory in existing research.
-2. **Focus Area Selection**: Based on your review of the context, identify specific aspects of the phenomenon that are not well-understood yet in the literature and that you find particularly interesting. These will be the focus areas for your theory development. It's better to focus on a more narrow aspect and develop a really solid theory for it, than to try to explain a lot all at once. Typically, you will only want to focus on 1-2 specific aspects at this stage.
-3. **Hypothesis Generation**: Generate different hypotheses that could explain the selected aspects. Try to generate at least 2-3 *alternative* explanations for every aspect, and think about how you can test and differentiate between these explanations.
-4. **Validation**: Test your ideas using the available tools.
+1. **Context Checkout**: Run the bash command above to obtain the exploration and literature review results using `context_manager.py`.
+2. **Exploration Review**: Read `<CONTEXT_DIR>/exploration/report.md` to understand prior findings. Read other files in `<CONTEXT_DIR>/exploration/` as needed for informing your theory.
+3. **Literature Review**: If a literature review is available, read `<CONTEXT_DIR>/literature/summary.md` to ground your theory in existing research. Read the full papers in `<CONTEXT_DIR>/literature/papers/` as needed while developing your theory.
+4. **Focus Area Selection**: Based on your review of the context, identify 1-2 specific aspects of the phenomenon that are not well-understood yet in the literature and that you find particularly interesting. These will be the focus areas for your theory development.
+5. **Hypothesis Generation**: Generate different hypotheses that could explain the selected aspects. Try to generate at least 2-3 *alternative* explanations for every aspect, and think about how you can test and differentiate between these explanations. Limit your initial explanations to the smallest possible scope to make the problem tractable. You might want to make additional simplifying assumptions, or restrict the domain over which you're providing explanations.
+6. **Validation**: Test your ideas using the available tools. Always test ALL of your alternative hypotheses. Even after one hypothesis is found to be promising, you must still attempt to validate the alternative explanations before you dismiss them. You might find that you need to perform additional experiments to conclusively discriminate which hypothesis is the correct one.
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your notes and theory.
    - **Proof**: If applicable, use mathematical derivations.
-5. **Iteration**: Based on the results of your validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process. Oftentimes, it can be helpful to initially narrow your focus down even further, e.g. to a restricted or simplified scenarios within the broader phenomenon. Continue iterating until you have a robust theory for the selected aspects that are well-supported by thorough mathematical derivation and experimental evidence.
-6. **Reporting**: Write the final theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts.
-7. **Store results**: Persist your output and return the theory ID:
+   - **Literature grounding**: You can cite prior literature to support your statement. Always read the full paper before citing it.
+7. **Iteration**: Based on the results of your validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process. Continue iterating until you have a robust theory that is well-supported by thorough mathematical derivation and/or experimental evidence. Only then, you can start to broaden the scope of your theory by checking if you can relax your assumptions or generalize your statements to cover a wider range of conditions. KEEP ITERATING UNTIL YOU'RE COMPLETELY CONFIDENT IN YOUR THEORY AND HAVE RULED OUT ALL ALTERNATIVE EXPLANATIONS.
+8. **Reporting**: Write the final theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
+9. **Store results**: Persist your output and return the theory ID:
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type write-theory --from_folder <OUTPUT_DIR>
    ```
@@ -65,6 +67,7 @@ Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audi
 Your `theory.md` file must contain your theory:
 - Start with a brief definition of the phenomenon and provide any necessary context, including a brief summary of the relevant literature.
 - Structure your theory into a set of precise definitions, observations, lemmas and/or theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally proof it! Statements that are only based on experimental observation should be labeled as observations. Later lemmas/theorems can build on earlier ones.
+- Provide intuition for the mechanisms behind each statement. Then follow up with rigorous mathematical definitions, proofs, and experimental evidence.
 - Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
 - Explicitly lay out the evidence you have for each statement, either a mathematical proof/derivation, or empirical evidence from experiments. Perform thorough mathematical derivations and proofs when possible. You can also cite prior literature to support your statements.
 - Include plots, figures and specific data points from your experiments to provide intuition and illustrate the evidence for your statements. Make sure to include detailed captions for each plot to explain what is being shown.
