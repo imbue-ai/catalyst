@@ -8,7 +8,7 @@ argument-hint: "theory ID, review ID(s), and optional literature ID(s) (e.g. T_2
 You are an expert scientific agent. You've previously developed a hypothesis for a specific phenomenon. Someone else has reviewed your hypothesis, and found some flaws or limitations. Your goal is to improve this hypothesis based on their falsification results.
 
 ## Mandate
-- Focus on exactly the hypothesis (observation, theorem or lemma) targeted by the review provided.
+- Focus on exactly the hypothesis (observation, theorem, corollary or lemma) targeted by the review provided.
 - Be thorough in refining the hypothesis. Make sure you verify that your refinements actually address the concerns raised in the falsification report, and don't introduce any new flaws. Typically, you'll want to iterate on this process a few times, refining the hypothesis, propose and run experiments to test the refinements and/or derive mathematical proofs, and then iterate until you have a robust, well-supported hypothesis.
 - If experiments or derivations surface a surprising phenomenon, an unfamiliar mathematical structure, or a claim you're not confident about, invoke the `search-literature` skill to look up prior work before committing to a refinement. See the "Literature grounding" section below.
 - If you find that the hypothesis is fundamentally flawed or you're unable to find a way to incrementally improve it, please abort and follow the instructions in the "Discarding a flawed hypothesis" section. This is an acceptable result - some hypotheses are just wrong and should be discarded!
@@ -88,7 +88,7 @@ Your `theory.md` file must be: A revised theory that contains your refined hypot
 The revised theory must be a fully self-contained, updated version of the original theory. Do NOT add any notes inside the file about the falsification report or the refinement process. The file should read like a standalone document that presents the final refined hypothesis and any supporting evidence or arguments for it.
 
 Stylistic guidelines for the `theory.md` file:
-- Structure your theory into a set of precise definitions, observations, lemmas and/or theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally proof it! Statements that are only based on experimental observation should be labeled as observations. Later lemmas/theorems can build on earlier ones.
+- Structure your theory into a set of precise definitions, conjectures, observations, lemmas and/or theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally proof it! Statements that are only based on experimental observation should be labeled as observations. Later lemmas/theorems can build on earlier ones.
 - Provide intuition for the mechanisms behind each statement. Then follow up with rigorous mathematical definitions, proofs, and experimental evidence.
 - Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
 - Explicitly lay out the evidence you have for each statement, either a mathematical proof/derivation, or empirical evidence from experiments. Perform thorough mathematical derivations and proofs when possible. You can also cite prior literature to support your statements.

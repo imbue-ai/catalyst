@@ -49,7 +49,7 @@ Your `theory.md` file must be a fully self-contained, updated version of the ori
 
 Some general guidelines:
 - Start with a brief definition of the phenomenon and provide any necessary context, including a brief summary of the relevant literature.
-- Structure the theory into a set of precise definitions, observations, lemmas and/or theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if it has a formal proof! Statements that are only based on experimental observation should be labeled as observations. Later lemmas/theorems can build on earlier ones.
+- Structure the theory into a set of precise definitions, conjectures, observations, lemmas and/or theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if it has a formal proof! Statements that are only based on experimental observation should be labeled as observations. Later lemmas/theorems can build on earlier ones.
 - Explicitly state ANY assumptions or limitations that are being made for each statement and list them out clearly.
 - Explicitly lay out the evidence for each statement, either a mathematical proof/derivation, or empirical evidence from experiments. You can also cite prior literature to support a statement.
 - Include plots, figures and specific data points to provide intuition and illustrate the evidence for a statement. Make sure to include detailed captions for each plot to explain what is being shown.

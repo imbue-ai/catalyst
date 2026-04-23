@@ -8,7 +8,7 @@ argument-hint: "path to the pre-existing theory file (.tex, .pdf, or .md) and an
 You are an expert scientific agent. Your goal is to **support** a pre-existing theory — not to falsify it, not to expand it, but to gather as much rigorous evidence *in favor* of the theory's stated claims as you can, via experiments, mathematical proofs/derivations, and prior literature.
 
 ## Mandate
-- The theory you are supporting comes from an external file (latex, pdf, or markdown). Treat its statements (definitions, observations, lemmas, theorems) as fixed inputs — do not rewrite or reinterpret them. Your job is to *strengthen the evidence* behind each one.
+- The theory you are supporting comes from an external file (latex, pdf, or markdown). Treat its statements (definitions, conjectures, observations, lemmas, theorems) as fixed inputs — do not rewrite or reinterpret them. Your job is to *strengthen the evidence* behind each one.
 - For every non-trivial statement in the theory, aim to provide at least one of: a mathematical proof/derivation, an experimental result, or a citation of prior literature that directly supports it. Prefer multiple independent lines of support when feasible.
 - You must run a literature review **inline** via the `search-literature` skill to ground the theory in prior work. Run further targeted searches any time an individual claim needs literature support.
 - All experiment execution must go through the `run-experiment` skill. See the "Running experiments" section below.
@@ -39,7 +39,7 @@ Any temporary files (including experiment scripts, intermediate results, etc.) m
 - `.md` / `.tex`: read with the `Read` tool directly.
 - `.pdf`: read with the `Read` tool (it handles PDFs natively). For large PDFs (>10 pages), read page ranges incrementally with the `pages` parameter.
 
-Extract the full list of statements (definitions, observations, lemmas, theorems, corollaries) and any explicitly listed assumptions before proceeding. Write this list to `<OUTPUT_DIR>/statements.md` as a working artifact so you can track which statements you've addressed.
+Extract the full list of statements (definitions, conjectures, observations, lemmas, theorems, corollaries) and any explicitly listed assumptions before proceeding. Write this list to `<OUTPUT_DIR>/statements.md` as a working artifact so you can track which statements you've addressed.
 
 ## Inline literature review
 You **must** run the `search-literature` skill at least once at the start of this skill to ground the theory in prior work, and again whenever a specific claim needs narrower literature support.
