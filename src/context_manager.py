@@ -659,8 +659,7 @@ def create_context(
             for exps in matched_experiments_by_base.values():
                 exps.sort(key=lambda x: x[0], reverse=True)
 
-            top_exp_ids: list[str] = []
-            num_experiments_to_include = 20
+            num_experiments_to_include = 30
             selected_eids: set[str] = set()
 
             if from_theories:
@@ -673,7 +672,6 @@ def create_context(
                             _, eid = exps[pointers[tid]]
                             pointers[tid] += 1
                             if eid not in selected_eids:
-                                top_exp_ids.append(eid)
                                 selected_eids.add(eid)
                                 added_in_round = True
                                 break
@@ -682,7 +680,7 @@ def create_context(
                     if not added_in_round:
                         break
 
-            for exp_id in top_exp_ids:
+            for exp_id in selected_eids:
                 fetch_experiment(target_folder, exp_id, exclude_results=True)
 
         elif for_agent_type == "score-soundness":
