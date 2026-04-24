@@ -41,6 +41,7 @@ AGENT_TYPE_MAP: dict[str, tuple[str, str]] = {
     "suggest-expansions": ("review", "review.md"),
     "expand-theory": ("theory", "theory.md"),
     "polish-theory": ("theory", "theory.md"),
+    "streamline-theory": ("theory", "theory.md"),
     "support-theory": ("theory", "theory.md"),
     "import-theory": ("theory", "theory.md"),
     "run-experiment": ("experiment", "description.md"),
@@ -315,6 +316,7 @@ def store_results(
         "predict-experiments",
         "refine-hypothesis",
         "polish-theory",
+        "streamline-theory",
         "expand-theory",
     )
     parent_theory_allowed_agents = parent_theory_required_agents + (
@@ -428,6 +430,7 @@ def create_context(
         "falsify-hypothesis",
         "suggest-expansions",
         "polish-theory",
+        "streamline-theory",
     ):
         if not from_theories or len(from_theories) != 1:
             raise ValueError(
@@ -556,6 +559,7 @@ def create_context(
             "falsify-hypothesis",
             "suggest-expansions",
             "polish-theory",
+            "streamline-theory",
         ):
             dst = target_folder / "theory"
             shutil.copytree(
@@ -991,6 +995,7 @@ def main(argv: list[str] | None = None) -> None:
             "score-soundness",
             "rank-predictive-power",
             "polish-theory",
+            "streamline-theory",
         ],
         help="Type of agent to prepare context for",
     )
