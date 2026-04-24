@@ -8,5 +8,7 @@ logs/
 /output/
 /organisms/org_*
 /bifurcation_gym/tmp/*
+/sharpening_gym/tmp/*
 /tmp/
-.ai-scientist-db/
+.ai-scientist-db*/
+scheduled_tasks.lock
