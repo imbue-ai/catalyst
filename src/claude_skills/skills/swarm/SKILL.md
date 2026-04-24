@@ -1,7 +1,6 @@
 ---
 name: swarm
 description: "Fan out a task to N independent agents with diverse approaches and collect all results"
-allowed-tools: Read Bash Glob Grep Write Edit Agent
 argument-hint: The task to swarm. Optionally specify N (default 3).
 ---
 

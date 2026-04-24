@@ -1,7 +1,6 @@
 ---
 name: rank-predictions
 description: "Rank different predictions based on how well they predict the results of a given experiment. Returns a ranked list of the theory IDs associated with each prediction with their accuracy ranking (1...n)."
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*)
 argument-hint: "the prediction IDs to rank (e.g. P_20260414_143100_d4e5f6 P_20260414_143200_g7h8i9) and the experiment ID to compare against (e.g. X_20260414_143500_a1b2c3)"
 ---
 

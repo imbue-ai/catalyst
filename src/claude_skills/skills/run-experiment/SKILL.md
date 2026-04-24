@@ -1,7 +1,6 @@
 ---
 name: run-experiment
 description: "Set up and run a single experiment. Experiments can be arbitrary Python scripts. All experiment execution must go through this skill."
-allowed-tools: Bash(uv run:*) Bash(mkdir:*) Bash(ls:*) Read(*) Write(tmp/*) Edit(tmp/*)
 user-invocable: false
 ---
 

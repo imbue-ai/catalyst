@@ -1,7 +1,6 @@
 ---
 name: write-theory
 description: "Write a theory to explain a given phenomenon."
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*) Skill
 argument-hint: "exploration ID (e.g. E_20260414_...), optional literature ID (e.g. L_20260414_...), and the phenomenon to explain"
 ---
 

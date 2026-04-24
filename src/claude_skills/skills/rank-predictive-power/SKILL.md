@@ -1,7 +1,6 @@
 ---
 name: rank-predictive-power
 description: "Rank different theories based on their predictive and explanatory power"
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Read(*)
 argument-hint: "the theory IDs to score (e.g. T_20260414_143100_d4e5f6, T_20260414_143200_g7h8i9)"
 ---
 

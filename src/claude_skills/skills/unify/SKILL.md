@@ -1,7 +1,6 @@
 ---
 name: unify
 description: "Merge and synthesize results from multiple agents into a single coherent output"
-allowed-tools: Bash(mktemp:*) Bash(ls:*) Bash(mkdir:*) Bash(date:*) Read(*) Write(tmp/*) Edit(tmp/*)
 argument-hint: The results to unify — as inline text or file paths to read.
 ---
 

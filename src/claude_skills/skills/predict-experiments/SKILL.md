@@ -1,7 +1,6 @@
 ---
 name: predict-experiments
 description: "Use the given theory to predict the results of a given set of experiments."
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*)
 argument-hint: "the theory ID (e.g. T_20260414_143100_d4e5f6) and the experiment IDs to predict (e.g. X_20260414_143500_a1b2c3 X_20260414_143600_d4e5f6)"
 ---
 

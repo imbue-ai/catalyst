@@ -1,7 +1,6 @@
 ---
 name: support-theory
 description: "Run experiments and derive mathematical proofs to support a pre-existing theory supplied as a latex/pdf/markdown file."
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*) Skill
 argument-hint: "path to the pre-existing theory file (.tex, .pdf, or .md) and any optional scoping notes (e.g. 'focus on Theorem 3')"
 ---
 

@@ -1,7 +1,6 @@
 ---
 name: import-theory
 description: "Import a pre-existing theory from a latex/pdf/markdown file and store in the context database."
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*) Skill
 argument-hint: "path to the pre-existing theory file (.tex, .pdf, or .md)"
 ---
 

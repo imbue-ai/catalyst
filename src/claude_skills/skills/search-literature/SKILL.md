@@ -1,7 +1,6 @@
 ---
 name: search-literature
 description: "Run a targeted literature search on specific findings or questions that emerged during theory development"
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir:*) Bash(curl:*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*) WebSearch WebFetch Glob Grep
 argument-hint: "specific findings, questions, or phenomena to investigate (optionally referencing a theory/review ID for background)"
 ---
 

@@ -2,7 +2,6 @@
 name: write-n-theories
 description: "Spawn N independent agents that each invoke the write-theory skill, producing N distinct root theories"
 model: inherit
-allowed-tools: Read Skill
 argument-hint: "N, exploration ID (E_...), optional literature ID (L_...), and the phenomenon to explain"
 ---
 

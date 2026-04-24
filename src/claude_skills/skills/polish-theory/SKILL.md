@@ -1,7 +1,6 @@
 ---
 name: polish-theory
 description: "Polish a theory to improve its clarity and make it easier to read. Does not add or remove any content, just rewords and restructures it."
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*)
 argument-hint: "theory ID (e.g. T_20260414_143100_d4e5f6)"
 ---
 

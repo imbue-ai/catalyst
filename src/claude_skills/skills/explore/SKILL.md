@@ -1,7 +1,6 @@
 ---
 name: explore
 description: Team of explorers that investigate a scientific phenomenon from multiple angles simultaneously
-allowed-tools: Read Bash Glob Grep Write Edit Skill(swarm)
 argument-hint: the phenomenon and optionally direction to explore
 ---
 

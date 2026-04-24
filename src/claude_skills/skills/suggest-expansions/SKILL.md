@@ -1,7 +1,6 @@
 ---
 name: suggest-expansions
 description: "Review an entire theory and suggest concrete areas for expansion"
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*) Skill
 argument-hint: "theory ID (e.g. T_20260414_143100_d4e5f6)"
 ---
 

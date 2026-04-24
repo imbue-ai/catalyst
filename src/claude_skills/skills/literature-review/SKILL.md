@@ -1,7 +1,6 @@
 ---
 name: literature-review
 description: "Search arXiv for relevant papers, download PDFs, and produce a structured literature review"
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir:*) Bash(curl:*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*) WebSearch WebFetch Glob Grep
 argument-hint: "topic or research question to survey (e.g. 'bifurcation in shallow ReLU networks')"
 ---
 

@@ -1,7 +1,6 @@
 ---
 name: expand-theory
 description: "Expand a theory by applying suggested expansion reviews"
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*) Skill
 argument-hint: "theory ID, review ID(s), and optional literature ID(s) (e.g. T_20260414_143100_d4e5f6 R_20260414_143200_g7h8i9 L_20260414_151000_j0k1l2)"
 ---
 

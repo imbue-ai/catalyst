@@ -1,7 +1,6 @@
 ---
 name: score-soundness
 description: "Score the mathematical soundness of a given theory based on its existing falsification reports."
-allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir -p tmp/*) Read(*)
 argument-hint: "the theory ID to score (e.g. T_20260414_143100_d4e5f6)"
 ---
 
