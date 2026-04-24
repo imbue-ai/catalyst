@@ -12,3 +12,4 @@ logs/
 /tmp/
 .ai-scientist-db*/
 scheduled_tasks.lock
+tasks_state.json
