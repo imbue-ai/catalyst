@@ -37,7 +37,7 @@ The execution steps below may involve numeric calculations. Always use `uv run p
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the theory and experiment files using `context_manager.py`.
 2. **Carefully Read the Theory**: Carefully read the `theory.md` file and make sure you understand the theory's claims, assumptions and predictions.
-2. **Generate Predictions**: For each experiment, read its `description.md` and `script.py` files. Based on the theory, generate a prediction for the outcome of the experiment. This prediction should be as specific as possible. Whenever the theory makes quantitative predictions, include approximate predicted values for key variables measured in the experiment. If the theory does not make any specific prediction for this experiment (e.g. because the experiment setup does not fulfil a prerequisite posed by the theory, or the theory does not describe the variables and/or outcomes measured by the experiment), note that down.
+2. **Generate Predictions**: For each experiment, read its `description.md` and `script.py` files. Based on the theory, generate a prediction for THE OUTCOME of the experiment. This prediction should be as specific as possible. Whenever the theory makes quantitative predictions, include predicted values for key variables measured in the experiment. If the theory does not make any specific prediction for the outcome of the experiment (e.g. because the experiment setup does not fulfil a prerequisite posed by the theory, or the theory does not describe the variables and/or outcomes measured by the experiment), note that down as "NO_PREDICTION".
 3. **Reporting**: Write the prediction for each experiment to `<OUTPUT_DIR>/predictions.md` (this exact filename is required). See the output format below.
 4. **Store results**: Persist your output and return the prediction ID:
    ```bash
@@ -53,10 +53,10 @@ Your `predictions.md` file MUST be formatted exactly as follows:
 Theory used: [The ID of the theory used]
 
 ## [Experiment ID 1]
-[The full prediction made for this experiment, or "NO_PREDICTION" if the theory does not make a prediction for this experiment]
+[The full prediction made for this experiment, or "NO_PREDICTION" if the theory does not make a precise prediction for this experiment]
 
 ### Reasoning
-[List of theorems and/or sections from the theory used to make this prediction. Or an explanation for why the theory does make a prediction for this experiment.]
+[List of theorems and/or sections from the theory used to make this prediction. Or an explanation for why the theory does not make a precise prediction for this experiment.]
 
 ## [Experiment ID 2]
 ...
