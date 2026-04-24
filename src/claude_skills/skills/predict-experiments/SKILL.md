@@ -37,7 +37,12 @@ The execution steps below may involve numeric calculations. Always use `uv run p
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the theory and experiment files using `context_manager.py`.
 2. **Carefully Read the Theory**: Carefully read the `theory.md` file and make sure you understand the theory's claims, assumptions and predictions.
-2. **Generate Predictions**: For each experiment, read its `description.md` and `script.py` files. Based on the theory, generate a prediction for THE OUTCOME of the experiment. This prediction should be as specific as possible. Whenever the theory makes quantitative predictions, include predicted values for key variables measured in the experiment. If the theory does not make any specific prediction for the outcome of the experiment (e.g. because the experiment setup does not fulfil a prerequisite posed by the theory, or the theory does not describe the variables and/or outcomes measured by the experiment), note that down as "NO_PREDICTION".
+2. **Generate Predictions**: For each experiment, read its `description.md` and `script.py` files. Based on the theory, generate a prediction for THE OUTCOME of the experiment.
+  - First, check whether the theory even makes a specific prediction for the outcome of the experiment. If not, you must note the prediction down as "NO_PREDICTION". Examples of no prediction being possible:
+    - The theory requires a certain prerequisite or has certain limits, which the experiment setup does not fulfil
+    - The theory does not describe the variables and/or outcomes measured by the experiment
+    - The theory is ambiguous or non-committal about the expected outcome of the experiment
+  - The prediction must be as specific as possible. Whenever the experiment measures quantitative variables, include the specific values that the theory predicts for those.
 3. **Reporting**: Write the prediction for each experiment to `<OUTPUT_DIR>/predictions.md` (this exact filename is required). See the output format below.
 4. **Store results**: Persist your output and return the prediction ID:
    ```bash
