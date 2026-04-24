@@ -68,7 +68,7 @@ Useful experiment patterns for this skill:
 1. **Parse input**: Extract the file path and scoping notes from `$ARGUMENTS`. Validate the file exists and has extension `.tex`, `.pdf`, or `.md`. Copy it into `<CONTEXT_DIR>` as described in "Folder setup".
 2. **Extract statements**: Read the source theory and produce `<OUTPUT_DIR>/statements.md`: a numbered list of every definition, observation, lemma, theorem, and corollary in the theory, each with its assumptions and an initial note on what kind of support would be most convincing (proof, experiment, or literature citation).
 3. **Initial literature review**: Invoke `search-literature` with the theory's topic + its top 2–3 load-bearing claims, then fold the result into `<CONTEXT_DIR>` as described above. Read the resulting `summary.md`.
-4. **Reproduce a base case**: Before you continue, make sure you can successfully reproduce a base case of the phenomenon. Use `run-experiment`, or derive it mathematically if it's a theoretical phenomenon.
+4. **Reproduce a base case**: Before you continue, make sure you can successfully reproduce a base case of the phenomenon. Use `run-experiment`, and find the hyper-parameters that most clearly illustrate the phenomenon. You might get a good figure out of this step for inclusion in your theory.
 5. **Plan**: For each statement in `statements.md`, decide on a support strategy (proof, experiment, literature citation, or combination). Prioritize the theory's most central / most uncertain statements.
 6. **Gather support**: Work through the statements. For each:
    - **Proof**: If the statement is formally provable, derive a rigorous mathematical proof. Show all steps — do not hand-wave.
