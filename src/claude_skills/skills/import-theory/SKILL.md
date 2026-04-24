@@ -27,9 +27,10 @@ Any temporary files must be stored only under `<OUTPUT_DIR>`.
 Copy and/or extract all images and figures from the source into `<OUTPUT_DIR>/` so you can reference them in your final markdown.
 
 ## Execution Steps
-1. **Parse input**: Extract the file path and scoping notes from `$ARGUMENTS`. Validate the file exists and has extension `.tex`, `.pdf`, or `.md`.
-2. **Convert file**: Write the imported theory as a markdown file to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Copy over and/or extract and correctly reference any images from the source location.
-3. **Store results**: Persist your output and return the theory ID:
+1. **Parse input**: Extract the file path from `$ARGUMENTS`. Validate the file exists and has extension `.tex`, `.pdf`, or `.md`.
+2. **Extract figures**: If the source file contains images/figures, extract and save and/or copy them into `<OUTPUT_DIR>/` and note their new paths for referencing in the markdown. Crop the relevant sections of a PDF to isolate figures if needed. Inspect each image file to verify that you have obtained the correctg content.
+3. **Convert file**: Write the theory as a markdown file to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Make sure you maintain any mathematical formulas. Correctly reference any images relative to `<OUTPUT_DIR>`.
+4. **Store results**: Persist your output and return the theory ID:
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type import-theory --from_folder <OUTPUT_DIR>
    ```
