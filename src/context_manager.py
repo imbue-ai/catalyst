@@ -632,26 +632,55 @@ def create_context(
                 shutil.copytree(tdir, dst, ignore=IGNORE_METADATA_PATTERN)
                 _make_writable(dst)
 
-            matched_experiments: list[tuple[str, str]] = []
+            matched_experiments_by_base: dict[str, list[tuple[str, str]]] = {
+                tid: [] for tid in (from_theories or [])
+            }
             exp_root = db_root / "experiment"
             if exp_root.is_dir() and from_theories:
-                target_theories = _get_ancestor_theories(db_root, from_theories)
+                base_ancestors = {
+                    tid: _get_ancestor_theories(db_root, [tid]) for tid in from_theories
+                }
                 for meta_path in exp_root.glob("*/metadata.json"):
                     try:
                         data = json.loads(meta_path.read_text())
-                        if data.get("parent_theory") in target_theories:
+                        parent_theory = data.get("parent_theory")
+                        if parent_theory:
                             eid = data.get("id")
                             created_at = data.get("created_at", "")
                             if eid:
-                                matched_experiments.append((created_at, eid))
+                                for base_tid, ancestors in base_ancestors.items():
+                                    if parent_theory in ancestors:
+                                        matched_experiments_by_base[base_tid].append(
+                                            (created_at, eid)
+                                        )
                     except (json.JSONDecodeError, OSError):
                         continue
 
-            matched_experiments.sort(key=lambda x: x[0], reverse=True)
+            for exps in matched_experiments_by_base.values():
+                exps.sort(key=lambda x: x[0], reverse=True)
+
+            top_exp_ids: list[str] = []
             num_experiments_to_include = 20
-            top_exp_ids = [
-                eid for _, eid in matched_experiments[:num_experiments_to_include]
-            ]
+            selected_eids: set[str] = set()
+
+            if from_theories:
+                pointers = {tid: 0 for tid in from_theories}
+                while len(selected_eids) < num_experiments_to_include:
+                    added_in_round = False
+                    for tid in from_theories:
+                        exps = matched_experiments_by_base[tid]
+                        while pointers[tid] < len(exps):
+                            _, eid = exps[pointers[tid]]
+                            pointers[tid] += 1
+                            if eid not in selected_eids:
+                                top_exp_ids.append(eid)
+                                selected_eids.add(eid)
+                                added_in_round = True
+                                break
+                        if len(selected_eids) >= num_experiments_to_include:
+                            break
+                    if not added_in_round:
+                        break
 
             for exp_id in top_exp_ids:
                 fetch_experiment(target_folder, exp_id, exclude_results=True)
