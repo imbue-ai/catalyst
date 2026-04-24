@@ -1,0 +1,36 @@
+---
+name: import-theory
+description: "Import a pre-existing theory from a latex/pdf/markdown file and store in the context database."
+allowed-tools: Bash(uv run:*) Bash(mktemp:*) Bash(ls:*) Bash(mkdir:*) Bash(mkdir -p tmp/*) Bash(cp:*) Read(*) Write(tmp/*) Edit(tmp/*) Skill
+argument-hint: "path to the pre-existing theory file (.tex, .pdf, or .md)"
+---
+
+You are an expert scientific agent. Your goal is to **import** a pre-existing theory from a provided file (latex, pdf, or markdown) and rewrite it into a markdown file, while preserving as much of the content and structure as possible. You'll then store the theory into our context database for future use.
+
+## Input
+Arguments: $ARGUMENTS
+
+The arguments contain a path to the pre-existing theory file (with extension `.tex`, `.pdf`, or `.md`).
+
+## Folder setup
+Set up an output folder:
+OUTPUT_DIR: `mktemp -d -p ./tmp import-theory-output-XXXX`
+
+- `<OUTPUT_DIR>/` — write the imported theory and all required image files here.
+
+Any temporary files must be stored only under `<OUTPUT_DIR>`.
+
+## Reading the input theory
+- `.md` / `.tex`: read with the `Read` tool directly.
+- `.pdf`: read with the `Read` tool (it handles PDFs natively). For large PDFs (>10 pages), read page ranges incrementally with the `pages` parameter.
+
+Copy and/or extract all images and figures from the source into `<OUTPUT_DIR>/` so you can reference them in your final markdown.
+
+## Execution Steps
+1. **Parse input**: Extract the file path and scoping notes from `$ARGUMENTS`. Validate the file exists and has extension `.tex`, `.pdf`, or `.md`.
+2. **Convert file**: Write the imported theory as a markdown file to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Copy over and/or extract and correctly reference any images from the source location.
+3. **Store results**: Persist your output and return the theory ID:
+   ```bash
+   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type import-theory --from_folder <OUTPUT_DIR>
+   ```
+   Note down the returned theory ID (e.g. `T_20260421_150000_x1y2z3`) as the result of this skill.
