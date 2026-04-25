@@ -27,7 +27,7 @@ function App() {
 
   useEffect(() => {
     fetchTasks()
-    const interval = setInterval(fetchTasks, 5000)
+    const interval = setInterval(fetchTasks, 2000)
     return () => clearInterval(interval)
   }, [])
 
@@ -54,7 +54,7 @@ function App() {
           <XCircle size={14} /> Backend Server Offline - Reconnecting...
         </div>
       )}
-      
+
       {/* Sidebar */}
       <div className="flex h-screen overflow-hidden">
         <aside className="w-80 border-r border-black flex flex-col bg-white">
@@ -63,15 +63,15 @@ function App() {
               <FlaskConical size={20} />
             </div>
             <h1 className="text-lg font-black tracking-tight leading-none uppercase">
-              AI Scientist<br/><span className="text-gray-400">Orchestrator</span>
+              AI Scientist<br /><span className="text-gray-400">Orchestrator</span>
             </h1>
           </div>
-          
+
           <div className="p-4 border-b border-black flex items-center justify-between bg-gray-50/50">
             <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
               <History size={12} /> Recent Research
             </div>
-            <button 
+            <button
               onClick={() => setShowCreate(true)}
               className="hover:scale-110 transition-transform p-1 bg-black text-white rounded-full"
               title="New Research Task"
@@ -87,7 +87,7 @@ function App() {
               </div>
             )}
             {tasks.map(task => (
-              <div 
+              <div
                 key={task.id}
                 onClick={() => setSelectedTaskId(task.id)}
                 className={`group p-4 border-b border-black cursor-pointer transition-all ${selectedTaskId === task.id ? 'bg-black text-white' : 'hover:bg-gray-50'}`}
@@ -109,22 +109,22 @@ function App() {
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-white flex flex-col relative">
           {selectedTask ? (
-            <TaskDetail 
-              key={selectedTask.id} 
-              task={selectedTask} 
-              onDeleteRequest={(id) => setShowDeleteConfirm(id)} 
+            <TaskDetail
+              key={selectedTask.id}
+              task={selectedTask}
+              onDeleteRequest={(id) => setShowDeleteConfirm(id)}
               onRefresh={fetchTasks}
             />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-20 text-center">
               <div className="w-24 h-24 border border-black rounded-full flex items-center justify-center mb-6 animate-pulse">
-                 <Activity size={40} strokeWidth={1} className="text-gray-300" />
+                <Activity size={40} strokeWidth={1} className="text-gray-300" />
               </div>
               <h2 className="text-2xl font-black uppercase tracking-tighter mb-2">Ready for Discovery</h2>
               <p className="text-gray-400 max-w-sm text-sm">
                 Select a research thread from the sidebar or start a new scientific inquiry to observe the automated theory development process.
               </p>
-              <button 
+              <button
                 onClick={() => setShowCreate(true)}
                 className="mt-8 px-6 py-3 bg-black text-white font-bold uppercase text-xs tracking-widest hover:bg-gray-800 transition-colors"
               >
@@ -137,7 +137,7 @@ function App() {
 
       {/* Modals */}
       {showDeleteConfirm && (
-        <DeleteConfirmModal 
+        <DeleteConfirmModal
           onClose={() => { setShowDeleteConfirm(null); setDeleteInput(''); }}
           onDelete={handleDelete}
           deleteInput={deleteInput}
@@ -146,7 +146,7 @@ function App() {
       )}
 
       {showCreate && (
-        <CreateTaskModal 
+        <CreateTaskModal
           onClose={() => setShowCreate(false)}
           onCreated={(task) => {
             setTasks([task, ...tasks]);
