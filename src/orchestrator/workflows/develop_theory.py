@@ -7,6 +7,8 @@ from .base import Workflow
 
 
 class DevelopTheoryWorkflow(Workflow):
+    MAX_REFINEMENT_ITERATIONS = 3
+
     @property
     def name(self) -> str:
         return "develop-theory"
@@ -43,7 +45,11 @@ class DevelopTheoryWorkflow(Workflow):
             print(f"[ORCHESTRATOR] [{task.id[:8]}] Initializing DB folder...")
             env = os.environ.copy()
             env["AI_SCIENTIST_DB_PATH"] = task.db_path
-            subprocess.run(["uv", "run", "python", "context_manager.py", "init"], env=env, check=True)
+            subprocess.run(
+                ["uv", "run", "python", "context_manager.py", "init"],
+                env=env,
+                check=True,
+            )
 
         def get_step_output(stage_prefix: str):
             for s in task.steps:
@@ -203,7 +209,10 @@ class DevelopTheoryWorkflow(Workflow):
                 raise Exception(
                     f"Theory refinement for iteration {i} failed to return a new theory ID."
                 )
+            if not refine_data.get("major_changes", True):
+                # This is a legitimate end of the loop
+                break
 
             i += 1
-            if i > 3:  # Safety cap
+            if i > self.MAX_REFINEMENT_ITERATIONS:
                 break
