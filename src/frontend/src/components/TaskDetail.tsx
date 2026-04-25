@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Activity, Folder, Cpu, Terminal, Loader2, Square, Play, Trash2, Database } from 'lucide-react'
+import { Activity, Folder, Cpu, Terminal, Loader2, Square, Play, Trash2, Database, Copy, Check } from 'lucide-react'
 import * as api from '../api'
 import { StatusBadge } from './StatusBadge'
 import { DataSection } from './DataSection'
@@ -15,6 +15,13 @@ interface TaskDetailProps {
 export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps) {
   const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
 
   const handleCancel = async () => {
     setIsProcessing(true)
@@ -176,7 +183,21 @@ export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps
                       Inspect Agent
                     </div>
                     <div className="bg-[#0c0c0c] text-[#00ff00] p-4 font-mono text-[11px] border border-black shadow-[4px_4px_0px_0px_rgba(0,255,0,0.1)]">
-                      <div className="opacity-50 mb-2"># Use this command to resume this session manually</div>
+                      <div className="flex justify-between items-start mb-2">
+                        <div className="opacity-50"># Use this command to resume this session manually</div>
+                        <button 
+                          onClick={() => {
+                            const cmd = task.framework === 'gemini' 
+                              ? `gemini --resume ${task.steps[selectedStepIndex].session_id}` 
+                              : `claude --resume ${task.steps[selectedStepIndex].session_id}`;
+                            handleCopy(cmd);
+                          }}
+                          className="text-[#00ff00] hover:text-white transition-colors p-1"
+                          title="Copy to clipboard"
+                        >
+                          {copied ? <Check size={14} /> : <Copy size={14} />}
+                        </button>
+                      </div>
                       <div className="flex items-center gap-2">
                         <span className="text-gray-500">$</span>
                         <code className="select-all">
