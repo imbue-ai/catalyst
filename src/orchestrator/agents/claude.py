@@ -86,7 +86,7 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
             agent_raw_result = (
                 last_result_obj.get("data", {}).get("result")
                 if last_result_obj.get("data")
-                else stdout
+                else ""
             )
             data = self._parse_json_result(agent_raw_result)
             if data:
