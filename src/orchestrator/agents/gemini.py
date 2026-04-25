@@ -37,8 +37,8 @@ class GeminiAgentRunner(BaseCliAgentRunner):
                     if on_status:
                         last_line = (
                             "".join(assistant_content)
-                            .strip()
                             .replace(".", ".\n")
+                            .strip()
                             .split("\n")[-1]
                         )
                         on_status(last_line)
