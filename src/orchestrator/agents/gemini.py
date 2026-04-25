@@ -35,7 +35,7 @@ class GeminiAgentRunner(BaseCliAgentRunner):
                 if content:
                     assistant_content.append(content)
                     if on_status:
-                        last_line = content.strip().split("\n")[-1]
+                        last_line = "".join(assistant_content).strip().split("\n")[-1]
                         on_status(last_line)
 
         try:
