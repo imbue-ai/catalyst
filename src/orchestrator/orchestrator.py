@@ -70,6 +70,8 @@ def _run_step(task: Task, stage: str, prompt: str) -> Any:
     # Check if we should restart a failed/paused step
     existing_step = None
     
+    workflow = get_workflow(task.workflow_name)
+    
     lock = get_task_lock(task.id)
     with lock:
         for s in task.steps:
@@ -86,6 +88,8 @@ def _run_step(task: Task, stage: str, prompt: str) -> Any:
             task.steps.append(step)
 
         task.current_stage = stage
+        if workflow:
+            task.workflow_structure = workflow.get_structure(task)
         update_task(task)
 
     def on_sid(sid):

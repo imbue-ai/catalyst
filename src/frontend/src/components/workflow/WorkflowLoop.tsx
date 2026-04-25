@@ -14,16 +14,31 @@ interface WorkflowLoopProps {
 
 export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, selectedStage, onRetry }: WorkflowLoopProps) {
   const [activeIteration, setActiveIteration] = useState(1)
+  const [lastLatest, setLastLatest] = useState(0)
 
   useEffect(() => {
-    // Automatically set active iteration based on current task progress
+    // Calculate what the current latest iteration is based on steps
+    let currentLatest = 1
     for (let i = iterations; i >= 1; i--) {
       if (task.steps.some(s => s.stage.endsWith(`-${i}`))) {
-        setActiveIteration(i)
+        currentLatest = i
         break
       }
     }
-  }, [task.steps, iterations])
+
+    if (lastLatest === 0) {
+      // First load: sync both to latest
+      setActiveIteration(currentLatest)
+      setLastLatest(currentLatest)
+    } else if (currentLatest > lastLatest) {
+      // A new iteration has started! 
+      // If the user was watching the "old" latest, move them to the "new" latest.
+      if (activeIteration === lastLatest) {
+        setActiveIteration(currentLatest)
+      }
+      setLastLatest(currentLatest)
+    }
+  }, [task.steps, iterations, activeIteration, lastLatest])
 
   const getStepForIteration = (it: number, baseStage: string) => {
     const stage = `${baseStage}-${it}`

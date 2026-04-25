@@ -135,7 +135,19 @@ def initialize_state():
     with _lock:
         state = _load_state()
         modified = False
+        
+        # Local import to avoid circular dependency
+        from .workflows import get_workflow
+        
         for task in state.tasks:
+            # Always ensure structure is up-to-date with current steps
+            workflow = get_workflow(task.workflow_name)
+            if workflow:
+                new_struct = workflow.get_structure(task)
+                if new_struct != task.workflow_structure:
+                    task.workflow_structure = new_struct
+                    modified = True
+
             if task.status == TaskStatus.RUNNING or task.status == TaskStatus.PENDING:
                 task.status = TaskStatus.PAUSED
                 for step in task.steps:
