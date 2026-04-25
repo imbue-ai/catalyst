@@ -16,8 +16,9 @@ class BaseCliAgentRunner(AgentRunner):
         cmd: list[str],
         abs_env_folder: str,
         env: dict,
-        on_session_id: Optional[Callable[[str], None]] = None
-    ) -> Tuple[str, Optional[str], Optional[int], list[str]]:
+        on_session_id: Optional[Callable[[str], None]] = None,
+        on_data_event: Optional[Callable[[Dict[str, Any]], None]] = None
+    ) -> Tuple[str, Optional[str], int, list[str]]:
         """Common execution loop for stream-json output."""
         try:
             process = subprocess.Popen(
@@ -35,9 +36,7 @@ class BaseCliAgentRunner(AgentRunner):
             register_process(task_id, process)
             
             full_output = []
-            assistant_content = []
             session_id = None
-            last_result_obj = None
 
             for line in iter(process.stdout.readline, ''):
                 if line:
@@ -56,13 +55,8 @@ class BaseCliAgentRunner(AgentRunner):
                                     except Exception as cb_err:
                                         print(f"[AGENT] [{task_id[:8]}] Callback error: {cb_err}")
                             
-                            if data.get("type") == "message" and data.get("role") == "assistant":
-                                content = data.get("content")
-                                if content:
-                                    assistant_content.append(content)
-                            
-                            if data.get("type") == "result":
-                                last_result_obj = data
+                            if on_data_event:
+                                on_data_event(data)
                     except Exception:
                         pass
 
@@ -70,14 +64,12 @@ class BaseCliAgentRunner(AgentRunner):
             stdout = "".join(full_output)
             unregister_process(task_id, process)
             
-            # Prepare raw result for parsing
-            agent_raw_result = "".join(assistant_content) if assistant_content else \
-                              (last_result_obj.get("result") if last_result_obj and last_result_obj.get("result") else stdout)
-            
-            return agent_raw_result, session_id, process.returncode, full_output
+            return stdout, session_id, process.returncode, full_output
             
         except Exception as e:
-            unregister_process(task_id, process if 'process' in locals() else None)
+            # Attempt to unregister if process exists
+            if 'process' in locals():
+                unregister_process(task_id, process)
             raise e
 
     def _parse_json_result(self, raw_result: Any) -> Optional[Dict[str, Any]]:

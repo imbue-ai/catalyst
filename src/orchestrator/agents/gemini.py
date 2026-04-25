@@ -25,9 +25,16 @@ class GeminiAgentRunner(BaseCliAgentRunner):
         print(f"[AGENT] Starting Gemini for task {task_id[:8]}")
         print(f"[AGENT] Executing: {shlex.join(cmd)}")
 
+        assistant_content = []
+        def handle_event(data):
+            if data.get("type") == "message" and data.get("role") == "assistant":
+                content = data.get("content")
+                if content:
+                    assistant_content.append(content)
+
         try:
-            agent_raw_result, session_id, returncode, full_output = self._execute_cmd(
-                task_id, cmd, abs_env_folder, env, on_session_id
+            stdout, session_id, returncode, full_output = self._execute_cmd(
+                task_id, cmd, abs_env_folder, env, on_session_id, handle_event
             )
             
             print(f"[AGENT] [{task_id[:8]}] Gemini finished with exit code {returncode}")
@@ -36,6 +43,7 @@ class GeminiAgentRunner(BaseCliAgentRunner):
                 stdout_tail = "".join(full_output)[-500:]
                 return None, session_id, f"Gemini failed with exit code {returncode}. Last output: {stdout_tail}"
 
+            agent_raw_result = "".join(assistant_content) if assistant_content else stdout
             data = self._parse_json_result(agent_raw_result)
             if data:
                 return data, session_id, None

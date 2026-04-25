@@ -25,9 +25,14 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
         print(f"[AGENT] Starting Claude for task {task_id[:8]}")
         print(f"[AGENT] Executing: {shlex.join(cmd)}")
 
+        last_result_obj = {}
+        def handle_event(data):
+            if data.get("type") == "result":
+                last_result_obj["data"] = data
+
         try:
-            agent_raw_result, session_id, returncode, full_output = self._execute_cmd(
-                task_id, cmd, abs_env_folder, env, on_session_id
+            stdout, session_id, returncode, full_output = self._execute_cmd(
+                task_id, cmd, abs_env_folder, env, on_session_id, handle_event
             )
             
             print(f"[AGENT] [{task_id[:8]}] Claude finished with exit code {returncode}")
@@ -36,6 +41,7 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
                 stdout_tail = "".join(full_output)[-500:]
                 return None, session_id, f"Claude failed with exit code {returncode}. Last output: {stdout_tail}"
 
+            agent_raw_result = last_result_obj.get("data", {}).get("result") if last_result_obj.get("data") else stdout
             data = self._parse_json_result(agent_raw_result)
             if data:
                 return data, session_id, None
