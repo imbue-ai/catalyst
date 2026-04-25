@@ -88,7 +88,7 @@ class DevelopTheoryWorkflow(Workflow):
                     target=run_and_store,
                     args=(
                         "literature-review",
-                        f"Please run the literature-review skill for the following phenomenon: ```\n{task.phenomenon}\n```\n"
+                        f"Please run the literature-review skill for the following phenomenon:\n```\n{task.phenomenon}\n```\n"
                         "When you are done, return a JSON object with the key 'literature_review_id'.",
                         "lit",
                     ),
@@ -101,7 +101,7 @@ class DevelopTheoryWorkflow(Workflow):
                     target=run_and_store,
                     args=(
                         "explore",
-                        f"Please run the explore skill for the following phenomenon: ```\n{task.phenomenon}\n```\n"
+                        f"Please run the explore skill for the following phenomenon:\n```\n{task.phenomenon}\n```\n"
                         "When you are done, return a JSON object with the key 'exploration_id'.",
                         "exp",
                     ),
@@ -126,7 +126,9 @@ class DevelopTheoryWorkflow(Workflow):
                         exploration_id = res["exploration_id"]
 
         if not lit_review_id or not exploration_id:
-            raise Exception("Required research data (literature review or exploration) is missing.")
+            raise Exception(
+                "Required research data (literature review or exploration) is missing."
+            )
 
         # Step 3: Initial Theory
         theory_data = get_step_output("write-theory")
@@ -136,7 +138,7 @@ class DevelopTheoryWorkflow(Workflow):
             theory_data = run_step(
                 task,
                 "write-theory",
-                f"Please run the write-theory skill for the following phenomenon: ```\n{task.phenomenon}\n```\n"
+                f"Please run the write-theory skill for the following phenomenon:\n```\n{task.phenomenon}\n```\n"
                 f"Use exploration_id: {exploration_id} and literature_review_id: {lit_review_id}. "
                 "When you are done, return a JSON object with the key 'theory_id'.",
             )
@@ -160,11 +162,11 @@ class DevelopTheoryWorkflow(Workflow):
                     f"Please run the review-theory skill for the following theory_id: {theory_id}. "
                     "When you are done, return a JSON object with the key 'review_ids' (a list of strings).",
                 )
-            
+
             # If review_data is still None at this point, run_step should have raised
             if not review_data:
                 raise Exception(f"Theory review for iteration {i} failed.")
-            
+
             review_ids = review_data.get("review_ids", [])
             if not review_ids:
                 # This is a legitimate end of the loop
@@ -183,14 +185,16 @@ class DevelopTheoryWorkflow(Workflow):
                     f"Use literature_review_id: {lit_review_id}. "
                     "When you are done, return a JSON object with the keys 'theory_id' and 'major_changes' (boolean) to indicate if any major changes have been made to the theory.",
                 )
-            
+
             if not refine_data:
                 raise Exception(f"Theory refinement for iteration {i} failed.")
 
             theory_id = refine_data.get("theory_id")
             if not theory_id:
-                raise Exception(f"Theory refinement for iteration {i} failed to return a new theory ID.")
+                raise Exception(
+                    f"Theory refinement for iteration {i} failed to return a new theory ID."
+                )
 
             i += 1
-            if i > 3: # Safety cap
+            if i > 3:  # Safety cap
                 break
