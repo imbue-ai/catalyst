@@ -5,15 +5,22 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
+from contextlib import asynccontextmanager
 
 from orchestrator.models import Task, TaskStatus
-from orchestrator.state import get_tasks, get_task, add_task, update_task, cancel_task_process, delete_task, initialize_state
+from orchestrator.state import get_tasks, get_task, add_task, update_task, cancel_task_process, delete_task, initialize_state, shutdown_all
 from orchestrator.orchestrator import start_task
 
-app = FastAPI(title="AI Scientist Orchestrator")
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Initialize state on startup (move RUNNING to PAUSED)
+    initialize_state()
+    yield
+    # Clean up processes on shutdown
+    print("[SERVER] Shutting down, cleaning up processes...")
+    shutdown_all()
 
-# Initialize state on startup (move RUNNING to PAUSED)
-initialize_state()
+app = FastAPI(title="AI Scientist Orchestrator", lifespan=lifespan)
 
 # Enable CORS for the React frontend
 app.add_middleware(

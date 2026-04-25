@@ -43,15 +43,15 @@ export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps
         <div className="flex justify-between items-start gap-8">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-               <StatusBadge status={task.status} />
-               <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Research Session: {task.id.split('-')[0]}</span>
+              <StatusBadge status={task.status} />
+              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Research Session: {task.id.split('-')[0]}</span>
             </div>
             <h2 className="text-4xl font-black uppercase tracking-tighter leading-tight">{task.title || "Initializing..."}</h2>
             <p className="mt-4 text-xs text-gray-500 font-bold leading-relaxed max-w-2xl">{task.phenomenon}</p>
 
             <div className="mt-6 flex gap-3">
               {task.status === 'running' ? (
-                <button 
+                <button
                   disabled={isProcessing}
                   onClick={handleCancel}
                   className="bg-gray-500 text-white px-4 py-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-gray-600 transition-colors disabled:opacity-50"
@@ -62,7 +62,7 @@ export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps
               ) : (task.status === 'paused' || task.status === 'failed' || task.status === 'completed') ? (
                 <div className="flex gap-3">
                   {(task.status === 'paused' || task.status === 'failed') && (
-                    <button 
+                    <button
                       disabled={isProcessing}
                       onClick={handleResume}
                       className="bg-black text-white px-4 py-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-gray-800 transition-colors disabled:opacity-50"
@@ -71,7 +71,7 @@ export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps
                       Resume Research
                     </button>
                   )}
-                  <button 
+                  <button
                     disabled={isProcessing}
                     onClick={() => onDeleteRequest(task.id)}
                     className="border-2 border-red-600 text-red-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-red-50 transition-colors disabled:opacity-50"
@@ -101,14 +101,14 @@ export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps
               <Activity size={16} /> Research Workflow
             </h3>
           </div>
-          
+
           <div className="space-y-6 pb-20">
             {task.workflow_structure.map((item, idx) => {
               const showConnector = idx < task.workflow_structure.length - 1;
 
               if (item.type === 'step') {
                 return (
-                  <WorkflowStep 
+                  <WorkflowStep
                     key={item.stage}
                     stage={item.stage}
                     task={task}
@@ -122,25 +122,25 @@ export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps
 
               if (item.type === 'parallel') {
                 return (
-                   <div key={idx} className="flex flex-col gap-2">
-                     {item.stages.map((stage: string, sidx: number) => (
-                       <WorkflowStep 
-                         key={stage}
-                         stage={stage}
-                         task={task}
-                         isSelected={selectedStepIndex !== null && task.steps[selectedStepIndex]?.stage === stage}
-                         onSelect={setSelectedStepIndex}
-                         onRetry={handleResume}
-                         showConnector={showConnector || sidx < item.stages.length - 1}
-                       />
-                     ))}
-                   </div>
+                  <div key={idx} className="flex flex-col gap-2">
+                    {item.stages.map((stage: string, sidx: number) => (
+                      <WorkflowStep
+                        key={stage}
+                        stage={stage}
+                        task={task}
+                        isSelected={selectedStepIndex !== null && task.steps[selectedStepIndex]?.stage === stage}
+                        onSelect={setSelectedStepIndex}
+                        onRetry={handleResume}
+                        showConnector={showConnector || sidx < item.stages.length - 1}
+                      />
+                    ))}
+                  </div>
                 )
               }
 
               if (item.type === 'loop') {
                 return (
-                  <WorkflowLoop 
+                  <WorkflowLoop
                     key={item.name}
                     name={item.name}
                     baseStages={item.base_stages}
@@ -164,17 +164,11 @@ export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps
             <div className="flex flex-col h-full">
               <div className="p-6 border-b border-black bg-white flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                   <div className="bg-black text-white p-1 rounded-sm"><Terminal size={16} /></div>
-                   <span className="font-black text-xs uppercase tracking-widest">{task.steps[selectedStepIndex].stage}</span>
+                  <div className="bg-black text-white p-1 rounded-sm"><Terminal size={16} /></div>
+                  <span className="font-black text-xs uppercase tracking-widest">{task.steps[selectedStepIndex].stage}</span>
                 </div>
-                <button 
-                  onClick={() => setSelectedStepIndex(null)}
-                  className="text-[10px] font-black uppercase hover:underline"
-                >
-                  Dismiss
-                </button>
               </div>
-              
+
               <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-8 pb-20">
                 {task.steps[selectedStepIndex].session_id && (
                   <div className="group relative">
@@ -192,11 +186,25 @@ export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps
                     </div>
                   </div>
                 )}
-                
+
                 <DataSection label="Execution Context" data={task.steps[selectedStepIndex].inputs} />
-                
+
+                {task.steps[selectedStepIndex].last_status && (
+                  <div className="border-2 border-blue-600 bg-blue-50/30 p-4 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 p-1">
+                      <div className="w-1 h-1 bg-blue-600 rounded-full animate-ping" />
+                    </div>
+                    <div className="text-[10px] font-black uppercase text-blue-600 mb-2 tracking-widest flex items-center gap-2">
+                      <Activity size={10} /> Current Activity
+                    </div>
+                    <div className="text-[11px] font-bold text-blue-900 leading-relaxed italic">
+                      "{task.steps[selectedStepIndex].last_status}"
+                    </div>
+                  </div>
+                )}
+
                 {task.steps[selectedStepIndex].outputs && (
-                  <DataSection label="Results" data={task.steps[selectedStepIndex].outputs} primary />
+                  <DataSection label="Result" data={task.steps[selectedStepIndex].outputs} primary />
                 )}
 
                 {task.steps[selectedStepIndex].error && (
@@ -212,12 +220,12 @@ export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-12 text-center opacity-30">
               <Terminal size={48} strokeWidth={1} />
-              <div className="mt-4 text-[10px] font-black uppercase tracking-widest">Awaiting node selection</div>
+              <div className="mt-4 text-[10px] font-black uppercase tracking-widest">Select step to see details</div>
             </div>
           )}
         </div>
       </div>
-      
+
       {/* Footer Info */}
       <div className="p-4 border-t border-black bg-white flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">
         <div className="flex items-center gap-4">

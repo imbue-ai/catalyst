@@ -17,7 +17,8 @@ class BaseCliAgentRunner(AgentRunner):
         abs_env_folder: str,
         env: dict,
         on_session_id: Optional[Callable[[str], None]] = None,
-        on_data_event: Optional[Callable[[Dict[str, Any]], None]] = None
+        on_data_event: Optional[Callable[[Dict[str, Any]], None]] = None,
+        on_status: Optional[Callable[[str], None]] = None
     ) -> Tuple[str, Optional[str], int, list[str]]:
         """Common execution loop for stream-json output."""
         try:

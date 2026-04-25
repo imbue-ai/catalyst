@@ -2,10 +2,11 @@ const API_BASE = "http://localhost:8000/api";
 
 export interface Step {
   stage: string;
-  status: "pending" | "running" | "completed" | "failed";
+  status: "pending" | "running" | "completed" | "failed" | "paused";
   inputs: any;
   outputs?: any;
   session_id?: string;
+  last_status?: string;
   error?: string;
 }
 

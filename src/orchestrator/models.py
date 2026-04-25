@@ -22,6 +22,7 @@ class Step(BaseModel):
     inputs: Dict[str, Any] = {}
     outputs: Optional[Dict[str, Any]] = None
     session_id: Optional[str] = None
+    last_status: Optional[str] = None
     error: Optional[str] = None
 
 class Task(BaseModel):

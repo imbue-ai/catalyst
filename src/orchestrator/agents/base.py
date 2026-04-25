@@ -10,7 +10,8 @@ class AgentRunner(ABC):
         env_folder: str,
         db_path: str,
         model: Optional[str] = None,
-        on_session_id: Optional[Callable[[str], None]] = None
+        on_session_id: Optional[Callable[[str], None]] = None,
+        on_status: Optional[Callable[[str], None]] = None
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
         """
         Runs the agent and returns (json_output, session_id, error).

@@ -2,7 +2,6 @@ import threading
 import uuid
 import os
 from typing import List, Any
-from concurrent.futures import ThreadPoolExecutor
 from .models import Task, Step, TaskStatus, StepStatus
 from .state import update_task, get_task, get_task_lock
 from .agents import get_agent_runner
@@ -94,6 +93,11 @@ def _run_step(task: Task, stage: str, prompt: str) -> Any:
             step.session_id = sid
             update_task(task)
 
+    def on_status(status):
+        with lock:
+            step.last_status = status
+            update_task(task)
+
     runner = get_agent_runner(task.framework)
     if not runner:
         error = f"No agent runner found for framework: {task.framework}"
@@ -109,7 +113,8 @@ def _run_step(task: Task, stage: str, prompt: str) -> Any:
         env_folder=task.env_folder,
         db_path=task.db_path,
         model=task.model,
-        on_session_id=on_sid
+        on_session_id=on_sid,
+        on_status=on_status
     )
 
     # Check for pause again
