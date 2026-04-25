@@ -17,9 +17,11 @@ export interface Task {
   framework: string;
   model?: string;
   db_path: string;
-  status: "pending" | "running" | "completed" | "failed";
+  status: "pending" | "running" | "completed" | "failed" | "paused";
   current_stage?: string;
   steps: Step[];
+  workflow_name: string;
+  workflow_structure: any[];
 }
 
 export async function listTasks(): Promise<Task[]> {

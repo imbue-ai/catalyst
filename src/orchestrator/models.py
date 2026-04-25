@@ -14,6 +14,7 @@ class StepStatus(str, Enum):
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+    PAUSED = "paused"
 
 class Step(BaseModel):
     stage: str
@@ -34,6 +35,8 @@ class Task(BaseModel):
     status: TaskStatus = TaskStatus.PENDING
     current_stage: Optional[str] = None
     steps: List[Step] = []
+    workflow_name: str = "develop-theory"
+    workflow_structure: List[Dict[str, Any]] = []
 
 class TasksState(BaseModel):
     tasks: List[Task] = []
