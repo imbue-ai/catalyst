@@ -1,4 +1,6 @@
 import threading
+import os
+import subprocess
 from typing import Any, Callable, List, Dict
 from ..models import Task, StepStatus
 from .base import Workflow
@@ -36,6 +38,13 @@ class DevelopTheoryWorkflow(Workflow):
         ]
 
     def run(self, task: Task, run_step: Callable) -> None:
+        # Initialize DB folder
+        if not os.path.exists(task.db_path):
+            print(f"[ORCHESTRATOR] [{task.id[:8]}] Initializing DB folder...")
+            env = os.environ.copy()
+            env["AI_SCIENTIST_DB_PATH"] = task.db_path
+            subprocess.run(["uv", "run", "python", "context_manager.py", "init"], env=env, check=True)
+
         def get_step_output(stage_prefix: str):
             for s in task.steps:
                 if (
