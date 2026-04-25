@@ -189,7 +189,7 @@ export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps
 
                 <DataSection label="Execution Context" data={task.steps[selectedStepIndex].inputs} />
 
-                {task.steps[selectedStepIndex].last_status && (
+                {task.steps[selectedStepIndex].last_status && task.steps[selectedStepIndex].status === 'running' && (
                   <div className="border-2 border-blue-600 bg-blue-50/30 p-4 relative overflow-hidden">
                     <div className="absolute top-0 right-0 p-1">
                       <div className="w-1 h-1 bg-blue-600 rounded-full animate-ping" />
