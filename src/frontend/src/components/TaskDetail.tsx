@@ -187,7 +187,7 @@ export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps
                   </div>
                 )}
 
-                <DataSection label="Execution Context" data={task.steps[selectedStepIndex].inputs} />
+                <DataSection label="Prompt" data={task.steps[selectedStepIndex].inputs} />
 
                 {task.steps[selectedStepIndex].last_status && task.steps[selectedStepIndex].status === 'running' && (
                   <div className="border-2 border-blue-600 bg-blue-50/30 p-4 relative overflow-hidden">
