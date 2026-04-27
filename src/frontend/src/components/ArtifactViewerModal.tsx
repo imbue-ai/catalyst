@@ -56,6 +56,16 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
     };
   }, []);
 
+  const processContent = (text: string) => {
+    const parts = text.split(/(```[\s\S]*?```|`[^`]+`)/g);
+    return parts.map((part, i) => {
+      if (i % 2 === 0) {
+        return part.replace(/\b([ELTRXP]_\d{8}_\d{6}_[a-f0-9]{6})\b/g, `[$1](#/task/${taskId}/artifact/$1?from=artifact)`);
+      }
+      return part;
+    }).join('');
+  };
+
   const toc = useMemo(() => {
     if (!content) return [];
     
@@ -194,7 +204,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
                     }
                   }}
                 >
-                  {content}
+                  {processContent(content)}
                 </ReactMarkdown>
               </div>
             )}
