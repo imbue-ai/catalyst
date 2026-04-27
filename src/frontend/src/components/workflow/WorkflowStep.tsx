@@ -1,4 +1,4 @@
-import { CheckCircle, Loader2, Terminal, RefreshCw } from 'lucide-react'
+import { CheckCircle, Terminal, RefreshCw } from 'lucide-react'
 import * as api from '../../api'
 
 interface WorkflowStepProps {

@@ -2,6 +2,7 @@ import uuid
 import os
 import shutil
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional
@@ -10,6 +11,7 @@ from contextlib import asynccontextmanager
 from orchestrator.models import Task, TaskStatus
 from orchestrator.state import get_tasks, get_task, add_task, update_task, cancel_task_process, delete_task, initialize_state, shutdown_all
 from orchestrator.orchestrator import start_task
+from context_manager import PREFIX_TO_CATEGORY, CATEGORY_MD_MAP
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -119,6 +121,50 @@ def remove_task(task_id: str):
     # 3. Remove from state
     delete_task(task_id)
     return {"status": "deleted"}
+
+@app.get("/api/tasks/{task_id}/artifacts/{artifact_id}/primary")
+def get_artifact_primary(task_id: str, artifact_id: str):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+        
+    prefix = artifact_id.split('_')[0]
+    category = PREFIX_TO_CATEGORY.get(prefix)
+    if not category:
+        raise HTTPException(status_code=400, detail="Invalid artifact ID prefix")
+        
+    md_filename = CATEGORY_MD_MAP.get(category)
+    if not md_filename:
+        raise HTTPException(status_code=500, detail="No primary markdown configured for category")
+        
+    file_path = os.path.join(task.db_path, category, artifact_id, md_filename)
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Artifact file not found")
+        
+    with open(file_path, "r", encoding="utf-8") as f:
+        return {"content": f.read()}
+
+@app.get("/api/tasks/{task_id}/artifacts/{artifact_id}/files/{file_path:path}")
+def get_artifact_file(task_id: str, artifact_id: str, file_path: str):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+        
+    prefix = artifact_id.split('_')[0]
+    category = PREFIX_TO_CATEGORY.get(prefix)
+    if not category:
+        raise HTTPException(status_code=400, detail="Invalid artifact ID prefix")
+        
+    # Prevent path traversal
+    normalized_path = os.path.normpath(file_path)
+    if normalized_path.startswith("..") or os.path.isabs(normalized_path):
+        raise HTTPException(status_code=403, detail="Invalid file path")
+        
+    full_path = os.path.join(task.db_path, category, artifact_id, normalized_path)
+    if not os.path.exists(full_path):
+        raise HTTPException(status_code=404, detail="File not found")
+        
+    return FileResponse(full_path)
 
 if __name__ == "__main__":
     import uvicorn

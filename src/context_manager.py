@@ -30,22 +30,31 @@ from theory_evolver import (
 # Constants & configuration
 # ---------------------------------------------------------------------------
 
-AGENT_TYPE_MAP: dict[str, tuple[str, str]] = {
-    # agent_type -> (database_category, expected_primary_md)
-    "explorer": ("exploration", "report.md"),
-    "literature-review": ("literature", "summary.md"),
-    "search-literature": ("literature", "summary.md"),
-    "write-theory": ("theory", "theory.md"),
-    "refine-hypothesis": ("theory", "theory.md"),
-    "falsify-hypothesis": ("review", "review.md"),
-    "suggest-expansions": ("review", "review.md"),
-    "expand-theory": ("theory", "theory.md"),
-    "polish-theory": ("theory", "theory.md"),
-    "streamline-theory": ("theory", "theory.md"),
-    "support-theory": ("theory", "theory.md"),
-    "import-theory": ("theory", "theory.md"),
-    "run-experiment": ("experiment", "description.md"),
-    "predict-experiments": ("prediction", "predictions.md"),
+AGENT_TYPE_MAP: dict[str, str] = {
+    # agent_type -> database_category
+    "explorer": "exploration",
+    "literature-review": "literature",
+    "search-literature": "literature",
+    "write-theory": "theory",
+    "refine-hypothesis": "theory",
+    "falsify-hypothesis": "review",
+    "suggest-expansions": "review",
+    "expand-theory": "theory",
+    "polish-theory": "theory",
+    "streamline-theory": "theory",
+    "support-theory": "theory",
+    "import-theory": "theory",
+    "run-experiment": "experiment",
+    "predict-experiments": "prediction",
+}
+
+CATEGORY_MD_MAP: dict[str, str] = {
+    "exploration": "report.md",
+    "literature": "summary.md",
+    "theory": "theory.md",
+    "review": "review.md",
+    "experiment": "description.md",
+    "prediction": "predictions.md",
 }
 
 ID_PREFIXES: dict[str, str] = {
@@ -56,6 +65,8 @@ ID_PREFIXES: dict[str, str] = {
     "experiment": "X",
     "prediction": "P",
 }
+
+PREFIX_TO_CATEGORY: dict[str, str] = {v: k for k, v in ID_PREFIXES.items()}
 
 VALID_CATEGORIES: tuple[str, ...] = (
     "exploration",
@@ -297,7 +308,8 @@ def store_results(
             f"Must be one of: {', '.join(AGENT_TYPE_MAP)}"
         )
 
-    category, expected_md = AGENT_TYPE_MAP[from_agent_type]
+    category = AGENT_TYPE_MAP[from_agent_type]
+    expected_md = CATEGORY_MD_MAP[category]
 
     # --- validate source folder ---
     if not from_folder.is_dir():

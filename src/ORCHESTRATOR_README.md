@@ -52,8 +52,8 @@ The dashboard will be available at `http://localhost:5173`.
 3. **Monitor:** The dashboard polls the backend every 5 seconds to update the timeline.
 4. **Inspect:** Click any completed or running step in the timeline to view the raw inputs, JSON outputs, and the **Session ID**.
 5. **Recover:** If you want to see the detailed agent logs or manually intervene, use the session ID provided in the inspection panel:
-   - For Gemini: `gemini -s <session_id>`
-   - For Claude: `claude -s <session_id>`
+   - For Gemini: `gemini --resume <session_id>`
+   - For Claude: `claude --resume <session_id>`
 
 ## Persistence
 

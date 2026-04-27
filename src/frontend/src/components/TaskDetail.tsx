@@ -5,14 +5,16 @@ import { StatusBadge } from './StatusBadge'
 import { DataSection } from './DataSection'
 import { WorkflowStep } from './workflow/WorkflowStep'
 import { WorkflowLoop } from './workflow/WorkflowLoop'
+import { ArtifactViewerModal } from './ArtifactViewerModal'
 
 interface TaskDetailProps {
   task: api.Task;
+  viewingArtifactId: string | null;
   onDeleteRequest: (id: string) => void;
   onRefresh: () => void;
 }
 
-export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps) {
+export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh }: TaskDetailProps) {
   const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -208,7 +210,7 @@ export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps
                   </div>
                 )}
 
-                <DataSection label="Prompt" data={task.steps[selectedStepIndex].inputs} />
+                <DataSection label="Prompt" data={task.steps[selectedStepIndex].inputs} taskId={task.id} />
 
                 {task.steps[selectedStepIndex].last_status && task.steps[selectedStepIndex].status === 'running' && (
                   <div className="border-2 border-blue-600 bg-blue-50/30 p-4 relative overflow-hidden">
@@ -225,7 +227,7 @@ export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps
                 )}
 
                 {task.steps[selectedStepIndex].outputs && (
-                  <DataSection label="Result" data={task.steps[selectedStepIndex].outputs} primary />
+                  <DataSection label="Result" data={task.steps[selectedStepIndex].outputs} primary taskId={task.id} />
                 )}
 
                 {task.steps[selectedStepIndex].error && (
@@ -257,6 +259,14 @@ export function TaskDetail({ task, onDeleteRequest, onRefresh }: TaskDetailProps
           <span className="text-black">● Live Connection Established</span>
         </div>
       </div>
+
+      {viewingArtifactId && (
+        <ArtifactViewerModal 
+          taskId={task.id} 
+          artifactId={viewingArtifactId} 
+          onClose={() => { window.location.hash = `#/task/${task.id}` }} 
+        />
+      )}
     </div>
   )
 }

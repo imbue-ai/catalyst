@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, List, Database, Folder, Cpu, Activity, FlaskConical, History, XCircle } from 'lucide-react'
+import { Plus, Folder, Activity, FlaskConical, History, XCircle } from 'lucide-react'
 import * as api from './api'
 import { StatusBadge } from './components/StatusBadge'
 import { TaskDetail } from './components/TaskDetail'
@@ -8,11 +8,25 @@ import { DeleteConfirmModal } from './components/DeleteConfirmModal'
 
 function App() {
   const [tasks, setTasks] = useState<api.Task[]>([])
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
+  const [currentHash, setCurrentHash] = useState(window.location.hash)
   const [showCreate, setShowCreate] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [deleteInput, setDeleteInput] = useState('')
   const [isBackendDown, setIsBackendDown] = useState(false)
+
+  useEffect(() => {
+    const handleHashChange = () => setCurrentHash(window.location.hash)
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
+  let selectedTaskId: string | null = null;
+  let viewingArtifactId: string | null = null;
+  const match = currentHash.split('?')[0].match(/^#\/task\/([^\/]+)(?:\/artifact\/([^\/]+))?/);
+  if (match) {
+    selectedTaskId = match[1];
+    viewingArtifactId = match[2] || null;
+  }
 
   const fetchTasks = async () => {
     try {
@@ -36,7 +50,9 @@ function App() {
       try {
         await api.deleteTask(showDeleteConfirm)
         setTasks(tasks.filter(t => t.id !== showDeleteConfirm))
-        setSelectedTaskId(null)
+        if (selectedTaskId === showDeleteConfirm) {
+          window.location.hash = '';
+        }
         setShowDeleteConfirm(null)
         setDeleteInput('')
       } catch (e) {
@@ -87,10 +103,10 @@ function App() {
               </div>
             )}
             {tasks.map(task => (
-              <div
+              <a
                 key={task.id}
-                onClick={() => setSelectedTaskId(task.id)}
-                className={`group p-4 border-b border-black cursor-pointer transition-all ${selectedTaskId === task.id ? 'bg-black text-white' : 'hover:bg-gray-50'}`}
+                href={`#/task/${task.id}`}
+                className={`group p-4 border-b border-black block cursor-pointer transition-all ${selectedTaskId === task.id ? 'bg-black text-white' : 'hover:bg-gray-50'}`}
               >
                 <div className="flex justify-between items-start mb-2 gap-2">
                   <span className={`font-bold text-xs uppercase truncate flex-1 ${selectedTaskId === task.id ? 'text-white' : 'text-black'}`}>
@@ -101,7 +117,7 @@ function App() {
                 <div className={`text-[10px] flex flex-col gap-1 ${selectedTaskId === task.id ? 'text-gray-400' : 'text-gray-500'}`}>
                   <div className="flex items-center gap-1 truncate"><Folder size={10} /> {task.env_folder}</div>
                 </div>
-              </div>
+              </a>
             ))}
           </div>
         </aside>
@@ -112,6 +128,7 @@ function App() {
             <TaskDetail
               key={selectedTask.id}
               task={selectedTask}
+              viewingArtifactId={viewingArtifactId}
               onDeleteRequest={(id) => setShowDeleteConfirm(id)}
               onRefresh={fetchTasks}
             />
@@ -150,7 +167,7 @@ function App() {
           onClose={() => setShowCreate(false)}
           onCreated={(task) => {
             setTasks([task, ...tasks]);
-            setSelectedTaskId(task.id);
+            window.location.hash = `#/task/${task.id}`;
             setShowCreate(false);
           }}
           isBackendDown={isBackendDown}

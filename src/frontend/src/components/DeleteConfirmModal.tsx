@@ -1,5 +1,3 @@
-import { useState } from 'react'
-
 interface DeleteConfirmModalProps {
   onClose: () => void;
   onDelete: () => void;

@@ -28,6 +28,17 @@ body {
   width: 100%;
 }
 
+@media print {
+  #root {
+    display: none !important;
+  }
+  body {
+    display: block;
+    min-height: auto;
+    background-color: white;
+  }
+}
+
 * {
   box-sizing: border-box;
 }
