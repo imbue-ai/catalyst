@@ -51,8 +51,8 @@ We will use the following methods for converting from a rank `r` (1...n) to a sc
   - **Prediction Coverage Score**: Sum the importance scores of the experiments for which the theory made a prediction (regardless of its rank), and divide it by the summed total importance score of all selected experiments.
 13. **Score Predictive Power**: Convert the rank of each theory returned by the `rank-predictive-power` skill into a score using the *normalized reciprocal score* method.
 14. **Determine theory lengths**: For each theory, determine the length of its `theory.md` in number of words, excluding any appendices, supplementary materials, and introductions:
-  - Determine the line range corresponding to the main body of the theory (e.g. lines 50-500).
-  - Count the number of words in that line range using standard Unix tools (e.g. `sed -n '50,500p' theory.md | wc -w`).
-15. **Score Length**: Rank the theories by their lengths (shortest theory = rank 1) and convert these ranks into length scores using the *linear score* method.
-15. **Overall Theory Score**: Combine the scores for each theory into a final score using the formula: `Overall Score = (0.7 * Prediction Accuracy Score + 0.3 * Soundness Score) * (0.4 + (0.3 * Predictive Power Score + 0.3 * Prediction Coverage Score) * Length Score)`.
-16. **Final Output**: Report the list of all theory IDs along with their final scores, sorted from highest to lowest score. Also include a breakdown of the prediction accuracy, prediction coverage, soundness, predictive power, and length scores for each theory.
+  - Determine the line range corresponding to the main body of the theory by scanning its markdown headings.
+  - Count the number of words in that line range using standard Unix tools (e.g. `sed -n '50,500p' <CONTEXT_DIR>/theories/<theory_id>/theory.md | wc -w`).
+15. **Score Length**: Calculate a length score for each theory using the formula `Length Score = min(1, 1 / (words_in_main_body / 4000)**2)`, where `words_in_main_body` is the number of words in the main body of the theory.
+16. **Overall Theory Score**: Combine the scores for each theory into a final score using the formula: `Overall Score = (0.7 * Prediction Accuracy Score + 0.3 * Soundness Score) * (0.4 + (0.3 * Predictive Power Score + 0.3 * Prediction Coverage Score) * Length Score)`.
+17. **Final Output**: Report the list of all theory IDs along with their final scores, sorted from highest to lowest score. Also include a breakdown of the prediction accuracy, prediction coverage, soundness, predictive power, and length scores for each theory.
