@@ -42,6 +42,13 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
             <XCircle size={24} />
           </button>
         </div>
+
+        {task.status !== 'completed' && task.status !== 'running' && (
+          <div className="text-xs font-bold text-yellow-700 bg-yellow-100 p-4 border border-yellow-300 mb-6 flex gap-2 items-start">
+            <span className="shrink-0 mt-0.5">⚠️</span>
+            <span>Warning: Adding a step to an incomplete workflow will cancel any remaining steps in the current workflow sequence.</span>
+          </div>
+        )}
         
         {availableTheoryIds.length === 0 ? (
           <div className="text-sm font-bold text-red-600 mb-6">

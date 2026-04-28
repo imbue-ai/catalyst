@@ -15,6 +15,7 @@ class StepStatus(str, Enum):
     COMPLETED = "completed"
     FAILED = "failed"
     PAUSED = "paused"
+    CANCELED = "canceled"
 
 class Step(BaseModel):
     stage: str
@@ -46,6 +47,7 @@ class Task(BaseModel):
     addons: List[Addon] = []
     workflow_name: str = "develop-theory"
     workflow_structure: List[Dict[str, Any]] = []
+    base_workflow_canceled: bool = False
 
 class TasksState(BaseModel):
     tasks: List[Task] = []

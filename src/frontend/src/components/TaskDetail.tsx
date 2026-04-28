@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Activity, Folder, Cpu, Terminal, Loader2, Square, Play, Trash2, Database, Copy, Check, Layers, Plus } from 'lucide-react'
+import { Activity, Folder, Cpu, Terminal, Loader2, Square, Play, Trash2, Database, Copy, Check, Layers, Plus, XCircle } from 'lucide-react'
 import * as api from '../api'
 import { StatusBadge } from './StatusBadge'
 import { DataSection } from './DataSection'
@@ -17,7 +17,7 @@ interface TaskDetailProps {
 }
 
 export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh, isBackendDown }: TaskDetailProps) {
-  const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null)
+  const [selectedStage, setSelectedStage] = useState<string | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAddonModal, setShowAddonModal] = useState(false)
@@ -130,8 +130,8 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     key={item.stage}
                     stage={item.stage}
                     task={task}
-                    isSelected={selectedStepIndex !== null && task.steps[selectedStepIndex]?.stage === item.stage}
-                    onSelect={setSelectedStepIndex}
+                    isSelected={selectedStage === item.stage}
+                    onSelect={setSelectedStage}
                     onRetry={handleResume}
                     showConnector={showConnector}
                   />
@@ -146,8 +146,8 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                         key={stage}
                         stage={stage}
                         task={task}
-                        isSelected={selectedStepIndex !== null && task.steps[selectedStepIndex]?.stage === stage}
-                        onSelect={setSelectedStepIndex}
+                        isSelected={selectedStage === stage}
+                        onSelect={setSelectedStage}
                         onRetry={handleResume}
                         showConnector={showConnector || sidx < item.stages.length - 1}
                       />
@@ -164,9 +164,10 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     baseStages={item.base_stages}
                     iterations={item.iterations}
                     task={task}
-                    onSelect={setSelectedStepIndex}
-                    selectedStage={selectedStepIndex !== null ? task.steps[selectedStepIndex]?.stage : undefined}
+                    onSelect={setSelectedStage}
+                    selectedStage={selectedStage || undefined}
                     onRetry={handleResume}
+                    onRefresh={onRefresh}
                   />
                 )
               }
@@ -174,94 +175,126 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               return null;
             })}
 
-            {task.status === 'completed' && (
-              <div className="flex justify-center mt-8">
-                <button
-                  disabled={isProcessing}
-                  onClick={() => setShowAddonModal(true)}
-                  className="flex flex-col items-center gap-2 text-gray-400 hover:text-black transition-colors disabled:opacity-50"
-                >
-                  <div className="p-1 bg-black text-white rounded-full">
-                    <Plus size={16} />
-                  </div>
-                  <span className="text-[10px] font-black uppercase tracking-widest">Add step</span>
-                </button>
-              </div>
-            )}
+            <div className="flex justify-center mt-8">
+              <button
+                disabled={task.status === 'running' || isProcessing}
+                onClick={() => setShowAddonModal(true)}
+                className={`flex flex-col items-center gap-2 transition-colors ${task.status === 'running' ? 'opacity-30 cursor-not-allowed text-gray-400' : 'text-gray-400 hover:text-black'}`}
+              >
+                <div className={`p-1 rounded-full ${task.status === 'running' ? 'bg-gray-400' : 'bg-black text-white'}`}>
+                  <Plus size={16} />
+                </div>
+                <span className="text-[10px] font-black uppercase tracking-widest">Add step</span>
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Step Inspector */}
         <div className="w-1/2 bg-gray-50/50 flex flex-col h-full border-l border-black">
-          {selectedStepIndex !== null && task.steps[selectedStepIndex] ? (
+          {selectedStage !== null ? (
             <div className="flex flex-col h-full">
               <div className="p-6 border-b border-black bg-white flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <div className="bg-black text-white p-1 rounded-sm"><Layers size={16} /></div>
-                  <span className="font-black text-xs uppercase tracking-widest">{task.steps[selectedStepIndex].stage}</span>
+                  <span className="font-black text-xs uppercase tracking-widest">{selectedStage}</span>
                 </div>
+                
+                {['failed', 'paused', 'pending'].includes(task.steps.find(s => s.stage === selectedStage)?.status || 'pending') && (
+                  <button
+                    disabled={isProcessing}
+                    onClick={async () => {
+                      setIsProcessing(true)
+                      try {
+                        await api.cancelStep(task.id, selectedStage)
+                        onRefresh()
+                      } catch (e: any) {
+                        alert(e.message || "Failed to cancel step")
+                      } finally {
+                        setIsProcessing(false)
+                      }
+                    }}
+                    className="text-[10px] font-black uppercase tracking-widest bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 transition-colors flex items-center gap-1"
+                  >
+                    <XCircle size={12} /> Cancel Step
+                  </button>
+                )}
               </div>
 
               <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-8 pb-20">
-                {task.steps[selectedStepIndex].session_id && (
-                  <div className="group relative">
-                    <div className="absolute -top-3 -left-1 px-2 py-1 bg-black text-white text-[8px] font-black uppercase tracking-widest z-10">
-                      Inspect Agent
-                    </div>
-                    <div className="bg-[#0c0c0c] text-[#00ff00] p-4 font-mono text-[11px] border border-black shadow-[4px_4px_0px_0px_rgba(0,255,0,0.1)]">
-                      <div className="flex justify-between items-start mb-2">
-                        <div className="opacity-50"># Use this command to resume this session manually</div>
-                        <button 
-                          onClick={() => {
-                            const cmd = task.framework === 'gemini' 
-                              ? `gemini --resume ${task.steps[selectedStepIndex].session_id}` 
-                              : `claude --resume ${task.steps[selectedStepIndex].session_id}`;
-                            handleCopy(cmd);
-                          }}
-                          className="text-[#00ff00] hover:text-white transition-colors p-1"
-                          title="Copy to clipboard"
-                        >
-                          {copied ? <Check size={14} /> : <Copy size={14} />}
-                        </button>
+                {(() => {
+                  const step = task.steps.find(s => s.stage === selectedStage);
+                  if (!step) {
+                    return (
+                      <div className="text-center mt-10 text-gray-400 text-[10px] font-black uppercase tracking-widest">
+                        Step has not started yet
                       </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-gray-500">$</span>
-                        <code className="select-all">
-                          {task.framework === 'gemini' ? `gemini --resume ${task.steps[selectedStepIndex].session_id}` : `claude --resume ${task.steps[selectedStepIndex].session_id}`}
-                        </code>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                    )
+                  }
+                  return (
+                    <>
+                      {step.session_id && (
+                        <div className="group relative">
+                          <div className="absolute -top-3 -left-1 px-2 py-1 bg-black text-white text-[8px] font-black uppercase tracking-widest z-10">
+                            Inspect Agent
+                          </div>
+                          <div className="bg-[#0c0c0c] text-[#00ff00] p-4 font-mono text-[11px] border border-black shadow-[4px_4px_0px_0px_rgba(0,255,0,0.1)]">
+                            <div className="flex justify-between items-start mb-2">
+                              <div className="opacity-50"># Use this command to resume this session manually</div>
+                              <button 
+                                onClick={() => {
+                                  const cmd = task.framework === 'gemini' 
+                                    ? `gemini --resume ${step.session_id}` 
+                                    : `claude --resume ${step.session_id}`;
+                                  handleCopy(cmd);
+                                }}
+                                className="text-[#00ff00] hover:text-white transition-colors p-1"
+                                title="Copy to clipboard"
+                              >
+                                {copied ? <Check size={14} /> : <Copy size={14} />}
+                              </button>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-gray-500">$</span>
+                              <code className="select-all">
+                                {task.framework === 'gemini' ? `gemini --resume ${step.session_id}` : `claude --resume ${step.session_id}`}
+                              </code>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
-                <DataSection label="Prompt" data={task.steps[selectedStepIndex].inputs} taskId={task.id} />
+                      <DataSection label="Prompt" data={step.inputs} taskId={task.id} />
 
-                {task.steps[selectedStepIndex].last_status && task.steps[selectedStepIndex].status === 'running' && (
-                  <div className="border-2 border-blue-600 bg-blue-50/30 p-4 relative overflow-hidden">
-                    <div className="absolute top-0 right-0 p-1">
-                      <div className="w-1 h-1 bg-blue-600 rounded-full animate-ping" />
-                    </div>
-                    <div className="text-[10px] font-black uppercase text-blue-600 mb-2 tracking-widest flex items-center gap-2">
-                      <Activity size={10} /> Current Activity
-                    </div>
-                    <div className="text-[11px] font-bold text-blue-900 leading-relaxed italic">
-                      "{task.steps[selectedStepIndex].last_status}"
-                    </div>
-                  </div>
-                )}
+                      {step.last_status && step.status === 'running' && (
+                        <div className="border-2 border-blue-600 bg-blue-50/30 p-4 relative overflow-hidden">
+                          <div className="absolute top-0 right-0 p-1">
+                            <div className="w-1 h-1 bg-blue-600 rounded-full animate-ping" />
+                          </div>
+                          <div className="text-[10px] font-black uppercase text-blue-600 mb-2 tracking-widest flex items-center gap-2">
+                            <Activity size={10} /> Current Activity
+                          </div>
+                          <div className="text-[11px] font-bold text-blue-900 leading-relaxed italic">
+                            "{step.last_status}"
+                          </div>
+                        </div>
+                      )}
 
-                {task.steps[selectedStepIndex].outputs && (
-                  <DataSection label="Result" data={task.steps[selectedStepIndex].outputs} primary taskId={task.id} />
-                )}
+                      {step.outputs && (
+                        <DataSection label="Result" data={step.outputs} primary taskId={task.id} />
+                      )}
 
-                {task.steps[selectedStepIndex].error && task.steps[selectedStepIndex].status !== 'paused' && (
-                  <div className="bg-red-50 border border-red-200 p-4">
-                    <div className="text-[10px] font-black uppercase text-red-500 mb-2 tracking-widest">Critical Failure</div>
-                    <div className="text-xs font-bold text-red-900 leading-relaxed">
-                      {task.steps[selectedStepIndex].error}
-                    </div>
-                  </div>
-                )}
+                      {step.error && step.status !== 'paused' && step.status !== 'canceled' && (
+                        <div className="bg-red-50 border border-red-200 p-4">
+                          <div className="text-[10px] font-black uppercase text-red-500 mb-2 tracking-widest">Critical Failure</div>
+                          <div className="text-xs font-bold text-red-900 leading-relaxed">
+                            {step.error}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )
+                })()}
               </div>
             </div>
           ) : (

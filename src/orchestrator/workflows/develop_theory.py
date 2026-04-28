@@ -112,11 +112,16 @@ class DevelopTheoryWorkflow(Workflow):
                 if res and isinstance(res, dict):
                     if "literature_review_id" in res:
                         lit_review_id = res["literature_review_id"]
+                    elif "_canceled" in res:
+                        pass # Allowed to be missing if canceled
+                    
                     if "exploration_id" in res:
                         exploration_id = res["exploration_id"]
+                    elif "_canceled" in res:
+                        pass
 
-        if not lit_review_id or not exploration_id:
-            raise Exception("Required research data (literature review or exploration) is missing.")
+        # We allow them to be None if the respective steps were canceled.
+        # But if they failed without canceling, the loop above would have raised the error.
 
         # Step 3: Initial Theory
         theory_data = run_step_if_needed(
@@ -126,12 +131,13 @@ class DevelopTheoryWorkflow(Workflow):
             "When you are done, return a JSON object with the key 'theory_id'."
         )
         theory_id = theory_data.get("theory_id") if theory_data else None
-        if not theory_id:
+        if not theory_id and not (theory_data and theory_data.get("_canceled")):
             raise Exception("Theory generation failed to return a theory ID.")
 
-        # Step 4: Iterative Review and Refinement
-        max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
-        run_refinement_loop(
-            task, run_step, theory_id, lit_review_id, 
-            apply_extensions=True, max_refinements=max_refinements
-        )
+        if theory_id:
+            # Step 4: Iterative Review and Refinement
+            max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
+            run_refinement_loop(
+                task, run_step, theory_id, lit_review_id, 
+                apply_extensions=True, max_refinements=max_refinements
+            )

@@ -57,7 +57,8 @@ def _orchestrate_task(task_id: str):
         task.workflow_structure = get_full_structure(workflow, task)
         update_task(task)
 
-        workflow.run(task, run_step_wrapper)
+        if not task.base_workflow_canceled:
+            workflow.run(task, run_step_wrapper)
 
         # Process Addons
         for i, addon in enumerate(task.addons):
@@ -99,6 +100,8 @@ def _run_step(task: Task, stage: str, prompt: str) -> Any:
                 break
 
         if existing_step:
+            if existing_step.status == StepStatus.CANCELED:
+                return {"_canceled": True}
             step = existing_step
             step.status = StepStatus.RUNNING
             step.error = None

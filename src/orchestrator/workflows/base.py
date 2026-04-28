@@ -9,10 +9,15 @@ def get_step_output(task: Task, stage_prefix: str) -> Optional[Dict[str, Any]]:
         if s.stage.startswith(stage_prefix) and s.status == StepStatus.COMPLETED:
             return s.outputs
     return None
-
 def run_step_if_needed(task: Task, run_step_fn: Callable, stage: str, prompt: str) -> Optional[Dict[str, Any]]:
     out = get_step_output(task, stage)
     if not out:
+        # Check if already canceled to avoid logging "Running"
+        for s in task.steps:
+            if s.stage == stage and s.status == StepStatus.CANCELED:
+                print(f"[ORCHESTRATOR] [{task.id[:8]}] Skipping canceled step {stage}...")
+                return {"_canceled": True}
+
         print(f"[ORCHESTRATOR] [{task.id[:8]}] Running {stage}...")
         out = run_step_fn(task, stage, prompt)
     return out
@@ -30,6 +35,10 @@ def run_refinement_loop(task: Task, run_step_fn: Callable, theory_id: str, lit_r
         if not review_data:
             raise Exception(f"Theory review for iteration {i} failed.")
 
+        if review_data.get("_canceled"):
+            i += 1
+            continue
+
         review_ids = review_data.get("review_ids", [])
         if not review_ids:
             break
@@ -41,10 +50,10 @@ def run_refinement_loop(task: Task, run_step_fn: Callable, theory_id: str, lit_r
         if lit_review_id:
             prompt += f"Use literature_review_id: {lit_review_id}. "
         prompt += "When you are done, return a JSON object with the keys 'theory_id' and 'major_changes' (boolean) to indicate if any major changes have been made to the theory."
-            
+
         if not apply_extensions:
             prompt += "\n\nCRITICAL: Do not apply extensions."
-            
+
         refine_data = run_step_if_needed(
             task, run_step_fn, f"{stage_prefix}refine-theory-{i}", prompt
         )
@@ -52,14 +61,16 @@ def run_refinement_loop(task: Task, run_step_fn: Callable, theory_id: str, lit_r
         if not refine_data:
             raise Exception(f"Theory refinement for iteration {i} failed.")
 
-        theory_id = refine_data.get("theory_id")
-        if not theory_id:
-            raise Exception(f"Theory refinement for iteration {i} failed to return a new theory ID.")
+        if refine_data.get("_canceled"):
+            i += 1
+            continue
+
+        theory_id = refine_data.get("theory_id") or theory_id
         if not refine_data.get("major_changes", True):
             break
 
         i += 1
-        
+
     return theory_id
 
 class Workflow(ABC):

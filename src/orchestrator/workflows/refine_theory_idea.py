@@ -58,12 +58,13 @@ class RefineTheoryIdeaWorkflow(Workflow):
             "When you are done, return a JSON object with the key 'theory_id'."
         )
         theory_id = support_data.get("theory_id") if support_data else None
-        if not theory_id:
+        if not theory_id and not (support_data and support_data.get("_canceled")):
             raise Exception("support-idea failed to return a theory ID.")
 
-        # Step 2: Iterative Review and Refinement
-        max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
-        run_refinement_loop(
-            task, run_step, theory_id, lit_review_id=None, 
-            apply_extensions=apply_extensions, max_refinements=max_refinements
-        )
+        if theory_id:
+            # Step 2: Iterative Review and Refinement
+            max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
+            run_refinement_loop(
+                task, run_step, theory_id, lit_review_id=None, 
+                apply_extensions=apply_extensions, max_refinements=max_refinements
+            )

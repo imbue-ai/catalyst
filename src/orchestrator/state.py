@@ -123,6 +123,11 @@ def add_task(task: Task):
         _save_state(state)
 
 def update_task(task: Task):
+    # Sanity check: ensure step stages are unique
+    stages = [s.stage for s in task.steps]
+    if len(stages) != len(set(stages)):
+        raise ValueError(f"Duplicate step stages detected in task {task.id}: {stages}")
+        
     with _lock:
         state = _load_state()
         for i, t in enumerate(state.tasks):
