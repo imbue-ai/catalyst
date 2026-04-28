@@ -14,6 +14,8 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
   const [addonType, setAddonType] = useState('streamline-theory')
   const [theoryId, setTheoryId] = useState(availableTheoryIds[0] || '')
   const [direction, setDirection] = useState('')
+  const [maxRefinements, setMaxRefinements] = useState(3)
+  const [applyExtensions, setApplyExtensions] = useState(false)
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -21,7 +23,9 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
       const updatedTask = await api.createAddon(task.id, {
         type: addonType,
         theory_id: theoryId,
-        direction: addonType === 'streamline-theory' && direction ? direction : undefined
+        direction: addonType === 'streamline-theory' && direction ? direction : undefined,
+        max_refinements: addonType === 'refinement-loop' ? maxRefinements : undefined,
+        apply_extensions: addonType === 'refinement-loop' ? applyExtensions : undefined
       })
       onCreated(updatedTask)
     } catch (e: any) {
@@ -69,6 +73,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                 <option value="streamline-theory">Streamline Theory</option>
                 <option value="review-theory">Review Theory</option>
                 <option value="refine-theory">Refine Theory</option>
+                <option value="refinement-loop">Refinement Loop</option>
               </select>
             </div>
 
@@ -83,6 +88,35 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                   className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
                 />
               </div>
+            )}
+
+            {addonType === 'refinement-loop' && (
+              <>
+                <div>
+                  <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Max Refinement Iterations</label>
+                  <input 
+                    type="number"
+                    min="1"
+                    max="10"
+                    required
+                    value={maxRefinements}
+                    onChange={e => setMaxRefinements(parseInt(e.target.value, 10))}
+                    className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                  />
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer group">
+                  <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
+                    <input 
+                      type="checkbox"
+                      className="absolute opacity-0 w-full h-full cursor-pointer"
+                      checked={applyExtensions}
+                      onChange={e => setApplyExtensions(e.target.checked)}
+                    />
+                    {applyExtensions && <div className="w-3 h-3 bg-black" />}
+                  </div>
+                  <span className="text-xs font-bold uppercase tracking-widest">Apply Extensions</span>
+                </label>
+              </>
             )}
             
             <div className="flex gap-4 mt-8 pt-4 border-t border-gray-100">

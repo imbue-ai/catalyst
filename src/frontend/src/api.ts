@@ -15,6 +15,8 @@ export interface Addon {
   type: string;
   theory_id: string;
   direction?: string;
+  max_refinements?: number;
+  apply_extensions?: boolean;
 }
 
 export interface Task {

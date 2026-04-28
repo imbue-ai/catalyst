@@ -1,6 +1,6 @@
 from typing import Any, Callable, List, Dict
 from ..models import Task
-from .base import Workflow
+from .base import Workflow, run_step_if_needed
 
 class ImportTheoryWorkflow(Workflow):
     @property
@@ -20,7 +20,7 @@ class ImportTheoryWorkflow(Workflow):
 
         # Step 0: Summarize Title
         if not task.title:
-            title_data = self.run_step_if_needed(
+            title_data = run_step_if_needed(
                 task, run_step, "summarize-title",
                 f"Please read the following file and provide a very short, summarized title (maximum 5 words) for the theory it contains: {file_path}. "
                 "Return a JSON object with the key 'title'."
@@ -29,7 +29,7 @@ class ImportTheoryWorkflow(Workflow):
                 task.title = title_data.get("title")
 
         # Step 1: Import Theory
-        import_data = self.run_step_if_needed(
+        import_data = run_step_if_needed(
             task, run_step, "import-theory",
             f"Please run the import-theory skill for the following file path: {file_path}. "
             "When you are done, return a JSON object with the key 'theory_id'."

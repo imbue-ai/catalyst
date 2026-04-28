@@ -17,7 +17,11 @@ def start_task(task: Task):
 def get_full_structure(workflow, task: Task) -> List[Dict[str, Any]]:
     structure = workflow.get_structure(task) if workflow else []
     for i, addon in enumerate(task.addons):
-        structure.append({"type": "step", "stage": f"addon-{addon.type}-{i}"})
+        handler = get_addon_handler(addon.type)
+        if handler:
+            structure.append(handler.get_structure(addon, i, task))
+        else:
+            structure.append({"type": "step", "stage": f"addon-{addon.type}-{i}"})
     return structure
 
 def _orchestrate_task(task_id: str):
@@ -57,24 +61,11 @@ def _orchestrate_task(task_id: str):
 
         # Process Addons
         for i, addon in enumerate(task.addons):
-            stage = f"addon-{addon.type}-{i}"
+            handler = get_addon_handler(addon.type)
+            if not handler:
+                raise Exception(f"Unknown addon type: {addon.type}")
             
-            # Check if already completed
-            completed = False
-            with get_task_lock(task.id):
-                for s in task.steps:
-                    if s.stage == stage and s.status == StepStatus.COMPLETED:
-                        completed = True
-                        break
-            
-            if not completed:
-                print(f"[ORCHESTRATOR] [{task.id[:8]}] Running addon {stage}...")
-                handler = get_addon_handler(addon.type)
-                if not handler:
-                    raise Exception(f"Unknown addon type: {addon.type}")
-                
-                prompt = handler.get_prompt(addon)
-                run_step_wrapper(task, stage, prompt)
+            handler.run(task, run_step_wrapper, addon, i)
 
         task.status = TaskStatus.COMPLETED
         print(f"[ORCHESTRATOR] Task {task_id[:8]} COMPLETED successfully.")

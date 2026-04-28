@@ -1,6 +1,6 @@
 from typing import Any, Callable, List, Dict
 from ..models import Task
-from .base import Workflow
+from .base import Workflow, run_step_if_needed, run_refinement_loop
 
 class RefineTheoryIdeaWorkflow(Workflow):
     @property
@@ -43,7 +43,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
 
         # Step 0: Summarize Title
         if not task.title:
-            title_data = self.run_step_if_needed(
+            title_data = run_step_if_needed(
                 task, run_step, "summarize-title",
                 f"Please provide a very short, summarized title (maximum 5 words) for the following research idea: {idea}. "
                 "Return a JSON object with the key 'title'."
@@ -52,7 +52,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 task.title = title_data.get("title")
 
         # Step 1: Support Idea
-        support_data = self.run_step_if_needed(
+        support_data = run_step_if_needed(
             task, run_step, "support-idea",
             f"Please run the support-idea skill for the following idea:\n```\n{idea}\n```\n"
             "When you are done, return a JSON object with the key 'theory_id'."
@@ -63,41 +63,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
 
         # Step 2: Iterative Review and Refinement
         max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
-        i = 1
-        while i <= max_refinements:
-            # Review
-            review_data = self.run_step_if_needed(
-                task, run_step, f"review-theory-{i}",
-                f"Please run the review-theory skill for the following theory_id: {theory_id}. "
-                "When you are done, return a JSON object with the key 'review_ids' (a list of strings)."
-            )
-
-            if not review_data:
-                raise Exception(f"Theory review for iteration {i} failed.")
-
-            review_ids = review_data.get("review_ids", [])
-            if not review_ids:
-                break
-
-            # Refine
-            prompt = (
-                f"Please run the refine-theory skill for the following theory_id: {theory_id}. "
-                "When you are done, return a JSON object with the keys 'theory_id' and 'major_changes' (boolean) to indicate if any major changes have been made to the theory."
-            )
-            if not apply_extensions:
-                prompt += "\n\nCRITICAL: Do not apply extensions."
-                
-            refine_data = self.run_step_if_needed(
-                task, run_step, f"refine-theory-{i}", prompt
-            )
-
-            if not refine_data:
-                raise Exception(f"Theory refinement for iteration {i} failed.")
-
-            theory_id = refine_data.get("theory_id")
-            if not theory_id:
-                raise Exception(f"Theory refinement for iteration {i} failed to return a new theory ID.")
-            if not refine_data.get("major_changes", True):
-                break
-
-            i += 1
+        run_refinement_loop(
+            task, run_step, theory_id, lit_review_id=None, 
+            apply_extensions=apply_extensions, max_refinements=max_refinements
+        )

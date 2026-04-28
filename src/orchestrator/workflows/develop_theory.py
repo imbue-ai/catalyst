@@ -1,7 +1,7 @@
 import threading
 from typing import Any, Callable, List, Dict
 from ..models import Task
-from .base import Workflow
+from .base import Workflow, get_step_output, run_step_if_needed, run_refinement_loop
 
 
 class DevelopTheoryWorkflow(Workflow):
@@ -45,7 +45,7 @@ class DevelopTheoryWorkflow(Workflow):
 
         # Step 0: Summarize Title
         if not task.title:
-            title_data = self.run_step_if_needed(
+            title_data = run_step_if_needed(
                 task, run_step, "summarize-title",
                 f"Please provide a very short, summarized title (maximum 5 words) for the following research phenomenon: {task.workflow_inputs.get('phenomenon')}. "
                 "Return a JSON object with the key 'title'."
@@ -54,10 +54,10 @@ class DevelopTheoryWorkflow(Workflow):
                 task.title = title_data.get("title")
 
         # Step 1 & 2: Literature Review and Exploration in Parallel
-        lit_out = self.get_step_output(task, "literature-review")
+        lit_out = get_step_output(task, "literature-review")
         lit_review_id = lit_out.get("literature_review_id") if lit_out else None
         
-        exp_out = self.get_step_output(task, "explore")
+        exp_out = get_step_output(task, "explore")
         exploration_id = exp_out.get("exploration_id") if exp_out else None
 
         if not lit_review_id or not exploration_id:
@@ -119,7 +119,7 @@ class DevelopTheoryWorkflow(Workflow):
             raise Exception("Required research data (literature review or exploration) is missing.")
 
         # Step 3: Initial Theory
-        theory_data = self.run_step_if_needed(
+        theory_data = run_step_if_needed(
             task, run_step, "write-theory",
             f"Please run the write-theory skill for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
             f"Use exploration_id: {exploration_id} and literature_review_id: {lit_review_id}. "
@@ -131,37 +131,7 @@ class DevelopTheoryWorkflow(Workflow):
 
         # Step 4: Iterative Review and Refinement
         max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
-        i = 1
-        while i <= max_refinements:
-            # Review
-            review_data = self.run_step_if_needed(
-                task, run_step, f"review-theory-{i}",
-                f"Please run the review-theory skill for the following theory_id: {theory_id}. "
-                "When you are done, return a JSON object with the key 'review_ids' (a list of strings)."
-            )
-
-            if not review_data:
-                raise Exception(f"Theory review for iteration {i} failed.")
-
-            review_ids = review_data.get("review_ids", [])
-            if not review_ids:
-                break
-
-            # Refine
-            refine_data = self.run_step_if_needed(
-                task, run_step, f"refine-theory-{i}",
-                f"Please run the refine-theory skill for the following theory_id: {theory_id}. "
-                f"Use literature_review_id: {lit_review_id}. "
-                "When you are done, return a JSON object with the keys 'theory_id' and 'major_changes' (boolean) to indicate if any major changes have been made to the theory."
-            )
-
-            if not refine_data:
-                raise Exception(f"Theory refinement for iteration {i} failed.")
-
-            theory_id = refine_data.get("theory_id")
-            if not theory_id:
-                raise Exception(f"Theory refinement for iteration {i} failed to return a new theory ID.")
-            if not refine_data.get("major_changes", True):
-                break
-
-            i += 1
+        run_refinement_loop(
+            task, run_step, theory_id, lit_review_id, 
+            apply_extensions=True, max_refinements=max_refinements
+        )
