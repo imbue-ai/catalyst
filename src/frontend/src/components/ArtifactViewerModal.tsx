@@ -32,7 +32,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`http://localhost:8000/api/tasks/${taskId}/artifacts/${artifactId}/primary`);
+        const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/artifacts/${artifactId}/primary`);
         if (!response.ok) {
           throw new Error('Failed to fetch artifact content');
         }
