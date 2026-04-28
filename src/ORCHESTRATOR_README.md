@@ -49,7 +49,7 @@ The dashboard will be available at `http://localhost:5173`.
    - **Phenomenon:** The scientific topic to investigate.
    - **Environment Folder:** A local directory where the research will happen (e.g., `../bifurcation_gym`).
    - **Framework:** Choose between Gemini CLI or Claude Code.
-3. **Monitor:** The dashboard polls the backend every 5 seconds to update the timeline.
+3. **Monitor:** The dashboard polls the backend every 2 seconds to update the timeline.
 4. **Inspect:** Click any completed or running step in the timeline to view the raw inputs, JSON outputs, and the **Session ID**.
 5. **Recover:** If you want to see the detailed agent logs or manually intervene, use the session ID provided in the inspection panel:
    - For Gemini: `gemini --resume <session_id>`
