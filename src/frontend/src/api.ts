@@ -14,7 +14,7 @@ export interface Step {
 export interface Task {
   id: string;
   title?: string;
-  phenomenon: string;
+  workflow_inputs: any;
   env_folder: string;
   framework: string;
   model?: string;
@@ -37,7 +37,8 @@ export async function getTask(id: string): Promise<Task> {
 }
 
 export async function createTask(data: {
-  phenomenon: string;
+  workflow_name: string;
+  workflow_inputs: any;
   env_folder: string;
   framework: string;
   model?: string;

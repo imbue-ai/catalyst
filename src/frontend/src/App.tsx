@@ -108,7 +108,7 @@ function App() {
               >
                 <div className="flex justify-between items-start mb-2 gap-2">
                   <span className={`font-bold text-xs uppercase truncate flex-1 ${selectedTaskId === task.id ? 'text-white' : 'text-black'}`}>
-                    {task.title || task.phenomenon}
+                    {task.title || task.workflow_inputs.summary}
                   </span>
                   <StatusBadge status={task.status} inverted={selectedTaskId === task.id} />
                 </div>

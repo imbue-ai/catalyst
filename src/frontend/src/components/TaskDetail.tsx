@@ -57,7 +57,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Research Session: {task.id.split('-')[0]}</span>
             </div>
             <h2 className="text-4xl font-black uppercase tracking-tighter leading-tight">{task.title || "Initializing..."}</h2>
-            <p className="mt-4 text-xs text-gray-500 font-bold leading-relaxed max-w-2xl">{task.phenomenon}</p>
+            <p className="mt-4 text-xs text-gray-500 font-bold leading-relaxed max-w-2xl">{task.workflow_inputs.summary}</p>
 
             <div className="mt-6 flex gap-3">
               {task.status === 'running' ? (
