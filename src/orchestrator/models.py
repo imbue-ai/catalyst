@@ -26,9 +26,11 @@ class Step(BaseModel):
     error: Optional[str] = None
 
 class Addon(BaseModel):
-    type: str # "streamline-theory", "review-theory", "refine-theory"
+    type: str # "streamline-theory", "review-theory", "refine-theory", "refinement-loop"
     theory_id: str
     direction: Optional[str] = None
+    max_refinements: Optional[int] = None
+    apply_extensions: Optional[bool] = None
 
 class Task(BaseModel):
     id: str

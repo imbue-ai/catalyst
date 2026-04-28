@@ -138,12 +138,13 @@ def initialize_state():
         
         # Local import to avoid circular dependency
         from .workflows import get_workflow
+        from .orchestrator import get_full_structure
         
         for task in state.tasks:
             # Always ensure structure is up-to-date with current steps
             workflow = get_workflow(task.workflow_name)
             if workflow:
-                new_struct = workflow.get_structure(task)
+                new_struct = get_full_structure(workflow, task)
                 if new_struct != task.workflow_structure:
                     task.workflow_structure = new_struct
                     modified = True
