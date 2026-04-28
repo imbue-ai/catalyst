@@ -83,7 +83,7 @@ function App() {
 
           <div className="p-4 border-b border-black flex items-center justify-between bg-gray-50/50">
             <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-              <History size={12} /> Recent Research
+              <History size={12} /> Current research
             </div>
             <button
               onClick={() => setShowCreate(true)}
@@ -110,7 +110,7 @@ function App() {
                   <span className={`font-bold text-xs uppercase truncate flex-1 ${selectedTaskId === task.id ? 'text-white' : 'text-black'}`}>
                     {task.title || task.workflow_inputs.summary}
                   </span>
-                  <StatusBadge status={task.status} inverted={selectedTaskId === task.id} />
+                  <StatusBadge status={task.status} />
                 </div>
                 <div className={`text-[10px] flex flex-col gap-1 ${selectedTaskId === task.id ? 'text-gray-400' : 'text-gray-500'}`}>
                   <div className="flex items-center gap-1 truncate"><Folder size={10} /> {task.env_folder}</div>

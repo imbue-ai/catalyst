@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Activity, Folder, Cpu, Terminal, Loader2, Square, Play, Trash2, Database, Copy, Check, Layers } from 'lucide-react'
+import { Activity, Folder, Cpu, Terminal, Loader2, Square, Play, Trash2, Database, Copy, Check, Layers, Plus } from 'lucide-react'
 import * as api from '../api'
 import { StatusBadge } from './StatusBadge'
 import { DataSection } from './DataSection'
 import { WorkflowStep } from './workflow/WorkflowStep'
 import { WorkflowLoop } from './workflow/WorkflowLoop'
 import { ArtifactViewerModal } from './ArtifactViewerModal'
+import { CreateAddonModal } from './CreateAddonModal'
 
 interface TaskDetailProps {
   task: api.Task;
@@ -19,6 +20,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
   const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [showAddonModal, setShowAddonModal] = useState(false)
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -46,6 +48,12 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
     }
   }
 
+  const availableTheoryIds = Array.from(new Set(
+    task.steps
+      .filter(s => s.outputs && s.outputs.theory_id)
+      .map(s => s.outputs.theory_id)
+  )).reverse()
+
   return (
     <div className="flex flex-col h-full">
       {/* Task Header */}
@@ -70,7 +78,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                   Pause Research
                 </button>
               ) : (task.status === 'paused' || task.status === 'failed' || task.status === 'completed') ? (
-                <div className="flex gap-3">
+                <div className="flex gap-3 items-center">
                   {(task.status === 'paused' || task.status === 'failed') && (
                     <button
                       disabled={isProcessing}
@@ -92,7 +100,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               ) : null}
             </div>
           </div>
-          <div className="text-right flex flex-col gap-2 items-end">
+          <div className="flex items-center gap-2">
             <div className="bg-gray-100 p-3 flex items-center gap-2 text-[10px] font-bold">
               <Folder size={14} /> {task.env_folder}
             </div>
@@ -165,6 +173,21 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
 
               return null;
             })}
+
+            {task.status === 'completed' && (
+              <div className="flex justify-center mt-8">
+                <button
+                  disabled={isProcessing}
+                  onClick={() => setShowAddonModal(true)}
+                  className="flex flex-col items-center gap-2 text-gray-400 hover:text-black transition-colors disabled:opacity-50"
+                >
+                  <div className="p-1 bg-black text-white rounded-full">
+                    <Plus size={16} />
+                  </div>
+                  <span className="text-[10px] font-black uppercase tracking-widest">Add step</span>
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -277,6 +300,19 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
           taskId={task.id} 
           artifactId={viewingArtifactId} 
           onClose={() => { window.location.hash = `#/task/${task.id}` }} 
+        />
+      )}
+
+      {showAddonModal && (
+        <CreateAddonModal
+          task={task}
+          availableTheoryIds={availableTheoryIds}
+          onClose={() => setShowAddonModal(false)}
+          onCreated={() => {
+            setShowAddonModal(false)
+            onRefresh()
+          }}
+          isBackendDown={isBackendDown || false}
         />
       )}
     </div>

@@ -1,17 +1,24 @@
 import threading
 import uuid
 import os
-from typing import List, Any
+from typing import List, Any, Dict
 from .models import Task, Step, TaskStatus, StepStatus
 from .state import update_task, get_task, get_task_lock
 from .agents import get_agent_runner
 from .workflows import get_workflow
+from .addons import get_addon_handler
 
 def start_task(task: Task):
     print(f"[ORCHESTRATOR] Starting task {task.id[:8]}: {task.workflow_inputs.get('summary', '')[:50]}...")
     thread = threading.Thread(target=_orchestrate_task, args=(task.id,))
     thread.daemon = True
     thread.start()
+
+def get_full_structure(workflow, task: Task) -> List[Dict[str, Any]]:
+    structure = workflow.get_structure(task) if workflow else []
+    for i, addon in enumerate(task.addons):
+        structure.append({"type": "step", "stage": f"addon-{addon.type}-{i}"})
+    return structure
 
 def _orchestrate_task(task_id: str):
     task = get_task(task_id)
@@ -38,15 +45,36 @@ def _orchestrate_task(task_id: str):
         def run_step_wrapper(t, stage, prompt):
             res = _run_step(t, stage, prompt)
             # Update structure after each step to reflect progress
-            t.workflow_structure = workflow.get_structure(t)
+            t.workflow_structure = get_full_structure(workflow, t)
             update_task(t)
             return res
 
         # Initialize/Update structure before running
-        task.workflow_structure = workflow.get_structure(task)
+        task.workflow_structure = get_full_structure(workflow, task)
         update_task(task)
 
         workflow.run(task, run_step_wrapper)
+
+        # Process Addons
+        for i, addon in enumerate(task.addons):
+            stage = f"addon-{addon.type}-{i}"
+            
+            # Check if already completed
+            completed = False
+            with get_task_lock(task.id):
+                for s in task.steps:
+                    if s.stage == stage and s.status == StepStatus.COMPLETED:
+                        completed = True
+                        break
+            
+            if not completed:
+                print(f"[ORCHESTRATOR] [{task.id[:8]}] Running addon {stage}...")
+                handler = get_addon_handler(addon.type)
+                if not handler:
+                    raise Exception(f"Unknown addon type: {addon.type}")
+                
+                prompt = handler.get_prompt(addon)
+                run_step_wrapper(task, stage, prompt)
 
         task.status = TaskStatus.COMPLETED
         print(f"[ORCHESTRATOR] Task {task_id[:8]} COMPLETED successfully.")
@@ -89,7 +117,7 @@ def _run_step(task: Task, stage: str, prompt: str) -> Any:
 
         task.current_stage = stage
         if workflow:
-            task.workflow_structure = workflow.get_structure(task)
+            task.workflow_structure = get_full_structure(workflow, task)
         update_task(task)
 
     def on_sid(sid):

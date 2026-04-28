@@ -83,6 +83,27 @@ def create_task(req: CreateTaskRequest):
     start_task(task)
     return task
 
+class CreateAddonRequest(BaseModel):
+    type: str
+    theory_id: str
+    direction: Optional[str] = None
+
+@app.post("/api/tasks/{task_id}/addons", response_model=Task)
+def create_addon(task_id: str, req: CreateAddonRequest):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    from orchestrator.models import Addon
+    addon = Addon(type=req.type, theory_id=req.theory_id, direction=req.direction)
+    task.addons.append(addon)
+    update_task(task)
+    
+    if task.status != TaskStatus.RUNNING:
+        start_task(task)
+        
+    return task
+
 @app.post("/api/tasks/{task_id}/cancel")
 def cancel_task(task_id: str):
     task = get_task(task_id)

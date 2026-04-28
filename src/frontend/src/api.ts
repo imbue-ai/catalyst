@@ -11,6 +11,12 @@ export interface Step {
   error?: string;
 }
 
+export interface Addon {
+  type: string;
+  theory_id: string;
+  direction?: string;
+}
+
 export interface Task {
   id: string;
   title?: string;
@@ -22,6 +28,7 @@ export interface Task {
   status: "pending" | "running" | "completed" | "failed" | "paused";
   current_stage?: string;
   steps: Step[];
+  addons: Addon[];
   workflow_name: string;
   workflow_structure: any[];
 }
@@ -51,6 +58,19 @@ export async function createTask(data: {
   if (!res.ok) {
     const error = await res.json();
     throw new Error(error.detail || "Failed to create task");
+  }
+  return res.json();
+}
+
+export async function createAddon(taskId: string, addon: Omit<Addon, 'id'>): Promise<Task> {
+  const res = await fetch(`${API_BASE}/tasks/${taskId}/addons`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(addon),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.detail || "Failed to add addon");
   }
   return res.json();
 }

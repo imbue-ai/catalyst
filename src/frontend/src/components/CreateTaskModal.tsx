@@ -9,7 +9,7 @@ interface CreateTaskModalProps {
 }
 
 export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTaskModalProps) {
-  const [activeTab, setActiveTab] = useState<'develop-theory' | 'refine-theory-idea'>('develop-theory')
+  const [activeTab, setActiveTab] = useState<'develop-theory' | 'refine-theory-idea' | 'import-theory'>('develop-theory')
   
   // Develop Theory Inputs
   const [newPhenomenon, setNewPhenomenon] = useState('')
@@ -18,17 +18,26 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
   const [newIdea, setNewIdea] = useState('')
   const [applyExtensions, setApplyExtensions] = useState(false)
 
+  // Import Theory Inputs
+  const [importFilePath, setImportFilePath] = useState('')
+
   // Shared Inputs
   const [newEnvFolder, setNewEnvFolder] = useState('')
   const [newFramework, setNewFramework] = useState('claude')
   const [newModel, setNewModel] = useState('')
+  const [maxRefinements, setMaxRefinements] = useState(3)
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    const workflow_inputs = activeTab === 'develop-theory' 
-      ? { phenomenon: newPhenomenon }
-      : { idea: newIdea, apply_extensions: applyExtensions }
+    let workflow_inputs: any = {}
+    if (activeTab === 'develop-theory') {
+      workflow_inputs = { phenomenon: newPhenomenon, max_refinements: maxRefinements }
+    } else if (activeTab === 'refine-theory-idea') {
+      workflow_inputs = { idea: newIdea, apply_extensions: applyExtensions, max_refinements: maxRefinements }
+    } else if (activeTab === 'import-theory') {
+      workflow_inputs = { file_path: importFilePath }
+    }
 
     try {
       const task = await api.createTask({
@@ -46,7 +55,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white border-2 border-black p-8 w-full max-w-lg shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[90vh]">
+      <div className="bg-white border-2 border-black p-8 w-full max-w-3xl shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-black uppercase tracking-tighter">Start Research</h2>
           <button onClick={onClose} className="hover:rotate-90 transition-transform">
@@ -69,34 +78,67 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
           >
             Refine Idea
           </button>
+          <button
+            type="button"
+            className={`flex-1 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'import-theory' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
+            onClick={() => setActiveTab('import-theory')}
+          >
+            Import
+          </button>
         </div>
         
         <form onSubmit={handleCreate} className="flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2">
           {activeTab === 'develop-theory' ? (
-            <div>
-              <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Phenomenon to Explain</label>
-              <textarea 
-                autoFocus
-                required
-                rows={4}
-                value={newPhenomenon}
-                onChange={e => setNewPhenomenon(e.target.value)}
-                placeholder="Describe the phenomenon in detail..."
-                className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none"
-              />
-            </div>
-          ) : (
+            <>
+              <div>
+                <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Phenomenon to Explain</label>
+                <textarea 
+                  autoFocus
+                  required
+                  rows={8}
+                  value={newPhenomenon}
+                  onChange={e => setNewPhenomenon(e.target.value)}
+                  placeholder="Describe the phenomenon in detail..."
+                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Max Refinement Iterations</label>
+                <input 
+                  type="number"
+                  min="0"
+                  max="10"
+                  required
+                  value={maxRefinements}
+                  onChange={e => setMaxRefinements(parseInt(e.target.value, 10))}
+                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                />
+              </div>
+            </>
+          ) : activeTab === 'refine-theory-idea' ? (
             <>
               <div>
                 <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Idea / File Path</label>
                 <textarea 
                   autoFocus
                   required
-                  rows={4}
+                  rows={8}
                   value={newIdea}
                   onChange={e => setNewIdea(e.target.value)}
                   placeholder="Describe the idea or provide a file path..."
                   className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none"
+                />
+              </div>
+              <div>
+                <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Max Refinement Iterations</label>
+                <input 
+                  type="number"
+                  min="0"
+                  max="10"
+                  required
+                  value={maxRefinements}
+                  onChange={e => setMaxRefinements(parseInt(e.target.value, 10))}
+                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
                 />
               </div>
               <label className="flex items-center gap-3 cursor-pointer group">
@@ -112,8 +154,22 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                 <span className="text-xs font-bold uppercase tracking-widest">Apply Extensions</span>
               </label>
             </>
+          ) : (
+            <div>
+              <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">File Path to Import</label>
+              <input 
+                autoFocus
+                required
+                value={importFilePath}
+                onChange={e => setImportFilePath(e.target.value)}
+                placeholder="/absolute/path/to/theory.md"
+                className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
+              />
+            </div>
           )}
-          
+
+          <hr className="border-t-2 border-gray-100" />
+
           <div>
             <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Local Environment Path</label>
             <div className="flex items-center gap-2 border-b border-gray-200 focus-within:border-black transition-colors">
