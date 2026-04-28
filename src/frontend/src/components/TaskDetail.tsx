@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Activity, Folder, Cpu, Terminal, Loader2, Square, Play, Trash2, Database, Copy, Check } from 'lucide-react'
+import { Activity, Folder, Cpu, Terminal, Loader2, Square, Play, Trash2, Database, Copy, Check, Layers } from 'lucide-react'
 import * as api from '../api'
 import { StatusBadge } from './StatusBadge'
 import { DataSection } from './DataSection'
@@ -12,9 +12,10 @@ interface TaskDetailProps {
   viewingArtifactId: string | null;
   onDeleteRequest: (id: string) => void;
   onRefresh: () => void;
+  isBackendDown?: boolean;
 }
 
-export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh }: TaskDetailProps) {
+export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh, isBackendDown }: TaskDetailProps) {
   const [selectedStepIndex, setSelectedStepIndex] = useState<number | null>(null)
   const [isProcessing, setIsProcessing] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -173,7 +174,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             <div className="flex flex-col h-full">
               <div className="p-6 border-b border-black bg-white flex justify-between items-center">
                 <div className="flex items-center gap-3">
-                  <div className="bg-black text-white p-1 rounded-sm"><Terminal size={16} /></div>
+                  <div className="bg-black text-white p-1 rounded-sm"><Layers size={16} /></div>
                   <span className="font-black text-xs uppercase tracking-widest">{task.steps[selectedStepIndex].stage}</span>
                 </div>
               </div>
@@ -230,7 +231,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                   <DataSection label="Result" data={task.steps[selectedStepIndex].outputs} primary taskId={task.id} />
                 )}
 
-                {task.steps[selectedStepIndex].error && (
+                {task.steps[selectedStepIndex].error && task.steps[selectedStepIndex].status !== 'paused' && (
                   <div className="bg-red-50 border border-red-200 p-4">
                     <div className="text-[10px] font-black uppercase text-red-500 mb-2 tracking-widest">Critical Failure</div>
                     <div className="text-xs font-bold text-red-900 leading-relaxed">
@@ -252,11 +253,22 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
       {/* Footer Info */}
       <div className="p-4 border-t border-black bg-white flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">
         <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1"><Database size={10} /> {task.db_path}</span>
+          <span className="flex items-center gap-1">
+            <Database size={10} /> 
+            {task.db_path}
+            <button 
+              onClick={() => handleCopy(task.db_path)}
+              className="text-gray-400 hover:text-black transition-colors p-1"
+              title="Copy to clipboard"
+            >
+              {copied ? <Check size={10} /> : <Copy size={10} />}
+            </button>
+          </span>
         </div>
         <div className="flex items-center gap-4">
-          <span>AI Scientist Protocol v0.1.0</span>
-          <span className="text-black">● Live Connection Established</span>
+          <span className={isBackendDown ? "text-red-500 animate-pulse" : "text-black"}>
+            {isBackendDown ? "● Disconnected" : "● Connected"}
+          </span>
         </div>
       </div>
 

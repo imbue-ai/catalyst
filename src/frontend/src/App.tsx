@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Folder, Activity, FlaskConical, History, XCircle } from 'lucide-react'
+import { Plus, Folder, Activity, FlaskConical, History } from 'lucide-react'
 import * as api from './api'
 import { StatusBadge } from './components/StatusBadge'
 import { TaskDetail } from './components/TaskDetail'
@@ -64,11 +64,9 @@ function App() {
   const selectedTask = tasks.find(t => t.id === selectedTaskId)
 
   return (
-    <div className="min-h-screen bg-white text-black font-mono selection:bg-black selection:text-white">
+    <div className="min-h-screen bg-white text-black font-mono selection:bg-black selection:text-white relative">
       {isBackendDown && (
-        <div className="bg-red-600 text-white p-2 text-[10px] font-black uppercase tracking-[0.3em] flex items-center justify-center gap-4 sticky top-0 z-[100] animate-pulse">
-          <XCircle size={14} /> Backend Server Offline - Reconnecting...
-        </div>
+        <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[2px] pointer-events-none transition-all duration-300" />
       )}
 
       {/* Sidebar */}
@@ -131,6 +129,7 @@ function App() {
               viewingArtifactId={viewingArtifactId}
               onDeleteRequest={(id) => setShowDeleteConfirm(id)}
               onRefresh={fetchTasks}
+              isBackendDown={isBackendDown}
             />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-20 text-center">
