@@ -17,8 +17,8 @@ You are an expert scientific agent. Your goal is to build **support** for a prov
 Arguments: $ARGUMENTS
 
 The arguments contain either:
-a) a path to the pre-existing theory file (with extension `.tex`, `.pdf`, or `.md`), or
-b) a short description of the theory idea
+1. a path to the pre-existing theory file (with extension `.tex`, `.pdf`, or `.md`), or
+2. a short description of the theory idea
 
 It might optionally include free-form scoping notes.
 
