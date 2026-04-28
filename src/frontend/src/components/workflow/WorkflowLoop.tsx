@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { History, Loader2, RefreshCw } from 'lucide-react'
+import { History, Loader2, RefreshCw, XCircle } from 'lucide-react'
 import * as api from '../../api'
 
 interface WorkflowLoopProps {
@@ -7,14 +7,16 @@ interface WorkflowLoopProps {
   baseStages: string[];
   iterations: number;
   task: api.Task;
-  onSelect: (idx: number) => void;
+  onSelect: (stage: string) => void;
   selectedStage?: string;
   onRetry: () => void;
+  onRefresh: () => void;
 }
 
-export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, selectedStage, onRetry }: WorkflowLoopProps) {
+export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, selectedStage, onRetry, onRefresh }: WorkflowLoopProps) {
   const [activeIteration, setActiveIteration] = useState(1)
   const [lastLatest, setLastLatest] = useState(0)
+  const [isCanceling, setIsCanceling] = useState(false)
 
   useEffect(() => {
     // Calculate what the current latest iteration is based on steps
@@ -52,9 +54,34 @@ export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, sel
       
       <div className="bg-white border-2 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
         <div className="flex justify-between items-center mb-6">
-          <div className="flex items-center gap-2">
-            <History size={16} />
-            <h4 className="font-black text-xs uppercase tracking-[0.2em]">{name}</h4>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <History size={16} />
+              <h4 className="font-black text-xs uppercase tracking-[0.2em]">{name}</h4>
+            </div>
+            {task.status !== 'completed' && (
+              <button 
+                onClick={async () => {
+                  setIsCanceling(true);
+                  try {
+                    const stagesToCancel: string[] = [];
+                    for (let i = 1; i <= iterations; i++) {
+                      baseStages.forEach(bs => stagesToCancel.push(`${bs}-${i}`));
+                    }
+                    await api.bulkCancelSteps(task.id, stagesToCancel);
+                    onRefresh();
+                  } catch (e: any) {
+                    alert(e.message || "Failed to cancel loop");
+                  } finally {
+                    setIsCanceling(false);
+                  }
+                }}
+                disabled={isCanceling}
+                className="text-[10px] font-black uppercase text-gray-400 hover:text-red-600 transition-colors flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-sm border border-gray-200 hover:border-red-200"
+              >
+                {isCanceling ? <Loader2 size={10} className="animate-spin" /> : <XCircle size={10} />} Cancel Loop
+              </button>
+            )}
           </div>
           <div className="flex gap-1">
             {Array.from({ length: iterations }, (_, i) => i + 1).map(it => (
@@ -73,20 +100,13 @@ export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, sel
           {baseStages.map(baseStage => {
             const stageName = `${baseStage}-${activeIteration}`
             const step = getStepForIteration(activeIteration, baseStage)
-            const isCurrent = task.current_stage === stageName
+            const isCurrent = task.current_stage === stageName && (!step || step.status === 'running')
             
             return (
               <div 
                 key={baseStage}
-                onClick={() => {
-                   if (step) {
-                     const idx = task.steps.findIndex(s => s.stage === step.stage)
-                     onSelect(idx)
-                   }
-                }}
-                className={`p-3 border-2 transition-all ${
-                  step ? 'cursor-pointer' : 'opacity-30 cursor-default'
-                } ${
+                onClick={() => onSelect(stageName)}
+                className={`p-3 border-2 transition-all cursor-pointer ${
                   selectedStage === stageName
                     ? 'border-black bg-gray-50' : 'border-gray-100 hover:border-black'
                 }`}
@@ -108,6 +128,7 @@ export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, sel
                       step?.status === 'completed' ? 'text-green-600' :
                       step?.status === 'paused' ? 'text-yellow-600' :
                       step?.status === 'failed' ? 'text-red-600' :
+                      step?.status === 'canceled' ? 'text-gray-500' :
                       (step?.status === 'running' || isCurrent) ? 'text-blue-600' : 'text-gray-400'
                     }`}>{step?.status || (isCurrent ? 'running' : 'upcoming')}</span>
                   </div>

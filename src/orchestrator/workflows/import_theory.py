@@ -35,5 +35,5 @@ class ImportTheoryWorkflow(Workflow):
             "When you are done, return a JSON object with the key 'theory_id'."
         )
         theory_id = import_data.get("theory_id") if import_data else None
-        if not theory_id:
+        if not theory_id and not (import_data and import_data.get("_canceled")):
             raise Exception("import-theory failed to return a theory ID.")

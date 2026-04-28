@@ -3,7 +3,7 @@ const API_BASE = `${API_BASE_URL}/api`;
 
 export interface Step {
   stage: string;
-  status: "pending" | "running" | "completed" | "failed" | "paused";
+  status: "pending" | "running" | "completed" | "failed" | "paused" | "canceled";
   inputs: any;
   outputs?: any;
   session_id?: string;
@@ -84,6 +84,26 @@ export async function cancelTask(id: string): Promise<void> {
 export async function resumeTask(id: string): Promise<Task> {
   const res = await fetch(`${API_BASE}/tasks/${id}/resume`, { method: "POST" });
   return res.json();
+}
+
+export async function cancelStep(taskId: string, stage: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/tasks/${taskId}/steps/${stage}/cancel`, { method: "POST" });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.detail || "Failed to cancel step");
+  }
+}
+
+export async function bulkCancelSteps(taskId: string, stages: string[]): Promise<void> {
+  const res = await fetch(`${API_BASE}/tasks/${taskId}/steps/bulk-cancel`, { 
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ stages })
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.detail || "Failed to cancel steps");
+  }
 }
 
 export async function deleteTask(id: string): Promise<void> {

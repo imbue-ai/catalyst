@@ -8,7 +8,8 @@ export function StatusBadge({ status }: StatusBadgeProps) {
     running: 'bg-blue-600 text-white animate-pulse',
     completed: 'bg-green-600 text-white',
     failed: 'bg-red-600 text-white',
-    paused: 'bg-yellow-500 text-white'
+    paused: 'bg-yellow-500 text-white',
+    canceled: 'bg-gray-500 text-white'
   }
   
   return (

@@ -4,7 +4,7 @@ import * as api from '../../api'
 interface WorkflowStepProps {
   stage: string;
   task: api.Task;
-  onSelect: (idx: number) => void;
+  onSelect: (stage: string) => void;
   isSelected: boolean;
   onRetry: () => void;
   isPlaceholder?: boolean;
@@ -17,11 +17,8 @@ export function WorkflowStep({ stage, task, onSelect, isSelected, onRetry, isPla
   
   return (
     <div 
-      onClick={() => {
-        const stepIdx = task.steps.findIndex(s => s.stage === stage)
-        if (stepIdx !== -1) onSelect(stepIdx)
-      }}
-      className={`relative pl-8 group transition-all ${step ? 'cursor-pointer' : 'cursor-default'}`}
+      onClick={() => onSelect(stage)}
+      className={`relative pl-8 group transition-all cursor-pointer`}
     >
       {/* Connector line */}
       {showConnector && (
@@ -32,9 +29,11 @@ export function WorkflowStep({ stage, task, onSelect, isSelected, onRetry, isPla
       <div className={`absolute left-0 top-0 w-5 h-5 rounded-full border-2 bg-white z-10 transition-all ${
         step?.status === 'completed' ? 'border-green-600 bg-green-600' : 
         (step?.status === 'running' || isCurrent) ? 'border-blue-600' : 
-        step?.status === 'paused' ? 'border-yellow-500' : 'border-gray-200'
+        step?.status === 'paused' ? 'border-yellow-500' : 
+        step?.status === 'canceled' ? 'border-gray-500 bg-gray-500' : 'border-gray-200'
       }`}>
          {step?.status === 'completed' && <CheckCircle size={12} className="text-white m-auto mt-[2px]" />}
+         {step?.status === 'canceled' && <div className="w-2 h-0.5 bg-white m-auto mt-2" />}
          {(step?.status === 'running' || isCurrent) && <div className="w-1 h-1 bg-blue-600 rounded-full m-auto mt-1.5 animate-ping" />}
          {step?.status === 'paused' && <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full m-auto mt-1.5" />}
       </div>
@@ -60,7 +59,8 @@ export function WorkflowStep({ stage, task, onSelect, isSelected, onRetry, isPla
               step?.status === 'completed' ? 'bg-green-600 text-white' : 
               (step?.status === 'running' || isCurrent) ? 'bg-blue-100 text-blue-700' : 
               step?.status === 'failed' ? 'bg-red-100 text-red-700' : 
-              step?.status === 'paused' ? 'bg-yellow-500 text-white' : 'bg-gray-100 text-gray-400'
+              step?.status === 'paused' ? 'bg-yellow-500 text-white' : 
+              step?.status === 'canceled' ? 'bg-gray-500 text-white' : 'bg-gray-100 text-gray-400'
             }`}>
               {step?.status || (isCurrent ? 'running' : 'upcoming')}
             </span>
