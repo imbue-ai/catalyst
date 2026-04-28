@@ -28,7 +28,7 @@ class Step(BaseModel):
 class Task(BaseModel):
     id: str
     title: Optional[str] = None
-    phenomenon: str
+    workflow_inputs: Dict[str, Any] = {}
     env_folder: str
     framework: str # "gemini" or "claude"
     model: Optional[str] = None

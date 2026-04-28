@@ -9,16 +9,31 @@ interface CreateTaskModalProps {
 }
 
 export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTaskModalProps) {
+  const [activeTab, setActiveTab] = useState<'develop-theory' | 'refine-theory-idea'>('develop-theory')
+  
+  // Develop Theory Inputs
   const [newPhenomenon, setNewPhenomenon] = useState('')
+  
+  // Refine Theory Idea Inputs
+  const [newIdea, setNewIdea] = useState('')
+  const [applyExtensions, setApplyExtensions] = useState(false)
+
+  // Shared Inputs
   const [newEnvFolder, setNewEnvFolder] = useState('')
   const [newFramework, setNewFramework] = useState('claude')
   const [newModel, setNewModel] = useState('')
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    const workflow_inputs = activeTab === 'develop-theory' 
+      ? { phenomenon: newPhenomenon }
+      : { idea: newIdea, apply_extensions: applyExtensions }
+
     try {
       const task = await api.createTask({
-        phenomenon: newPhenomenon,
+        workflow_name: activeTab,
+        workflow_inputs,
         env_folder: newEnvFolder,
         framework: newFramework,
         model: newModel || undefined
@@ -31,27 +46,73 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white border-2 border-black p-8 w-full max-w-lg shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
-        <div className="flex justify-between items-center mb-8">
+      <div className="bg-white border-2 border-black p-8 w-full max-w-lg shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[90vh]">
+        <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-black uppercase tracking-tighter">Start Research</h2>
           <button onClick={onClose} className="hover:rotate-90 transition-transform">
             <XCircle size={24} />
           </button>
         </div>
+
+        <div className="flex border-b-2 border-black mb-6">
+          <button
+            type="button"
+            className={`flex-1 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'develop-theory' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
+            onClick={() => setActiveTab('develop-theory')}
+          >
+            Develop Theory
+          </button>
+          <button
+            type="button"
+            className={`flex-1 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'refine-theory-idea' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
+            onClick={() => setActiveTab('refine-theory-idea')}
+          >
+            Refine Idea
+          </button>
+        </div>
         
-        <form onSubmit={handleCreate} className="flex flex-col gap-6">
-          <div>
-            <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Phenomenon to Explain</label>
-            <textarea 
-              autoFocus
-              required
-              rows={4}
-              value={newPhenomenon}
-              onChange={e => setNewPhenomenon(e.target.value)}
-              placeholder="Describe the phenomenon in detail..."
-              className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none"
-            />
-          </div>
+        <form onSubmit={handleCreate} className="flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2">
+          {activeTab === 'develop-theory' ? (
+            <div>
+              <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Phenomenon to Explain</label>
+              <textarea 
+                autoFocus
+                required
+                rows={4}
+                value={newPhenomenon}
+                onChange={e => setNewPhenomenon(e.target.value)}
+                placeholder="Describe the phenomenon in detail..."
+                className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none"
+              />
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Idea / File Path</label>
+                <textarea 
+                  autoFocus
+                  required
+                  rows={4}
+                  value={newIdea}
+                  onChange={e => setNewIdea(e.target.value)}
+                  placeholder="Describe the idea or provide a file path..."
+                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none"
+                />
+              </div>
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
+                  <input 
+                    type="checkbox"
+                    className="absolute opacity-0 w-full h-full cursor-pointer"
+                    checked={applyExtensions}
+                    onChange={e => setApplyExtensions(e.target.checked)}
+                  />
+                  {applyExtensions && <div className="w-3 h-3 bg-black" />}
+                </div>
+                <span className="text-xs font-bold uppercase tracking-widest">Apply Extensions</span>
+              </label>
+            </>
+          )}
           
           <div>
             <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Local Environment Path</label>
@@ -93,11 +154,11 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
             </div>
           </div>
 
-          <div className="flex gap-4 mt-8">
+          <div className="flex gap-4 mt-8 pt-4 border-t border-gray-100">
             <button 
               type="submit"
               disabled={isBackendDown}
-              className="flex-1 bg-black text-white p-4 font-black uppercase text-sm tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="flex-1 bg-black text-white p-4 font-black uppercase text-sm tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
             >
               {isBackendDown ? 'Backend Offline' : 'START RESEARCH'} <ChevronRight size={18} />
             </button>

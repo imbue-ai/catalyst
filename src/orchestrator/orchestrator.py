@@ -8,7 +8,7 @@ from .agents import get_agent_runner
 from .workflows import get_workflow
 
 def start_task(task: Task):
-    print(f"[ORCHESTRATOR] Starting task {task.id[:8]}: {task.phenomenon[:50]}...")
+    print(f"[ORCHESTRATOR] Starting task {task.id[:8]}: {task.workflow_inputs.get('summary', '')[:50]}...")
     thread = threading.Thread(target=_orchestrate_task, args=(task.id,))
     thread.daemon = True
     thread.start()

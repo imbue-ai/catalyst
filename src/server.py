@@ -5,7 +5,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from contextlib import asynccontextmanager
 
 from orchestrator.models import Task, TaskStatus
@@ -33,7 +33,8 @@ app.add_middleware(
 )
 
 class CreateTaskRequest(BaseModel):
-    phenomenon: str
+    workflow_name: str
+    workflow_inputs: Dict[str, Any]
     env_folder: str
     framework: str
     model: Optional[str] = None
@@ -56,6 +57,11 @@ def create_task(req: CreateTaskRequest):
     if not os.path.exists(abs_env_folder) or not os.path.isdir(abs_env_folder):
         raise HTTPException(status_code=400, detail=f"Environment folder does not exist: {req.env_folder}")
 
+    # Inject summary into workflow_inputs
+    inputs = dict(req.workflow_inputs)
+    summary_candidate = inputs.get("phenomenon") or inputs.get("idea") or ""
+    inputs["summary"] = summary_candidate
+
     task_id = str(uuid.uuid4())
     # Generate unique DB path inside env_folder
     db_name = f".ai-scientist-db_{task_id[:8]}"
@@ -63,13 +69,14 @@ def create_task(req: CreateTaskRequest):
     
     task = Task(
         id=task_id,
-        phenomenon=req.phenomenon,
+        workflow_inputs=inputs,
         env_folder=req.env_folder,
         framework=req.framework,
         model=req.model,
         db_path=db_path,
         status=TaskStatus.PENDING,
-        steps=[]
+        steps=[],
+        workflow_name=req.workflow_name
     )
     
     add_task(task)

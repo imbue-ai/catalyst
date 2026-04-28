@@ -60,13 +60,15 @@ class DevelopTheoryWorkflow(Workflow):
                     return s.outputs
             return None
 
+        phenomenon = task.workflow_inputs["phenomenon"]
+
         # Step 0: Summarize Title
         if not task.title:
             print(f"[ORCHESTRATOR] [{task.id[:8]}] Generating summarized title...")
             title_data = run_step(
                 task,
                 "summarize-title",
-                f"Please provide a very short, summarized title (maximum 5 words) for the following research phenomenon: {task.phenomenon}. "
+                f"Please provide a very short, summarized title (maximum 5 words) for the following research phenomenon:\n```\n{phenomenon}\n```\n"
                 "Return a JSON object with the key 'title'.",
             )
             if title_data and isinstance(title_data, dict):
@@ -103,7 +105,7 @@ class DevelopTheoryWorkflow(Workflow):
                     target=run_and_store,
                     args=(
                         "literature-review",
-                        f"Please run the literature-review skill for the following phenomenon:\n```\n{task.phenomenon}\n```\n"
+                        f"Please run the literature-review skill for the following phenomenon:\n```\n{phenomenon}\n```\n"
                         "When you are done, return a JSON object with the key 'literature_review_id'.",
                         "lit",
                     ),
@@ -116,7 +118,7 @@ class DevelopTheoryWorkflow(Workflow):
                     target=run_and_store,
                     args=(
                         "explore",
-                        f"Please run the explore skill for the following phenomenon:\n```\n{task.phenomenon}\n```\n"
+                        f"Please run the explore skill for the following phenomenon:\n```\n{phenomenon}\n```\n"
                         "When you are done, return a JSON object with the key 'exploration_id'.",
                         "exp",
                     ),
@@ -153,7 +155,7 @@ class DevelopTheoryWorkflow(Workflow):
             theory_data = run_step(
                 task,
                 "write-theory",
-                f"Please run the write-theory skill for the following phenomenon:\n```\n{task.phenomenon}\n```\n"
+                f"Please run the write-theory skill for the following phenomenon:\n```\n{phenomenon}\n```\n"
                 f"Use exploration_id: {exploration_id} and literature_review_id: {lit_review_id}. "
                 "When you are done, return a JSON object with the key 'theory_id'.",
             )

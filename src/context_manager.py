@@ -42,7 +42,7 @@ AGENT_TYPE_MAP: dict[str, str] = {
     "expand-theory": "theory",
     "polish-theory": "theory",
     "streamline-theory": "theory",
-    "support-theory": "theory",
+    "support-idea": "theory",
     "import-theory": "theory",
     "run-experiment": "experiment",
     "predict-experiments": "prediction",
@@ -333,7 +333,7 @@ def store_results(
     )
     parent_theory_allowed_agents = parent_theory_required_agents + (
         "run-experiment",
-        "support-theory",
+        "support-idea",
     )
 
     if from_agent_type in parent_theory_required_agents and not parent_theory:
