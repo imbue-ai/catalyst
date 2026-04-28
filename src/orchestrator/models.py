@@ -25,6 +25,11 @@ class Step(BaseModel):
     last_status: Optional[str] = None
     error: Optional[str] = None
 
+class Addon(BaseModel):
+    type: str # "streamline-theory", "review-theory", "refine-theory"
+    theory_id: str
+    direction: Optional[str] = None
+
 class Task(BaseModel):
     id: str
     title: Optional[str] = None
@@ -36,6 +41,7 @@ class Task(BaseModel):
     status: TaskStatus = TaskStatus.PENDING
     current_stage: Optional[str] = None
     steps: List[Step] = []
+    addons: List[Addon] = []
     workflow_name: str = "develop-theory"
     workflow_structure: List[Dict[str, Any]] = []
 
