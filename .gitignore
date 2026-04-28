@@ -2,6 +2,7 @@
 __pycache__/
 *.pyc
 *.egg-info/
+.env
 dist/
 build/
 logs/
@@ -12,3 +13,4 @@ logs/
 /tmp/
 .ai-scientist-db*/
 scheduled_tasks.lock
+tasks_state.json
