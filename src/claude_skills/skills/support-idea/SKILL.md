@@ -1,13 +1,13 @@
 ---
-name: support-theory
-description: "Run experiments and derive mathematical proofs to support a pre-existing theory supplied as a latex/pdf/markdown file."
-argument-hint: "path to the pre-existing theory file (.tex, .pdf, or .md) and any optional scoping notes (e.g. 'focus on Theorem 3')"
+name: support-idea
+description: "Run experiments and derive mathematical proofs to support a pre-existing theory idea supplied as a latex/pdf/markdown file or argument."
+argument-hint: "Either: path to the pre-existing theory file (.tex, .pdf, or .md) and any optional scoping notes (e.g. 'focus on Theorem 3'), OR a short description of the theory idea"
 ---
 
-You are an expert scientific agent. Your goal is to **support** a pre-existing theory — not to falsify it, not to expand it, but to gather as much rigorous evidence *in favor* of the theory's stated claims as you can, via experiments, mathematical proofs/derivations, and prior literature.
+You are an expert scientific agent. Your goal is to build **support** for a provided theory idea — not to falsify it, not to expand it, but to gather as much rigorous evidence *in favor* of the theory's stated claims as you can, via experiments, mathematical proofs/derivations, and prior literature.
 
 ## Mandate
-- The theory you are supporting comes from an external file (latex, pdf, or markdown). Treat its statements (definitions, conjectures, observations, lemmas, theorems) as fixed inputs — do not rewrite or reinterpret them. Your job is to *strengthen the evidence* behind each one.
+- The theory you are supporting comes from an external file (latex, pdf, or markdown) or a short description provided as an argument. Treat its statements (definitions, conjectures, observations, lemmas, theorems) as fixed inputs — do not rewrite or reinterpret them. Your job is to *strengthen the evidence* behind each one. You *can* however add additional intermediate lemmas or propositions if they help build the case for the main statements.
 - For every non-trivial statement in the theory, aim to provide at least one of: a mathematical proof/derivation, an experimental result, or a citation of prior literature that directly supports it. Prefer multiple independent lines of support when feasible.
 - You must run a literature review **inline** via the `search-literature` skill to ground the theory in prior work. Run further targeted searches any time an individual claim needs literature support.
 - All experiment execution must go through the `run-experiment` skill. See the "Running experiments" section below.
@@ -16,14 +16,18 @@ You are an expert scientific agent. Your goal is to **support** a pre-existing t
 ## Input
 Arguments: $ARGUMENTS
 
-The arguments contain a path to the pre-existing theory file (with extension `.tex`, `.pdf`, or `.md`), and optionally free-form scoping notes. Parse the file path first; treat everything else as scoping notes.
+The arguments contain either:
+a) a path to the pre-existing theory file (with extension `.tex`, `.pdf`, or `.md`), or
+b) a short description of the theory idea
+
+It might optionally include free-form scoping notes.
 
 ## Folder setup
 Set up two folders — one for input context, one for your own output:
 CONTEXT_DIR: `mktemp -d -p ./tmp support-theory-context-XXXX`
 OUTPUT_DIR: `mktemp -d -p ./tmp support-theory-output-XXXX`
 
-Copy the provided theory file into the context folder so it lives at a stable path for the rest of the run:
+If the input theory is provided as a file, copy the provided theory file into the context folder so it lives at a stable path for the rest of the run:
 ```bash
 cp "<INPUT_FILE_PATH>" "<CONTEXT_DIR>/source_theory.<ext>"
 ```
@@ -64,7 +68,7 @@ Useful experiment patterns for this skill:
 - **Cross-regime confirmation**: Verify a claim holds in regimes that weren't the theory's original focus, to strengthen the case.
 
 ## Execution Steps
-1. **Parse input**: Extract the file path and scoping notes from `$ARGUMENTS`. Validate the file exists and has extension `.tex`, `.pdf`, or `.md`. Copy it into `<CONTEXT_DIR>` as described in "Folder setup".
+1. **Parse input**: Extract the file path or theory idea, and any potential scoping notes from `$ARGUMENTS`. If a file path is provided, validate that the file exists and has extension `.tex`, `.pdf`, or `.md`. Copy it into `<CONTEXT_DIR>` as described in "Folder setup".
 2. **Extract statements**: Read the source theory and produce `<OUTPUT_DIR>/statements.md`: a numbered list of every definition, observation, lemma, theorem, and corollary in the theory, each with its assumptions and an initial note on what kind of support would be most convincing (proof, experiment, or literature citation).
 3. **Initial literature review**: Invoke `search-literature` with the theory's topic + its top 2–3 load-bearing claims, then fold the result into `<CONTEXT_DIR>` as described above. Read the resulting `summary.md`.
 4. **Reproduce a base case**: Before you continue, make sure you can successfully reproduce a base case of the phenomenon. Use `run-experiment`, and find the hyper-parameters that most clearly illustrate the phenomenon. You might get a good figure out of this step for inclusion in your theory.
@@ -82,48 +86,16 @@ Useful experiment patterns for this skill:
    Note down the returned theory ID (e.g. `T_20260421_150000_x1y2z3`) as the result of this skill.
 
 ## Theory Output Format
-Your `theory.md` file must be a **self-contained, fully supported rewrite** of the source theory. Preserve the original statements verbatim (including their numbering and names where the source provides them). Beneath each statement, add a structured "Support" block with the evidence you gathered.
+Your `theory.md` file must be a **self-contained, fully supported rewrite** of the source theory. Preserve the original statements (including their names where the source provides them). Add supporting evidence (such as mathematical proofs, experimental results, or literature citations) that you have gathered after each statement.
 
-Structure:
+Follow these guidelines when writing the `theory.md` file:
+- Start with a brief definition of the phenomenon and provide any necessary context, including a brief summary of the relevant literature.
+- Structure your theory into a set of precise definitions, conjectures, observations, lemmas and theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally prove it! Statements that are only based on experimental observation should be labeled as observations. Later statements can build on earlier ones.
+- Provide intuition for the mechanisms behind each statement. Then follow up with rigorous mathematical definitions, proofs, and experimental evidence.
+- Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
+- Explicitly lay out the evidence you have for each statement, either a mathematical proof/derivation, or empirical evidence from experiments. Perform thorough mathematical derivations and proofs when possible. You can also cite prior literature to support your statements.
+- Include plots, figures and specific data points from your experiments to provide intuition and illustrate the evidence for your statements. Make sure to include detailed captions for each plot to explain what is being shown.
+- Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. If you want to include images from the exploration context, copy them to your `<OUTPUT_DIR>/` first.
+- Cite literature where applicable
 
-```
-# Supported Theory: [original theory title]
-
-## Source
-- Original file: [filename the user provided]
-- Scope of this support effort: [if the user provided scoping notes, repeat them here; otherwise "entire theory"]
-
-## Background & Literature
-[1–3 paragraph synthesis grounded in the inline literature review(s). Cite the papers that directly support or contextualize the theory's central claims. Reference literature IDs (L_...) you used.]
-
-## Statements and Supporting Evidence
-
-### [Statement 1 label — e.g. "Definition 1: Bifurcation manifold"]
-> [Verbatim statement from the source theory]
-
-**Assumptions**: [list assumptions, copied from source or inferred]
-
-**Support**:
-- *Proof / derivation*: [full derivation, or "N/A — observational statement"]
-- *Experiments*: [list each supporting experiment as `X_ID` with a 1-line description of what it shows]
-- *Literature*: [list supporting papers as `[arXiv:XXXX.XXXXX]` with a 1-line note on how each paper supports the claim]
-- *Caveats*: [any regime where the support is weaker or conditional]
-
----
-
-### [Statement 2 label] ...
-...
-
-## Unsupported Claims
-[If any statements could not be supported, list them here with a brief explanation of what was attempted and why it failed. Omit this section if all statements are supported.]
-
-## Summary of Evidence
-[A short closing paragraph summarizing the overall strength of support: how many statements have proofs, how many have experimental support, how many rely primarily on literature. Mention the overall experiment IDs and literature IDs used.]
-```
-
-Stylistic guidelines:
-- Do NOT modify the original statements — only add supporting evidence beneath them.
-- Image references in the markdown file must be relative to `<OUTPUT_DIR>`. Copy any images you want to include into `<OUTPUT_DIR>/`.
-- Include detailed figure captions explaining exactly what each plot shows.
-- Cite every literature reference with its arXiv ID and link to the PDF inside `<CONTEXT_DIR>/literature/<L_ID>/papers/` where applicable.
-- The final document should read like a scientific report defending the theory, grounded in proofs, experiments, and prior work.
+As a general guideline, write your theory in a way that resembles a well-written main part of a scientific paper or textbook chapter.
