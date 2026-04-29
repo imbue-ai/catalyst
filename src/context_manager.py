@@ -416,20 +416,316 @@ def _get_ancestor_theories(db_root: Path, base_theories: list[str]) -> set[str]:
     return target_theories
 
 
-def create_context(
-    for_agent_type: str,
+def _assemble_write_theory(
     target_folder: Path,
-    from_exploration: str | None = None,
-    from_literatures: list[str] | None = None,
-    from_theories: list[str] | None = None,
-    from_reviews: list[str] | None = None,
-    from_experiments: list[str] | None = None,
-    from_predictions: list[str] | None = None,
+    exploration_dir: Path | None,
+    literature_dirs: list[tuple[str, Path]],
 ) -> None:
-    """Assemble upstream artifacts into *target_folder* for the next agent."""
-    db_root = get_db_path()
+    dst = target_folder / "exploration"
+    shutil.copytree(
+        exploration_dir,  # type: ignore[possibly-undefined]
+        dst,
+        ignore=IGNORE_METADATA_PATTERN,
+    )
+    _make_writable(dst)
+    if literature_dirs:
+        _, lit_dir = literature_dirs[0]
+        ldst = target_folder / "literature"
+        shutil.copytree(lit_dir, ldst, ignore=IGNORE_METADATA_PATTERN)
+        _make_writable(ldst)
 
-    # --- validate required references per agent type ---
+
+def _assemble_theory_copy(
+    target_folder: Path, theory_dirs: list[tuple[str, Path]]
+) -> None:
+    dst = target_folder / "theory"
+    shutil.copytree(
+        theory_dirs[0][1],
+        dst,
+        ignore=IGNORE_METADATA_PATTERN,
+    )
+    _make_writable(dst)
+
+
+def _assemble_refine_expand(
+    db_root: Path,
+    target_folder: Path,
+    theory_dirs: list[tuple[str, Path]],
+    from_reviews: list[str] | None,
+    literature_dirs: list[tuple[str, Path]],
+) -> None:
+    dst = target_folder / "theory"
+    shutil.copytree(
+        theory_dirs[0][1],
+        dst,
+        ignore=IGNORE_METADATA_PATTERN,
+    )
+    _make_writable(dst)
+    reviews_root = target_folder / "reviews"
+    reviews_root.mkdir(exist_ok=True)
+    for rid in from_reviews:  # type: ignore[union-attr]
+        src = db_root / "review" / rid
+        rdst = reviews_root / rid
+        shutil.copytree(src, rdst, ignore=IGNORE_METADATA_PATTERN)
+        _make_writable(rdst)
+    if literature_dirs:
+        lit_root = target_folder / "literature"
+        lit_root.mkdir(exist_ok=True)
+        for lid, lit_dir in literature_dirs:
+            ldst = lit_root / lid
+            shutil.copytree(lit_dir, ldst, ignore=IGNORE_METADATA_PATTERN)
+            _make_writable(ldst)
+
+
+def _assemble_review_theory(
+    target_folder: Path, theory_dirs: list[tuple[str, Path]]
+) -> None:
+    dst = target_folder / "theory.md"
+    src_theory_md = theory_dirs[0][1] / "theory.md"
+    if src_theory_md.exists():
+        shutil.copy2(src_theory_md, dst)
+        _make_writable(dst)
+
+
+def _assemble_predict_experiments(
+    target_folder: Path,
+    theory_dirs: list[tuple[str, Path]],
+    from_experiments: list[str] | None,
+) -> None:
+    dst = target_folder / "theory"
+    shutil.copytree(
+        theory_dirs[0][1],
+        dst,
+        ignore=IGNORE_METADATA_PATTERN,
+    )
+    _make_writable(dst)
+    for exp_id in from_experiments:  # type: ignore[union-attr]
+        fetch_experiment(target_folder, exp_id, exclude_results=True)
+
+
+def _assemble_rank_predictions(
+    db_root: Path,
+    target_folder: Path,
+    from_predictions: list[str] | None,
+    from_experiments: list[str] | None,
+) -> None:
+    preds_root = target_folder / "predictions"
+    preds_root.mkdir(exist_ok=True)
+    for pid in from_predictions:  # type: ignore[union-attr]
+        src = db_root / "prediction" / pid
+        pdst = preds_root / pid
+        shutil.copytree(src, pdst, ignore=IGNORE_METADATA_PATTERN)
+        _make_writable(pdst)
+
+    exp_id = from_experiments[0]  # type: ignore[index]
+    exp_src = db_root / "experiment" / exp_id
+    exp_dst = target_folder / "experiment"
+    shutil.copytree(exp_src, exp_dst, ignore=IGNORE_METADATA_PATTERN)
+    _make_writable(exp_dst)
+
+
+def _assemble_score_theories(
+    db_root: Path,
+    target_folder: Path,
+    theory_dirs: list[tuple[str, Path]],
+    from_theories: list[str] | None,
+) -> None:
+    theories_root = target_folder / "theories"
+    theories_root.mkdir(exist_ok=True)
+    for tid, tdir in theory_dirs:
+        dst = theories_root / tid
+        shutil.copytree(tdir, dst, ignore=IGNORE_METADATA_PATTERN)
+        _make_writable(dst)
+
+    matched_experiments_by_base: dict[str, list[tuple[str, str]]] = {
+        tid: [] for tid in (from_theories or [])
+    }
+    exp_root = db_root / "experiment"
+    if exp_root.is_dir() and from_theories:
+        base_ancestors = {
+            tid: _get_ancestor_theories(db_root, [tid]) for tid in from_theories
+        }
+        for meta_path in exp_root.glob("*/metadata.json"):
+            try:
+                data = json.loads(meta_path.read_text())
+                parent_theory = data.get("parent_theory")
+                if parent_theory:
+                    eid = data.get("id")
+                    created_at = data.get("created_at", "")
+                    if eid:
+                        for base_tid, ancestors in base_ancestors.items():
+                            if parent_theory in ancestors:
+                                matched_experiments_by_base[base_tid].append(
+                                    (created_at, eid)
+                                )
+            except (json.JSONDecodeError, OSError):
+                continue
+
+    for exps in matched_experiments_by_base.values():
+        exps.sort(key=lambda x: x[0], reverse=True)
+
+    num_experiments_to_include = 30
+    selected_eids: set[str] = set()
+
+    if from_theories:
+        pointers = {tid: 0 for tid in from_theories}
+        while len(selected_eids) < num_experiments_to_include:
+            added_in_round = False
+            for tid in from_theories:
+                exps = matched_experiments_by_base[tid]
+                while pointers[tid] < len(exps):
+                    _, eid = exps[pointers[tid]]
+                    pointers[tid] += 1
+                    if eid not in selected_eids:
+                        selected_eids.add(eid)
+                        added_in_round = True
+                        break
+                if len(selected_eids) >= num_experiments_to_include:
+                    break
+            if not added_in_round:
+                break
+
+    for exp_id in selected_eids:
+        fetch_experiment(target_folder, exp_id, exclude_results=True)
+
+
+def _assemble_score_soundness(
+    db_root: Path, target_folder: Path, theory_dirs: list[tuple[str, Path]]
+) -> None:
+    dst = target_folder / "theory"
+    shutil.copytree(
+        theory_dirs[0][1],
+        dst,
+        ignore=IGNORE_METADATA_PATTERN,
+    )
+    _make_writable(dst)
+
+    reviews_root = target_folder / "reviews"
+    reviews_root.mkdir(exist_ok=True)
+    review_root_dir = db_root / "review"
+    tid = theory_dirs[0][0]
+    if review_root_dir.is_dir():
+        for meta_path in sorted(review_root_dir.glob("*/metadata.json")):
+            try:
+                data = json.loads(meta_path.read_text())
+                if (
+                    data.get("parent_theory") == tid
+                    and data.get("agent_type") == "falsify-hypothesis"
+                ):
+                    rid = data.get("id")
+                    if rid:
+                        src_review = review_root_dir / rid
+                        rdst = reviews_root / rid
+                        shutil.copytree(
+                            src_review, rdst, ignore=IGNORE_METADATA_PATTERN
+                        )
+                        _make_writable(rdst)
+            except (json.JSONDecodeError, OSError):
+                continue
+
+
+def _assemble_rank_predictive_power(
+    db_root: Path,
+    target_folder: Path,
+    theory_dirs: list[tuple[str, Path]],
+    from_theories: list[str] | None,
+) -> None:
+    theories_root = target_folder / "theories"
+    theories_root.mkdir(exist_ok=True)
+    for tid, tdir in theory_dirs:
+        dst = theories_root / tid
+        shutil.copytree(tdir, dst, ignore=IGNORE_METADATA_PATTERN)
+        _make_writable(dst)
+
+    reviews_root = target_folder / "reviews"
+    reviews_root.mkdir(exist_ok=True)
+    review_root_dir = db_root / "review"
+    if review_root_dir.is_dir():
+        for meta_path in sorted(review_root_dir.glob("*/metadata.json")):
+            try:
+                data = json.loads(meta_path.read_text())
+                if (
+                    data.get("parent_theory") in from_theories
+                    and data.get("agent_type") == "suggest-expansions"
+                ):
+                    rid = data.get("id")
+                    if rid:
+                        src_review = review_root_dir / rid
+                        rdst = reviews_root / rid
+                        shutil.copytree(
+                            src_review, rdst, ignore=IGNORE_METADATA_PATTERN
+                        )
+                        _make_writable(rdst)
+            except (json.JSONDecodeError, OSError):
+                continue
+
+
+def _resolve_context_paths(
+    db_root: Path,
+    from_exploration: str | None,
+    from_literatures: list[str] | None,
+    from_theories: list[str] | None,
+    from_reviews: list[str] | None,
+    from_predictions: list[str] | None,
+) -> tuple[Path | None, list[tuple[str, Path]], list[tuple[str, Path]]]:
+    exploration_dir = None
+    if from_exploration:
+        exploration_dir = db_root / "exploration" / from_exploration
+        if not exploration_dir.is_dir():
+            raise ValueError(
+                f"Exploration {from_exploration!r} not found in database "
+                f"(expected {exploration_dir})"
+            )
+
+    literature_dirs: list[tuple[str, Path]] = []
+    if from_literatures:
+        for lid in from_literatures:
+            lit_dir = db_root / "literature" / lid
+            if not lit_dir.is_dir():
+                raise ValueError(
+                    f"Literature review {lid!r} not found in database "
+                    f"(expected {lit_dir})"
+                )
+            literature_dirs.append((lid, lit_dir))
+
+    theory_dirs: list[tuple[str, Path]] = []
+    if from_theories:
+        for tid in from_theories:
+            theory_dir = db_root / "theory" / tid
+            if not theory_dir.is_dir():
+                raise ValueError(
+                    f"Theory {tid!r} not found in database (expected {theory_dir})"
+                )
+            theory_dirs.append((tid, theory_dir))
+
+    if from_reviews:
+        for rid in from_reviews:
+            review_dir = db_root / "review" / rid
+            if not review_dir.is_dir():
+                raise ValueError(
+                    f"Review {rid!r} not found in database (expected {review_dir})"
+                )
+
+    if from_predictions:
+        for pid in from_predictions:
+            pred_dir = db_root / "prediction" / pid
+            if not pred_dir.is_dir():
+                raise ValueError(
+                    f"Prediction {pid!r} not found in database (expected {pred_dir})"
+                )
+                
+    return exploration_dir, literature_dirs, theory_dirs
+
+
+def _validate_create_context_args(
+    for_agent_type: str,
+    from_exploration: str | None,
+    from_literatures: list[str] | None,
+    from_theories: list[str] | None,
+    from_reviews: list[str] | None,
+    from_experiments: list[str] | None,
+    from_predictions: list[str] | None,
+) -> None:
     if for_agent_type == "write-theory":
         if not from_exploration:
             raise ValueError("--from_exploration is required for write-theory")
@@ -502,70 +798,51 @@ def create_context(
             f"rank-predictive-power"
         )
 
+
+def create_context(
+    for_agent_type: str,
+    target_folder: Path,
+    from_exploration: str | None = None,
+    from_literatures: list[str] | None = None,
+    from_theories: list[str] | None = None,
+    from_reviews: list[str] | None = None,
+    from_experiments: list[str] | None = None,
+    from_predictions: list[str] | None = None,
+) -> None:
+    """Assemble upstream artifacts into *target_folder* for the next agent."""
+    db_root = get_db_path()
+
+    # --- validate required references per agent type ---
+    _validate_create_context_args(
+        for_agent_type=for_agent_type,
+        from_exploration=from_exploration,
+        from_literatures=from_literatures,
+        from_theories=from_theories,
+        from_reviews=from_reviews,
+        from_experiments=from_experiments,
+        from_predictions=from_predictions,
+    )
+
     with DatabaseLock(db_root):
         # --- resolve and validate paths ---
-        if from_exploration:
-            exploration_dir = db_root / "exploration" / from_exploration
-            if not exploration_dir.is_dir():
-                raise ValueError(
-                    f"Exploration {from_exploration!r} not found in database "
-                    f"(expected {exploration_dir})"
-                )
-
-        literature_dirs: list[tuple[str, Path]] = []
-        if from_literatures:
-            for lid in from_literatures:
-                lit_dir = db_root / "literature" / lid
-                if not lit_dir.is_dir():
-                    raise ValueError(
-                        f"Literature review {lid!r} not found in database "
-                        f"(expected {lit_dir})"
-                    )
-                literature_dirs.append((lid, lit_dir))
-
-        theory_dirs: list[tuple[str, Path]] = []
-        if from_theories:
-            for tid in from_theories:
-                theory_dir = db_root / "theory" / tid
-                if not theory_dir.is_dir():
-                    raise ValueError(
-                        f"Theory {tid!r} not found in database (expected {theory_dir})"
-                    )
-                theory_dirs.append((tid, theory_dir))
-
-        if from_reviews:
-            for rid in from_reviews:
-                review_dir = db_root / "review" / rid
-                if not review_dir.is_dir():
-                    raise ValueError(
-                        f"Review {rid!r} not found in database (expected {review_dir})"
-                    )
-
-        if from_predictions:
-            for pid in from_predictions:
-                pred_dir = db_root / "prediction" / pid
-                if not pred_dir.is_dir():
-                    raise ValueError(
-                        f"Prediction {pid!r} not found in database (expected {pred_dir})"
-                    )
+        exploration_dir, literature_dirs, theory_dirs = _resolve_context_paths(
+            db_root=db_root,
+            from_exploration=from_exploration,
+            from_literatures=from_literatures,
+            from_theories=from_theories,
+            from_reviews=from_reviews,
+            from_predictions=from_predictions,
+        )
 
         # --- create target and copy ---
         target_folder.mkdir(parents=True, exist_ok=True)
 
         if for_agent_type == "write-theory":
-            dst = target_folder / "exploration"
-            shutil.copytree(
-                exploration_dir,  # type: ignore[possibly-undefined]
-                dst,
-                ignore=IGNORE_METADATA_PATTERN,
+            _assemble_write_theory(
+                target_folder=target_folder,
+                exploration_dir=exploration_dir,
+                literature_dirs=literature_dirs,
             )
-            _make_writable(dst)
-            if literature_dirs:
-                # write-theory uses flat layout (single literature review).
-                _, lit_dir = literature_dirs[0]
-                ldst = target_folder / "literature"
-                shutil.copytree(lit_dir, ldst, ignore=IGNORE_METADATA_PATTERN)
-                _make_writable(ldst)
 
         elif for_agent_type in (
             "falsify-hypothesis",
@@ -573,194 +850,61 @@ def create_context(
             "polish-theory",
             "streamline-theory",
         ):
-            dst = target_folder / "theory"
-            shutil.copytree(
-                theory_dirs[0][1],
-                dst,
-                ignore=IGNORE_METADATA_PATTERN,
+            _assemble_theory_copy(
+                target_folder=target_folder, theory_dirs=theory_dirs
             )
-            _make_writable(dst)
 
         elif for_agent_type in ("refine-hypothesis", "expand-theory"):
-            dst = target_folder / "theory"
-            shutil.copytree(
-                theory_dirs[0][1],
-                dst,
-                ignore=IGNORE_METADATA_PATTERN,
+            _assemble_refine_expand(
+                db_root=db_root,
+                target_folder=target_folder,
+                theory_dirs=theory_dirs,
+                from_reviews=from_reviews,
+                literature_dirs=literature_dirs,
             )
-            _make_writable(dst)
-            reviews_root = target_folder / "reviews"
-            reviews_root.mkdir(exist_ok=True)
-            for rid in from_reviews:  # type: ignore[union-attr]
-                src = db_root / "review" / rid
-                rdst = reviews_root / rid
-                shutil.copytree(src, rdst, ignore=IGNORE_METADATA_PATTERN)
-                _make_writable(rdst)
-            if literature_dirs:
-                # refine-hypothesis / expand-theory use nested layout so
-                # multiple literature reviews (including ones added mid-run
-                # via `fetch_literature`) can coexist.
-                lit_root = target_folder / "literature"
-                lit_root.mkdir(exist_ok=True)
-                for lid, lit_dir in literature_dirs:
-                    ldst = lit_root / lid
-                    shutil.copytree(lit_dir, ldst, ignore=IGNORE_METADATA_PATTERN)
-                    _make_writable(ldst)
 
         elif for_agent_type == "review-theory":
-            dst = target_folder / "theory.md"
-            src_theory_md = theory_dirs[0][1] / "theory.md"
-            if src_theory_md.exists():
-                shutil.copy2(src_theory_md, dst)
-                _make_writable(dst)
+            _assemble_review_theory(
+                target_folder=target_folder, theory_dirs=theory_dirs
+            )
 
         elif for_agent_type == "predict-experiments":
-            dst = target_folder / "theory"
-            shutil.copytree(
-                theory_dirs[0][1],
-                dst,
-                ignore=IGNORE_METADATA_PATTERN,
+            _assemble_predict_experiments(
+                target_folder=target_folder,
+                theory_dirs=theory_dirs,
+                from_experiments=from_experiments,
             )
-            _make_writable(dst)
-            for exp_id in from_experiments:  # type: ignore[union-attr]
-                fetch_experiment(target_folder, exp_id, exclude_results=True)
 
         elif for_agent_type == "rank-predictions":
-            preds_root = target_folder / "predictions"
-            preds_root.mkdir(exist_ok=True)
-            for pid in from_predictions:  # type: ignore[union-attr]
-                src = db_root / "prediction" / pid
-                pdst = preds_root / pid
-                shutil.copytree(src, pdst, ignore=IGNORE_METADATA_PATTERN)
-                _make_writable(pdst)
-
-            exp_id = from_experiments[0]  # type: ignore[index]
-            exp_src = db_root / "experiment" / exp_id
-            exp_dst = target_folder / "experiment"
-            shutil.copytree(exp_src, exp_dst, ignore=IGNORE_METADATA_PATTERN)
-            _make_writable(exp_dst)
+            _assemble_rank_predictions(
+                db_root=db_root,
+                target_folder=target_folder,
+                from_predictions=from_predictions,
+                from_experiments=from_experiments,
+            )
 
         elif for_agent_type == "score-theories":
-            theories_root = target_folder / "theories"
-            theories_root.mkdir(exist_ok=True)
-            for tid, tdir in theory_dirs:
-                dst = theories_root / tid
-                shutil.copytree(tdir, dst, ignore=IGNORE_METADATA_PATTERN)
-                _make_writable(dst)
-
-            matched_experiments_by_base: dict[str, list[tuple[str, str]]] = {
-                tid: [] for tid in (from_theories or [])
-            }
-            exp_root = db_root / "experiment"
-            if exp_root.is_dir() and from_theories:
-                base_ancestors = {
-                    tid: _get_ancestor_theories(db_root, [tid]) for tid in from_theories
-                }
-                for meta_path in exp_root.glob("*/metadata.json"):
-                    try:
-                        data = json.loads(meta_path.read_text())
-                        parent_theory = data.get("parent_theory")
-                        if parent_theory:
-                            eid = data.get("id")
-                            created_at = data.get("created_at", "")
-                            if eid:
-                                for base_tid, ancestors in base_ancestors.items():
-                                    if parent_theory in ancestors:
-                                        matched_experiments_by_base[base_tid].append(
-                                            (created_at, eid)
-                                        )
-                    except (json.JSONDecodeError, OSError):
-                        continue
-
-            for exps in matched_experiments_by_base.values():
-                exps.sort(key=lambda x: x[0], reverse=True)
-
-            num_experiments_to_include = 30
-            selected_eids: set[str] = set()
-
-            if from_theories:
-                pointers = {tid: 0 for tid in from_theories}
-                while len(selected_eids) < num_experiments_to_include:
-                    added_in_round = False
-                    for tid in from_theories:
-                        exps = matched_experiments_by_base[tid]
-                        while pointers[tid] < len(exps):
-                            _, eid = exps[pointers[tid]]
-                            pointers[tid] += 1
-                            if eid not in selected_eids:
-                                selected_eids.add(eid)
-                                added_in_round = True
-                                break
-                        if len(selected_eids) >= num_experiments_to_include:
-                            break
-                    if not added_in_round:
-                        break
-
-            for exp_id in selected_eids:
-                fetch_experiment(target_folder, exp_id, exclude_results=True)
+            _assemble_score_theories(
+                db_root=db_root,
+                target_folder=target_folder,
+                theory_dirs=theory_dirs,
+                from_theories=from_theories,
+            )
 
         elif for_agent_type == "score-soundness":
-            dst = target_folder / "theory"
-            shutil.copytree(
-                theory_dirs[0][1],
-                dst,
-                ignore=IGNORE_METADATA_PATTERN,
+            _assemble_score_soundness(
+                db_root=db_root,
+                target_folder=target_folder,
+                theory_dirs=theory_dirs,
             )
-            _make_writable(dst)
-
-            reviews_root = target_folder / "reviews"
-            reviews_root.mkdir(exist_ok=True)
-            review_root_dir = db_root / "review"
-            tid = theory_dirs[0][0]
-            if review_root_dir.is_dir():
-                for meta_path in sorted(review_root_dir.glob("*/metadata.json")):
-                    try:
-                        data = json.loads(meta_path.read_text())
-                        if (
-                            data.get("parent_theory") == tid
-                            and data.get("agent_type") == "falsify-hypothesis"
-                        ):
-                            rid = data.get("id")
-                            if rid:
-                                src_review = review_root_dir / rid
-                                rdst = reviews_root / rid
-                                shutil.copytree(
-                                    src_review, rdst, ignore=IGNORE_METADATA_PATTERN
-                                )
-                                _make_writable(rdst)
-                    except (json.JSONDecodeError, OSError):
-                        continue
 
         elif for_agent_type == "rank-predictive-power":
-            theories_root = target_folder / "theories"
-            theories_root.mkdir(exist_ok=True)
-            for tid, tdir in theory_dirs:
-                dst = theories_root / tid
-                shutil.copytree(tdir, dst, ignore=IGNORE_METADATA_PATTERN)
-                _make_writable(dst)
-
-            reviews_root = target_folder / "reviews"
-            reviews_root.mkdir(exist_ok=True)
-            review_root_dir = db_root / "review"
-            if review_root_dir.is_dir():
-                for meta_path in sorted(review_root_dir.glob("*/metadata.json")):
-                    try:
-                        data = json.loads(meta_path.read_text())
-                        # from_theories is guaranteed to be non-empty and accessible here.
-                        if (
-                            data.get("parent_theory") in from_theories
-                            and data.get("agent_type") == "suggest-expansions"
-                        ):
-                            rid = data.get("id")
-                            if rid:
-                                src_review = review_root_dir / rid
-                                rdst = reviews_root / rid
-                                shutil.copytree(
-                                    src_review, rdst, ignore=IGNORE_METADATA_PATTERN
-                                )
-                                _make_writable(rdst)
-                    except (json.JSONDecodeError, OSError):
-                        continue
+            _assemble_rank_predictive_power(
+                db_root=db_root,
+                target_folder=target_folder,
+                theory_dirs=theory_dirs,
+                from_theories=from_theories,
+            )
 
 
 def fetch_experiment(
