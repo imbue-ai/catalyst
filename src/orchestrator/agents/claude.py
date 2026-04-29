@@ -5,6 +5,8 @@ from .cli_base import BaseCliAgentRunner
 
 
 class ClaudeAgentRunner(BaseCliAgentRunner):
+    _EXTRA_SYSTEM_PROMPT = "Run each shell command individually. Combining commands using `&&` or `;` might lead to the command being rejected."
+
     def run(
         self,
         task_id: str,
@@ -26,6 +28,8 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
             "--output-format",
             "stream-json",
             "--verbose",
+            "--append-system-prompt",
+            self._EXTRA_SYSTEM_PROMPT,
         ]
         if model:
             cmd.extend(["--model", model])

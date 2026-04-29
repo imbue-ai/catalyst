@@ -73,25 +73,31 @@ def cancel_task_process(task_id: str, timeout: int = 15):
         if task_id in _running_processes:
             del _running_processes[task_id]
 
+_last_written_json: Optional[str] = None
+
 def _load_state() -> TasksState:
-    global _state_cache
+    global _state_cache, _last_written_json
     if _state_cache is not None:
         return _state_cache
 
     if not os.path.exists(STATE_FILE):
         _state_cache = TasksState(tasks=[])
+        _last_written_json = json.dumps(_state_cache.model_dump(), indent=2)
         return _state_cache
     try:
         with open(STATE_FILE, "r") as f:
-            data = json.load(f)
+            content = f.read()
+            _last_written_json = content
+            data = json.loads(content)
             _state_cache = TasksState.model_validate(data)
             return _state_cache
     except Exception:
         _state_cache = TasksState(tasks=[])
+        _last_written_json = json.dumps(_state_cache.model_dump(), indent=2)
         return _state_cache
 
 def _save_state(state: TasksState, disk_save: bool = True):
-    global _state_cache
+    global _state_cache, _last_written_json
     _state_cache = state
     
     if not disk_save:
@@ -104,8 +110,16 @@ def _save_state(state: TasksState, disk_save: bool = True):
             if "last_status" in step:
                 step["last_status"] = None
                 
+    json_str = json.dumps(data, indent=2)
+    
+    # Skip disk write if nothing actually changed
+    if _last_written_json == json_str:
+        return
+        
     with open(STATE_FILE, "w") as f:
-        json.dump(data, f, indent=2)
+        f.write(json_str)
+        
+    _last_written_json = json_str
 
 def get_tasks() -> List[Task]:
     with _lock:
@@ -134,24 +148,12 @@ def update_task(task: Task):
     with _lock:
         state = _load_state()
         
-        # Check if anything *other* than last_status changed
-        needs_disk_save = True
         for i, old_t in enumerate(state.tasks):
             if old_t.id == task.id:
-                # Compare JSON dumps ignoring last_status
-                old_dump = old_t.model_dump()
-                new_dump = task.model_dump()
-                for d in (old_dump, new_dump):
-                    for step in d.get("steps", []):
-                        if "last_status" in step:
-                            step["last_status"] = None
-                if old_dump == new_dump:
-                    needs_disk_save = False
-
                 state.tasks[i] = task
                 break
                 
-        _save_state(state, disk_save=needs_disk_save)
+        _save_state(state, disk_save=True)
 
 def initialize_state():
     with _lock:
