@@ -8,6 +8,8 @@ from .agents import get_agent_runner
 from .workflows import get_workflow
 from .addons import get_addon_handler
 
+MAX_CONCURRENCY_PER_TASK = 3
+
 def start_task(task: Task):
     print(f"[ORCHESTRATOR] Starting task {task.id[:8]}: {task.workflow_inputs.get('summary', '')[:50]}...")
     thread = threading.Thread(target=_orchestrate_task, args=(task.id,))
@@ -46,12 +48,16 @@ def _orchestrate_task(task_id: str):
     update_task(task)
 
     try:
+        # Global per-task concurrency limit
+        semaphore = threading.Semaphore(MAX_CONCURRENCY_PER_TASK)
+
         def run_step_wrapper(t, stage, prompt):
-            res = _run_step(t, stage, prompt)
-            # Update structure after each step to reflect progress
-            t.workflow_structure = get_full_structure(workflow, t)
-            update_task(t)
-            return res
+            with semaphore:
+                res = _run_step(t, stage, prompt)
+                # Update structure after each step to reflect progress
+                t.workflow_structure = get_full_structure(workflow, t)
+                update_task(t)
+                return res
 
         # Initialize/Update structure before running
         task.workflow_structure = get_full_structure(workflow, task)

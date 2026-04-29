@@ -1,5 +1,4 @@
 from typing import Any, Callable, List, Dict
-import threading
 from ..models import Task
 from .base import Workflow, run_step_if_needed, run_refinement_loop
 
@@ -59,7 +58,7 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
 
         # Step 1: Support Idea
         support_data = run_step_if_needed(
-            task, bounded_run_step, "support-idea",
+            task, run_step, "support-idea",
             f"Please run the support-idea skill for the following idea:\n```\n{idea}\n```\n"
             "When you are done, return a JSON object with the key 'theory_id'."
         )
@@ -71,6 +70,6 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
             # Step 2: Iterative Review and Refinement
             max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
             run_refinement_loop(
-                task, bounded_run_step, theory_id, lit_review_id=None, 
+                task, run_step, theory_id, lit_review_id=None, 
                 apply_extensions=apply_extensions, max_refinements=max_refinements
             )

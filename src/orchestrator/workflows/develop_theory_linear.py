@@ -1,4 +1,3 @@
-import threading
 from typing import Any, Callable, List, Dict
 from ..models import Task
 from .base import Workflow, get_step_output, run_step_if_needed, run_refinement_loop
@@ -73,7 +72,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
 
             def run_and_store(stage, prompt, key):
                 try:
-                    results[key] = bounded_run_step(task, stage, prompt)
+                    results[key] = run_step(task, stage, prompt)
                 except Exception as e:
                     errors.append(e)
 

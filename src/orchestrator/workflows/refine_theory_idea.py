@@ -1,5 +1,4 @@
 from typing import Any, Callable, List, Dict
-import threading
 from ..models import Task
 from .base import Workflow, run_step_if_needed
 
@@ -41,7 +40,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
 
         # Step 1: Support Idea
         support_data = run_step_if_needed(
-            task, bounded_run_step, "support-idea",
+            task, run_step, "support-idea",
             f"Please run the support-idea skill for the following idea:\n```\n{idea}\n```\n"
             "When you are done, return a JSON object with the key 'theory_id'."
         )
@@ -52,14 +51,14 @@ class RefineTheoryIdeaWorkflow(Workflow):
         if theory_id:
             # Step 2: Review Theory
             review_data = run_step_if_needed(
-                task, bounded_run_step, "review-theory",
+                task, run_step, "review-theory",
                 f"Please run the review-theory skill for theory_id: {theory_id}. "
                 "When you are done, return a JSON object with the key 'review_id'."
             )
             
             # Step 3: Score Theories
             score_data = run_step_if_needed(
-                task, bounded_run_step, "score-theories",
+                task, run_step, "score-theories",
                 f"Please run the score-theories skill for the following theory_id: {theory_id}. "
                 "When you are done, return a JSON object mapping each theory ID to its assigned score."
             )
