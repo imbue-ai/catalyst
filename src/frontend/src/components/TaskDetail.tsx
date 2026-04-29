@@ -175,6 +175,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     selectedStage={selectedStage || undefined}
                     onRetry={handleResume}
                     onRefresh={onRefresh}
+                    showConnector={showConnector}
                   />
                 )
               }
