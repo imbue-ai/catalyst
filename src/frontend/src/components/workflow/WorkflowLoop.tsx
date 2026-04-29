@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { RotateCw } from 'lucide-react'
 import * as api from '../../api'
-import { InnerStepCard, InnerParallelCard, CancelStepsButton } from './shared'
+import { InnerStepCard, InnerParallelCard, CancelStepsButton, StepIndicator } from './shared'
 
 interface WorkflowLoopProps {
   name: string;
@@ -13,9 +13,10 @@ interface WorkflowLoopProps {
   selectedStage?: string;
   onRetry: () => void;
   onRefresh: () => void;
+  showConnector?: boolean;
 }
 
-export function WorkflowLoop({ name, baseStages, iterationStructures, iterations, task, onSelect, selectedStage, onRetry, onRefresh }: WorkflowLoopProps) {
+export function WorkflowLoop({ name, baseStages, iterationStructures, iterations, task, onSelect, selectedStage, onRetry, onRefresh, showConnector = true }: WorkflowLoopProps) {
   const [activeIteration, setActiveIteration] = useState(1)
   const [lastLatest, setLastLatest] = useState(0)
 
@@ -67,37 +68,55 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
 
   const activeStructure = iterationStructures ? iterationStructures[activeIteration.toString()] : null;
 
+  const innerSteps = stagesToCancel.map(stage => task.steps.find(s => s.stage === stage)).filter(Boolean)
+  
+  const hasRunning = stagesToCancel.some(stage => task.current_stage === stage && (!task.steps.find(s => s.stage === stage) || task.steps.find(s => s.stage === stage)?.status === 'running')) || innerSteps.some(s => s?.status === 'running')
+  const hasFailed = innerSteps.some(s => s?.status === 'failed')
+  const hasPaused = innerSteps.some(s => s?.status === 'paused')
+  const allCompleted = stagesToCancel.length > 0 && stagesToCancel.every(stage => task.steps.find(s => s.stage === stage)?.status === 'completed')
+  const allCanceled = stagesToCancel.length > 0 && stagesToCancel.every(stage => task.steps.find(s => s.stage === stage)?.status === 'canceled')
+
+  const overallStatus = allCompleted ? 'completed' : 
+                        hasFailed ? 'failed' :
+                        hasPaused ? 'paused' :
+                        hasRunning ? 'running' :
+                        allCanceled ? 'canceled' : 'upcoming'
+
   return (
-    <div className="relative pl-8 mt-12 mb-6">
-      <div className="absolute left-[9px] -top-12 w-[2px] h-12 bg-gray-100" />
-      <div className="absolute left-[-10px] top-6 w-10 h-[200px] border-l-2 border-y-2 border-black rounded-l-2xl opacity-20" />
+    <div className={`relative pl-8 group transition-all mb-6`}>
+      {/* Connector line */}
+      {showConnector && (
+        <div className="absolute left-[9px] top-5 w-[2px] h-full bg-gray-100 group-hover:bg-black transition-colors" />
+      )}
+      
+      <StepIndicator status={overallStatus} isRunning={overallStatus === 'running'} />
       
       <div className="bg-white border-2 border-gray-200 p-6">
         <div className="flex justify-between items-center mb-6">
+          <div className="flex items-center gap-2">
+            <RotateCw size={16} />
+            <h4 className="font-black text-xs uppercase tracking-[0.2em]">{name}</h4>
+          </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <RotateCw size={16} />
-              <h4 className="font-black text-xs uppercase tracking-[0.2em]">{name}</h4>
+            <div className="flex gap-1">
+              {Array.from({ length: iterations }, (_, i) => i + 1).map(it => (
+                <button 
+                  key={it}
+                  onClick={() => setActiveIteration(it)}
+                  className={`w-6 h-6 text-[10px] font-black border transition-all ${activeIteration === it ? 'bg-black text-white border-black' : 'hover:bg-gray-100 border-gray-200'}`}
+                >
+                  {it}
+                </button>
+              ))}
             </div>
-            {task.status !== 'completed' && stagesToCancel.length > 0 && (
+            {task.status !== 'completed' && stagesToCancel.length > 0 && overallStatus !== 'completed' && overallStatus !== 'canceled' && (
               <CancelStepsButton 
                 task={task} 
                 stagesToCancel={stagesToCancel} 
                 onRefresh={onRefresh} 
-                label="Cancel Loop" 
+                label="Cancel Tasks" 
               />
             )}
-          </div>
-          <div className="flex gap-1">
-            {Array.from({ length: iterations }, (_, i) => i + 1).map(it => (
-              <button 
-                key={it}
-                onClick={() => setActiveIteration(it)}
-                className={`w-6 h-6 text-[10px] font-black border transition-all ${activeIteration === it ? 'bg-black text-white border-black' : 'hover:bg-gray-100 border-gray-200'}`}
-              >
-                {it}
-              </button>
-            ))}
           </div>
         </div>
 
