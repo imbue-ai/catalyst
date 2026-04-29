@@ -15,6 +15,7 @@ dependencies = [
     "pyyaml>=6.0",
     "pydantic>=2.0",
     "darwinian-evolver",
+    "scipy>=1.17.1",
 ]
 
 [project.scripts]
