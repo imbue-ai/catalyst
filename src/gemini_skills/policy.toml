@@ -12,7 +12,7 @@ priority = 10
 
 # Subagents, skills and background processes
 [[rule]]
-toolName = ["invoke_agent", "complete_task", "activate_skill", "list_background_processes", "read_background_output"]
+toolName = ["invoke_agent", "complete_task", "activate_skill", "list_background_processes", "read_background_output", "scientist"]
 decision = "allow"
 priority = 10
 
