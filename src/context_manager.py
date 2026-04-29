@@ -1,6 +1,9 @@
 """Agent Context Manager — filesystem-based persistence and context assembly for the Skills pipeline.
 
 Run with ``--help`` to see the available CLI subcommands.
+
+This command is intentionally contained within a single Python file, to make sure that it can be run
+reliably through a symlink or copy from within a skill's scripts folder.
 """
 
 from __future__ import annotations
@@ -314,7 +317,6 @@ def _record_theory_in_population(
         return
 
     parent_org: TheoryOrganism | None = None
-    parent_score: float | None = None
     if parent_theory_id is not None:
         found = _find_organism_by_theory_id(population, parent_theory_id)
         if found is None:
@@ -323,10 +325,9 @@ def _record_theory_in_population(
                 f"refusing to add child {theory_id!r}"
             )
         parent_org, parent_result = found
-        parent_score = parent_result.score
 
-    # Inherit an interim score from the parent - typically, organisms will be rescored later.
-    score = parent_score if parent_score is not None else INITIAL_ROOT_SCORE
+    # Initialize scores for new children to 0 - they should get rescored later.
+    score = 0.0 if parent_org else INITIAL_ROOT_SCORE
     organism = TheoryOrganism(theory_id=theory_id, parent=parent_org)
     result = TheoryEvaluationResult(score=score, trainable_failure_cases=[])
     population.add(organism, result)
