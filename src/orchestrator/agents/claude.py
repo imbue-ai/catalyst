@@ -21,7 +21,8 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
 
         cmd = [
             "claude",
-            "--dangerously-skip-permissions",
+            "--permission-mode",
+            "dontAsk",
             "--output-format",
             "stream-json",
             "--verbose",

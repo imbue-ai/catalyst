@@ -2,6 +2,7 @@ from typing import Any, Callable, List, Dict
 from ..models import Task
 from .base import Workflow, run_step_if_needed, run_refinement_loop
 
+
 class RefineTheoryIdeaLinearWorkflow(Workflow):
     @property
     def name(self) -> str:
@@ -12,7 +13,9 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
         # Count iterations dynamically based on steps
         max_iters = max_refinements if max_refinements > 0 else 0
         for s in task.steps:
-            if s.stage.startswith("review-theory-") or s.stage.startswith("refine-theory-"):
+            if s.stage.startswith("review-theory-") or s.stage.startswith(
+                "refine-theory-"
+            ):
                 try:
                     it = int(s.stage.split("-")[-1])
                     if it > max_iters:
@@ -24,24 +27,21 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
             {"type": "step", "stage": "summarize-title"},
             {"type": "step", "stage": "support-idea"},
         ]
-        
+
         if max_iters > 0:
-            structure.append({
-                "type": "loop",
-                "name": "Refinement Loop",
-                "base_stages": ["review-theory", "refine-theory"],
-                "iterations": max_iters,
-            })
-            
+            structure.append(
+                {
+                    "type": "loop",
+                    "name": "Refinement Loop",
+                    "base_stages": ["review-theory", "refine-theory"],
+                    "iterations": max_iters,
+                }
+            )
+
         return structure
 
     def run(self, task: Task, run_step: Callable) -> None:
         self.init_db(task)
-        semaphore = threading.Semaphore(3)
-
-        def bounded_run_step(task, stage, prompt):
-            with semaphore:
-                return run_step(task, stage, prompt)
 
         idea = task.workflow_inputs.get("idea", "")
         apply_extensions = task.workflow_inputs.get("apply_extensions", False)
@@ -49,18 +49,22 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
         # Step 0: Summarize Title
         if not task.title:
             title_data = run_step_if_needed(
-                task, bounded_run_step, "summarize-title",
+                task,
+                run_step,
+                "summarize-title",
                 f"Please provide a very short, summarized title (maximum 5 words) for the following research idea: {idea}. "
-                "Return a JSON object with the key 'title'."
+                "Return a JSON object with the key 'title'.",
             )
             if title_data and isinstance(title_data, dict):
                 task.title = title_data.get("title")
 
         # Step 1: Support Idea
         support_data = run_step_if_needed(
-            task, run_step, "support-idea",
+            task,
+            run_step,
+            "support-idea",
             f"Please run the support-idea skill for the following idea:\n```\n{idea}\n```\n"
-            "When you are done, return a JSON object with the key 'theory_id'."
+            "When you are done, return a JSON object with the key 'theory_id'.",
         )
         theory_id = support_data.get("theory_id") if support_data else None
         if not theory_id and not (support_data and support_data.get("_canceled")):
@@ -70,6 +74,10 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
             # Step 2: Iterative Review and Refinement
             max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
             run_refinement_loop(
-                task, run_step, theory_id, lit_review_id=None, 
-                apply_extensions=apply_extensions, max_refinements=max_refinements
+                task,
+                run_step,
+                theory_id,
+                lit_review_id=None,
+                apply_extensions=apply_extensions,
+                max_refinements=max_refinements,
             )
