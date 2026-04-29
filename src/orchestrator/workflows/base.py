@@ -94,6 +94,7 @@ def run_evolve_loop(
     num_parents: int, 
     streamline_prob: float, 
     num_extra_scores: int, 
+    apply_extensions: bool = False,
     stage_prefix: str = ""
 ) -> None:
     for i in range(1, iterations + 1):
@@ -126,10 +127,12 @@ def run_evolve_loop(
                     mutation_results[stage_name] = res
                 else:
                     stage_name = f"{stage_prefix}mutate-refine-{i}-{idx}"
+                    prompt = f"Please run the refine-theory skill for theory_id: {tid}. Return a JSON object with the key 'theory_id'."
+                    if not apply_extensions:
+                        prompt += "\n\nCRITICAL: Do not apply extensions."
+                        
                     res = run_step_if_needed(
-                        task, run_step_fn, stage_name,
-                        f"Please run the refine-theory skill for theory_id: {tid}. "
-                        "Return a JSON object with the key 'theory_id'."
+                        task, run_step_fn, stage_name, prompt
                     )
                     mutation_results[stage_name] = res
             except Exception as e:
