@@ -1,4 +1,3 @@
-import threading
 from typing import Any, Callable, List, Dict
 from ..models import Task
 from .base import Workflow, get_step_output, run_step_if_needed
@@ -108,7 +107,7 @@ class DevelopTheoryWorkflow(Workflow):
         # Step 3: Write N Theories
         num_theories = task.workflow_inputs.get("num_root_theories", 3)
         theories_data = run_step_if_needed(
-            task, bounded_run_step, "write-n-theories",
+            task, run_step, "write-n-theories",
             f"Please run the write-n-theories skill to generate {num_theories} theories for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
             f"Use exploration_id: {exploration_id} and literature_review_id: {lit_review_id}. "
             "When you are done, return a JSON object with the key 'theory_ids' containing a list of the generated theory IDs."
