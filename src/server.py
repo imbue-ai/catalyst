@@ -22,7 +22,7 @@ async def lifespan(app: FastAPI):
     print("[SERVER] Shutting down, cleaning up processes...")
     shutdown_all()
 
-app = FastAPI(title="AI Scientist Orchestrator", lifespan=lifespan)
+app = FastAPI(title="AI Researcher Orchestrator", lifespan=lifespan)
 
 # Enable CORS for the React frontend
 app.add_middleware(

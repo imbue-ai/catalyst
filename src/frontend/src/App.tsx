@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Folder, Activity, FlaskConical, History } from 'lucide-react'
+import { Plus, Folder, Activity, Microscope, History } from 'lucide-react'
 import * as api from './api'
 import { StatusBadge } from './components/StatusBadge'
 import { TaskDetail } from './components/TaskDetail'
@@ -74,10 +74,10 @@ function App() {
         <aside className="w-80 border-r border-black flex flex-col bg-white">
           <div className="p-6 border-b border-black flex items-center gap-3">
             <div className="bg-black p-2 rounded-sm text-white">
-              <FlaskConical size={20} />
+              <Microscope size={20} />
             </div>
             <h1 className="text-lg font-black tracking-tight leading-none uppercase">
-              AI Scientist<br /><span className="text-gray-400">Orchestrator</span>
+              AI Researcher<br /><span className="text-gray-400">Orchestrator</span>
             </h1>
           </div>
 
