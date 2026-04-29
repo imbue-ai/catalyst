@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { History, Loader2, RefreshCw, XCircle } from 'lucide-react'
+import { RotateCw, Loader2, RefreshCw, XCircle } from 'lucide-react'
 import * as api from '../../api'
 
 interface WorkflowLoopProps {
@@ -56,7 +56,7 @@ export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, sel
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <History size={16} />
+              <RotateCw size={16} />
               <h4 className="font-black text-xs uppercase tracking-[0.2em]">{name}</h4>
             </div>
             {task.status !== 'completed' && (

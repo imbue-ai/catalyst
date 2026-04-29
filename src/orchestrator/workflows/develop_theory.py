@@ -26,7 +26,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
 
         structure = [
             {"type": "step", "stage": "summarize-title"},
-            {"type": "parallel", "stages": ["literature-review", "explore"]},
+            {"type": "parallel", "name": "Gather Context", "stages": ["literature-review", "explore"]},
             {"type": "step", "stage": "write-theory"},
         ]
         
