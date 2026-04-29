@@ -118,7 +118,7 @@ class DevelopTheoryWorkflow(Workflow):
                     args=(
                         "literature-review",
                         f"Please run the literature-review skill for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
-                        "When you are done, return a JSON object with the key 'literature_review_id'.",
+                        "When you are done, return ONLY a JSON object with the key 'literature_review_id'.",
                         "lit",
                     ),
                 )
@@ -131,7 +131,7 @@ class DevelopTheoryWorkflow(Workflow):
                     args=(
                         "explore",
                         f"Please run the explore skill for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
-                        "When you are done, return a JSON object with the key 'exploration_id'.",
+                        "When you are done, return ONLY a JSON object with the key 'exploration_id'.",
                         "exp",
                     ),
                 )
@@ -161,7 +161,7 @@ class DevelopTheoryWorkflow(Workflow):
             "write-n-theories",
             f"Please run the write-n-theories skill to generate {num_theories} theories for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
             f"Use exploration_id: {exploration_id} and literature_review_id: {lit_review_id}. "
-            "When you are done, return a JSON object with the key 'theory_ids' containing a list of the generated theory IDs.",
+            "When you are done, return ONLY a JSON object with the key 'theory_ids' containing a list of the generated theory IDs.",
         )
 
         theory_ids = theories_data.get("theory_ids") if theories_data else None
@@ -184,7 +184,7 @@ class DevelopTheoryWorkflow(Workflow):
                         run_step,
                         review_stage,
                         f"Please run the review-theory skill for theory_id: {tid}. "
-                        "When you are done, return a JSON object with the key 'review_id'.",
+                        "When you are done, return ONLY a JSON object with the key 'review_id'.",
                     )
                     review_results[tid] = res
                 except Exception as e:
@@ -210,15 +210,25 @@ class DevelopTheoryWorkflow(Workflow):
                 run_step,
                 "score-theories",
                 f"Please run the score-theories skill for the following theory_ids: {', '.join(theory_ids)}. "
-                "When you are done, return a JSON object mapping each theory ID to its assigned score.",
+                "When you are done, return ONLY a JSON object mapping each theory ID to its assigned score.",
             )
 
             # Step 6: Evolve Loop
-            evolve_iterations = int(task.workflow_inputs.get("evolve_iterations", DEFAULT_EVOLVE_ITERATIONS))
+            evolve_iterations = int(
+                task.workflow_inputs.get("evolve_iterations", DEFAULT_EVOLVE_ITERATIONS)
+            )
             if evolve_iterations > 0:
-                num_parents = int(task.workflow_inputs.get("num_parents", DEFAULT_NUM_PARENTS))
-                streamline_prob = float(task.workflow_inputs.get("streamline_prob", DEFAULT_STREAMLINE_PROB))
-                num_extra_scores = int(task.workflow_inputs.get("num_extra_scores", DEFAULT_NUM_EXTRA_SCORES))
+                num_parents = int(
+                    task.workflow_inputs.get("num_parents", DEFAULT_NUM_PARENTS)
+                )
+                streamline_prob = float(
+                    task.workflow_inputs.get("streamline_prob", DEFAULT_STREAMLINE_PROB)
+                )
+                num_extra_scores = int(
+                    task.workflow_inputs.get(
+                        "num_extra_scores", DEFAULT_NUM_EXTRA_SCORES
+                    )
+                )
                 run_evolve_loop(
                     task,
                     run_step,

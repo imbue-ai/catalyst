@@ -64,7 +64,7 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
             run_step,
             "support-idea",
             f"Please run the support-idea skill for the following idea:\n```\n{idea}\n```\n"
-            "When you are done, return a JSON object with the key 'theory_id'.",
+            "When you are done, return ONLY a JSON object with the key 'theory_id'.",
         )
         theory_id = support_data.get("theory_id") if support_data else None
         if not theory_id and not (support_data and support_data.get("_canceled")):
