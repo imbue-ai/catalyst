@@ -1,0 +1,36 @@
+# Reads
+[[rule]]
+toolName = ["glob", "grep_search", "search_file_content", "list_directory", "read_file", "read_many_files"]
+decision = "allow"
+priority = 10
+
+# Task tracking
+[[rule]]
+toolName = ["write_todos", "tracker_create_task", "tracker_update_task", "tracker_list_tasks", "tracker_get_task", "tracker_add_dependency", "tracker_visualize", "update_topic"]
+decision = "allow"
+priority = 10
+
+# Subagents, skills and background processes
+[[rule]]
+toolName = ["invoke_agent", "complete_task", "activate_skill", "list_background_processes", "read_background_output"]
+decision = "allow"
+priority = 10
+
+# Web access
+[[rule]]
+toolName = ["google_web_search", "web_fetch"]
+decision = "allow"
+priority = 10
+
+# Writes
+[[rule]]
+toolName = ["write_file", "replace"]
+argsPattern = "\"file_path\":\"tmp/.+/.*\""
+decision = "allow"
+priority = 10
+
+# Shell commands
+[[rule]]
+toolName = "run_shell_command"
+commandPrefix = ["uv run python ", "mkdir -p tmp/", "mkdir tmp/", "mktemp ", "cp ", "mv ", "jq ", "awk ", "head ", "tail ", "wc "]
+allowRedirection = true
