@@ -17,6 +17,10 @@ export interface Addon {
   direction?: string;
   max_refinements?: number;
   apply_extensions?: boolean;
+  evolve_iterations?: number;
+  num_parents?: number;
+  streamline_prob?: number;
+  num_extra_scores?: number;
 }
 
 export interface Task {

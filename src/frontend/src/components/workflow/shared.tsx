@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { CheckCircle, Loader2, RefreshCw, XCircle } from 'lucide-react'
+import { CheckCircle, Loader2, RefreshCw, XCircle, LayoutGrid } from 'lucide-react'
 import * as api from '../../api'
 
 export function StepIndicator({ status, isRunning }: { status: string | undefined, isRunning: boolean }) {
@@ -94,3 +94,57 @@ export function CancelStepsButton({ task, stagesToCancel, onRefresh, label }: Ca
     </button>
   )
 }
+
+interface InnerParallelCardProps {
+  name: string;
+  stages: string[];
+  task: api.Task;
+  selectedStage?: string;
+  onSelect: (stage: string) => void;
+  onRetry: (e: React.MouseEvent) => void;
+  onRefresh: () => void;
+}
+
+export function InnerParallelCard({ name, stages, task, selectedStage, onSelect, onRetry, onRefresh }: InnerParallelCardProps) {
+  if (!stages || stages.length === 0) {
+      return (
+         <div className="p-3 border-2 border-dashed border-gray-200 opacity-40">
+           <div className="flex items-center gap-2 mb-2"><LayoutGrid size={12} /> <span className="text-[10px] font-black uppercase">{name}</span></div>
+           <div className="text-[8px] text-gray-400 font-bold uppercase">Pending...</div>
+         </div>
+      )
+  }
+
+  return (
+    <div className="p-3 border-2 border-gray-200 bg-gray-50/50">
+      <div className="flex justify-between items-center mb-3">
+        <div className="flex items-center gap-2">
+          <LayoutGrid size={12} />
+          <span className="text-[10px] font-black uppercase">{name}</span>
+        </div>
+        {task.status !== 'completed' && (
+          <CancelStepsButton task={task} stagesToCancel={stages} onRefresh={onRefresh} label="Cancel Tasks" />
+        )}
+      </div>
+      <div className="space-y-2">
+        {stages.map(stage => {
+            const step = task.steps.find(s => s.stage === stage)
+            const isRunning = step?.status === 'running' || (task.current_stage === stage && !step)
+            return (
+              <InnerStepCard
+                key={stage}
+                label={stage.replace(/-/g, ' ')}
+                step={step}
+                isRunning={isRunning}
+                isSelected={selectedStage === stage}
+                taskStatus={task.status}
+                onSelect={() => onSelect(stage)}
+                onRetry={onRetry}
+              />
+            )
+        })}
+      </div>
+    </div>
+  )
+}
+

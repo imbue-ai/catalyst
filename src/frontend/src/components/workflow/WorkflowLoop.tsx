@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
 import { RotateCw } from 'lucide-react'
 import * as api from '../../api'
-import { InnerStepCard, CancelStepsButton } from './shared'
+import { InnerStepCard, InnerParallelCard, CancelStepsButton } from './shared'
 
 interface WorkflowLoopProps {
   name: string;
-  baseStages: string[];
+  baseStages?: string[];
+  iterationStructures?: { [key: string]: any[] };
   iterations: number;
   task: api.Task;
   onSelect: (stage: string) => void;
@@ -14,7 +15,7 @@ interface WorkflowLoopProps {
   onRefresh: () => void;
 }
 
-export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, selectedStage, onRetry, onRefresh }: WorkflowLoopProps) {
+export function WorkflowLoop({ name, baseStages, iterationStructures, iterations, task, onSelect, selectedStage, onRetry, onRefresh }: WorkflowLoopProps) {
   const [activeIteration, setActiveIteration] = useState(1)
   const [lastLatest, setLastLatest] = useState(0)
 
@@ -22,7 +23,8 @@ export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, sel
     // Calculate what the current latest iteration is based on steps
     let currentLatest = 1
     for (let i = iterations; i >= 1; i--) {
-      if (task.steps.some(s => s.stage.endsWith(`-${i}`))) {
+      // If any step stage ends with -i, or contains -i-
+      if (task.steps.some(s => s.stage.endsWith(`-${i}`) || s.stage.includes(`-${i}-`))) {
         currentLatest = i
         break
       }
@@ -50,11 +52,23 @@ export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, sel
   // Pre-calculate stages to cancel
   const stagesToCancel: string[] = [];
   for (let i = 1; i <= iterations; i++) {
-    baseStages.forEach(bs => stagesToCancel.push(`${bs}-${i}`));
+    if (iterationStructures && iterationStructures[i.toString()]) {
+        iterationStructures[i.toString()].forEach((item: any) => {
+            if (item.type === 'step') {
+                stagesToCancel.push(item.stage)
+            } else if (item.type === 'parallel') {
+                stagesToCancel.push(...item.stages)
+            }
+        })
+    } else if (baseStages) {
+        baseStages.forEach(bs => stagesToCancel.push(`${bs}-${i}`));
+    }
   }
 
+  const activeStructure = iterationStructures ? iterationStructures[activeIteration.toString()] : null;
+
   return (
-    <div className="relative pl-8 mt-12">
+    <div className="relative pl-8 mt-12 mb-6">
       <div className="absolute left-[9px] -top-12 w-[2px] h-12 bg-gray-100" />
       <div className="absolute left-[-10px] top-6 w-10 h-[200px] border-l-2 border-y-2 border-black rounded-l-2xl opacity-20" />
       
@@ -65,7 +79,7 @@ export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, sel
               <RotateCw size={16} />
               <h4 className="font-black text-xs uppercase tracking-[0.2em]">{name}</h4>
             </div>
-            {task.status !== 'completed' && (
+            {task.status !== 'completed' && stagesToCancel.length > 0 && (
               <CancelStepsButton 
                 task={task} 
                 stagesToCancel={stagesToCancel} 
@@ -88,24 +102,59 @@ export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, sel
         </div>
 
         <div className="space-y-4">
-          {baseStages.map(baseStage => {
-            const stageName = `${baseStage}-${activeIteration}`
-            const step = getStepForIteration(activeIteration, baseStage)
-            const isRunning = step?.status === 'running' || (task.current_stage === stageName && !step)
-            
-            return (
-              <InnerStepCard
-                key={baseStage}
-                label={baseStage.replace(/-/g, ' ')}
-                step={step}
-                isRunning={isRunning}
-                isSelected={selectedStage === stageName}
-                taskStatus={task.status}
-                onSelect={() => onSelect(stageName)}
-                onRetry={(e) => { e.stopPropagation(); onRetry(); }}
-              />
-            )
-          })}
+          {activeStructure ? (
+             activeStructure.map((item: any, idx: number) => {
+                 if (item.type === 'step') {
+                     const step = task.steps.find(s => s.stage === item.stage)
+                     const isRunning = step?.status === 'running' || (task.current_stage === item.stage && !step)
+                     return (
+                        <InnerStepCard
+                          key={item.stage}
+                          label={item.stage.replace(/-/g, ' ')}
+                          step={step}
+                          isRunning={isRunning}
+                          isSelected={selectedStage === item.stage}
+                          taskStatus={task.status}
+                          onSelect={() => onSelect(item.stage)}
+                          onRetry={(e) => { e.stopPropagation(); onRetry(); }}
+                        />
+                     )
+                 } else if (item.type === 'parallel') {
+                     return (
+                        <InnerParallelCard
+                           key={idx}
+                           name={item.name}
+                           stages={item.stages}
+                           task={task}
+                           selectedStage={selectedStage}
+                           onSelect={onSelect}
+                           onRetry={onRetry}
+                           onRefresh={onRefresh}
+                        />
+                     )
+                 }
+                 return null;
+             })
+          ) : baseStages ? (
+              baseStages.map(baseStage => {
+                const stageName = `${baseStage}-${activeIteration}`
+                const step = getStepForIteration(activeIteration, baseStage)
+                const isRunning = step?.status === 'running' || (task.current_stage === stageName && !step)
+                
+                return (
+                  <InnerStepCard
+                    key={baseStage}
+                    label={baseStage.replace(/-/g, ' ')}
+                    step={step}
+                    isRunning={isRunning}
+                    isSelected={selectedStage === stageName}
+                    taskStatus={task.status}
+                    onSelect={() => onSelect(stageName)}
+                    onRetry={(e) => { e.stopPropagation(); onRetry(); }}
+                  />
+                )
+              })
+          ) : null}
         </div>
         
         <div className="mt-4 text-center">

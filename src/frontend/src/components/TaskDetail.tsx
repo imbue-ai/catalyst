@@ -168,6 +168,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     key={item.name}
                     name={item.name}
                     baseStages={item.base_stages}
+                    iterationStructures={item.iteration_structures}
                     iterations={item.iterations}
                     task={task}
                     onSelect={setSelectedStage}
