@@ -391,7 +391,7 @@ def store_results(
             _record_theory_in_population(
                 db_root=db_root,
                 theory_id=new_id,
-                parent_theory_id=meta.parent_theory,
+                parent_theory_id=parent_theory,
             )
 
     return new_id
