@@ -45,7 +45,7 @@ export function WorkflowStep({ stage, task, onSelect, isSelected, onRetry, isPla
                 <RefreshCw size={10} strokeWidth={3} />
               </button>
             )}
-            <span className={`text-[8px] font-bold px-1 py-0.5 rounded ${
+            <span className={`text-[8px] font-bold px-1 py-0.5 rounded uppercase ${
               step?.status === 'completed' ? 'bg-green-600 text-white' : 
               isRunning ? 'bg-blue-100 text-blue-700' : 
               step?.status === 'failed' ? 'bg-red-100 text-red-700' : 

@@ -13,7 +13,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
   }
   
   return (
-    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-sm ${styles[status] || 'bg-gray-100'}`}>
+    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded-sm uppercase ${styles[status] || 'bg-gray-100'}`}>
       {status}
     </span>
   )
