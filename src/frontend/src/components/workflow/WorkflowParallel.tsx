@@ -52,7 +52,7 @@ export function WorkflowParallel({ name, stages, task, onSelect, selectedStage, 
          {overallStatus === 'paused' && <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full m-auto mt-1.5" />}
       </div>
 
-      <div className="bg-white border-2 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+      <div className="bg-white border-2 border-gray-200 p-6">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
             <LayoutGrid size={16} />
