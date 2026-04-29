@@ -19,7 +19,16 @@ class GeminiAgentRunner(BaseCliAgentRunner):
         env["AI_SCIENTIST_DB_PATH"] = db_path
         abs_env_folder = os.path.abspath(env_folder)
 
-        cmd = ["gemini", "--yolo", "--output-format", "stream-json"]
+        cmd = [
+            "gemini",
+            "--approval-mode",
+            "default",
+            "--policy",
+            f"{db_path}/.gemini/policy.toml",
+            "--skip-trust",
+            "--output-format",
+            "stream-json",
+        ]
         if model:
             cmd.extend(["--model", model])
         cmd.extend(["-p", prompt])
