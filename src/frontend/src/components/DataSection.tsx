@@ -74,7 +74,7 @@ export function DataSection({ label, data, primary, taskId }: DataSectionProps) 
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
-        <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500">{label}</h4>
+        <h4 className="text-[10px] font-black tracking-widest text-gray-500">{label}</h4>
       </div>
       <div className={`border p-4 bg-white overflow-x-auto ${primary ? 'border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.05)]' : 'border-gray-100'}`}>
         {isPromptOnly ? (

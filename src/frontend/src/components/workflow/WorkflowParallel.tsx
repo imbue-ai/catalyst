@@ -43,7 +43,7 @@ export function WorkflowParallel({ name, stages, task, onSelect, selectedStage, 
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
             <LayoutGrid size={16} />
-            <h4 className="font-black text-xs uppercase tracking-[0.2em]">{name || "Parallel Tasks"}</h4>
+            <h4 className="font-black text-xs tracking-[0.2em]">{name || "Parallel Tasks"}</h4>
           </div>
           {task.status !== 'completed' && overallStatus !== 'completed' && overallStatus !== 'canceled' && (
             <CancelStepsButton 

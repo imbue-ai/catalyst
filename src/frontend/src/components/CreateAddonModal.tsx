@@ -47,7 +47,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white border-2 border-black p-8 w-full max-w-lg shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-8">
-          <h2 className="text-2xl font-black uppercase tracking-tighter">Add Step</h2>
+          <h2 className="text-2xl font-black tracking-tighter">Add Step</h2>
           <button onClick={onClose} className="hover:rotate-90 transition-transform">
             <XCircle size={24} />
           </button>
@@ -67,7 +67,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
         ) : (
           <form onSubmit={handleCreate} className="flex flex-col gap-6">
             <div>
-              <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Target Theory ID</label>
+              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Target Theory ID</label>
               <select 
                 required={!isTheoryIdDisabled}
                 disabled={isTheoryIdDisabled}
@@ -83,7 +83,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
             </div>
 
             <div>
-              <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Add-on Skill</label>
+              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Add-on Skill</label>
               <select 
                 value={addonType}
                 onChange={e => setAddonType(e.target.value)}
@@ -99,7 +99,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
 
             {addonType === 'streamline-theory' && (
               <div>
-                <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Streamlining Direction (Optional)</label>
+                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamlining Direction (Optional)</label>
                 <input 
                   type="text"
                   value={direction}
@@ -113,7 +113,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
             {addonType === 'refinement-loop' && (
               <>
                 <div>
-                  <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Max Refinement Iterations</label>
+                  <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Refinement Iterations</label>
                   <input 
                     type="number"
                     min="1"
@@ -134,7 +134,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                     />
                     {applyExtensions && <div className="w-3 h-3 bg-black" />}
                   </div>
-                  <span className="text-xs font-bold uppercase tracking-widest">Apply Extensions</span>
+                  <span className="text-xs font-bold tracking-widest">Apply Extensions</span>
                 </label>
               </>
             )}
@@ -143,7 +143,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
               <>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Iterations</label>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Iterations</label>
                     <input 
                       type="number" min="1" max="10" required
                       value={evolveIterations} onChange={e => setEvolveIterations(parseInt(e.target.value, 10))}
@@ -151,7 +151,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Num Parents</label>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Num Parents</label>
                     <input 
                       type="number" min="1" max="10" required
                       value={numParents} onChange={e => setNumParents(parseInt(e.target.value, 10))}
@@ -159,7 +159,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Streamline Prob (0-1)</label>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamline Prob (0-1)</label>
                     <input 
                       type="number" step="0.1" min="0" max="1" required
                       value={streamlineProb} onChange={e => setStreamlineProb(parseFloat(e.target.value))}
@@ -167,7 +167,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Extra Scores</label>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Scores</label>
                     <input 
                       type="number" min="0" max="10" required
                       value={numExtraScores} onChange={e => setNumExtraScores(parseInt(e.target.value, 10))}
@@ -182,9 +182,9 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
               <button
                 type="submit"
                 disabled={isBackendDown}
-                className="flex-1 bg-black text-white p-4 font-black uppercase text-sm tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+                className="flex-1 bg-black text-white p-4 font-black text-sm tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
               >
-                {isBackendDown ? 'Backend Offline' : 'ADD STEP'} <ChevronRight size={18} />
+                {isBackendDown ? 'Backend Offline' : 'Add Step'} <ChevronRight size={18} />
               </button>
             </div>
           </form>

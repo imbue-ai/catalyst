@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Folder, Activity, FlaskConical, History } from 'lucide-react'
+import { Plus, Folder, Activity, FlaskConical } from 'lucide-react'
 import * as api from './api'
 import { StatusBadge } from './components/StatusBadge'
 import { TaskDetail } from './components/TaskDetail'
@@ -82,8 +82,8 @@ function App() {
           </div>
 
           <div className="p-4 border-b border-black flex items-center justify-between bg-gray-50/50">
-            <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-              <History size={12} /> Current research
+            <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 tracking-widest">
+              <Activity size={12} /> Current research
             </div>
             <button
               onClick={() => setShowCreate(true)}
@@ -107,7 +107,7 @@ function App() {
                 className={`group p-4 border-b border-black block cursor-pointer transition-all ${selectedTaskId === task.id ? 'bg-black text-white' : 'hover:bg-gray-50'}`}
               >
                 <div className="flex justify-between items-start mb-2 gap-2">
-                  <span className={`font-bold text-xs uppercase truncate flex-1 ${selectedTaskId === task.id ? 'text-white' : 'text-black'}`}>
+                  <span className={`font-bold text-xs truncate flex-1 ${selectedTaskId === task.id ? 'text-white' : 'text-black'}`}>
                     {task.title || task.workflow_inputs.summary}
                   </span>
                   <StatusBadge status={task.status} />
@@ -136,13 +136,13 @@ function App() {
               <div className="w-24 h-24 border border-black rounded-full flex items-center justify-center mb-6 animate-pulse">
                 <Activity size={40} strokeWidth={1} className="text-gray-300" />
               </div>
-              <h2 className="text-2xl font-black uppercase tracking-tighter mb-2">Ready for Discovery</h2>
+              <h2 className="text-2xl font-black tracking-tighter mb-2">Ready for Discovery</h2>
               <p className="text-gray-400 max-w-sm text-sm">
                 Select a research thread from the sidebar or start a new scientific inquiry.
               </p>
               <button
                 onClick={() => setShowCreate(true)}
-                className="mt-8 px-6 py-3 bg-black text-white font-bold uppercase text-xs tracking-widest hover:bg-gray-800 transition-colors"
+                className="mt-8 px-6 py-3 bg-black text-white font-bold text-xs tracking-widest hover:bg-gray-800 transition-colors"
               >
                 + Start New Research
               </button>

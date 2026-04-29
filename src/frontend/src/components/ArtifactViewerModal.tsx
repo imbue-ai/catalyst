@@ -127,7 +127,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
                 <ArrowLeft size={20} strokeWidth={3} />
               </button>
             )}
-            <span className="font-black text-sm uppercase tracking-widest">{artifactId}</span>
+            <span className="font-black text-sm tracking-widest">{artifactId}</span>
           </div>
           <div className="flex items-center gap-2">
             <button 
@@ -152,7 +152,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
             <div className="w-64 border-r-2 border-black bg-gray-50 flex flex-col print:hidden flex-shrink-0">
               <div className="p-4 border-b-2 border-black flex items-center gap-2">
                 <ListIcon size={16} />
-                <span className="font-black text-xs uppercase tracking-widest">Contents</span>
+                <span className="font-black text-xs tracking-widest">Contents</span>
               </div>
               <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                 <ul className="space-y-2">
@@ -180,7 +180,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
             {loading && (
               <div className="flex flex-col items-center justify-center h-full opacity-50 text-black">
                 <Loader2 size={48} className="animate-spin mb-4" strokeWidth={1} />
-                <div className="font-black text-xs uppercase tracking-widest">Loading Artifact...</div>
+                <div className="font-black text-xs tracking-widest">Loading Artifact...</div>
               </div>
             )}
             {error && (

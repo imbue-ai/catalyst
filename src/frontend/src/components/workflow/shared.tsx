@@ -39,7 +39,7 @@ export function InnerStepCard({ label, step, isRunning, isSelected, taskStatus, 
       }`}
     >
       <div className="flex justify-between items-center">
-        <span className={`text-[10px] font-black uppercase ${isRunning ? 'text-blue-600' : ''}`}>{label}</span>
+        <span className={`text-[10px] font-black ${isRunning ? 'text-blue-600' : ''}`}>{label}</span>
         <div className="flex items-center gap-2">
           {step?.status === 'failed' && taskStatus !== 'running' && (
             <button 
@@ -51,7 +51,7 @@ export function InnerStepCard({ label, step, isRunning, isSelected, taskStatus, 
             </button>
           )}
           {isRunning && <Loader2 size={10} className="animate-spin text-blue-600" />}
-          <span className={`text-[8px] font-bold uppercase ${
+          <span className={`text-[8px] font-bold ${
             step?.status === 'completed' ? 'text-green-600' :
             step?.status === 'paused' ? 'text-yellow-600' :
             step?.status === 'failed' ? 'text-red-600' :
@@ -88,7 +88,7 @@ export function CancelStepsButton({ task, stagesToCancel, onRefresh, label }: Ca
         }
       }}
       disabled={isCanceling}
-      className="text-[10px] font-black uppercase text-gray-400 hover:text-red-600 transition-colors flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-sm border border-gray-200 hover:border-red-200"
+      className="text-[10px] font-black text-gray-400 hover:text-red-600 transition-colors flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-sm border border-gray-200 hover:border-red-200"
     >
       {isCanceling ? <Loader2 size={10} className="animate-spin" /> : <XCircle size={10} />} {label}
     </button>
@@ -109,8 +109,8 @@ export function InnerParallelCard({ name, stages, task, selectedStage, onSelect,
   if (!stages || stages.length === 0) {
       return (
          <div className="p-3 border-2 border-dashed border-gray-200 opacity-40">
-           <div className="flex items-center gap-2 mb-2"><LayoutGrid size={12} /> <span className="text-[10px] font-black uppercase">{name}</span></div>
-           <div className="text-[8px] text-gray-400 font-bold uppercase">Pending...</div>
+           <div className="flex items-center gap-2 mb-2"><LayoutGrid size={12} /> <span className="text-[10px] font-black">{name}</span></div>
+           <div className="text-[8px] text-gray-400 font-bold">Pending...</div>
          </div>
       )
   }
@@ -120,7 +120,7 @@ export function InnerParallelCard({ name, stages, task, selectedStage, onSelect,
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center gap-2">
           <LayoutGrid size={12} />
-          <span className="text-[10px] font-black uppercase">{name}</span>
+          <span className="text-[10px] font-black">{name}</span>
         </div>
         {task.status !== 'completed' && (
           <CancelStepsButton task={task} stagesToCancel={stages} onRefresh={onRefresh} label="Cancel Tasks" />

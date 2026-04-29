@@ -34,7 +34,7 @@ export function WorkflowStep({ stage, task, onSelect, isSelected, onRetry, isPla
           : (isPlaceholder ? 'border-dashed border-gray-200 opacity-40' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50')
       }`}>
         <div className="flex justify-between items-center mb-1">
-          <span className={`font-black text-xs uppercase tracking-tight ${isRunning ? 'text-blue-600' : ''}`}>{stage}</span>
+          <span className={`font-black text-xs tracking-tight ${isRunning ? 'text-blue-600' : ''}`}>{stage}</span>
           <div className="flex items-center gap-2">
             {step?.status === 'failed' && task.status !== 'running' && (
               <button 
@@ -45,7 +45,7 @@ export function WorkflowStep({ stage, task, onSelect, isSelected, onRetry, isPla
                 <RefreshCw size={10} strokeWidth={3} />
               </button>
             )}
-            <span className={`text-[8px] font-bold px-1 py-0.5 rounded uppercase ${
+            <span className={`text-[8px] font-bold px-1 py-0.5 rounded ${
               step?.status === 'completed' ? 'bg-green-600 text-white' : 
               isRunning ? 'bg-blue-100 text-blue-700' : 
               step?.status === 'failed' ? 'bg-red-100 text-red-700' : 
