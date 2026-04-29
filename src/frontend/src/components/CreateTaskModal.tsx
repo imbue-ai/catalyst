@@ -9,10 +9,11 @@ interface CreateTaskModalProps {
 }
 
 export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTaskModalProps) {
-  const [activeTab, setActiveTab] = useState<'develop-theory' | 'refine-theory-idea' | 'import-theory'>('develop-theory')
+  const [activeTab, setActiveTab] = useState<'develop-theory' | 'develop-theory-linear' | 'refine-theory-idea' | 'refine-theory-idea-linear' | 'import-theory'>('develop-theory')
   
   // Develop Theory Inputs
   const [newPhenomenon, setNewPhenomenon] = useState('')
+  const [numRootTheories, setNumRootTheories] = useState(3)
   
   // Refine Theory Idea Inputs
   const [newIdea, setNewIdea] = useState('')
@@ -32,8 +33,10 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     
     let workflow_inputs: any = {}
     if (activeTab === 'develop-theory') {
+      workflow_inputs = { phenomenon: newPhenomenon, num_root_theories: numRootTheories, max_refinements: maxRefinements }
+    } else if (activeTab === 'develop-theory-linear') {
       workflow_inputs = { phenomenon: newPhenomenon, max_refinements: maxRefinements }
-    } else if (activeTab === 'refine-theory-idea') {
+    } else if (activeTab === 'refine-theory-idea' || activeTab === 'refine-theory-idea-linear') {
       workflow_inputs = { idea: newIdea, apply_extensions: applyExtensions, max_refinements: maxRefinements }
     } else if (activeTab === 'import-theory') {
       workflow_inputs = { file_path: importFilePath }
@@ -55,7 +58,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white border-2 border-black p-8 w-full max-w-3xl shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[90vh]">
+      <div className="bg-white border-2 border-black p-8 w-full max-w-4xl shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-black uppercase tracking-tighter">Start Research</h2>
           <button onClick={onClose} className="hover:rotate-90 transition-transform">
@@ -63,24 +66,38 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
           </button>
         </div>
 
-        <div className="flex border-b-2 border-black mb-6">
+        <div className="flex flex-wrap border-b-2 border-black mb-6">
           <button
             type="button"
-            className={`flex-1 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'develop-theory' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
+            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'develop-theory' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
             onClick={() => setActiveTab('develop-theory')}
           >
             Develop Theory
           </button>
           <button
             type="button"
-            className={`flex-1 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'refine-theory-idea' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
+            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'develop-theory-linear' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
+            onClick={() => setActiveTab('develop-theory-linear')}
+          >
+            Develop Theory (Linear)
+          </button>
+          <button
+            type="button"
+            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'refine-theory-idea' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
             onClick={() => setActiveTab('refine-theory-idea')}
           >
             Refine Idea
           </button>
           <button
             type="button"
-            className={`flex-1 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'import-theory' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
+            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'refine-theory-idea-linear' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
+            onClick={() => setActiveTab('refine-theory-idea-linear')}
+          >
+            Refine Idea (Linear)
+          </button>
+          <button
+            type="button"
+            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'import-theory' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
             onClick={() => setActiveTab('import-theory')}
           >
             Import
@@ -88,7 +105,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         </div>
         
         <form onSubmit={handleCreate} className="flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2">
-          {activeTab === 'develop-theory' ? (
+          {activeTab === 'develop-theory' || activeTab === 'develop-theory-linear' ? (
             <>
               <div>
                 <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Phenomenon to Explain</label>
@@ -102,20 +119,36 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                   className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none"
                 />
               </div>
-              <div>
-                <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Max Refinement Iterations</label>
-                <input 
-                  type="number"
-                  min="0"
-                  max="10"
-                  required
-                  value={maxRefinements}
-                  onChange={e => setMaxRefinements(parseInt(e.target.value, 10))}
-                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
-                />
+              <div className="grid grid-cols-2 gap-8">
+                {activeTab === 'develop-theory' && (
+                  <div>
+                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Number of Root Theories</label>
+                    <input 
+                      type="number"
+                      min="1"
+                      max="20"
+                      required
+                      value={numRootTheories}
+                      onChange={e => setNumRootTheories(parseInt(e.target.value, 10))}
+                      className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                    />
+                  </div>
+                )}
+                <div>
+                  <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Max Refinement Iterations</label>
+                  <input 
+                    type="number"
+                    min="0"
+                    max="10"
+                    required
+                    value={maxRefinements}
+                    onChange={e => setMaxRefinements(parseInt(e.target.value, 10))}
+                    className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                  />
+                </div>
               </div>
             </>
-          ) : activeTab === 'refine-theory-idea' ? (
+          ) : activeTab === 'refine-theory-idea' || activeTab === 'refine-theory-idea-linear' ? (
             <>
               <div>
                 <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Idea / File Path</label>
