@@ -32,5 +32,6 @@ priority = 10
 # Shell commands
 [[rule]]
 toolName = ["run_shell_command"]
+commandPrefix = ["uv run python ", "mkdir -p tmp/", "mkdir tmp/", "mktemp ", "cp ", "mv ", "jq ", "awk ", "head ", "tail ", "wc ", "curl ", "pdf2ps ", "pdfimages ", "pdfinfo ", "pdftotext ", "pdftohtml "]
 decision = "allow"
 priority = 10
