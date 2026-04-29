@@ -16,16 +16,24 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
   const [direction, setDirection] = useState('')
   const [maxRefinements, setMaxRefinements] = useState(3)
   const [applyExtensions, setApplyExtensions] = useState(false)
+  const [evolveIterations, setEvolveIterations] = useState(3)
+  const [numParents, setNumParents] = useState(3)
+  const [streamlineProb, setStreamlineProb] = useState(0.25)
+  const [numExtraScores, setNumExtraScores] = useState(5)
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     try {
       const updatedTask = await api.createAddon(task.id, {
         type: addonType,
-        theory_id: theoryId,
+        theory_id: addonType === 'evolve-loop' ? 'none' : theoryId, // Evolve loop doesn't strictly need a theory ID
         direction: addonType === 'streamline-theory' && direction ? direction : undefined,
         max_refinements: addonType === 'refinement-loop' ? maxRefinements : undefined,
-        apply_extensions: addonType === 'refinement-loop' ? applyExtensions : undefined
+        apply_extensions: addonType === 'refinement-loop' ? applyExtensions : undefined,
+        evolve_iterations: addonType === 'evolve-loop' ? evolveIterations : undefined,
+        num_parents: addonType === 'evolve-loop' ? numParents : undefined,
+        streamline_prob: addonType === 'evolve-loop' ? streamlineProb : undefined,
+        num_extra_scores: addonType === 'evolve-loop' ? numExtraScores : undefined
       })
       onCreated(updatedTask)
     } catch (e: any) {
@@ -33,9 +41,11 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
     }
   }
 
+  const isTheoryIdDisabled = addonType === 'evolve-loop';
+
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white border-2 border-black p-8 w-full max-w-lg shadow-[12px_12px_0px_0px_rgba(0,0,0,1)]">
+      <div className="bg-white border-2 border-black p-8 w-full max-w-lg shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-8">
           <h2 className="text-2xl font-black uppercase tracking-tighter">Add Step</h2>
           <button onClick={onClose} className="hover:rotate-90 transition-transform">
@@ -50,7 +60,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
           </div>
         )}
         
-        {availableTheoryIds.length === 0 ? (
+        {availableTheoryIds.length === 0 && !isTheoryIdDisabled ? (
           <div className="text-sm font-bold text-red-600 mb-6">
             No theories have been generated yet in this task. Please wait for a step to output a theory_id.
           </div>
@@ -59,12 +69,14 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
             <div>
               <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Target Theory ID</label>
               <select 
-                required
-                value={theoryId}
+                required={!isTheoryIdDisabled}
+                disabled={isTheoryIdDisabled}
+                value={isTheoryIdDisabled ? '' : theoryId}
                 onChange={e => setTheoryId(e.target.value)}
-                className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
+                className={`w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer ${isTheoryIdDisabled ? 'opacity-50 cursor-not-allowed bg-gray-100' : ''}`}
               >
-                {availableTheoryIds.map(id => (
+                {isTheoryIdDisabled && <option value="">N/A (Population Based)</option>}
+                {!isTheoryIdDisabled && availableTheoryIds.map(id => (
                   <option key={id} value={id}>{id}</option>
                 ))}
               </select>
@@ -81,6 +93,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                 <option value="review-theory">Review Theory</option>
                 <option value="refine-theory">Refine Theory</option>
                 <option value="refinement-loop">Refinement Loop</option>
+                <option value="evolve-loop">Evolve Theory Loop</option>
               </select>
             </div>
 
@@ -123,6 +136,45 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                   </div>
                   <span className="text-xs font-bold uppercase tracking-widest">Apply Extensions</span>
                 </label>
+              </>
+            )}
+
+            {addonType === 'evolve-loop' && (
+              <>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Iterations</label>
+                    <input 
+                      type="number" min="1" max="10" required
+                      value={evolveIterations} onChange={e => setEvolveIterations(parseInt(e.target.value, 10))}
+                      className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Num Parents</label>
+                    <input 
+                      type="number" min="1" max="10" required
+                      value={numParents} onChange={e => setNumParents(parseInt(e.target.value, 10))}
+                      className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Streamline Prob (0-1)</label>
+                    <input 
+                      type="number" step="0.1" min="0" max="1" required
+                      value={streamlineProb} onChange={e => setStreamlineProb(parseFloat(e.target.value))}
+                      className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Extra Scores</label>
+                    <input 
+                      type="number" min="0" max="10" required
+                      value={numExtraScores} onChange={e => setNumExtraScores(parseInt(e.target.value, 10))}
+                      className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                    />
+                  </div>
+                </div>
               </>
             )}
             

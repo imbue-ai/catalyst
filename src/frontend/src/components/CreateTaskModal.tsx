@@ -27,16 +27,40 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
   const [newFramework, setNewFramework] = useState('claude')
   const [newModel, setNewModel] = useState('')
   const [maxRefinements, setMaxRefinements] = useState(3)
+  
+  // Evolve Parameters
+  const [evolveIterations, setEvolveIterations] = useState(3)
+  const [numParents, setNumParents] = useState(3)
+  const [streamlineProb, setStreamlineProb] = useState(0.25)
+  const [numExtraScores, setNumExtraScores] = useState(5)
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
     
     let workflow_inputs: any = {}
     if (activeTab === 'develop-theory') {
-      workflow_inputs = { phenomenon: newPhenomenon, num_root_theories: numRootTheories, max_refinements: maxRefinements }
+      workflow_inputs = { 
+        phenomenon: newPhenomenon, 
+        num_root_theories: numRootTheories, 
+        max_refinements: maxRefinements,
+        evolve_iterations: evolveIterations,
+        num_parents: numParents,
+        streamline_prob: streamlineProb,
+        num_extra_scores: numExtraScores
+      }
     } else if (activeTab === 'develop-theory-linear') {
       workflow_inputs = { phenomenon: newPhenomenon, max_refinements: maxRefinements }
-    } else if (activeTab === 'refine-theory-idea' || activeTab === 'refine-theory-idea-linear') {
+    } else if (activeTab === 'refine-theory-idea') {
+      workflow_inputs = { 
+        idea: newIdea, 
+        apply_extensions: applyExtensions, 
+        max_refinements: maxRefinements,
+        evolve_iterations: evolveIterations,
+        num_parents: numParents,
+        streamline_prob: streamlineProb,
+        num_extra_scores: numExtraScores
+      }
+    } else if (activeTab === 'refine-theory-idea-linear') {
       workflow_inputs = { idea: newIdea, apply_extensions: applyExtensions, max_refinements: maxRefinements }
     } else if (activeTab === 'import-theory') {
       workflow_inputs = { file_path: importFilePath }
@@ -147,6 +171,27 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                   />
                 </div>
               </div>
+
+              {activeTab === 'develop-theory' && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Evolve Iterations</label>
+                    <input type="number" min="0" max="10" required value={evolveIterations} onChange={e => setEvolveIterations(parseInt(e.target.value, 10))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Num Parents</label>
+                    <input type="number" min="1" max="10" required value={numParents} onChange={e => setNumParents(parseInt(e.target.value, 10))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Streamline Prob (0-1)</label>
+                    <input type="number" step="0.1" min="0" max="1" required value={streamlineProb} onChange={e => setStreamlineProb(parseFloat(e.target.value))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Extra Scores</label>
+                    <input type="number" min="0" max="10" required value={numExtraScores} onChange={e => setNumExtraScores(parseInt(e.target.value, 10))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
+                  </div>
+                </div>
+              )}
             </>
           ) : activeTab === 'refine-theory-idea' || activeTab === 'refine-theory-idea-linear' ? (
             <>
@@ -186,6 +231,27 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                 </div>
                 <span className="text-xs font-bold uppercase tracking-widest">Apply Extensions</span>
               </label>
+
+              {activeTab === 'refine-theory-idea' && (
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div>
+                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Evolve Iterations</label>
+                    <input type="number" min="0" max="10" required value={evolveIterations} onChange={e => setEvolveIterations(parseInt(e.target.value, 10))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Num Parents</label>
+                    <input type="number" min="1" max="10" required value={numParents} onChange={e => setNumParents(parseInt(e.target.value, 10))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Streamline Prob (0-1)</label>
+                    <input type="number" step="0.1" min="0" max="1" required value={streamlineProb} onChange={e => setStreamlineProb(parseFloat(e.target.value))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Extra Scores</label>
+                    <input type="number" min="0" max="10" required value={numExtraScores} onChange={e => setNumExtraScores(parseInt(e.target.value, 10))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
+                  </div>
+                </div>
+              )}
             </>
           ) : (
             <div>

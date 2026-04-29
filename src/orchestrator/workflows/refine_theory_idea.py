@@ -1,6 +1,6 @@
 from typing import Any, Callable, List, Dict
 from ..models import Task
-from .base import Workflow, run_step_if_needed
+from .base import Workflow, run_step_if_needed, run_evolve_loop
 
 class RefineTheoryIdeaWorkflow(Workflow):
     @property
@@ -16,22 +16,44 @@ class RefineTheoryIdeaWorkflow(Workflow):
             structure.append({"type": "step", "stage": "review-theory"})
         if any(s.stage == "score-theories" for s in task.steps):
             structure.append({"type": "step", "stage": "score-theories"})
+            
+        evolve_iterations = int(task.workflow_inputs.get("evolve_iterations", 0))
+        if evolve_iterations > 0:
+            iteration_structures = {}
+            for i in range(1, evolve_iterations + 1):
+                iter_struct = []
+                
+                # Mutate parallel block
+                mutate_stages = [s.stage for s in task.steps if s.stage.startswith(f"mutate-streamline-{i}-") or s.stage.startswith(f"mutate-refine-{i}-")]
+                iter_struct.append({"type": "parallel", "name": "Mutate", "stages": mutate_stages})
+                
+                # Review parallel block
+                loop_review_stages = [s.stage for s in task.steps if s.stage.startswith(f"review-theory-{i}-")]
+                iter_struct.append({"type": "parallel", "name": "Review", "stages": loop_review_stages})
+                
+                # Score step
+                iter_struct.append({"type": "step", "stage": f"score-theories-{i}"})
+                
+                iteration_structures[str(i)] = iter_struct
+
+            structure.append({
+                "type": "loop",
+                "name": "Evolve Theories",
+                "iterations": evolve_iterations,
+                "iteration_structures": iteration_structures
+            })
+            
         return structure
 
     def run(self, task: Task, run_step: Callable) -> None:
         self.init_db(task)
-        semaphore = threading.Semaphore(3)
-
-        def bounded_run_step(task, stage, prompt):
-            with semaphore:
-                return run_step(task, stage, prompt)
 
         idea = task.workflow_inputs.get("idea", "")
 
         # Step 0: Summarize Title
         if not task.title:
             title_data = run_step_if_needed(
-                task, bounded_run_step, "summarize-title",
+                task, run_step, "summarize-title",
                 f"Please provide a very short, summarized title (maximum 5 words) for the following research idea: {idea}. "
                 "Return a JSON object with the key 'title'."
             )
@@ -63,4 +85,19 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 "When you are done, return a JSON object mapping each theory ID to its assigned score."
             )
             
-            # TODO: Add new Refinement Loop here
+            # Step 4: Evolve Loop
+            evolve_iterations = int(task.workflow_inputs.get("evolve_iterations", DEFAULT_EVOLVE_ITERATIONS))
+            if evolve_iterations > 0:
+                num_parents = int(task.workflow_inputs.get("num_parents", DEFAULT_NUM_PARENTS))
+                streamline_prob = float(task.workflow_inputs.get("streamline_prob", DEFAULT_STREAMLINE_PROB))
+                num_extra_scores = int(task.workflow_inputs.get("num_extra_scores", DEFAULT_NUM_EXTRA_SCORES))
+                run_evolve_loop(
+                    task, 
+                    run_step, 
+                    iterations=evolve_iterations,
+                    num_parents=num_parents,
+                    streamline_prob=streamline_prob,
+                    num_extra_scores=num_extra_scores
+                )
+extra_scores=num_extra_scores
+                )

@@ -90,10 +90,13 @@ def _load_state() -> TasksState:
         _state_cache = TasksState(tasks=[])
         return _state_cache
 
-def _save_state(state: TasksState):
+def _save_state(state: TasksState, disk_save: bool = True):
     global _state_cache
     _state_cache = state
     
+    if not disk_save:
+        return
+
     # Strip transient fields like last_status before saving to disk
     data = state.model_dump()
     for task in data.get("tasks", []):
@@ -130,11 +133,25 @@ def update_task(task: Task):
         
     with _lock:
         state = _load_state()
-        for i, t in enumerate(state.tasks):
-            if t.id == task.id:
+        
+        # Check if anything *other* than last_status changed
+        needs_disk_save = True
+        for i, old_t in enumerate(state.tasks):
+            if old_t.id == task.id:
+                # Compare JSON dumps ignoring last_status
+                old_dump = old_t.model_dump()
+                new_dump = task.model_dump()
+                for d in (old_dump, new_dump):
+                    for step in d.get("steps", []):
+                        if "last_status" in step:
+                            step["last_status"] = None
+                if old_dump == new_dump:
+                    needs_disk_save = False
+
                 state.tasks[i] = task
                 break
-        _save_state(state)
+                
+        _save_state(state, disk_save=needs_disk_save)
 
 def initialize_state():
     with _lock:
