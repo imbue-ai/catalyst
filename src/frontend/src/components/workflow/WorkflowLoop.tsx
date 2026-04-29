@@ -95,7 +95,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
             <RotateCw size={16} />
-            <h4 className="font-black text-xs uppercase tracking-[0.2em]">{name}</h4>
+            <h4 className="font-black text-xs tracking-[0.2em]">{name}</h4>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex gap-1">
@@ -177,7 +177,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
         </div>
         
         <div className="mt-4 text-center">
-          <div className="inline-block text-[8px] font-black uppercase tracking-widest text-gray-300">
+          <div className="inline-block text-[8px] font-black tracking-widest text-gray-300">
             Iteration {activeIteration} of {iterations}
           </div>
         </div>

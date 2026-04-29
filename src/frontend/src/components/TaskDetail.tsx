@@ -70,9 +70,9 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
               <StatusBadge status={task.status} />
-              <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Research Session: {task.id.split('-')[0]}</span>
+              <span className="text-[10px] text-gray-400 font-bold tracking-widest">Research Session: {task.id.split('-')[0]}</span>
             </div>
-            <h2 className="text-4xl font-black uppercase tracking-tighter leading-tight">{task.title || "Initializing..."}</h2>
+            <h2 className="text-4xl font-black tracking-tighter leading-tight">{task.title || "Initializing..."}</h2>
             <p className="mt-4 text-xs text-gray-500 font-bold leading-relaxed max-w-2xl">{task.workflow_inputs.summary}</p>
 
             <div className="mt-6 flex gap-3">
@@ -80,7 +80,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                 <button
                   disabled={isProcessing}
                   onClick={handleCancel}
-                  className="bg-gray-500 text-white px-4 py-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-gray-600 transition-colors disabled:opacity-50"
+                  className="bg-gray-500 text-white px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-600 transition-colors disabled:opacity-50"
                 >
                   {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Square size={12} fill="white" />}
                   Pause Research
@@ -91,7 +91,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     <button
                       disabled={isProcessing}
                       onClick={handleResume}
-                      className="bg-black text-white px-4 py-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-gray-800 transition-colors disabled:opacity-50"
+                      className="bg-black text-white px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-800 transition-colors disabled:opacity-50"
                     >
                       {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="white" />}
                       Resume Research
@@ -100,7 +100,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                   <button
                     disabled={isProcessing}
                     onClick={() => onDeleteRequest(task.id)}
-                    className="border-2 border-red-600 text-red-600 px-4 py-2 text-[10px] font-black uppercase tracking-widest flex items-center gap-2 hover:bg-red-50 transition-colors disabled:opacity-50"
+                    className="border-2 border-red-600 text-red-600 px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-red-50 transition-colors disabled:opacity-50"
                   >
                     <Trash2 size={12} /> Delete Project
                   </button>
@@ -112,7 +112,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             <div className="bg-gray-100 p-3 flex items-center gap-2 text-[10px] font-bold">
               <Folder size={14} /> {task.env_folder}
             </div>
-            <div className="bg-gray-100 p-3 flex items-center gap-2 text-[10px] font-bold uppercase">
+            <div className="bg-gray-100 p-3 flex items-center gap-2 text-[10px] font-bold">
               <Cpu size={14} /> {task.framework} {task.model && `[${task.model}]`}
             </div>
           </div>
@@ -123,7 +123,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
         {/* Timeline */}
         <div ref={timelineRef} className="w-1/2 p-8 overflow-y-auto border-r border-gray-100">
           <div className="flex items-center justify-between mb-8">
-            <h3 className="font-black text-xs uppercase tracking-widest flex items-center gap-2">
+            <h3 className="font-black text-xs tracking-widest flex items-center gap-2">
               <Activity size={16} /> Research Workflow
             </h3>
           </div>
@@ -192,7 +192,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                 <div className={`p-1 rounded-full ${task.status === 'running' ? 'bg-gray-400' : 'bg-black text-white'}`}>
                   <Plus size={16} />
                 </div>
-                <span className="text-[10px] font-black uppercase tracking-widest">Add step</span>
+                <span className="text-[10px] font-black tracking-widest">Add step</span>
               </button>
             </div>
           </div>
@@ -205,7 +205,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               <div className="p-6 border-b border-black bg-white flex justify-between items-center">
                 <div className="flex items-center gap-3">
                   <div className="bg-black text-white p-1 rounded-sm"><Layers size={16} /></div>
-                  <span className="font-black text-xs uppercase tracking-widest">{selectedStage}</span>
+                  <span className="font-black text-xs tracking-widest">{selectedStage}</span>
                 </div>
                 
                 {['failed', 'paused', 'pending'].includes(task.steps.find(s => s.stage === selectedStage)?.status || 'pending') && (
@@ -222,7 +222,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                         setIsProcessing(false)
                       }
                     }}
-                    className="text-[10px] font-black uppercase tracking-widest bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 transition-colors flex items-center gap-1"
+                    className="text-[10px] font-black tracking-widest bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 transition-colors flex items-center gap-1"
                   >
                     <XCircle size={12} /> Cancel Step
                   </button>
@@ -234,7 +234,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                   const step = task.steps.find(s => s.stage === selectedStage);
                   if (!step) {
                     return (
-                      <div className="text-center mt-10 text-gray-400 text-[10px] font-black uppercase tracking-widest">
+                      <div className="text-center mt-10 text-gray-400 text-[10px] font-black tracking-widest">
                         Step has not started yet
                       </div>
                     )
@@ -243,7 +243,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     <>
                       {step.session_id && (
                         <div className="group relative">
-                          <div className="absolute -top-3 -left-1 px-2 py-1 bg-black text-white text-[8px] font-black uppercase tracking-widest z-10">
+                          <div className="absolute -top-3 -left-1 px-2 py-1 bg-black text-white text-[8px] font-black tracking-widest z-10">
                             Inspect Agent
                           </div>
                           <div className="bg-[#0c0c0c] text-[#00ff00] p-4 font-mono text-[11px] border border-black shadow-[4px_4px_0px_0px_rgba(0,255,0,0.1)]">
@@ -279,7 +279,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                           <div className="absolute top-0 right-0 p-1">
                             <div className="w-1 h-1 bg-blue-600 rounded-full animate-ping" />
                           </div>
-                          <div className="text-[10px] font-black uppercase text-blue-600 mb-2 tracking-widest flex items-center gap-2">
+                          <div className="text-[10px] font-black text-blue-600 mb-2 tracking-widest flex items-center gap-2">
                             <Activity size={10} /> Current Activity
                           </div>
                           <div className="text-[11px] font-bold text-blue-900 leading-relaxed italic">
@@ -294,7 +294,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
 
                       {step.error && step.status !== 'paused' && step.status !== 'canceled' && (
                         <div className="bg-red-50 border border-red-200 p-4">
-                          <div className="text-[10px] font-black uppercase text-red-500 mb-2 tracking-widest">Critical Failure</div>
+                          <div className="text-[10px] font-black text-red-500 mb-2 tracking-widest">Critical Failure</div>
                           <div className="text-xs font-bold text-red-900 leading-relaxed">
                             {step.error}
                           </div>
@@ -308,14 +308,14 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-12 text-center opacity-30">
               <Terminal size={48} strokeWidth={1} />
-              <div className="mt-4 text-[10px] font-black uppercase tracking-widest">Select step to see details</div>
+              <div className="mt-4 text-[10px] font-black tracking-widest">Select step to see details</div>
             </div>
           )}
         </div>
       </div>
 
       {/* Footer Info */}
-      <div className="p-4 border-t border-black bg-white flex justify-between items-center text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">
+      <div className="p-4 border-t border-black bg-white flex justify-between items-center text-[9px] font-bold text-gray-400 tracking-[0.2em]">
         <div className="flex items-center gap-4">
           <span className="flex items-center gap-1">
             <Database size={10} /> 

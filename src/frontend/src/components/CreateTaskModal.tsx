@@ -84,7 +84,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
       <div className="bg-white border-2 border-black p-8 w-full max-w-4xl shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col max-h-[90vh]">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-black uppercase tracking-tighter">Start Research</h2>
+          <h2 className="text-2xl font-black tracking-tighter">Start Research</h2>
           <button onClick={onClose} className="hover:rotate-90 transition-transform">
             <XCircle size={24} />
           </button>
@@ -93,35 +93,35 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         <div className="flex flex-wrap border-b-2 border-black mb-6">
           <button
             type="button"
-            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'develop-theory' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
+            className={`px-4 py-2 text-xs font-black tracking-widest transition-colors ${activeTab === 'develop-theory' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
             onClick={() => setActiveTab('develop-theory')}
           >
             Develop Theory
           </button>
           <button
             type="button"
-            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'develop-theory-linear' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
+            className={`px-4 py-2 text-xs font-black tracking-widest transition-colors ${activeTab === 'develop-theory-linear' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
             onClick={() => setActiveTab('develop-theory-linear')}
           >
             Develop Theory (Linear)
           </button>
           <button
             type="button"
-            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'refine-theory-idea' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
+            className={`px-4 py-2 text-xs font-black tracking-widest transition-colors ${activeTab === 'refine-theory-idea' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
             onClick={() => setActiveTab('refine-theory-idea')}
           >
             Refine Idea
           </button>
           <button
             type="button"
-            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'refine-theory-idea-linear' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
+            className={`px-4 py-2 text-xs font-black tracking-widest transition-colors ${activeTab === 'refine-theory-idea-linear' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
             onClick={() => setActiveTab('refine-theory-idea-linear')}
           >
             Refine Idea (Linear)
           </button>
           <button
             type="button"
-            className={`px-4 py-2 text-xs font-black uppercase tracking-widest transition-colors ${activeTab === 'import-theory' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
+            className={`px-4 py-2 text-xs font-black tracking-widest transition-colors ${activeTab === 'import-theory' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'}`}
             onClick={() => setActiveTab('import-theory')}
           >
             Import
@@ -132,7 +132,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
           {activeTab === 'develop-theory' || activeTab === 'develop-theory-linear' ? (
             <>
               <div>
-                <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Phenomenon to Explain</label>
+                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Phenomenon to Explain</label>
                 <textarea 
                   autoFocus
                   required
@@ -146,7 +146,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
               <div className="grid grid-cols-2 gap-8">
                 {activeTab === 'develop-theory' && (
                   <div>
-                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Number of Root Theories</label>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Number of Root Theories</label>
                     <input 
                       type="number"
                       min="1"
@@ -159,7 +159,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                   </div>
                 )}
                 <div>
-                  <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Max Refinement Iterations</label>
+                  <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Refinement Iterations</label>
                   <input 
                     type="number"
                     min="0"
@@ -175,19 +175,19 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
               {activeTab === 'develop-theory' && (
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Evolve Iterations</label>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Evolve Iterations</label>
                     <input type="number" min="0" max="10" required value={evolveIterations} onChange={e => setEvolveIterations(parseInt(e.target.value, 10))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Num Parents</label>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Num Parents</label>
                     <input type="number" min="1" max="10" required value={numParents} onChange={e => setNumParents(parseInt(e.target.value, 10))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Streamline Prob (0-1)</label>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamline Prob (0-1)</label>
                     <input type="number" step="0.1" min="0" max="1" required value={streamlineProb} onChange={e => setStreamlineProb(parseFloat(e.target.value))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Extra Scores</label>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Scores</label>
                     <input type="number" min="0" max="10" required value={numExtraScores} onChange={e => setNumExtraScores(parseInt(e.target.value, 10))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
                   </div>
                 </div>
@@ -196,7 +196,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
           ) : activeTab === 'refine-theory-idea' || activeTab === 'refine-theory-idea-linear' ? (
             <>
               <div>
-                <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Idea / File Path</label>
+                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Idea / File Path</label>
                 <textarea 
                   autoFocus
                   required
@@ -209,7 +209,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
               </div>
               {activeTab === 'refine-theory-idea-linear' && (
                 <div>
-                  <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Max Refinement Iterations</label>
+                  <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Refinement Iterations</label>
                   <input 
                     type="number"
                     min="0"
@@ -225,19 +225,19 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
               {activeTab === 'refine-theory-idea' && (
                 <div className="grid grid-cols-2 gap-4 mt-4">
                   <div>
-                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Evolve Iterations</label>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Evolve Iterations</label>
                     <input type="number" min="0" max="10" required value={evolveIterations} onChange={e => setEvolveIterations(parseInt(e.target.value, 10))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Num Parents</label>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Num Parents</label>
                     <input type="number" min="1" max="10" required value={numParents} onChange={e => setNumParents(parseInt(e.target.value, 10))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Streamline Prob (0-1)</label>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamline Prob (0-1)</label>
                     <input type="number" step="0.1" min="0" max="1" required value={streamlineProb} onChange={e => setStreamlineProb(parseFloat(e.target.value))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Extra Scores</label>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Scores</label>
                     <input type="number" min="0" max="10" required value={numExtraScores} onChange={e => setNumExtraScores(parseInt(e.target.value, 10))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
                   </div>
                 </div>
@@ -253,12 +253,12 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                   />
                   {applyExtensions && <div className="w-3 h-3 bg-black" />}
                 </div>
-                <span className="text-xs font-bold uppercase tracking-widest">Apply Extensions</span>
+                <span className="text-xs font-bold tracking-widest">Apply Extensions</span>
               </label>
             </>
           ) : (
             <div>
-              <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">File Path to Import</label>
+              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">File Path to Import</label>
               <input 
                 autoFocus
                 required
@@ -273,7 +273,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
           <hr className="border-t-2 border-gray-100" />
 
           <div>
-            <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Local Environment Path</label>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Local Environment Path</label>
             <div className="flex items-center gap-2 border-b border-gray-200 focus-within:border-black transition-colors">
               <Folder size={16} className="text-gray-300" />
               <input 
@@ -288,7 +288,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
 
           <div className="grid grid-cols-2 gap-8">
             <div>
-              <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Agent Framework</label>
+              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Agent Framework</label>
               <select 
                 value={newFramework}
                 onChange={e => setNewFramework(e.target.value)}
@@ -299,7 +299,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
               </select>
             </div>
             <div>
-              <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Model Identifier</label>
+              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Model Identifier</label>
               <div className="flex items-center gap-2 border-b border-gray-200 focus-within:border-black transition-colors">
                 <Cpu size={16} className="text-gray-300" />
                 <input 
@@ -316,9 +316,9 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
             <button 
               type="submit"
               disabled={isBackendDown}
-              className="flex-1 bg-black text-white p-4 font-black uppercase text-sm tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+              className="flex-1 bg-black text-white p-4 font-black text-sm tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
             >
-              {isBackendDown ? 'Backend Offline' : 'START RESEARCH'} <ChevronRight size={18} />
+              {isBackendDown ? 'Backend Offline' : 'Start Research'} <ChevronRight size={18} />
             </button>
           </div>
         </form>
