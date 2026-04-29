@@ -51,7 +51,7 @@ export function InnerStepCard({ label, step, isRunning, isSelected, taskStatus, 
             </button>
           )}
           {isRunning && <Loader2 size={10} className="animate-spin text-blue-600" />}
-          <span className={`text-[8px] font-bold ${
+          <span className={`text-[8px] font-bold uppercase ${
             step?.status === 'completed' ? 'text-green-600' :
             step?.status === 'paused' ? 'text-yellow-600' :
             step?.status === 'failed' ? 'text-red-600' :

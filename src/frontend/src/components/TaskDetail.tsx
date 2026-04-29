@@ -124,7 +124,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
         <div ref={timelineRef} className="w-1/2 p-8 overflow-y-auto border-r border-gray-100">
           <div className="flex items-center justify-between mb-8">
             <h3 className="font-black text-xs tracking-widest flex items-center gap-2">
-              <Activity size={16} /> Research Workflow
+              Workflow
             </h3>
           </div>
 
