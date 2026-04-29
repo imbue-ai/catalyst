@@ -3,8 +3,7 @@
     "allow": [
       "Bash(uv run python:*)",
       "Bash(ls:*)",
-      "Bash(mkdir -p *tmp/*)",
-      "Bash(mkdir *tmp/*)",
+      "Bash(mkdir:*)",
       "Bash(mktemp:*)",
       "Bash(cp:*)",
       "Bash(mv:*)",
@@ -19,6 +18,7 @@
       "Bash(pdfinfo:*)",
       "Bash(pdftotext:*)",
       "Bash(pdftohtml:*)",
+      "Bash(find:*)",
       "Read",
       "Glob",
       "Grep",

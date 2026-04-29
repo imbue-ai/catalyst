@@ -311,6 +311,7 @@ def _record_theory_in_population(
             organism,
             result,
             # Since our scores are largely based on ranking and hence will naturally be centered, we use a fixed midpoint.
+            midpoint_score_percentile=None,
             fixed_midpoint_score=0.5,
             sharpness=10.0,
         )
