@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { RotateCw, Loader2, RefreshCw, XCircle } from 'lucide-react'
+import { RotateCw } from 'lucide-react'
 import * as api from '../../api'
+import { InnerStepCard, CancelStepsButton } from './shared'
 
 interface WorkflowLoopProps {
   name: string;
@@ -16,7 +17,6 @@ interface WorkflowLoopProps {
 export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, selectedStage, onRetry, onRefresh }: WorkflowLoopProps) {
   const [activeIteration, setActiveIteration] = useState(1)
   const [lastLatest, setLastLatest] = useState(0)
-  const [isCanceling, setIsCanceling] = useState(false)
 
   useEffect(() => {
     // Calculate what the current latest iteration is based on steps
@@ -47,6 +47,12 @@ export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, sel
     return task.steps.find(s => s.stage === stage)
   }
 
+  // Pre-calculate stages to cancel
+  const stagesToCancel: string[] = [];
+  for (let i = 1; i <= iterations; i++) {
+    baseStages.forEach(bs => stagesToCancel.push(`${bs}-${i}`));
+  }
+
   return (
     <div className="relative pl-8 mt-12">
       <div className="absolute left-[9px] -top-12 w-[2px] h-12 bg-gray-100" />
@@ -60,27 +66,12 @@ export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, sel
               <h4 className="font-black text-xs uppercase tracking-[0.2em]">{name}</h4>
             </div>
             {task.status !== 'completed' && (
-              <button 
-                onClick={async () => {
-                  setIsCanceling(true);
-                  try {
-                    const stagesToCancel: string[] = [];
-                    for (let i = 1; i <= iterations; i++) {
-                      baseStages.forEach(bs => stagesToCancel.push(`${bs}-${i}`));
-                    }
-                    await api.bulkCancelSteps(task.id, stagesToCancel);
-                    onRefresh();
-                  } catch (e: any) {
-                    alert(e.message || "Failed to cancel loop");
-                  } finally {
-                    setIsCanceling(false);
-                  }
-                }}
-                disabled={isCanceling}
-                className="text-[10px] font-black uppercase text-gray-400 hover:text-red-600 transition-colors flex items-center gap-1 bg-gray-50 px-2 py-1 rounded-sm border border-gray-200 hover:border-red-200"
-              >
-                {isCanceling ? <Loader2 size={10} className="animate-spin" /> : <XCircle size={10} />} Cancel Loop
-              </button>
+              <CancelStepsButton 
+                task={task} 
+                stagesToCancel={stagesToCancel} 
+                onRefresh={onRefresh} 
+                label="Cancel Loop" 
+              />
             )}
           </div>
           <div className="flex gap-1">
@@ -100,40 +91,19 @@ export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, sel
           {baseStages.map(baseStage => {
             const stageName = `${baseStage}-${activeIteration}`
             const step = getStepForIteration(activeIteration, baseStage)
-            const isCurrent = task.current_stage === stageName && (!step || step.status === 'running')
+            const isRunning = step?.status === 'running' || (task.current_stage === stageName && !step)
             
             return (
-              <div 
+              <InnerStepCard
                 key={baseStage}
-                onClick={() => onSelect(stageName)}
-                className={`p-3 border-2 transition-all cursor-pointer ${
-                  selectedStage === stageName
-                    ? 'border-black bg-gray-50' : 'border-gray-100 hover:border-black'
-                }`}
-              >
-                <div className="flex justify-between items-center">
-                  <span className={`text-[10px] font-black uppercase ${isCurrent ? 'text-blue-600' : ''}`}>{baseStage.replace(/-/g, ' ')}</span>
-                  <div className="flex items-center gap-2">
-                    {step?.status === 'failed' && task.status !== 'running' && (
-                      <button 
-                        onClick={(e) => { e.stopPropagation(); onRetry(); }}
-                        className="p-1 hover:bg-red-200 rounded-sm text-red-600 transition-colors"
-                        title="Retry this step"
-                      >
-                        <RefreshCw size={10} strokeWidth={3} />
-                      </button>
-                    )}
-                    {isCurrent && <Loader2 size={10} className="animate-spin text-blue-600" />}
-                    <span className={`text-[8px] font-bold uppercase ${
-                      step?.status === 'completed' ? 'text-green-600' :
-                      step?.status === 'paused' ? 'text-yellow-600' :
-                      step?.status === 'failed' ? 'text-red-600' :
-                      step?.status === 'canceled' ? 'text-gray-500' :
-                      (step?.status === 'running' || isCurrent) ? 'text-blue-600' : 'text-gray-400'
-                    }`}>{step?.status || (isCurrent ? 'running' : 'upcoming')}</span>
-                  </div>
-                </div>
-              </div>
+                label={baseStage.replace(/-/g, ' ')}
+                step={step}
+                isRunning={isRunning}
+                isSelected={selectedStage === stageName}
+                taskStatus={task.status}
+                onSelect={() => onSelect(stageName)}
+                onRetry={(e) => { e.stopPropagation(); onRetry(); }}
+              />
             )
           })}
         </div>
