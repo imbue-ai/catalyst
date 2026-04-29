@@ -1,4 +1,4 @@
-# AI Researcher Orchestrator
+# AI Scientist Orchestrator
 
 A dedicated orchestration service and dashboard for autonomous scientific research. This system replaces the unreliable agent-sequenced `develop-theory` loop with a robust Python-based state machine that coordinates multi-step research tasks.
 
