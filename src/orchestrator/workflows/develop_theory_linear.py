@@ -1,29 +1,42 @@
 import threading
 from typing import Any, Callable, List, Dict
 from ..models import Task
-from .base import Workflow, get_step_output, run_step_if_needed
+from .base import Workflow, get_step_output, run_step_if_needed, run_refinement_loop
 
 
-class DevelopTheoryWorkflow(Workflow):
+class DevelopTheoryLinearWorkflow(Workflow):
     @property
     def name(self) -> str:
-        return "develop-theory"
+        return "develop-theory-linear"
 
     def get_structure(self, task: Task) -> List[Dict[str, Any]]:
+        max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
+        # Count iterations dynamically based on steps
+        max_iters = max_refinements if max_refinements > 0 else 0
+        for s in task.steps:
+            if s.stage.startswith("review-theory-") or s.stage.startswith(
+                "refine-theory-"
+            ):
+                try:
+                    it = int(s.stage.split("-")[-1])
+                    if it > max_iters:
+                        max_iters = it
+                except ValueError:
+                    pass
+
         structure = [
             {"type": "step", "stage": "summarize-title"},
             {"type": "parallel", "name": "Gather Context", "stages": ["literature-review", "explore"]},
-            {"type": "step", "stage": "write-n-theories"},
+            {"type": "step", "stage": "write-theory"},
         ]
         
-        review_stages = [s.stage for s in task.steps if s.stage.startswith("review-theory-")]
-        if review_stages:
-            structure.append({"type": "parallel", "name": "Review Theories", "stages": review_stages})
-            
-        if any(s.stage == "score-theories" for s in task.steps):
-            structure.append({"type": "step", "stage": "score-theories"})
-            
-        # TODO: New Refinement Loop to be added here.
+        if max_iters > 0:
+            structure.append({
+                "type": "loop",
+                "name": "Refinement Loop",
+                "base_stages": ["review-theory", "refine-theory"],
+                "iterations": max_iters,
+            })
             
         return structure
 
@@ -54,6 +67,7 @@ class DevelopTheoryWorkflow(Workflow):
 
         if not lit_review_id or not exploration_id:
             print(f"[ORCHESTRATOR] [{task.id[:8]}] Running Literature Review and Exploration in parallel...")
+
             results = {}
             errors = []
 
@@ -98,63 +112,34 @@ class DevelopTheoryWorkflow(Workflow):
             if errors:
                 raise errors[0]
 
+            # Update IDs from results
             for res in results.values():
                 if res and isinstance(res, dict):
                     if "literature_review_id" in res:
                         lit_review_id = res["literature_review_id"]
+                    elif "_canceled" in res:
+                        pass # Allowed to be missing if canceled
+                    
                     if "exploration_id" in res:
                         exploration_id = res["exploration_id"]
+                    elif "_canceled" in res:
+                        pass
 
-        # Step 3: Write N Theories
-        num_theories = task.workflow_inputs.get("num_root_theories", 3)
-        theories_data = run_step_if_needed(
-            task, bounded_run_step, "write-n-theories",
-            f"Please run the write-n-theories skill to generate {num_theories} theories for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
+        # Step 3: Initial Theory
+        theory_data = run_step_if_needed(
+            task, bounded_run_step, "write-theory",
+            f"Please run the write-theory skill for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
             f"Use exploration_id: {exploration_id} and literature_review_id: {lit_review_id}. "
-            "When you are done, return a JSON object with the key 'theory_ids' containing a list of the generated theory IDs."
+            "When you are done, return a JSON object with the key 'theory_id'."
         )
-        
-        theory_ids = theories_data.get("theory_ids") if theories_data else None
-        if not theory_ids and not (theories_data and theories_data.get("_canceled")):
-            raise Exception("Theory generation failed to return theory IDs.")
+        theory_id = theory_data.get("theory_id") if theory_data else None
+        if not theory_id and not (theory_data and theory_data.get("_canceled")):
+            raise Exception("Theory generation failed to return a theory ID.")
 
-        if theory_ids and isinstance(theory_ids, list):
-            # Step 4: Parallel Review Theories
-            print(f"[ORCHESTRATOR] [{task.id[:8]}] Running {len(theory_ids)} Review Theories in parallel...")
-            review_results = {}
-            review_errors = []
-            
-            def run_review(tid):
-                try:
-                    review_stage = f"review-theory-{tid}"
-                    res = run_step_if_needed(
-                        task, bounded_run_step, review_stage,
-                        f"Please run the review-theory skill for theory_id: {tid}. "
-                        "When you are done, return a JSON object with the key 'review_id'."
-                    )
-                    review_results[tid] = res
-                except Exception as e:
-                    review_errors.append(e)
-
-            threads = []
-            for tid in theory_ids:
-                t = threading.Thread(target=run_review, args=(tid,))
-                t.daemon = True
-                threads.append(t)
-
-            for t in threads:
-                t.start()
-            for t in threads:
-                t.join()
-
-            if review_errors:
-                raise review_errors[0]
-
-            # Step 5: Score Theories
-            score_data = run_step_if_needed(
-                task, bounded_run_step, "score-theories",
-                f"Please run the score-theories skill for the following theory_ids: {', '.join(theory_ids)}. "
-                "When you are done, return a JSON object mapping each theory ID to its assigned score."
+        if theory_id:
+            # Step 4: Iterative Review and Refinement
+            max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
+            run_refinement_loop(
+                task, bounded_run_step, theory_id, lit_review_id, 
+                apply_extensions=True, max_refinements=max_refinements
             )
-            
-            # TODO: Add new Refinement Loop here
