@@ -13,18 +13,19 @@ import shutil
 import stat
 import sys
 import time
+from typing import Literal
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
-from darwinian_evolver.population import Population
-
-from theory_evolver import (
-    TheoryEvaluationResult,
-    TheoryOrganism,
+from darwinian_evolver.population import Population, WeightedSamplingPopulation
+from darwinian_evolver.problem import (
+    EvaluationResult,
+    Organism,
 )
+
 
 # ---------------------------------------------------------------------------
 # Constants & configuration
@@ -84,6 +85,7 @@ IGNORE_METADATA_PATTERN = shutil.ignore_patterns("metadata.json")
 
 POPULATION_FILENAME = "population.snapshot"
 INITIAL_ROOT_SCORE = 0.5
+SCORE_DECAY_RATE = 0.8
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -179,6 +181,33 @@ class StoredMetadata(BaseModel):
     extra: dict[str, str] = Field(default_factory=dict)
 
 
+class TheoryOrganism(Organism):
+    """An organism that wraps a single theory artifact in the context_manager DB."""
+
+    theory_id: str = Field(
+        description="Theory ID (e.g. 'T_20260414_143100_d4e5f6') stored in the context_manager DB."
+    )
+
+
+class TheoryEvaluationResult(EvaluationResult):
+    """Mutable evaluation result for a theory.
+
+    We continually rescore theories as new evidence comes in, so this type
+    overrides the base's ``frozen=True`` config with ``frozen=False``.
+
+    Holds the inherited top-level ``score`` (used for parent sampling in the
+    Population) and an open ``subscores`` dict for arbitrary named components
+    (e.g. ``{"prediction_accuracy": 0.72, "soundness": 0.9}``).
+    """
+
+    model_config = ConfigDict(frozen=False)
+
+    subscores: dict[str, float] = Field(
+        default_factory=dict,
+        description="Named subscore components.",
+    )
+
+
 # ---------------------------------------------------------------------------
 # Core operations
 # ---------------------------------------------------------------------------
@@ -237,8 +266,10 @@ def _find_organism_by_theory_id(
     population: Population, theory_id: str
 ) -> tuple[TheoryOrganism, TheoryEvaluationResult] | None:
     for organism, result in population.organisms:
-        if isinstance(organism, TheoryOrganism) and organism.theory_id == theory_id:
-            return organism, result  # type: ignore[return-value]
+        if organism.theory_id == theory_id:
+            assert isinstance(organism, TheoryOrganism)
+            assert isinstance(result, TheoryEvaluationResult)
+            return organism, result
     return None
 
 
@@ -272,7 +303,13 @@ def _record_theory_in_population(
         result = TheoryEvaluationResult(
             score=INITIAL_ROOT_SCORE, trainable_failure_cases=[]
         )
-        population = Population(organism, result)
+        population = WeightedSamplingPopulation(
+            organism,
+            result,
+            # Since our scores are largely based on ranking and hence will naturally be centered, we use a fixed midpoint.
+            fixed_midpoint_score=0.5,
+            sharpness=10.0,
+        )
         _save_population(population, path)
         return
 
@@ -288,6 +325,7 @@ def _record_theory_in_population(
         parent_org, parent_result = found
         parent_score = parent_result.score
 
+    # Inherit an interim score from the parent - typically, organisms will be rescored later.
     score = parent_score if parent_score is not None else INITIAL_ROOT_SCORE
     organism = TheoryOrganism(theory_id=theory_id, parent=parent_org)
     result = TheoryEvaluationResult(score=score, trainable_failure_cases=[])
@@ -713,7 +751,7 @@ def _resolve_context_paths(
                 raise ValueError(
                     f"Prediction {pid!r} not found in database (expected {pred_dir})"
                 )
-                
+
     return exploration_dir, literature_dirs, theory_dirs
 
 
@@ -850,9 +888,7 @@ def create_context(
             "polish-theory",
             "streamline-theory",
         ):
-            _assemble_theory_copy(
-                target_folder=target_folder, theory_dirs=theory_dirs
-            )
+            _assemble_theory_copy(target_folder=target_folder, theory_dirs=theory_dirs)
 
         elif for_agent_type in ("refine-hypothesis", "expand-theory"):
             _assemble_refine_expand(
@@ -1075,6 +1111,65 @@ def list_entries(entry_type: str, parent_theory: str | None = None) -> list[dict
 
     results.sort(key=lambda d: d.get("created_at", ""))
     return results
+
+
+def sample_theories(
+    num_theories: int, purpose: Literal["scoring", "mutation"]
+) -> list[str]:
+    db_root = get_db_path()
+    with DatabaseLock(db_root):
+        population_path = _population_path(db_root)
+        population = _load_population(population_path)
+        if not population:
+            return []
+        if purpose == "scoring":
+            samples = population.sample_parents(
+                k=min(
+                    len(population.organisms),
+                    num_theories,
+                ),
+                exclude_untrainable=False,
+                replace=False,
+                novelty_weight=0.0,
+            )
+        elif purpose == "mutation":
+            samples = population.sample_parents(
+                k=num_theories,
+                exclude_untrainable=False,
+            )
+        else:
+            raise ValueError(f"Unknown sampling purpose {purpose!r}")
+
+        return [o.theory_id for o, _ in samples]
+
+
+def rescore_theories(theory_scores: dict[str, float]) -> None:
+    db_root = get_db_path()
+    with DatabaseLock(db_root):
+        population_path = _population_path(db_root)
+        population = _load_population(population_path)
+        if not population:
+            raise RuntimeError("Population is empty; cannot rescore theories")
+
+        # Step 1: Update scores for the procvided theories
+        updated_theories = set()
+        for organism, score in population.organisms:
+            if organism.theory_id in theory_scores:
+                score.score = theory_scores[organism.theory_id]
+                updated_theories.add(organism.theory_id)
+
+        if set(theory_scores.keys()) - updated_theories:
+            raise ValueError(
+                f"Theory IDs not found in population: "
+                f"{set(theory_scores.keys()) - updated_theories}"
+            )
+
+        # Step 2: Decay the scores of all remaining organisms
+        for organism, score in population.organisms:
+            if organism.theory_id not in updated_theories:
+                score.score *= SCORE_DECAY_RATE
+
+        _save_population(population, population_path)
 
 
 # ---------------------------------------------------------------------------
@@ -1310,6 +1405,33 @@ def main(argv: list[str] | None = None) -> None:
         help="Output as JSON instead of a table",
     )
 
+    # -- sample --------------------------------------------------------------
+    sp_sample = sub.add_parser(
+        "sample_theories", help="Sample theory IDs from the population"
+    )
+    sp_sample.add_argument(
+        "--num_theories",
+        type=int,
+        required=True,
+        help="Number of theory IDs to sample",
+    )
+    sp_sample.add_argument(
+        "--purpose",
+        choices=["scoring", "mutation"],
+        required=True,
+        help="Intended use of the sampled theories (may influence sampling strategy)",
+    )
+
+    # -- rescore ----------------------------------------------------------------
+    sp_rescore = sub.add_parser(
+        "rescore_theories", help="Submit updated scores for theories"
+    )
+    sp_rescore.add_argument(
+        "theory_score_dict",
+        required=True,
+        help='Dictionary of theory IDs and their updated scores as a JSON object string (e.g. \'{"theory_id_1": 0.8, "theory_id_2": 0.3}\')',
+    )
+
     args = parser.parse_args(argv)
 
     try:
@@ -1412,6 +1534,20 @@ def main(argv: list[str] | None = None) -> None:
                             f"{e.get('created_at', '?'):<28} "
                             f"{e.get('agent_type', '?'):<20}"
                         )
+
+        elif args.command == "sample_theories":
+            sampled_ids = sample_theories(
+                num_theories=args.num_theories, purpose=args.purpose
+            )
+            print(", ".join(sampled_ids))
+
+        elif args.command == "rescore_theories":
+            theory_score_dict = json.loads(args.theory_score_dict)
+            if not isinstance(theory_score_dict, dict):
+                raise ValueError(
+                    "theory_score_dict must be a JSON object mapping theory IDs to scores"
+                )
+            rescore_theories(theory_score_dict)
 
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)
