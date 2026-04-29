@@ -89,7 +89,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
                     args=(
                         "literature-review",
                         f"Please run the literature-review skill for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
-                        "When you are done, return a JSON object with the key 'literature_review_id'.",
+                        "When you are done, return ONLY a JSON object with the key 'literature_review_id'.",
                         "lit",
                     ),
                 )
@@ -102,7 +102,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
                     args=(
                         "explore",
                         f"Please run the explore skill for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
-                        "When you are done, return a JSON object with the key 'exploration_id'.",
+                        "When you are done, return ONLY a JSON object with the key 'exploration_id'.",
                         "exp",
                     ),
                 )
@@ -137,7 +137,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
             "write-theory",
             f"Please run the write-theory skill for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
             f"Use exploration_id: {exploration_id} and literature_review_id: {lit_review_id}. "
-            "When you are done, return a JSON object with the key 'theory_id'.",
+            "When you are done, return ONLY a JSON object with the key 'theory_id'.",
         )
         theory_id = theory_data.get("theory_id") if theory_data else None
         if not theory_id and not (theory_data and theory_data.get("_canceled")):

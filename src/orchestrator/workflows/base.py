@@ -11,6 +11,7 @@ DEFAULT_NUM_PARENTS = 3
 DEFAULT_STREAMLINE_PROB = 0.25
 DEFAULT_NUM_EXTRA_SCORES = 5
 
+
 def run_context_manager(task: Task, args: List[str]) -> str:
     env = os.environ.copy()
     env["AI_SCIENTIST_DB_PATH"] = task.db_path
@@ -18,32 +19,50 @@ def run_context_manager(task: Task, args: List[str]) -> str:
     result = subprocess.run(cmd, env=env, check=True, capture_output=True, text=True)
     return result.stdout.strip()
 
+
 def get_step_output(task: Task, stage_prefix: str) -> Optional[Dict[str, Any]]:
     for s in task.steps:
         if s.stage.startswith(stage_prefix) and s.status == StepStatus.COMPLETED:
             return s.outputs
     return None
-def run_step_if_needed(task: Task, run_step_fn: Callable, stage: str, prompt: str) -> Optional[Dict[str, Any]]:
+
+
+def run_step_if_needed(
+    task: Task, run_step_fn: Callable, stage: str, prompt: str
+) -> Optional[Dict[str, Any]]:
     out = get_step_output(task, stage)
     if not out:
         # Check if already canceled to avoid logging "Running"
         for s in task.steps:
             if s.stage == stage and s.status == StepStatus.CANCELED:
-                print(f"[ORCHESTRATOR] [{task.id[:8]}] Skipping canceled step {stage}...")
+                print(
+                    f"[ORCHESTRATOR] [{task.id[:8]}] Skipping canceled step {stage}..."
+                )
                 return {"_canceled": True}
 
         print(f"[ORCHESTRATOR] [{task.id[:8]}] Running {stage}...")
         out = run_step_fn(task, stage, prompt)
     return out
 
-def run_refinement_loop(task: Task, run_step_fn: Callable, theory_id: str, lit_review_id: Optional[str], apply_extensions: bool, max_refinements: int, stage_prefix: str = "") -> str:
+
+def run_refinement_loop(
+    task: Task,
+    run_step_fn: Callable,
+    theory_id: str,
+    lit_review_id: Optional[str],
+    apply_extensions: bool,
+    max_refinements: int,
+    stage_prefix: str = "",
+) -> str:
     i = 1
     while i <= max_refinements:
         # Review
         review_data = run_step_if_needed(
-            task, run_step_fn, f"{stage_prefix}review-theory-{i}",
+            task,
+            run_step_fn,
+            f"{stage_prefix}review-theory-{i}",
             f"Please run the review-theory skill for the following theory_id: {theory_id}. "
-            "When you are done, return a JSON object with the key 'review_ids' (a list of strings)."
+            "When you are done, return ONLY a JSON object with the key 'review_ids' (a list of strings).",
         )
 
         if not review_data:
@@ -58,12 +77,10 @@ def run_refinement_loop(task: Task, run_step_fn: Callable, theory_id: str, lit_r
             break
 
         # Refine
-        prompt = (
-            f"Please run the refine-theory skill for the following theory_id: {theory_id}. "
-        )
+        prompt = f"Please run the refine-theory skill for the following theory_id: {theory_id}. "
         if lit_review_id:
             prompt += f"Use literature_review_id: {lit_review_id}. "
-        prompt += "When you are done, return a JSON object with the keys 'theory_id' and 'major_changes' (boolean) to indicate if any major changes have been made to the theory."
+        prompt += "When you are done, return ONLY a JSON object with the keys 'theory_id' and 'major_changes' (boolean) to indicate if any major changes have been made to the theory."
 
         if not apply_extensions:
             prompt += "\n\nCRITICAL: Do not apply extensions."
@@ -87,42 +104,58 @@ def run_refinement_loop(task: Task, run_step_fn: Callable, theory_id: str, lit_r
 
     return theory_id
 
+
 def run_evolve_loop(
-    task: Task, 
-    run_step_fn: Callable, 
-    iterations: int, 
-    num_parents: int, 
-    streamline_prob: float, 
-    num_extra_scores: int, 
+    task: Task,
+    run_step_fn: Callable,
+    iterations: int,
+    num_parents: int,
+    streamline_prob: float,
+    num_extra_scores: int,
     apply_extensions: bool = False,
-    stage_prefix: str = ""
+    stage_prefix: str = "",
 ) -> None:
     for i in range(1, iterations + 1):
         print(f"[ORCHESTRATOR] [{task.id[:8]}] Evolve Loop Iteration {i}/{iterations}")
-        
+
         # 1. Sample Parents
-        sample_out = run_context_manager(task, ["sample_theories", "--num_theories", str(num_parents), "--purpose", "mutation"])
+        sample_out = run_context_manager(
+            task,
+            [
+                "sample_theories",
+                "--num_theories",
+                str(num_parents),
+                "--purpose",
+                "mutation",
+            ],
+        )
         parent_ids = [tid.strip() for tid in sample_out.split(",") if tid.strip()]
-        
+
         if not parent_ids:
-            print(f"[ORCHESTRATOR] [{task.id[:8]}] No parent theories available to sample. Skipping iteration.")
+            print(
+                f"[ORCHESTRATOR] [{task.id[:8]}] No parent theories available to sample. Skipping iteration."
+            )
             continue
 
         # 2. Mutate (Nested Parallel)
-        print(f"[ORCHESTRATOR] [{task.id[:8]}] Mutating {len(parent_ids)} parents in parallel...")
+        print(
+            f"[ORCHESTRATOR] [{task.id[:8]}] Mutating {len(parent_ids)} parents in parallel..."
+        )
         new_theory_ids: Set[str] = set()
         mutation_errors = []
         mutation_results = {}
-        
+
         def run_mutation(tid: str, idx: int):
             try:
                 is_streamline = random.random() < streamline_prob
                 if is_streamline:
                     stage_name = f"{stage_prefix}mutate-streamline-{i}-{idx}"
                     res = run_step_if_needed(
-                        task, run_step_fn, stage_name,
+                        task,
+                        run_step_fn,
+                        stage_name,
                         f"Please run the streamline-theory-variations skill for theory_id: {tid}. "
-                        "Return a JSON object with the key 'theory_ids' containing a list of the generated theory IDs."
+                        "Return a JSON object with the key 'theory_ids' containing a list of the generated theory IDs.",
                     )
                     mutation_results[stage_name] = res
                 else:
@@ -130,10 +163,8 @@ def run_evolve_loop(
                     prompt = f"Please run the refine-theory skill for theory_id: {tid}. Return a JSON object with the key 'theory_id'."
                     if not apply_extensions:
                         prompt += "\n\nCRITICAL: Do not apply extensions."
-                        
-                    res = run_step_if_needed(
-                        task, run_step_fn, stage_name, prompt
-                    )
+
+                    res = run_step_if_needed(task, run_step_fn, stage_name, prompt)
                     mutation_results[stage_name] = res
             except Exception as e:
                 mutation_errors.append(e)
@@ -143,38 +174,44 @@ def run_evolve_loop(
             t = threading.Thread(target=run_mutation, args=(tid, idx))
             t.daemon = True
             threads.append(t)
-            
+
         for t in threads:
             t.start()
         for t in threads:
             t.join()
-            
+
         if mutation_errors:
             raise mutation_errors[0]
-            
+
         for res in mutation_results.values():
             if res and isinstance(res, dict) and not res.get("_canceled"):
                 if "theory_ids" in res and isinstance(res["theory_ids"], list):
                     new_theory_ids.update(res["theory_ids"])
                 elif "theory_id" in res:
                     new_theory_ids.add(res["theory_id"])
-                    
+
         new_theory_ids_list = list(new_theory_ids)
 
         if not new_theory_ids_list:
-            print(f"[ORCHESTRATOR] [{task.id[:8]}] No new theories were generated. Skipping review and score.")
+            print(
+                f"[ORCHESTRATOR] [{task.id[:8]}] No new theories were generated. Skipping review and score."
+            )
             continue
 
         # 3. Review (Nested Parallel)
-        print(f"[ORCHESTRATOR] [{task.id[:8]}] Reviewing {len(new_theory_ids_list)} new theories in parallel...")
+        print(
+            f"[ORCHESTRATOR] [{task.id[:8]}] Reviewing {len(new_theory_ids_list)} new theories in parallel..."
+        )
         review_errors = []
-        
+
         def run_review(tid: str, idx: int):
             try:
                 run_step_if_needed(
-                    task, run_step_fn, f"{stage_prefix}review-theory-{i}-{idx}",
+                    task,
+                    run_step_fn,
+                    f"{stage_prefix}review-theory-{i}-{idx}",
                     f"Please run the review-theory skill for theory_id: {tid}. "
-                    "Return a JSON object with the key 'review_id'."
+                    "Return a JSON object with the key 'review_id'.",
                 )
             except Exception as e:
                 review_errors.append(e)
@@ -184,27 +221,41 @@ def run_evolve_loop(
             t = threading.Thread(target=run_review, args=(tid, idx))
             t.daemon = True
             threads.append(t)
-            
+
         for t in threads:
             t.start()
         for t in threads:
             t.join()
-            
+
         if review_errors:
             raise review_errors[0]
 
         # 4. Sample Scoring
-        score_sample_out = run_context_manager(task, ["sample_theories", "--num_theories", str(num_extra_scores), "--purpose", "scoring"])
-        scoring_sample_ids = [tid.strip() for tid in score_sample_out.split(",") if tid.strip()]
+        score_sample_out = run_context_manager(
+            task,
+            [
+                "sample_theories",
+                "--num_theories",
+                str(num_extra_scores),
+                "--purpose",
+                "scoring",
+            ],
+        )
+        scoring_sample_ids = [
+            tid.strip() for tid in score_sample_out.split(",") if tid.strip()
+        ]
 
         # 5. Score Union
         union_ids = list(set(new_theory_ids_list + scoring_sample_ids))
         print(f"[ORCHESTRATOR] [{task.id[:8]}] Scoring {len(union_ids)} theories...")
         run_step_if_needed(
-            task, run_step_fn, f"{stage_prefix}score-theories-{i}",
+            task,
+            run_step_fn,
+            f"{stage_prefix}score-theories-{i}",
             f"Please run the score-theories skill for the following theory_ids: {', '.join(union_ids)}. "
-            "Return a JSON object mapping each theory ID to its assigned score."
+            "Return a JSON object mapping each theory ID to its assigned score.",
         )
+
 
 class Workflow(ABC):
     @property
