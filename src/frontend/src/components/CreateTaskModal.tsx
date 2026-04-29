@@ -207,30 +207,20 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                   className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none"
                 />
               </div>
-              <div>
-                <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Max Refinement Iterations</label>
-                <input 
-                  type="number"
-                  min="0"
-                  max="10"
-                  required
-                  value={maxRefinements}
-                  onChange={e => setMaxRefinements(parseInt(e.target.value, 10))}
-                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
-                />
-              </div>
-              <label className="flex items-center gap-3 cursor-pointer group">
-                <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
+              {activeTab === 'refine-theory-idea-linear' && (
+                <div>
+                  <label className="block text-[10px] font-black mb-2 uppercase tracking-widest text-gray-400">Max Refinement Iterations</label>
                   <input 
-                    type="checkbox"
-                    className="absolute opacity-0 w-full h-full cursor-pointer"
-                    checked={applyExtensions}
-                    onChange={e => setApplyExtensions(e.target.checked)}
+                    type="number"
+                    min="0"
+                    max="10"
+                    required
+                    value={maxRefinements}
+                    onChange={e => setMaxRefinements(parseInt(e.target.value, 10))}
+                    className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
                   />
-                  {applyExtensions && <div className="w-3 h-3 bg-black" />}
                 </div>
-                <span className="text-xs font-bold uppercase tracking-widest">Apply Extensions</span>
-              </label>
+              )}
 
               {activeTab === 'refine-theory-idea' && (
                 <div className="grid grid-cols-2 gap-4 mt-4">
@@ -252,6 +242,19 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                   </div>
                 </div>
               )}
+              
+              <label className="flex items-center gap-3 cursor-pointer group mt-4">
+                <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
+                  <input 
+                    type="checkbox"
+                    className="absolute opacity-0 w-full h-full cursor-pointer"
+                    checked={applyExtensions}
+                    onChange={e => setApplyExtensions(e.target.checked)}
+                  />
+                  {applyExtensions && <div className="w-3 h-3 bg-black" />}
+                </div>
+                <span className="text-xs font-bold uppercase tracking-widest">Apply Extensions</span>
+              </label>
             </>
           ) : (
             <div>

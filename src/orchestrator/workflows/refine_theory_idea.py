@@ -91,11 +91,14 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 num_parents = int(task.workflow_inputs.get("num_parents", DEFAULT_NUM_PARENTS))
                 streamline_prob = float(task.workflow_inputs.get("streamline_prob", DEFAULT_STREAMLINE_PROB))
                 num_extra_scores = int(task.workflow_inputs.get("num_extra_scores", DEFAULT_NUM_EXTRA_SCORES))
+                apply_extensions = task.workflow_inputs.get("apply_extensions", False)
+                
                 run_evolve_loop(
                     task, 
                     run_step, 
                     iterations=evolve_iterations,
                     num_parents=num_parents,
                     streamline_prob=streamline_prob,
-                    num_extra_scores=num_extra_scores
+                    num_extra_scores=num_extra_scores,
+                    apply_extensions=apply_extensions
                 )
