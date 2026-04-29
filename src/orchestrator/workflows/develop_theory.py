@@ -227,6 +227,3 @@ class DevelopTheoryWorkflow(Workflow):
                     streamline_prob=streamline_prob,
                     num_extra_scores=num_extra_scores,
                 )
-=streamline_prob,
-                    num_extra_scores=num_extra_scores,
-                )
