@@ -52,7 +52,7 @@ export function WorkflowLoop({ name, baseStages, iterations, task, onSelect, sel
       <div className="absolute left-[9px] -top-12 w-[2px] h-12 bg-gray-100" />
       <div className="absolute left-[-10px] top-6 w-10 h-[200px] border-l-2 border-y-2 border-black rounded-l-2xl opacity-20" />
       
-      <div className="bg-white border-2 border-black p-6 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]">
+      <div className="bg-white border-2 border-gray-200 p-6">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
