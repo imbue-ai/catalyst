@@ -1428,7 +1428,6 @@ def main(argv: list[str] | None = None) -> None:
     )
     sp_rescore.add_argument(
         "theory_score_dict",
-        required=True,
         help='Dictionary of theory IDs and their updated scores as a JSON object string (e.g. \'{"theory_id_1": 0.8, "theory_id_2": 0.3}\')',
     )
 
