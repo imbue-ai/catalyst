@@ -25,12 +25,12 @@ priority = 10
 # Writes
 [[rule]]
 toolName = ["write_file", "replace"]
-argsPattern = "\"file_path\":\"tmp/.+/.*\""
+argsPattern = '"file_path":".*tmp/.+/.*"'
 decision = "allow"
 priority = 10
 
 # Shell commands
 [[rule]]
-toolName = "run_shell_command"
-commandPrefix = ["uv run python ", "mkdir -p tmp/", "mkdir tmp/", "mktemp ", "cp ", "mv ", "jq ", "awk ", "head ", "tail ", "wc ", "curl ", "pdf2ps ", "pdfimages ", "pdfinfo ", "pdftotext ", "pdftohtml "]
-allowRedirection = true
+toolName = ["run_shell_command"]
+decision = "allow"
+priority = 10

@@ -27,6 +27,7 @@ from darwinian_evolver.population import Population, WeightedSamplingPopulation
 from darwinian_evolver.problem import (
     EvaluationResult,
     Organism,
+    EvaluationFailureCase,  # noqa: F401
 )
 
 
