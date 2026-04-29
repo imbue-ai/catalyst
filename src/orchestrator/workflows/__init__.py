@@ -1,11 +1,13 @@
 from .base import Workflow
-from .develop_theory import DevelopTheoryWorkflow
-from .refine_theory_idea import RefineTheoryIdeaWorkflow
+from .develop_theory import DevelopTheoryWorkflow, DevelopTheoryLinearWorkflow
+from .refine_theory_idea import RefineTheoryIdeaWorkflow, RefineTheoryIdeaLinearWorkflow
 from .import_theory import ImportTheoryWorkflow
 
 WORKFLOWS = {
     "develop-theory": DevelopTheoryWorkflow(),
+    "develop-theory-linear": DevelopTheoryLinearWorkflow(),
     "refine-theory-idea": RefineTheoryIdeaWorkflow(),
+    "refine-theory-idea-linear": RefineTheoryIdeaLinearWorkflow(),
     "import-theory": ImportTheoryWorkflow(),
 }
 

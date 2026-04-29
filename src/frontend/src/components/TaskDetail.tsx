@@ -5,6 +5,7 @@ import { StatusBadge } from './StatusBadge'
 import { DataSection } from './DataSection'
 import { WorkflowStep } from './workflow/WorkflowStep'
 import { WorkflowLoop } from './workflow/WorkflowLoop'
+import { WorkflowParallel } from './workflow/WorkflowParallel'
 import { ArtifactViewerModal } from './ArtifactViewerModal'
 import { CreateAddonModal } from './CreateAddonModal'
 
@@ -147,19 +148,17 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
 
               if (item.type === 'parallel') {
                 return (
-                  <div key={idx} className="flex flex-col gap-2">
-                    {item.stages.map((stage: string, sidx: number) => (
-                      <WorkflowStep
-                        key={stage}
-                        stage={stage}
-                        task={task}
-                        isSelected={selectedStage === stage}
-                        onSelect={setSelectedStage}
-                        onRetry={handleResume}
-                        showConnector={showConnector || sidx < item.stages.length - 1}
-                      />
-                    ))}
-                  </div>
+                  <WorkflowParallel
+                    key={idx}
+                    name={item.name}
+                    stages={item.stages}
+                    task={task}
+                    onSelect={setSelectedStage}
+                    selectedStage={selectedStage || undefined}
+                    onRetry={handleResume}
+                    onRefresh={onRefresh}
+                    showConnector={showConnector}
+                  />
                 )
               }
 
