@@ -143,7 +143,7 @@ def run_evolve_loop(
         if sample_res and sample_res.get("_canceled"):
             continue
 
-        parent_ids = sample_res.get("parent_ids", []) if sample_res else []
+        parent_ids = sorted(sample_res.get("parent_ids", []) if sample_res else [])
 
         if not parent_ids:
             logger.debug(
@@ -161,7 +161,7 @@ def run_evolve_loop(
 
         def run_mutation(tid: str, idx: int):
             try:
-                deterministic_rng = random.Random(f"{tid}:{idx}")
+                deterministic_rng = random.Random(f"{tid}:{idx}:{stage_prefix}:{i}")
                 is_streamline = deterministic_rng.random() < streamline_prob
                 if is_streamline:
                     stage_name = f"{stage_prefix}mutate-streamline-{i}-{idx}"
