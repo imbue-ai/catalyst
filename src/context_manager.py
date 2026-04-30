@@ -379,7 +379,7 @@ def _record_review_in_population(
     org, result = found
     assert isinstance(result, TheoryEvaluationResult)
     result.trainable_failure_cases.append(
-        TheoryEvaluationFailureCase(review_id=review_id)
+        TheoryEvaluationFailureCase(review_id=review_id, data_point_id=review_id)
     )
     _save_population(population, path)
 
