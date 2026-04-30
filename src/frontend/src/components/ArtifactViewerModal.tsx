@@ -7,8 +7,8 @@ import rehypeKatex from 'rehype-katex';
 import rehypeSlug from 'rehype-slug';
 import GithubSlugger from 'github-slugger';
 import 'katex/dist/katex.min.css';
-import { X, Loader2, Printer, List as ListIcon, ArrowLeft } from 'lucide-react';
-import { API_BASE_URL } from '../api';
+import { X, Loader2, Printer, List as ListIcon, ArrowLeft, Download } from 'lucide-react';
+import * as api from '../api';
 
 interface ArtifactViewerModalProps {
   taskId: string;
@@ -25,6 +25,7 @@ interface TocEntry {
 export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactViewerModalProps) {
   const [content, setContent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${API_BASE_URL}/api/tasks/${taskId}/artifacts/${artifactId}/primary`);
+        const response = await fetch(`${api.API_BASE_URL}/api/tasks/${taskId}/artifacts/${artifactId}/primary`);
         if (!response.ok) {
           throw new Error('Failed to fetch artifact content');
         }
@@ -47,6 +48,17 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
 
     fetchContent();
   }, [taskId, artifactId]);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      await api.exportArtifact(taskId, artifactId);
+    } catch (err: any) {
+      alert(err.message || 'Export failed');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   // Prevent background scrolling when modal is open
   useEffect(() => {
@@ -131,6 +143,14 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
           </div>
           <div className="flex items-center gap-2">
             <button 
+              onClick={handleExport}
+              disabled={exporting || loading}
+              className="p-1 hover:bg-gray-200 rounded transition-colors disabled:opacity-50"
+              title="Export as ZIP"
+            >
+              {exporting ? <Loader2 size={20} strokeWidth={3} className="animate-spin" /> : <Download size={20} strokeWidth={3} />}
+            </button>
+            <button 
               onClick={() => window.print()}
               className="p-1 hover:bg-gray-200 rounded transition-colors"
               title="Print Artifact"
@@ -197,7 +217,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
                     img({ node, src, alt, ...props }) {
                       if (src && !src.startsWith('http') && !src.startsWith('data:')) {
                         // rewrite local relative paths to our files endpoint
-                        const newSrc = `${API_BASE_URL}/api/tasks/${taskId}/artifacts/${artifactId}/files/${src.replace(/^\.\//, '')}`;
+                        const newSrc = `${api.API_BASE_URL}/api/tasks/${taskId}/artifacts/${artifactId}/files/${src.replace(/^\.\//, '')}`;
                         return <img src={newSrc} alt={alt} {...props} />;
                       }
                       return <img src={src} alt={alt} {...props} />;
