@@ -280,7 +280,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
               <input
                 value={templateFolder}
                 onChange={e => setTemplateFolder(e.target.value)}
-                placeholder="../templates/bifurcation"
+                placeholder="../templates/learning_mechanics"
                 className="w-full p-3 outline-none text-sm font-bold"
               />
             </div>
