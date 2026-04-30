@@ -35,7 +35,7 @@ def run_context_manager(task: Task, args: List[str]) -> str:
 
 def get_step_output(task: Task, stage_prefix: str) -> Optional[Dict[str, Any]]:
     for s in task.steps:
-        if s.stage.startswith(stage_prefix) and s.status == StepStatus.COMPLETED:
+        if s.stage == stage_prefix and s.status == StepStatus.COMPLETED:
             return s.outputs
     return None
 
