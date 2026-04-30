@@ -21,6 +21,7 @@ DEFAULT_NUM_PARENTS = 3
 DEFAULT_STREAMLINE_PROB = 0.25
 DEFAULT_NUM_EXTRA_SCORES = 5
 
+
 def run_context_manager(task: Task, args: List[str]) -> str:
     env = os.environ.copy()
 
@@ -86,9 +87,7 @@ def run_refinement_loop(
             task,
             run_step_fn,
             f"{stage_prefix}refine-theory-{i}",
-            get_refine_theory_prompt(
-                theory_id, apply_extensions, lit_review_id, request_major_changes=True
-            ),
+            get_refine_theory_prompt(theory_id, apply_extensions, lit_review_id),
         )
 
         if not refine_data:
@@ -163,7 +162,15 @@ def run_evolve_loop(
                     mutation_results[stage_name] = res
                 else:
                     stage_name = f"{stage_prefix}mutate-refine-{i}-{idx}"
-                    res = run_step_if_needed(task, run_step_fn, stage_name, get_refine_theory_prompt(tid, apply_extensions=apply_extensions, request_major_changes=False))
+                    res = run_step_if_needed(
+                        task,
+                        run_step_fn,
+                        stage_name,
+                        get_refine_theory_prompt(
+                            tid,
+                            apply_extensions=apply_extensions,
+                        ),
+                    )
                     mutation_results[stage_name] = res
             except Exception as e:
                 mutation_errors.append(e)
