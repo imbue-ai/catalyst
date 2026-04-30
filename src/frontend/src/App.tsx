@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { Plus, Folder, Activity, FlaskConical } from 'lucide-react'
 import * as api from './api'
 import { StatusBadge } from './components/StatusBadge'
@@ -14,6 +14,13 @@ function App() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [deleteInput, setDeleteInput] = useState('')
   const [isBackendDown, setIsBackendDown] = useState(false)
+  const prevTasksRef = useRef<api.Task[]>([])
+
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
 
   useEffect(() => {
     const handleHashChange = () => setCurrentHash(window.location.hash)
@@ -32,6 +39,27 @@ function App() {
   const fetchTasks = async () => {
     try {
       const data = await api.listTasks()
+      
+      // Detect changes
+      if (prevTasksRef.current.length > 0) {
+        data.forEach(task => {
+          const oldTask = prevTasksRef.current.find(t => t.id === task.id);
+          if (oldTask && oldTask.status !== task.status) {
+            if (Notification.permission === "granted") {
+              const notification = new Notification("Research Status Update", {
+                body: `Research "${task.title || task.workflow_inputs.summary || task.id}" is now ${task.status}.`,
+                icon: "/favicon.svg"
+              });
+              notification.onclick = () => {
+                window.focus();
+                window.location.hash = `#/task/${task.id}`;
+              };
+            }
+          }
+        });
+      }
+      prevTasksRef.current = data;
+
       setTasks(data)
       setIsBackendDown(false)
     } catch (e) {
