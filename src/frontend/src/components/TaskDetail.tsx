@@ -102,7 +102,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     onClick={() => onDeleteRequest(task.id)}
                     className="border-2 border-red-600 text-red-600 px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-red-50 transition-colors disabled:opacity-50"
                   >
-                    <Trash2 size={12} /> Delete Project
+                    <Trash2 size={12} /> Delete Research
                   </button>
                 </div>
               ) : null}
