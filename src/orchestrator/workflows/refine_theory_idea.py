@@ -34,6 +34,9 @@ class RefineTheoryIdeaWorkflow(Workflow):
             iteration_structures = {}
             for i in range(1, evolve_iterations + 1):
                 iter_struct = []
+                
+                # Sample Parents step
+                iter_struct.append({"type": "step", "stage": f"sample-parents-{i}"})
 
                 # Mutate parallel block
                 mutate_stages = [
@@ -55,6 +58,9 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 iter_struct.append(
                     {"type": "parallel", "name": "Review", "stages": loop_review_stages}
                 )
+
+                # Sample Scoring step
+                iter_struct.append({"type": "step", "stage": f"sample-scoring-{i}"})
 
                 # Score step
                 iter_struct.append({"type": "step", "stage": f"score-theories-{i}"})

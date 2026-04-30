@@ -1,11 +1,11 @@
-from typing import Callable, List, Optional, Set
+from typing import Any, Callable, Dict, List, Optional, Set
 import os
 import subprocess
 import random
 import threading
 import logging
 from ..models import Task
-from .base import run_step_if_needed
+from .base import run_step_if_needed, run_local_step_if_needed
 from orchestrator.prompts import (
     get_summarize_title_prompt,
     get_review_theory_prompt,
@@ -113,7 +113,7 @@ def run_evolve_loop(
     num_parents: int,
     streamline_prob: float,
     num_extra_scores: int,
-    apply_extensions: bool = False,
+    apply_extensions: bool = True,
     stage_prefix: str = "",
 ) -> None:
     for i in range(1, iterations + 1):
@@ -122,17 +122,28 @@ def run_evolve_loop(
         )
 
         # 1. Sample Parents
-        sample_out = run_context_manager(
-            task,
-            [
-                "sample_theories",
-                "--num_theories",
-                str(num_parents),
-                "--purpose",
-                "mutation",
-            ],
+        def _sample_parents() -> Dict[str, Any]:
+            out = run_context_manager(
+                task,
+                [
+                    "sample_theories",
+                    "--num_theories",
+                    str(num_parents),
+                    "--purpose",
+                    "mutation",
+                ],
+            )
+            return {
+                "parent_ids": [tid.strip() for tid in out.split(",") if tid.strip()]
+            }
+
+        sample_res = run_local_step_if_needed(
+            task, f"{stage_prefix}sample-parents-{i}", _sample_parents
         )
-        parent_ids = [tid.strip() for tid in sample_out.split(",") if tid.strip()]
+        if sample_res and sample_res.get("_canceled"):
+            continue
+
+        parent_ids = sample_res.get("parent_ids", []) if sample_res else []
 
         if not parent_ids:
             logger.debug(
@@ -237,19 +248,30 @@ def run_evolve_loop(
             raise review_errors[0]
 
         # 4. Sample Scoring
-        score_sample_out = run_context_manager(
-            task,
-            [
-                "sample_theories",
-                "--num_theories",
-                str(num_extra_scores),
-                "--purpose",
-                "scoring",
-            ],
+        def _sample_scoring() -> Dict[str, Any]:
+            out = run_context_manager(
+                task,
+                [
+                    "sample_theories",
+                    "--num_theories",
+                    str(num_extra_scores),
+                    "--purpose",
+                    "scoring",
+                ],
+            )
+            return {
+                "scoring_ids": [tid.strip() for tid in out.split(",") if tid.strip()]
+            }
+
+        score_sample_res = run_local_step_if_needed(
+            task, f"{stage_prefix}sample-scoring-{i}", _sample_scoring
         )
-        scoring_sample_ids = [
-            tid.strip() for tid in score_sample_out.split(",") if tid.strip()
-        ]
+        if score_sample_res and score_sample_res.get("_canceled"):
+            continue
+
+        scoring_sample_ids = (
+            score_sample_res.get("scoring_ids", []) if score_sample_res else []
+        )
 
         # 5. Score Union
         union_ids = list(set(new_theory_ids_list + scoring_sample_ids))

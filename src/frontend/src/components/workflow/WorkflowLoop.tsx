@@ -24,10 +24,25 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
     // Calculate what the current latest iteration is based on steps
     let currentLatest = 1
     for (let i = iterations; i >= 1; i--) {
-      // If any step stage ends with -i, or contains -i-
-      if (task.steps.some(s => s.stage.endsWith(`-${i}`) || s.stage.includes(`-${i}-`))) {
-        currentLatest = i
-        break
+      // Collect exact stage names for this iteration to avoid brittle suffix matching
+      const iterationStages = new Set<string>();
+      if (iterationStructures && iterationStructures[i.toString()]) {
+        iterationStructures[i.toString()].forEach((item: any) => {
+          if (item.type === 'step' && item.stage) {
+            iterationStages.add(item.stage);
+          } else if (item.type === 'parallel' && item.stages) {
+            item.stages.forEach((s: string) => iterationStages.add(s));
+          }
+        });
+      } else if (baseStages) {
+        baseStages.forEach(bs => iterationStages.add(`${bs}-${i}`));
+      }
+
+      // Check if any of these exact stages are in a state other than 'pending'
+      const hasStarted = task.steps.some(s => iterationStages.has(s.stage) && s.status !== 'pending');
+      if (hasStarted) {
+        currentLatest = i;
+        break;
       }
     }
 
@@ -43,7 +58,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
       }
       setLastLatest(currentLatest)
     }
-  }, [task.steps, iterations, activeIteration, lastLatest])
+  }, [task.steps, iterations, activeIteration, lastLatest, iterationStructures, baseStages])
 
   const getStepForIteration = (it: number, baseStage: string) => {
     const stage = `${baseStage}-${it}`

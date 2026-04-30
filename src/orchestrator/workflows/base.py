@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Dict, Optional
 import os
 import logging
-from ..models import Task, StepStatus
+from ..models import Task, StepStatus, Step
+from ..state import update_task
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +12,34 @@ def get_step_output(task: Task, stage_prefix: str) -> Optional[Dict[str, Any]]:
         if s.stage == stage_prefix and s.status == StepStatus.COMPLETED:
             return s.outputs
     return None
+
+def run_local_step_if_needed(
+    task: Task, stage: str, fn: Callable[[], Dict[str, Any]]
+) -> Optional[Dict[str, Any]]:
+    out = get_step_output(task, stage)
+    if out is not None:
+        return out
+
+    for s in task.steps:
+        if s.stage == stage and s.status == StepStatus.CANCELED:
+            logger.debug(
+                f"[ORCHESTRATOR] [{task.id[:8]}] Skipping canceled local step {stage}..."
+            )
+            return {"_canceled": True}
+
+    logger.debug(f"[ORCHESTRATOR] [{task.id[:8]}] Running local step {stage}...")
+
+    try:
+        out = fn()
+        step = Step(stage=stage, status=StepStatus.COMPLETED, inputs={}, outputs=out)
+        task.steps.append(step)
+        update_task(task)
+        return out
+    except Exception as e:
+        step = Step(stage=stage, status=StepStatus.FAILED, inputs={}, error=str(e))
+        task.steps.append(step)
+        update_task(task)
+        raise e
 
 def run_step_if_needed(
     task: Task, run_step_fn: Callable, stage: str, prompt: str
