@@ -1,7 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(uv run python:*)",
+      "Bash(uv run python *)",
       "Bash(ls:*)",
       "Bash(mkdir:*)",
       "Bash(mktemp:*)",
