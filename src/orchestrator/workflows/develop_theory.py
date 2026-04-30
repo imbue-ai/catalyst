@@ -1,7 +1,18 @@
 import threading
 from typing import Any, Callable, List, Dict
 from ..models import Task
-from .base import Workflow, get_step_output, run_step_if_needed, run_evolve_loop, run_summarize_title
+from .base import (
+    DEFAULT_EVOLVE_ITERATIONS,
+    DEFAULT_NUM_EXTRA_SCORES,
+    DEFAULT_NUM_PARENTS,
+    DEFAULT_STREAMLINE_PROB,
+    Workflow,
+    get_step_output,
+    run_step_if_needed,
+    run_evolve_loop,
+    run_summarize_title,
+)
+
 
 class DevelopTheoryWorkflow(Workflow):
     @property
@@ -29,8 +40,7 @@ class DevelopTheoryWorkflow(Workflow):
                 {"type": "parallel", "name": "Review Theories", "stages": review_stages}
             )
 
-        if any(s.stage == "score-theories" for s in task.steps):
-            structure.append({"type": "step", "stage": "score-theories"})
+        structure.append({"type": "step", "stage": "score-theories"})
 
         evolve_iterations = int(task.workflow_inputs.get("evolve_iterations", 0))
         if evolve_iterations > 0:
@@ -79,7 +89,9 @@ class DevelopTheoryWorkflow(Workflow):
         self.init_db(task)
 
         # Step 0: Summarize Title
-        run_summarize_title(task, run_step, f"phenomenon: {task.workflow_inputs.get('phenomenon')}")
+        run_summarize_title(
+            task, run_step, f"phenomenon: {task.workflow_inputs.get('phenomenon')}"
+        )
 
         # Step 1 & 2: Literature Review and Exploration in Parallel
         lit_out = get_step_output(task, "literature-review")
@@ -174,7 +186,7 @@ class DevelopTheoryWorkflow(Workflow):
                         run_step,
                         review_stage,
                         f"Please run the review-theory skill for theory_id: {tid}. "
-                        "When you are done, return ONLY a JSON object with the key 'review_id'.",
+                        "When you are done, return ONLY a JSON object with the key 'review_ids' containing the list of generated review IDs.",
                     )
                     review_results[tid] = res
                 except Exception as e:

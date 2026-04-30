@@ -1,6 +1,16 @@
 from typing import Any, Callable, List, Dict
 from ..models import Task
-from .base import Workflow, run_step_if_needed, run_evolve_loop, run_summarize_title
+from .base import (
+    DEFAULT_EVOLVE_ITERATIONS,
+    DEFAULT_NUM_EXTRA_SCORES,
+    DEFAULT_NUM_PARENTS,
+    DEFAULT_STREAMLINE_PROB,
+    Workflow,
+    run_step_if_needed,
+    run_evolve_loop,
+    run_summarize_title,
+)
+
 
 class RefineTheoryIdeaWorkflow(Workflow):
     @property
@@ -11,11 +21,9 @@ class RefineTheoryIdeaWorkflow(Workflow):
         structure = [
             {"type": "step", "stage": "summarize-title"},
             {"type": "step", "stage": "support-idea"},
+            {"type": "step", "stage": "review-theory"},
+            {"type": "step", "stage": "score-theories"},
         ]
-        if any(s.stage == "review-theory" for s in task.steps):
-            structure.append({"type": "step", "stage": "review-theory"})
-        if any(s.stage == "score-theories" for s in task.steps):
-            structure.append({"type": "step", "stage": "score-theories"})
 
         evolve_iterations = int(task.workflow_inputs.get("evolve_iterations", 0))
         if evolve_iterations > 0:
@@ -87,7 +95,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 run_step,
                 "review-theory",
                 f"Please run the review-theory skill for theory_id: {theory_id}. "
-                "When you are done, return ONLY a JSON object with the key 'review_id'.",
+                "When you are done, return ONLY a JSON object with the key 'review_ids' containing the list of generated review IDs.",
             )
 
             # Step 3: Score Theories

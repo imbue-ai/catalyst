@@ -36,11 +36,12 @@ export function WorkflowStep({ stage, task, onSelect, isSelected, onRetry, isPla
         <div className="flex justify-between items-center mb-1">
           <span className={`font-black text-xs tracking-tight ${isRunning ? 'text-blue-600' : ''}`}>{stage}</span>
           <div className="flex items-center gap-2">
-            {step?.status === 'failed' && task.status !== 'running' && (
-              <button 
+            {step?.status === 'failed' && (
+              <button
                 onClick={(e) => { e.stopPropagation(); onRetry(); }}
-                className="p-1 hover:bg-red-200 rounded-sm text-red-600 transition-colors"
-                title="Retry this step"
+                disabled={task.status === 'running'}
+                className={`p-1 rounded-sm transition-colors ${task.status === 'running' ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-red-200 text-red-600'}`}
+                title={task.status === 'running' ? 'Waiting for parallel steps to finish...' : 'Retry this step'}
               >
                 <RefreshCw size={10} strokeWidth={3} />
               </button>
