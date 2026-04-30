@@ -281,29 +281,30 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                             <div className="absolute -top-3 -left-1 px-2 py-1 bg-black text-white text-[8px] font-black tracking-widest z-10">
                               Inspect Agent
                             </div>
-                            <div className="bg-[#0c0c0c] text-[#00ff00] p-4 font-mono text-[11px] border border-black shadow-[4px_4px_0px_0px_rgba(0,255,0,0.1)]">
+                            <div className="bg-[#1a1a1a] text-gray-300 p-4 font-mono text-[11px] border border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
                               <div className="flex justify-between items-start mb-2">
-                                <div className="opacity-50"># Use this command to resume this session manually</div>
+                                <div className="text-gray-400"># Use this command to resume this session manually</div>
                                 <button
                                   onClick={() => {
                                     const cmd = task.framework === 'gemini'
-                                      ? `gemini --resume ${step.session_id}`
-                                      : `claude --resume ${step.session_id}`;
+                                      ? `cd "${task.env_folder}" && gemini --resume ${step.session_id}`
+                                      : `cd "${task.env_folder}" && claude --resume ${step.session_id}`;
                                     handleCopy(cmd);
                                   }}
-                                  className="text-[#00ff00] hover:text-white transition-colors p-1"
+                                  className="text-gray-300 hover:text-white transition-colors p-1"
                                   title="Copy to clipboard"
                                 >
                                   {copied ? <Check size={14} /> : <Copy size={14} />}
                                 </button>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-gray-500">$</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                <span className="text-gray-400">$</span>
                                 <code className="select-all">
-                                  {task.framework === 'gemini' ? `gemini --resume ${step.session_id}` : `claude --resume ${step.session_id}`}
+                                  {task.framework === 'gemini' 
+                                    ? `cd "${task.env_folder}" && gemini --resume ${step.session_id}` 
+                                    : `cd "${task.env_folder}" && claude --resume ${step.session_id}`}
                                 </code>
-                              </div>
-                            </div>
+                                </div>                            </div>
                           </div>
                         )}
 
