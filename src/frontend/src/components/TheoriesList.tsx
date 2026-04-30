@@ -96,7 +96,7 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
                       {theory.id}
                     </span>
                     <span 
-                      className={`inline-flex items-center px-2.5 py-1 rounded text-[12px] font-black uppercase shrink-0 border ${getScoreStyle(theory.score).className}`}
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase shrink-0 border ${getScoreStyle(theory.score).className}`}
                       style={getScoreStyle(theory.score).style}
                     >
                       {theory.score != null ? theory.score.toFixed(4) : "N/A"}
