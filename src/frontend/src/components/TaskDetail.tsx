@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Activity, Folder, Cpu, Terminal, Loader2, Square, Play, Trash2, Layers, Plus, XCircle, Copy, Check } from 'lucide-react'
+import { Activity, Folder, Cpu, Loader2, Square, Play, Trash2, Workflow, Plus, XCircle, Copy, Check } from 'lucide-react'
 import * as api from '../api'
 import { StatusBadge } from './StatusBadge'
 import { DataSection } from './DataSection'
@@ -240,7 +240,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               <div className="flex flex-col h-full">
                 <div className="p-6 border-b border-black bg-white flex justify-between items-center">
                   <div className="flex items-center gap-3">
-                    <div className="bg-black text-white p-1 rounded-sm"><Layers size={16} /></div>
+                    <div className="bg-black text-white p-1 rounded-sm"><Workflow size={16} /></div>
                     <span className="font-black text-xs tracking-widest">{formatStageName(selectedStage)}</span>
                   </div>
                   {['failed', 'paused', 'pending'].includes(task.steps.find(s => s.stage === selectedStage)?.status || 'pending') && (
@@ -342,7 +342,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               </div>
             ) : (
               <div className="flex-1 flex flex-col items-center justify-center p-12 text-center opacity-30">
-                <Terminal size={48} strokeWidth={1} />
+                <Workflow size={48} strokeWidth={1} />
                 <div className="mt-4 text-[10px] font-black tracking-widest">Select step to see details</div>
               </div>
             )}
