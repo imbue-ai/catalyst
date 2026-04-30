@@ -9,7 +9,6 @@ from orchestrator.prompts import (
     get_score_theories_prompt,
 )
 
-logger = logging.getLogger(__name__)
 from .base import Workflow, get_step_output, run_step_if_needed
 from .common import (
     DEFAULT_EVOLVE_ITERATIONS,
@@ -19,6 +18,8 @@ from .common import (
     run_evolve_loop,
     run_summarize_title,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class DevelopTheoryWorkflow(Workflow):
@@ -216,7 +217,7 @@ class DevelopTheoryWorkflow(Workflow):
                 raise review_errors[0]
 
             # Step 5: Score Theories
-            score_data = run_step_if_needed(
+            run_step_if_needed(
                 task,
                 run_step,
                 "score-theories",
