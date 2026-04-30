@@ -5,7 +5,7 @@ from .cli_base import BaseCliAgentRunner
 
 
 class ClaudeAgentRunner(BaseCliAgentRunner):
-    _EXTRA_SYSTEM_PROMPT = "Run each shell command individually. Combining commands using `&&` or `;` might lead to the command being rejected."
+    _EXTRA_SYSTEM_PROMPT = "Run each Bash command individually. NEVER combine multiple commands using `&&` or `;`, as this will lead to the command being rejected."
 
     def run(
         self,
