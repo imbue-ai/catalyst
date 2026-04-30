@@ -281,7 +281,7 @@ def _load_population(path: Path) -> Population | None:
     """Restore the population via ``Population.from_snapshot()``, or return None."""
     if not path.is_file():
         return None
-    return Population.from_snapshot(path.read_bytes())
+    return WeightedSamplingPopulation.from_snapshot(path.read_bytes())
 
 
 def _record_theory_in_population(
