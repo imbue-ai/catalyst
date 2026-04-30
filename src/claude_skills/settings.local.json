@@ -1,40 +1,6 @@
 {
-  "permissions": {
-    "allow": [
-      "Bash(uv run python *)",
-      "Bash(ls:*)",
-      "Bash(mkdir:*)",
-      "Bash(mktemp:*)",
-      "Bash(cp:*)",
-      "Bash(mv:*)",
-      "Bash(jq:*)",
-      "Bash(awk:*)",
-      "Bash(head:*)",
-      "Bash(tail:*)",
-      "Bash(wc:*)",
-      "Bash(curl:*)",
-      "Bash(pdf2ps:*)",
-      "Bash(pdfimages:*)",
-      "Bash(pdfinfo:*)",
-      "Bash(pdftotext:*)",
-      "Bash(pdftohtml:*)",
-      "Bash(find:*)",
-      "Read",
-      "Glob",
-      "Grep",
-      "Write(*tmp/*/*)",
-      "Edit(*tmp/*/*)",
-      "Agent",
-      "TaskCreate",
-      "TaskUpdate",
-      "TaskList",
-      "TaskGet",
-      "TaskStop",
-      "TodoWrite",
-      "Monitor",
-      "WebSearch",
-      "WebFetch",
-      "Skill"
-    ]
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true
   }
 }

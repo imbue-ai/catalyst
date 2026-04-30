@@ -18,22 +18,15 @@ class GeminiAgentRunner(BaseCliAgentRunner):
         env = os.environ.copy()
         env["AI_SCIENTIST_DB_PATH"] = db_path
         abs_env_folder = os.path.abspath(env_folder)
-        abs_source_folders = self._locate_source_folders(abs_env_folder)
-
-        include_subdirectory_args = []
-        for folder in abs_source_folders:
-            include_subdirectory_args.extend(["--include-directories", folder])
 
         cmd = [
             "gemini",
             "--approval-mode",
-            "default",
-            "--policy",
-            f"{abs_env_folder}/.gemini/policy.toml",
+            "yolo",
+            "--sandbox",
             "--skip-trust",
             "--output-format",
             "stream-json",
-            *include_subdirectory_args,
         ]
         if model:
             cmd.extend(["--model", model])
@@ -98,19 +91,3 @@ class GeminiAgentRunner(BaseCliAgentRunner):
 
         except Exception as e:
             return None, None, f"Gemini execution error: {str(e)}"
-
-    def _locate_source_folders(self, abs_env_folder: str) -> list[str]:
-        # Traverse abs_env_folder, and collect all directories that contain symlink targets
-        source_folders = set()
-        for root, dirs, files in os.walk(abs_env_folder):
-            for name in dirs + files:
-                item_path = os.path.join(root, name)
-                if os.path.islink(item_path):
-                    target_path = os.readlink(item_path)
-                    if not os.path.isabs(target_path):
-                        target_path = os.path.join(root, target_path)
-                        target_path = os.path.abspath(target_path)
-                    # Add the parent folder of the target
-                    source_folders.add(os.path.dirname(target_path))
-
-        return list(source_folders)
