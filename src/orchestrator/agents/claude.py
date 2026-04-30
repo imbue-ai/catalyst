@@ -5,8 +5,6 @@ from .cli_base import BaseCliAgentRunner
 
 
 class ClaudeAgentRunner(BaseCliAgentRunner):
-    _EXTRA_SYSTEM_PROMPT = "Run each Bash command individually. NEVER combine multiple commands using `&&` or `;`, as this will lead to the command being rejected."
-
     def run(
         self,
         task_id: str,
@@ -23,13 +21,10 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
 
         cmd = [
             "claude",
-            "--permission-mode",
-            "dontAsk",
+            "--dangerously-skip-permissions",
             "--output-format",
             "stream-json",
             "--verbose",
-            "--append-system-prompt",
-            self._EXTRA_SYSTEM_PROMPT,
         ]
         if model:
             cmd.extend(["--model", model])
