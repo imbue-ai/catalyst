@@ -1084,13 +1084,17 @@ def fetch_literature(target_folder: Path, literature_id: str) -> None:
         _make_writable(dst)
 
 
-def list_entries(entry_type: str, parent_theory: str | None = None) -> list[dict]:
-    """List stored entries of the given type, sorted by creation time."""
+def list_entries(entry_type: str, parent_theory: str | None = None, sort_by: str = "created_at") -> list[dict]:
+    """List stored entries of the given type."""
     if entry_type not in VALID_CATEGORIES:
         raise ValueError(
             f"Unknown entry type {entry_type!r}. Must be one of: "
             f"{', '.join(VALID_CATEGORIES)}"
         )
+    if sort_by not in ("created_at", "score"):
+        raise ValueError(f"Unknown sort_by {sort_by!r}. Must be 'created_at' or 'score'")
+    if sort_by == "score" and entry_type != "theory":
+        raise ValueError("Sorting by score is only supported for entry_type 'theory'")
 
     db_root = get_db_path()
 
@@ -1112,7 +1116,22 @@ def list_entries(entry_type: str, parent_theory: str | None = None) -> list[dict
             except (json.JSONDecodeError, OSError):
                 continue
 
-    results.sort(key=lambda d: d.get("created_at", ""))
+        if sort_by == "created_at":
+            results.sort(key=lambda d: d.get("created_at", ""))
+        elif sort_by == "score":
+            population_path = _population_path(db_root)
+            population = _load_population(population_path)
+            scores = {}
+            if population:
+                for organism, eval_result in population.organisms:
+                    if hasattr(organism, "theory_id"):
+                        scores[organism.theory_id] = eval_result.score
+            
+            for d in results:
+                d["score"] = scores.get(d.get("id"))
+            
+            results.sort(key=lambda d: d.get("score") if d.get("score") is not None else float("-inf"))
+
     return results
 
 
@@ -1173,6 +1192,20 @@ def rescore_theories(theory_scores: dict[str, float]) -> None:
                 score.score *= SCORE_DECAY_RATE
 
         _save_population(population, population_path)
+
+
+def export_theory_population(dest_path: Path) -> None:
+    """Export the theory population to a single-line JSON file."""
+    db_root = get_db_path()
+    with DatabaseLock(db_root):
+        population_path = _population_path(db_root)
+        population = _load_population(population_path)
+        if not population:
+            raise RuntimeError("Population is empty; cannot export")
+
+        data = population.log_to_json_dict()
+        with open(dest_path, "w", encoding="utf-8") as f:
+            f.write(json.dumps(data) + "\n")
 
 
 # ---------------------------------------------------------------------------
@@ -1402,6 +1435,12 @@ def main(argv: list[str] | None = None) -> None:
         help="Filter reviews by parent theory ID",
     )
     sp_list.add_argument(
+        "--sort_by",
+        choices=["created_at", "score"],
+        default="created_at",
+        help="Sort list by property (score is only supported for theory entries)",
+    )
+    sp_list.add_argument(
         "--json",
         action="store_true",
         dest="json_output",
@@ -1432,6 +1471,16 @@ def main(argv: list[str] | None = None) -> None:
     sp_rescore.add_argument(
         "theory_score_dict",
         help='Dictionary of theory IDs and their updated scores as a JSON object string (e.g. \'{"theory_id_1": 0.8, "theory_id_2": 0.3}\')',
+    )
+
+    # -- export_theory_population --------------------------------------------
+    sp_export = sub.add_parser(
+        "export_theory_population", help="Export theory population to a JSON file"
+    )
+    sp_export.add_argument(
+        "dest_file",
+        type=Path,
+        help="Destination .json file",
     )
 
     args = parser.parse_args(argv)
@@ -1519,7 +1568,7 @@ def main(argv: list[str] | None = None) -> None:
 
         elif args.command == "list":
             entries = list_entries(
-                args.entry_type, parent_theory=getattr(args, "parent_theory", None)
+                args.entry_type, parent_theory=getattr(args, "parent_theory", None), sort_by=args.sort_by
             )
             if args.json_output:
                 print(json.dumps(entries, indent=2))
@@ -1527,15 +1576,27 @@ def main(argv: list[str] | None = None) -> None:
                 if not entries:
                     print(f"No {args.entry_type} entries found.")
                 else:
-                    # Print table header
-                    print(f"{'ID':<40} {'Created At':<28} {'Agent Type':<20}")
-                    print("-" * 88)
-                    for e in entries:
-                        print(
-                            f"{e.get('id', '?'):<40} "
-                            f"{e.get('created_at', '?'):<28} "
-                            f"{e.get('agent_type', '?'):<20}"
-                        )
+                    if args.sort_by == "score":
+                        print(f"{'ID':<40} {'Score':<20} {'Created At':<28} {'Agent Type':<20}")
+                        print("-" * 110)
+                        for e in entries:
+                            score_val = e.get('score')
+                            score_str = f"{score_val:.4f}" if isinstance(score_val, float) else "N/A"
+                            print(
+                                f"{e.get('id', '?'):<40} "
+                                f"{score_str:<20} "
+                                f"{e.get('created_at', '?'):<28} "
+                                f"{e.get('agent_type', '?'):<20}"
+                            )
+                    else:
+                        print(f"{'ID':<40} {'Created At':<28} {'Agent Type':<20}")
+                        print("-" * 88)
+                        for e in entries:
+                            print(
+                                f"{e.get('id', '?'):<40} "
+                                f"{e.get('created_at', '?'):<28} "
+                                f"{e.get('agent_type', '?'):<20}"
+                            )
 
         elif args.command == "sample_theories":
             sampled_ids = sample_theories(
@@ -1550,6 +1611,9 @@ def main(argv: list[str] | None = None) -> None:
                     "theory_score_dict must be a JSON object mapping theory IDs to scores"
                 )
             rescore_theories(theory_score_dict)
+
+        elif args.command == "export_theory_population":
+            export_theory_population(args.dest_file)
 
     except ValueError as exc:
         print(f"Error: {exc}", file=sys.stderr)
