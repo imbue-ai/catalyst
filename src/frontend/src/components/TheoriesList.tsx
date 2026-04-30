@@ -28,6 +28,32 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
     fetchTheories();
   }, [taskId]);
 
+  const validScores = theories.map(t => t.score).filter(s => s != null && s !== 0.0) as number[];
+  const minScore = validScores.length > 0 ? Math.min(...validScores) : 0;
+  const maxScore = validScores.length > 0 ? Math.max(...validScores) : 0;
+
+  const getScoreStyle = (score: number | null | undefined) => {
+    if (score == null || score === 0.0) {
+      return { className: "bg-gray-200 text-gray-600 border border-gray-300", style: {} };
+    }
+    
+    let normalized = 1;
+    if (maxScore > minScore) {
+      normalized = (score - minScore) / (maxScore - minScore);
+    }
+    
+    // Green (120) for max score, Red (0) for min score.
+    const hue = Math.round(normalized * 120);
+    return {
+      className: "border",
+      style: {
+        backgroundColor: `hsl(${hue}, 80%, 92%)`,
+        color: `hsl(${hue}, 85%, 25%)`,
+        borderColor: `hsl(${hue}, 80%, 85%)`
+      }
+    };
+  };
+
   return (
     <div className="flex flex-col h-full bg-white text-gray-800">
       <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100 flex-shrink-0">
@@ -65,18 +91,20 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
             {theories.map((theory) => (
               <li key={theory.id} className="p-4 bg-gray-50 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                 <div className="flex justify-between items-start mb-2">
-                  <a
+                  <a 
                     href={`#/task/${taskId}/artifact/${theory.id}`}
-                    className="font-mono text-sm font-semibold text-blue-700 truncate mr-3 hover:underline cursor-pointer"
+                    className="font-mono text-sm font-semibold text-blue-700 truncate mr-3 hover:underline cursor-pointer" 
                     title={theory.id}
                   >
                     {theory.id}
                   </a>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 shrink-0">
+                  <span 
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${getScoreStyle(theory.score).className}`}
+                    style={getScoreStyle(theory.score).style}
+                  >
                     {theory.score != null ? theory.score.toFixed(4) : "N/A"}
                   </span>
-                </div>
-                <div className="text-sm text-gray-600 mb-1 flex items-center">
+                  </div>                <div className="text-sm text-gray-600 mb-1 flex items-center">
                   <svg className="w-4 h-4 mr-1.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                   </svg>
