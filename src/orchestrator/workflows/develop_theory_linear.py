@@ -1,7 +1,16 @@
 import threading
+import logging
 from typing import Any, Callable, List, Dict
 from ..models import Task
-from .base import Workflow, get_step_output, run_step_if_needed, run_refinement_loop, run_summarize_title
+from .base import (
+    Workflow,
+    get_step_output,
+    run_step_if_needed,
+    run_refinement_loop,
+    run_summarize_title,
+)
+
+logger = logging.getLogger(__name__)
 
 
 class DevelopTheoryLinearWorkflow(Workflow):
@@ -50,7 +59,9 @@ class DevelopTheoryLinearWorkflow(Workflow):
         self.init_db(task)
 
         # Step 0: Summarize Title
-        run_summarize_title(task, run_step, f"phenomenon: {task.workflow_inputs.get('phenomenon')}")
+        run_summarize_title(
+            task, run_step, f"phenomenon: {task.workflow_inputs.get('phenomenon')}"
+        )
 
         # Step 1 & 2: Literature Review and Exploration in Parallel
         lit_out = get_step_output(task, "literature-review")
@@ -60,7 +71,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
         exploration_id = exp_out.get("exploration_id") if exp_out else None
 
         if not lit_review_id or not exploration_id:
-            print(
+            logger.debug(
                 f"[ORCHESTRATOR] [{task.id[:8]}] Running Literature Review and Exploration in parallel..."
             )
 

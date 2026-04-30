@@ -1,6 +1,7 @@
 import threading
 import uuid
 import os
+import logging
 from typing import List, Any, Dict
 from .models import Task, Step, TaskStatus, StepStatus
 from .state import update_task, get_task, get_task_lock
@@ -8,10 +9,12 @@ from .agents import get_agent_runner
 from .workflows import get_workflow
 from .addons import get_addon_handler
 
+logger = logging.getLogger(__name__)
+
 MAX_CONCURRENCY_PER_TASK = 3
 
 def start_task(task: Task):
-    print(f"[ORCHESTRATOR] Starting task {task.id[:8]}: {task.workflow_inputs.get('summary', '')[:50]}...")
+    logger.info(f"[ORCHESTRATOR] Starting task {task.id[:8]}: {task.workflow_inputs.get('summary', '')[:50]}...")
     thread = threading.Thread(target=_orchestrate_task, args=(task.id,))
     thread.daemon = True
     thread.start()
@@ -37,13 +40,13 @@ def _orchestrate_task(task_id: str):
 
     workflow = get_workflow(task.workflow_name)
     if not workflow:
-        print(f"[ORCHESTRATOR] Unknown workflow: {task.workflow_name}")
+        logger.error(f"[ORCHESTRATOR] Unknown workflow: {task.workflow_name}")
         task.status = TaskStatus.FAILED
         update_task(task)
         return
 
     is_resume = task.status in [TaskStatus.PAUSED, TaskStatus.FAILED]
-    print(f"[ORCHESTRATOR] Orchestrating task {task_id[:8]} via {workflow.name} (Resume: {is_resume})")
+    logger.info(f"[ORCHESTRATOR] Orchestrating task {task_id[:8]} via {workflow.name} (Resume: {is_resume})")
     task.status = TaskStatus.RUNNING
     update_task(task)
 
@@ -75,17 +78,17 @@ def _orchestrate_task(task_id: str):
             handler.run(task, run_step_wrapper, addon, i)
 
         task.status = TaskStatus.COMPLETED
-        print(f"[ORCHESTRATOR] Task {task_id[:8]} COMPLETED successfully.")
+        logger.info(f"[ORCHESTRATOR] Task {task_id[:8]} COMPLETED successfully.")
         update_task(task)
 
     except Exception as e:
         # Check if it was paused
         updated_task = get_task(task_id)
         if updated_task and updated_task.status == TaskStatus.PAUSED:
-            print(f"[ORCHESTRATOR] Task {task_id[:8]} PAUSED.")
+            logger.info(f"[ORCHESTRATOR] Task {task_id[:8]} PAUSED.")
             return
             
-        print(f"[ORCHESTRATOR] Task {task_id[:8]} FAILED: {str(e)}")
+        logger.error(f"[ORCHESTRATOR] Task {task_id[:8]} FAILED: {str(e)}")
         task.status = TaskStatus.FAILED
         if task.steps and task.steps[-1].status == StepStatus.RUNNING:
             task.steps[-1].error = str(e)

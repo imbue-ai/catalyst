@@ -1,7 +1,10 @@
 import os
 import shlex
+import logging
 from typing import Dict, Any, Optional, Tuple, Callable
 from .cli_base import BaseCliAgentRunner
+
+logger = logging.getLogger(__name__)
 
 
 class ClaudeAgentRunner(BaseCliAgentRunner):
@@ -12,7 +15,7 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
         env_folder: str,
         model: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
-        on_status: Optional[Callable[[str], None]] = None
+        on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
         env = os.environ.copy()
         abs_env_folder = os.path.abspath(env_folder)
@@ -28,8 +31,8 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
             cmd.extend(["--model", model])
         cmd.extend(["-p", prompt])
 
-        print(f"[AGENT] Starting Claude for task {task_id[:8]}")
-        print(f"[AGENT] Executing in folder {abs_env_folder}: {shlex.join(cmd)}")
+        logger.debug(f"[AGENT] Starting Claude for task {task_id[:8]}")
+        logger.debug(f"[AGENT] Executing in folder {abs_env_folder}: {shlex.join(cmd)}")
 
         last_result_obj = {}
 
@@ -65,7 +68,7 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
                 on_status,
             )
 
-            print(
+            logger.debug(
                 f"[AGENT] [{task_id[:8]}] Claude finished with exit code {returncode}"
             )
 

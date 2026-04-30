@@ -1,7 +1,11 @@
 from abc import ABC, abstractmethod
+import logging
 from typing import Dict, Any, Callable
 from ..models import Addon, Task, StepStatus
 from ..state import get_task_lock
+
+logger = logging.getLogger(__name__)
+
 
 class AddonHandler(ABC):
     @property
@@ -14,17 +18,20 @@ class AddonHandler(ABC):
 
     def run(self, task: Task, run_step: Callable, addon: Addon, index: int) -> None:
         stage = f"addon-{addon.type}-{index}"
-        
+
         # Check if already completed or canceled
         completed_or_canceled = False
         with get_task_lock(task.id):
             for s in task.steps:
-                if s.stage == stage and s.status in (StepStatus.COMPLETED, StepStatus.CANCELED):
+                if s.stage == stage and s.status in (
+                    StepStatus.COMPLETED,
+                    StepStatus.CANCELED,
+                ):
                     completed_or_canceled = True
                     break
-        
+
         if not completed_or_canceled:
-            print(f"[ORCHESTRATOR] [{task.id[:8]}] Running addon {stage}...")
+            logger.debug(f"[ORCHESTRATOR] [{task.id[:8]}] Running addon {stage}...")
             prompt = self.get_prompt(addon)
             run_step(task, stage, prompt)
 

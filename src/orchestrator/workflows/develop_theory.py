@@ -1,6 +1,9 @@
 import threading
+import logging
 from typing import Any, Callable, List, Dict
 from ..models import Task
+
+logger = logging.getLogger(__name__)
 from .base import (
     DEFAULT_EVOLVE_ITERATIONS,
     DEFAULT_NUM_EXTRA_SCORES,
@@ -101,7 +104,7 @@ class DevelopTheoryWorkflow(Workflow):
         exploration_id = exp_out.get("exploration_id") if exp_out else None
 
         if not lit_review_id or not exploration_id:
-            print(
+            logger.debug(
                 f"[ORCHESTRATOR] [{task.id[:8]}] Running Literature Review and Exploration in parallel..."
             )
             results = {}
@@ -172,7 +175,7 @@ class DevelopTheoryWorkflow(Workflow):
 
         if theory_ids and isinstance(theory_ids, list):
             # Step 4: Parallel Review Theories
-            print(
+            logger.debug(
                 f"[ORCHESTRATOR] [{task.id[:8]}] Running {len(theory_ids)} Review Theories in parallel..."
             )
             review_results = {}
