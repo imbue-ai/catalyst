@@ -12,7 +12,7 @@ const TAGLINES = [
   "Observing cellular automata and academic breakthroughs.",
   "Letting the best concepts thrive and multiply.",
   "Simulating the genome of innovation.",
-  "Where weak ideas perish and strong models flourish.",
+  "Where the strongest models flourish.",
   "Cross-pollinating diverse fields of research.",
   "Watching the ecosystem of knowledge adapt.",
   "Spawning new intellectual lineages.",
@@ -35,10 +35,12 @@ export function GameOfLife() {
         } while (next === prev); // Ensure it actually changes
         return next;
       });
-    }, 15000);
-    return () => clearInterval(textInterval);
-  }, []);
+    }, 10000);
 
+    return () => {
+      clearInterval(textInterval);
+    };
+  }, []);
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -163,7 +165,6 @@ export function GameOfLife() {
     <div className="flex-1 w-full h-full relative overflow-hidden flex flex-col items-center justify-center bg-white">
       <canvas ref={canvasRef} className="absolute inset-0 z-0 opacity-[0.15]" />
       <div className="z-10 bg-white/90 p-10 border-2 border-black backdrop-blur-sm text-center shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col items-center max-w-sm transition-all">
-        <div className="w-16 h-16 border-4 border-black border-t-transparent rounded-full animate-spin mb-6" />
         <h2 className="text-3xl font-black tracking-tighter mb-3">Researching</h2>
         <p className="text-gray-500 text-sm font-bold tracking-widest leading-relaxed transition-opacity duration-500 min-h-[3rem] flex items-center justify-center">
           {TAGLINES[taglineIndex]}
