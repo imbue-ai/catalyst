@@ -56,6 +56,10 @@ def _orchestrate_task(task_id: str):
 
         def run_step_wrapper(t, stage, prompt):
             with semaphore:
+                current_task = get_task(t.id)
+                if current_task and current_task.status not in [TaskStatus.RUNNING, TaskStatus.PENDING]:
+                    return {"_canceled": True}
+                
                 res = _run_step(t, stage, prompt)
                 # Update structure after each step to reflect progress
                 t.workflow_structure = get_full_structure(workflow, t)
@@ -90,9 +94,6 @@ def _orchestrate_task(task_id: str):
             
         logger.error(f"[ORCHESTRATOR] Task {task_id[:8]} FAILED: {str(e)}")
         task.status = TaskStatus.FAILED
-        if task.steps and task.steps[-1].status == StepStatus.RUNNING:
-            task.steps[-1].error = str(e)
-            task.steps[-1].status = StepStatus.FAILED
         update_task(task)
 
 def _run_step(task: Task, stage: str, prompt: str) -> Any:
