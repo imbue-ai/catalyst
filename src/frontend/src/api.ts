@@ -38,7 +38,22 @@ export interface Task {
   workflow_structure: any[];
 }
 
-export async function listTasks(): Promise<Task[]> {
+export interface TheoryArtifact {
+  id: string;
+  agent_type: string;
+  category: string;
+  created_at: string;
+  parent_theory: string | null;
+  extra: Record<string, string>;
+  score?: number | null;
+}
+
+export const getTasks = async (): Promise<Task[]> => {
+  const res = await fetch(`${API_BASE}/tasks`);
+  return res.json();
+}
+
+export const listTasks = async (): Promise<Task[]> => {
   const res = await fetch(`${API_BASE}/tasks`);
   return res.json();
 }
@@ -86,6 +101,12 @@ export async function cancelTask(id: string): Promise<void> {
 
 export async function resumeTask(id: string): Promise<Task> {
   const res = await fetch(`${API_BASE}/tasks/${id}/resume`, { method: "POST" });
+  return res.json();
+}
+
+export async function getTheories(id: string): Promise<TheoryArtifact[]> {
+  const res = await fetch(`${API_BASE}/tasks/${id}/theories`);
+  if (!res.ok) throw new Error("Failed to get theories");
   return res.json();
 }
 
