@@ -1,16 +1,19 @@
 from typing import Any, Callable, List, Dict
 from ..models import Task
-from .base import (
+from .base import Workflow, run_step_if_needed
+from .common import (
     DEFAULT_EVOLVE_ITERATIONS,
     DEFAULT_NUM_EXTRA_SCORES,
     DEFAULT_NUM_PARENTS,
     DEFAULT_STREAMLINE_PROB,
-    Workflow,
-    run_step_if_needed,
     run_evolve_loop,
     run_summarize_title,
 )
-
+from orchestrator.prompts import (
+    get_support_idea_prompt,
+    get_review_theory_prompt,
+    get_score_theories_prompt,
+)
 
 class RefineTheoryIdeaWorkflow(Workflow):
     @property
@@ -81,8 +84,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
             task,
             run_step,
             "support-idea",
-            f"Please run the support-idea skill for the following idea:\n```\n{idea}\n```\n"
-            "When you are done, return ONLY a JSON object with the key 'theory_id'.",
+            get_support_idea_prompt(idea),
         )
         theory_id = support_data.get("theory_id") if support_data else None
         if not theory_id and not (support_data and support_data.get("_canceled")):
@@ -94,8 +96,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 task,
                 run_step,
                 "review-theory",
-                f"Please run the review-theory skill for theory_id: {theory_id}. "
-                "When you are done, return ONLY a JSON object with the key 'review_ids' containing the list of generated review IDs.",
+                get_review_theory_prompt(theory_id),
             )
 
             # Step 3: Score Theories
@@ -103,8 +104,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 task,
                 run_step,
                 "score-theories",
-                f"Please run the score-theories skill for the following theory_id: {theory_id}. "
-                "When you are done, return ONLY a JSON object mapping each theory ID to its assigned scores object (including subscores).",
+                get_score_theories_prompt([theory_id]),
             )
 
             # Step 4: Evolve Loop

@@ -1,6 +1,6 @@
 from ..models import Addon
 from .base import AddonHandler
-
+from orchestrator.prompts import get_review_theory_prompt
 
 class ReviewTheoryAddon(AddonHandler):
     @property
@@ -8,4 +8,4 @@ class ReviewTheoryAddon(AddonHandler):
         return "review-theory"
 
     def get_prompt(self, addon: Addon) -> str:
-        return f"Please run the review-theory skill for the following theory_id: {addon.theory_id}.\nWhen you are done, return ONLY a JSON object with the key 'review_ids' (a list of strings)."
+        return get_review_theory_prompt(addon.theory_id)

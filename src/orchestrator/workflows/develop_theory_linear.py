@@ -7,9 +7,8 @@ from .base import (
     Workflow,
     get_step_output,
     run_step_if_needed,
-    run_refinement_loop,
-    run_summarize_title,
 )
+from .common import run_refinement_loop, run_summarize_title
 from orchestrator.prompts import get_write_theory_prompt
 logger = logging.getLogger(__name__)
 

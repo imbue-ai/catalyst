@@ -1,7 +1,7 @@
 from typing import Dict, Any, Callable
 from ..models import Addon, Task
 from .base import AddonHandler
-from ..workflows.base import run_refinement_loop
+from ..workflows.common import run_refinement_loop
 
 class RefinementLoopAddon(AddonHandler):
     @property

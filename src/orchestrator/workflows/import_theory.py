@@ -1,6 +1,8 @@
 from typing import Any, Callable, List, Dict
 from ..models import Task
-from .base import Workflow, run_step_if_needed, run_summarize_title
+from .base import Workflow, run_step_if_needed
+from .common import run_summarize_title
+from orchestrator.prompts import get_import_theory_prompt
 
 class ImportTheoryWorkflow(Workflow):
     @property
@@ -26,8 +28,7 @@ class ImportTheoryWorkflow(Workflow):
             task,
             run_step,
             "import-theory",
-            f"Please run the import-theory skill for the following file path: {file_path}. "
-            "When you are done, return ONLY a JSON object with the key 'theory_id'.",
+            get_import_theory_prompt(file_path),
         )
         theory_id = import_data.get("theory_id") if import_data else None
         if not theory_id and not (import_data and import_data.get("_canceled")):

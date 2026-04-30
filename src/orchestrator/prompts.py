@@ -40,19 +40,15 @@ def get_refine_theory_prompt(
     theory_id: str,
     apply_extensions: bool = True,
     lit_review_id: Optional[str] = None,
-    request_major_changes: bool = False,
 ) -> str:
     prompt = f"Please run the refine-theory skill for theory_id: {theory_id}. "
     if lit_review_id:
         prompt += f"Use literature_review_id: {lit_review_id}. "
-        
-    if request_major_changes:
-        prompt += "When you are done, return ONLY a JSON object with the keys 'theory_id' and 'major_changes' (boolean) to indicate if any major changes have been made to the theory."
-    else:
-        prompt += "When you are done, return ONLY a JSON object with the key 'theory_id', containing the ID of the new, refined theory."
+
+    prompt += "When you are done, return ONLY a JSON object with the keys 'theory_id' (the ID of the new, refined theory), and 'major_changes' (boolean - whether any major changes have been made to the theory)."
 
     if not apply_extensions:
-        prompt += "\n\nCRITICAL: Do not apply extensions."
+        prompt += "\n\nDo NOT apply extension reviews."
     return prompt
 
 
@@ -61,6 +57,16 @@ def get_streamline_theory_variations_prompt(theory_id: str) -> str:
         f"Please run the streamline-theory-variations skill for theory_id: {theory_id}. "
         "When you are done, return ONLY a JSON object with the key 'theory_ids' containing a list of the generated theory IDs."
     )
+
+
+def get_streamline_theory_prompt(
+    theory_id: str, direction: Optional[str] = None
+) -> str:
+    prompt = f"Please run the streamline-theory skill for theory_id: {theory_id}."
+    if direction:
+        prompt += f"Direction:\n```\n{direction}\n```\n"
+    prompt += "When you are done, return ONLY a JSON object with the key 'theory_id'."
+    return prompt
 
 
 def get_summarize_title_prompt(content_desc: str) -> str:
