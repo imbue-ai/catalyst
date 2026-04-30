@@ -283,7 +283,7 @@ def run_evolve_loop(
             run_step_fn,
             f"{stage_prefix}score-theories-{i}",
             f"Please run the score-theories skill for the following theory_ids: {', '.join(union_ids)}. "
-            "Return a JSON object mapping each theory ID to its assigned score.",
+            "When you are done, return ONLY a JSON object mapping each theory ID to its assigned scores object (including subscores).",
         )
 
 

@@ -55,8 +55,8 @@ We will use the following methods for converting from a rank `r` (1...n) to a sc
   - Count the number of words in that line range using standard Unix tools (e.g. `head -n 500 <CONTEXT_DIR>/theories/<theory_id>/theory.md | tail -n +50 | wc -w`).
 15. **Score Length**: Calculate a length score for each theory using the formula `Length Score = min(1, 1 / (words_in_main_body / 3000)**2)`, where `words_in_main_body` is the number of words in the main body of the theory.
 16. **Overall Theory Score**: Combine the scores for each theory into a final score using the formula: `Overall Score = (0.7 * Prediction Accuracy Score + 0.3 * Soundness Score) * (0.4 + (0.3 * Predictive Power Score + 0.3 * Prediction Coverage Score) * Length Score)`.
-17. **Save Scores**: Save the scores to a database, using this bash command:
+17. **Save Scores**: Save the overall scores and the detailed subscores to a database, using this bash command:
   ```bash
-  uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" rescore_theories '{<THEORY_ID_1>: <OVERALL_SCORE_1>, <THEORY_ID_2>: <OVERALL_SCORE_2>, ...}'
+  uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" rescore_theories '{<THEORY_ID_1>: {"score": <OVERALL_SCORE_1>, "prediction_accuracy": <PREDICTION_ACCURACY_1>, "prediction_coverage": <PREDICTION_COVERAGE_1>, "soundness": <SOUNDNESS_1>, "predictive_power": <PREDICTIVE_POWER_1>, "length": <LENGTH_1>}, <THEORY_ID_2>: {"score": <OVERALL_SCORE_2>, "prediction_accuracy": <PREDICTION_ACCURACY_2>, "prediction_coverage": <PREDICTION_COVERAGE_2>, "soundness": <SOUNDNESS_2>, "predictive_power": <PREDICTIVE_POWER_2>, "length": <LENGTH_2>}, ...}'
   ```
 18. **Final Output**: Report the list of all theory IDs along with their final scores, sorted from highest to lowest score. Also include a breakdown of the prediction accuracy, prediction coverage, soundness, predictive power, and length scores for each theory.

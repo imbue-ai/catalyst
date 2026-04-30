@@ -1084,7 +1084,9 @@ def fetch_literature(target_folder: Path, literature_id: str) -> None:
         _make_writable(dst)
 
 
-def list_entries(entry_type: str, parent_theory: str | None = None, sort_by: str = "created_at") -> list[dict]:
+def list_entries(
+    entry_type: str, parent_theory: str | None = None, sort_by: str = "created_at"
+) -> list[dict]:
     """List stored entries of the given type."""
     if entry_type not in VALID_CATEGORIES:
         raise ValueError(
@@ -1092,7 +1094,9 @@ def list_entries(entry_type: str, parent_theory: str | None = None, sort_by: str
             f"{', '.join(VALID_CATEGORIES)}"
         )
     if sort_by not in ("created_at", "score"):
-        raise ValueError(f"Unknown sort_by {sort_by!r}. Must be 'created_at' or 'score'")
+        raise ValueError(
+            f"Unknown sort_by {sort_by!r}. Must be 'created_at' or 'score'"
+        )
     if sort_by == "score" and entry_type != "theory":
         raise ValueError("Sorting by score is only supported for entry_type 'theory'")
 
@@ -1126,11 +1130,15 @@ def list_entries(entry_type: str, parent_theory: str | None = None, sort_by: str
                 for organism, eval_result in population.organisms:
                     if hasattr(organism, "theory_id"):
                         scores[organism.theory_id] = eval_result.score
-            
+
             for d in results:
                 d["score"] = scores.get(d.get("id"))
-            
-            results.sort(key=lambda d: d.get("score") if d.get("score") is not None else float("-inf"))
+
+            results.sort(
+                key=lambda d: (
+                    d.get("score") if d.get("score") is not None else float("-inf")
+                )
+            )
 
     return results
 
@@ -1165,7 +1173,7 @@ def sample_theories(
         return [o.theory_id for o, _ in samples]
 
 
-def rescore_theories(theory_scores: dict[str, float]) -> None:
+def rescore_theories(theory_scores: dict[str, dict[str, float]]) -> None:
     db_root = get_db_path()
     with DatabaseLock(db_root):
         population_path = _population_path(db_root)
@@ -1177,7 +1185,13 @@ def rescore_theories(theory_scores: dict[str, float]) -> None:
         updated_theories = set()
         for organism, score in population.organisms:
             if organism.theory_id in theory_scores:
-                score.score = theory_scores[organism.theory_id]
+                theory_score = theory_scores[organism.theory_id]
+                if "score" not in theory_score:
+                    raise ValueError(
+                        f"Missing 'score' for theory ID {organism.theory_id!r} in input"
+                    )
+                score.score = theory_score["score"]
+                score.subscores = theory_score
                 updated_theories.add(organism.theory_id)
 
         if set(theory_scores.keys()) - updated_theories:
@@ -1470,7 +1484,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     sp_rescore.add_argument(
         "theory_score_dict",
-        help='Dictionary of theory IDs and their updated scores as a JSON object string (e.g. \'{"theory_id_1": 0.8, "theory_id_2": 0.3}\')',
+        help='Dictionary of theory IDs and their updated scores as a JSON object string (e.g. \'{"theory_id_1": {"score": 0.8, "subscore_1": 0.5, "subscore_2": 0.3}, "theory_id_2": {"score": 0.3, "subscore_1": 0.2, "subscore_2": 0.1} }\'). The score object for each theory must contain at least the `score` field for its overall score.',
     )
 
     # -- export_theory_population --------------------------------------------
@@ -1568,7 +1582,9 @@ def main(argv: list[str] | None = None) -> None:
 
         elif args.command == "list":
             entries = list_entries(
-                args.entry_type, parent_theory=getattr(args, "parent_theory", None), sort_by=args.sort_by
+                args.entry_type,
+                parent_theory=getattr(args, "parent_theory", None),
+                sort_by=args.sort_by,
             )
             if args.json_output:
                 print(json.dumps(entries, indent=2))
@@ -1577,11 +1593,17 @@ def main(argv: list[str] | None = None) -> None:
                     print(f"No {args.entry_type} entries found.")
                 else:
                     if args.sort_by == "score":
-                        print(f"{'ID':<40} {'Score':<20} {'Created At':<28} {'Agent Type':<20}")
+                        print(
+                            f"{'ID':<40} {'Score':<20} {'Created At':<28} {'Agent Type':<20}"
+                        )
                         print("-" * 110)
                         for e in entries:
-                            score_val = e.get('score')
-                            score_str = f"{score_val:.4f}" if isinstance(score_val, float) else "N/A"
+                            score_val = e.get("score")
+                            score_str = (
+                                f"{score_val:.4f}"
+                                if isinstance(score_val, float)
+                                else "N/A"
+                            )
                             print(
                                 f"{e.get('id', '?'):<40} "
                                 f"{score_str:<20} "
