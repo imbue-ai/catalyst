@@ -35,7 +35,7 @@ app.add_middleware(
 class CreateTaskRequest(BaseModel):
     workflow_name: str
     workflow_inputs: Dict[str, Any]
-    env_folder: str
+    template_folder: Optional[str] = None
     framework: str
     model: Optional[str] = None
 
@@ -52,37 +52,44 @@ def get_task_details(task_id: str):
 
 @app.post("/api/tasks", response_model=Task)
 def create_task(req: CreateTaskRequest):
-    # Verify environment folder exists
-    abs_env_folder = os.path.abspath(req.env_folder)
-    if not os.path.exists(abs_env_folder) or not os.path.isdir(abs_env_folder):
-        raise HTTPException(status_code=400, detail=f"Environment folder does not exist: {req.env_folder}")
+    task_id = str(uuid.uuid4())
+
+    # Generate unique target path inside ./research
+    target_path = os.path.abspath(os.path.join(".", "research", f"task_{task_id[:8]}"))
+
+    # Run create_environment.py
+    cmd = ["python", "create_environment.py", target_path]
+    if req.template_folder:
+        abs_template = os.path.abspath(req.template_folder)
+        if not os.path.exists(abs_template) or not os.path.isdir(abs_template):
+            raise HTTPException(status_code=400, detail=f"Template folder does not exist: {req.template_folder}")
+        cmd.extend(["--template", abs_template])
+
+    try:
+        import subprocess
+        subprocess.run(cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create environment: {e}")
 
     # Inject summary into workflow_inputs
     inputs = dict(req.workflow_inputs)
     summary_candidate = inputs.get("phenomenon") or inputs.get("idea") or ""
     inputs["summary"] = summary_candidate
 
-    task_id = str(uuid.uuid4())
-    # Generate unique DB path inside env_folder
-    db_name = f".ai-scientist-db_{task_id[:8]}"
-    db_path = os.path.join(req.env_folder, db_name)
-    
     task = Task(
         id=task_id,
         workflow_inputs=inputs,
-        env_folder=req.env_folder,
+        env_folder=target_path,
         framework=req.framework,
         model=req.model,
-        db_path=db_path,
         status=TaskStatus.PENDING,
         steps=[],
         workflow_name=req.workflow_name
     )
-    
+
     add_task(task)
     start_task(task)
     return task
-
 class CreateAddonRequest(BaseModel):
     type: str
     theory_id: str
@@ -238,14 +245,14 @@ def remove_task(task_id: str):
     cancel_task_process(task_id)
     
     # 2. Delete database folder
-    if os.path.exists(task.db_path):
+    if os.path.exists(task.env_folder):
         try:
-            if os.path.isdir(task.db_path):
-                shutil.rmtree(task.db_path)
+            if os.path.isdir(task.env_folder):
+                shutil.rmtree(task.env_folder)
             else:
-                os.remove(task.db_path)
+                os.remove(task.env_folder)
         except Exception as e:
-            print(f"Error deleting db_path {task.db_path}: {e}")
+            print(f"Error deleting env_folder {task.env_folder}: {e}")
 
     # 3. Remove from state
     delete_task(task_id)
@@ -266,7 +273,7 @@ def get_artifact_primary(task_id: str, artifact_id: str):
     if not md_filename:
         raise HTTPException(status_code=500, detail="No primary markdown configured for category")
         
-    file_path = os.path.join(task.db_path, category, artifact_id, md_filename)
+    file_path = os.path.join(task.env_folder, ".ai-scientist-db", category, artifact_id, md_filename)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Artifact file not found")
         
@@ -289,7 +296,7 @@ def get_artifact_file(task_id: str, artifact_id: str, file_path: str):
     if normalized_path.startswith("..") or os.path.isabs(normalized_path):
         raise HTTPException(status_code=403, detail="Invalid file path")
         
-    full_path = os.path.join(task.db_path, category, artifact_id, normalized_path)
+    full_path = os.path.join(task.env_folder, ".ai-scientist-db", category, artifact_id, normalized_path)
     if not os.path.exists(full_path):
         raise HTTPException(status_code=404, detail="File not found")
         

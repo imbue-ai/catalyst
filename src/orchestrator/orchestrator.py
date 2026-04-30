@@ -143,7 +143,6 @@ def _run_step(task: Task, stage: str, prompt: str) -> Any:
         task_id=task.id,
         prompt=prompt,
         env_folder=task.env_folder,
-        db_path=task.db_path,
         model=task.model,
         on_session_id=on_sid,
         on_status=on_status

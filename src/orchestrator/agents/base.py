@@ -8,7 +8,6 @@ class AgentRunner(ABC):
         task_id: str,
         prompt: str,
         env_folder: str,
-        db_path: str,
         model: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None

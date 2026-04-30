@@ -1,6 +1,7 @@
 {
   "sandbox": {
     "enabled": true,
-    "failIfUnavailable": true
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false
   }
 }

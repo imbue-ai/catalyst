@@ -23,7 +23,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
   const [importFilePath, setImportFilePath] = useState('')
 
   // Shared Inputs
-  const [newEnvFolder, setNewEnvFolder] = useState('')
+  const [templateFolder, setTemplateFolder] = useState('')
   const [newFramework, setNewFramework] = useState('claude')
   const [newModel, setNewModel] = useState('')
   const [maxRefinements, setMaxRefinements] = useState(3)
@@ -70,7 +70,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
       const task = await api.createTask({
         workflow_name: activeTab,
         workflow_inputs,
-        env_folder: newEnvFolder,
+        template_folder: templateFolder || undefined,
         framework: newFramework,
         model: newModel || undefined
       })
@@ -274,14 +274,13 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
           <hr className="border-t-2 border-gray-100" />
 
           <div>
-            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Local Environment Path</label>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Template Folder (Optional)</label>
             <div className="flex items-center gap-2 border-b border-gray-200 focus-within:border-black transition-colors">
               <Folder size={16} className="text-gray-300" />
               <input
-                required
-                value={newEnvFolder}
-                onChange={e => setNewEnvFolder(e.target.value)}
-                placeholder="../sharpening_gym"
+                value={templateFolder}
+                onChange={e => setTemplateFolder(e.target.value)}
+                placeholder="../templates/bifurcation"
                 className="w-full p-3 outline-none text-sm font-bold"
               />
             </div>

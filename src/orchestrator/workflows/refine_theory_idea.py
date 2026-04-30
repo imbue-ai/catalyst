@@ -1,7 +1,6 @@
 from typing import Any, Callable, List, Dict
 from ..models import Task
-from .base import Workflow, run_step_if_needed, run_evolve_loop
-
+from .base import Workflow, run_step_if_needed, run_evolve_loop, run_summarize_title
 
 class RefineTheoryIdeaWorkflow(Workflow):
     @property
@@ -67,16 +66,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
         idea = task.workflow_inputs.get("idea", "")
 
         # Step 0: Summarize Title
-        if not task.title:
-            title_data = run_step_if_needed(
-                task,
-                run_step,
-                "summarize-title",
-                f"Please provide a very short, summarized title (maximum 5 words) for the following research idea: {idea}. "
-                "Return a JSON object with the key 'title'.",
-            )
-            if title_data and isinstance(title_data, dict):
-                task.title = title_data.get("title")
+        run_summarize_title(task, run_step, f"idea: {idea}")
 
         # Step 1: Support Idea
         support_data = run_step_if_needed(
