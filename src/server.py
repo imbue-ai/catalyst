@@ -20,8 +20,11 @@ logger = logging.getLogger(__name__)
 
 class EndpointFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
-        msg = record.getMessage()
-        return not ('"GET ' in msg and ' 200 ' in msg)
+        if record.args and len(record.args) >= 5:
+            method, status = record.args[1], record.args[4]
+            if method == "GET" and status == 200:
+                return False
+        return True
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
