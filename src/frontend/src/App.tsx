@@ -5,6 +5,7 @@ import { StatusBadge } from './components/StatusBadge'
 import { TaskDetail } from './components/TaskDetail'
 import { CreateTaskModal } from './components/CreateTaskModal'
 import { DeleteConfirmModal } from './components/DeleteConfirmModal'
+import { GameOfLife } from './components/GameOfLife'
 
 function App() {
   const [tasks, setTasks] = useState<api.Task[]>([])
@@ -62,6 +63,7 @@ function App() {
   }
 
   const selectedTask = tasks.find(t => t.id === selectedTaskId)
+  const isAnyTaskRunning = tasks.some(t => t.status === 'running')
 
   return (
     <div className="min-h-screen bg-white text-black font-mono selection:bg-black selection:text-white relative">
@@ -72,7 +74,11 @@ function App() {
       {/* Sidebar */}
       <div className="flex h-screen overflow-hidden">
         <aside className="w-80 border-r border-black flex flex-col bg-white">
-          <div className="p-6 border-b border-black flex items-center gap-3">
+          <div 
+            className="p-6 border-b border-black flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
+            onClick={() => { window.location.hash = ''; }}
+            title="Return to Home"
+          >
             <div className="bg-black p-2 rounded-sm text-white">
               <FlaskConical size={20} />
             </div>
@@ -137,6 +143,8 @@ function App() {
               onRefresh={fetchTasks}
               isBackendDown={isBackendDown}
             />
+          ) : isAnyTaskRunning ? (
+            <GameOfLife />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-20 text-center">
               <div className="w-24 h-24 border border-black rounded-full flex items-center justify-center mb-6 animate-pulse">
