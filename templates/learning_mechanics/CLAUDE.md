@@ -1,0 +1,1 @@
+The paradigm your research is in is called "Learning mechanics". At the beginning of any exploration or theory writing task, please review the file `there_will_be_a_scientific_theory_of_deep_learning.pdf` in your workspace to understand the overarching goal behind your research, and to grasp the spirit and style in which it should be presented.
