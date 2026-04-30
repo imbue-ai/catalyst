@@ -150,7 +150,8 @@ def run_evolve_loop(
 
         def run_mutation(tid: str, idx: int):
             try:
-                is_streamline = random.random() < streamline_prob
+                deterministic_rng = random.Random(f"{tid}:{idx}")
+                is_streamline = deterministic_rng.random() < streamline_prob
                 if is_streamline:
                     stage_name = f"{stage_prefix}mutate-streamline-{i}-{idx}"
                     res = run_step_if_needed(
