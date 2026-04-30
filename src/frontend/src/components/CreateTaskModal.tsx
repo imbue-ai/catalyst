@@ -11,6 +11,13 @@ interface CreateTaskModalProps {
 export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTaskModalProps) {
   const [activeTab, setActiveTab] = useState<'develop-theory' | 'develop-theory-linear' | 'refine-theory-idea' | 'refine-theory-idea-linear' | 'import-theory'>('develop-theory')
 
+  // Templates
+  const [templates, setTemplates] = useState<string[]>([])
+
+  React.useEffect(() => {
+    api.getTemplates().then(setTemplates).catch(console.error)
+  }, [])
+
   // Develop Theory Inputs
   const [newPhenomenon, setNewPhenomenon] = useState('')
   const [numRootTheories, setNumRootTheories] = useState(3)
@@ -274,15 +281,21 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
           <hr className="border-t-2 border-gray-100" />
 
           <div>
-            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Template Folder (Optional)</label>
-            <div className="flex items-center gap-2 border-b border-gray-200 focus-within:border-black transition-colors">
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Template (Optional)</label>
+            <div className="flex items-center gap-2 border-b border-gray-200 focus-within:border-black transition-colors relative">
               <Folder size={16} className="text-gray-300" />
               <input
+                list="templates-list"
                 value={templateFolder}
                 onChange={e => setTemplateFolder(e.target.value)}
-                placeholder="../templates/learning_mechanics"
-                className="w-full p-3 outline-none text-sm font-bold"
+                placeholder="Select or enter path (e.g. ../templates/learning_mechanics)"
+                className="w-full p-3 outline-none text-sm font-bold bg-transparent"
               />
+              <datalist id="templates-list">
+                {templates.map(t => (
+                  <option key={t} value={`../templates/${t}`} />
+                ))}
+              </datalist>
             </div>
           </div>
 

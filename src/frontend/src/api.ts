@@ -110,6 +110,12 @@ export async function getTheories(id: string): Promise<TheoryArtifact[]> {
   return res.json();
 }
 
+export async function getTemplates(): Promise<string[]> {
+  const res = await fetch(`${API_BASE}/templates`);
+  if (!res.ok) throw new Error("Failed to get templates");
+  return res.json();
+}
+
 export async function cancelStep(taskId: string, stage: string): Promise<void> {
   const res = await fetch(`${API_BASE}/tasks/${taskId}/steps/${stage}/cancel`, { method: "POST" });
   if (!res.ok) {

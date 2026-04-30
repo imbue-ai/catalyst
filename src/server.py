@@ -84,6 +84,18 @@ def get_task_details(task_id: str):
     return task
 
 
+@app.get("/api/templates")
+def list_templates():
+    templates_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "templates"))
+    if not os.path.exists(templates_dir) or not os.path.isdir(templates_dir):
+        return []
+    
+    templates = []
+    for item in os.listdir(templates_dir):
+        if os.path.isdir(os.path.join(templates_dir, item)):
+            templates.append(item)
+    return sorted(templates)
+
 @app.post("/api/tasks", response_model=Task)
 def create_task(req: CreateTaskRequest):
     task_id = str(uuid.uuid4())
