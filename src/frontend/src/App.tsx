@@ -39,7 +39,7 @@ function App() {
   const fetchTasks = async () => {
     try {
       const data = await api.listTasks()
-      
+
       // Detect changes
       if (prevTasksRef.current.length > 0) {
         data.forEach(task => {
@@ -102,7 +102,7 @@ function App() {
       {/* Sidebar */}
       <div className="flex h-screen overflow-hidden">
         <aside className="w-80 border-r border-black flex flex-col bg-white">
-          <div 
+          <div
             className="p-6 border-b border-black flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
             onClick={() => { window.location.hash = ''; }}
             title="Return to Home"
@@ -117,7 +117,7 @@ function App() {
 
           <div className="p-4 border-b border-black flex items-center justify-between bg-gray-50/50">
             <div className="flex items-center gap-2 text-[10px] font-bold text-gray-500 tracking-widest">
-              <Activity size={12} /> Current research
+              <Activity size={12} /> Current Research
             </div>
             <button
               onClick={() => setShowCreate(true)}
