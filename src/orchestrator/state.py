@@ -132,6 +132,12 @@ def _save_state(state: TasksState, disk_save: bool = True):
     if _last_written_json == json_str:
         return
 
+    if os.path.exists(STATE_FILE):
+        try:
+            os.replace(STATE_FILE, f"{STATE_FILE}.bak")
+        except Exception as e:
+            logger.warning(f"Could not create backup of state file: {e}")
+
     with open(STATE_FILE, "w") as f:
         f.write(json_str)
 

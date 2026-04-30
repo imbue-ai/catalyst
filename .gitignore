@@ -5,10 +5,8 @@ __pycache__/
 .env
 dist/
 build/
-logs/
-/output/
-/organisms/org_*
 /research/*
 /src/research/*
 scheduled_tasks.lock
 tasks_state.json
+tasks_state.json.bak

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { RotateCw } from 'lucide-react'
 import * as api from '../../api'
-import { InnerStepCard, InnerParallelCard, CancelStepsButton, StepIndicator } from './shared'
+import { InnerStepCard, InnerParallelCard, CancelStepsButton, StepIndicator, formatStageName } from './shared'
 
 interface WorkflowLoopProps {
   name: string;
@@ -95,7 +95,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
             <RotateCw size={16} />
-            <h4 className="font-black text-xs tracking-[0.2em]">{name}</h4>
+            <h4 className="font-black text-xs tracking-[0.2em]">{formatStageName(name)}</h4>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex gap-1">
@@ -129,7 +129,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
                      return (
                         <InnerStepCard
                           key={item.stage}
-                          label={item.stage.replace(/-/g, ' ')}
+                          label={formatStageName(item.stage)}
                           step={step}
                           isRunning={isRunning}
                           isSelected={selectedStage === item.stage}
@@ -163,7 +163,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
                 return (
                   <InnerStepCard
                     key={baseStage}
-                    label={baseStage.replace(/-/g, ' ')}
+                    label={formatStageName(baseStage)}
                     step={step}
                     isRunning={isRunning}
                     isSelected={selectedStage === stageName}

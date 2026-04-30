@@ -1,6 +1,6 @@
 import { LayoutGrid } from 'lucide-react'
 import * as api from '../../api'
-import { StepIndicator, InnerStepCard, CancelStepsButton } from './shared'
+import { StepIndicator, InnerStepCard, CancelStepsButton, formatStageName } from './shared'
 
 interface WorkflowParallelProps {
   name: string;
@@ -43,7 +43,7 @@ export function WorkflowParallel({ name, stages, task, onSelect, selectedStage, 
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
             <LayoutGrid size={16} />
-            <h4 className="font-black text-xs tracking-[0.2em]">{name || "Parallel Tasks"}</h4>
+            <h4 className="font-black text-xs tracking-[0.2em]">{formatStageName(name || "Parallel Tasks")}</h4>
           </div>
           {task.status !== 'completed' && overallStatus !== 'completed' && overallStatus !== 'canceled' && (
             <CancelStepsButton 
@@ -63,7 +63,7 @@ export function WorkflowParallel({ name, stages, task, onSelect, selectedStage, 
             return (
               <InnerStepCard
                 key={stage}
-                label={stage.replace(/-/g, ' ')}
+                label={formatStageName(stage)}
                 step={step}
                 isRunning={isRunning}
                 isSelected={selectedStage === stage}

@@ -1,6 +1,6 @@
 import { Terminal, RefreshCw } from 'lucide-react'
 import * as api from '../../api'
-import { StepIndicator } from './shared'
+import { StepIndicator, formatStageName } from './shared'
 
 interface WorkflowStepProps {
   stage: string;
@@ -34,7 +34,7 @@ export function WorkflowStep({ stage, task, onSelect, isSelected, onRetry, isPla
           : (isPlaceholder ? 'border-dashed border-gray-200 opacity-40' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50')
       }`}>
         <div className="flex justify-between items-center mb-1">
-          <span className={`font-black text-xs tracking-tight ${isRunning ? 'text-blue-600' : ''}`}>{stage}</span>
+          <span className={`font-black text-xs tracking-tight ${isRunning ? 'text-blue-600' : ''}`}>{formatStageName(stage)}</span>
           <div className="flex items-center gap-2">
             {step?.status === 'failed' && (
               <button

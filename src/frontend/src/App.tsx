@@ -106,7 +106,7 @@ function App() {
                 No active research threads.
               </div>
             )}
-            {tasks.map(task => (
+            {[...tasks].sort((a, b) => (a.created_at || '').localeCompare(b.created_at || '')).map(task => (
               <a
                 key={task.id}
                 href={`#/task/${task.id}`}

@@ -6,6 +6,7 @@ import { DataSection } from './DataSection'
 import { WorkflowStep } from './workflow/WorkflowStep'
 import { WorkflowLoop } from './workflow/WorkflowLoop'
 import { WorkflowParallel } from './workflow/WorkflowParallel'
+import { formatStageName } from './workflow/shared'
 import { ArtifactViewerModal } from './ArtifactViewerModal'
 import { CreateAddonModal } from './CreateAddonModal'
 import { TheoriesList } from './TheoriesList'
@@ -240,9 +241,8 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                 <div className="p-6 border-b border-black bg-white flex justify-between items-center">
                   <div className="flex items-center gap-3">
                     <div className="bg-black text-white p-1 rounded-sm"><Layers size={16} /></div>
-                    <span className="font-black text-xs tracking-widest">{selectedStage}</span>
+                    <span className="font-black text-xs tracking-widest">{formatStageName(selectedStage)}</span>
                   </div>
-
                   {['failed', 'paused', 'pending'].includes(task.steps.find(s => s.stage === selectedStage)?.status || 'pending') && (
                     <button
                       disabled={isProcessing}
