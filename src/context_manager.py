@@ -21,7 +21,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, computed_field
 
 from darwinian_evolver.population import Population, WeightedSamplingPopulation
 from darwinian_evolver.problem import (
@@ -192,6 +192,12 @@ class TheoryOrganism(Organism):
         description="Theory ID (e.g. 'T_20260414_143100_d4e5f6') stored in the context_manager DB."
     )
 
+    @computed_field
+    @property
+    def visualizer_props(self) -> dict[str, str | float]:
+        """Additional properties that should be included in the organism info and tooltip."""
+        return {"theory_id": self.theory_id}
+
 
 class TheoryEvaluationResult(EvaluationResult):
     """Mutable evaluation result for a theory.
@@ -210,6 +216,12 @@ class TheoryEvaluationResult(EvaluationResult):
         default_factory=dict,
         description="Named subscore components.",
     )
+
+    @computed_field
+    @property
+    def visualizer_props(self) -> dict[str, str | float]:
+        """Additional properties that should be included in the organism evaluation info and tooltip."""
+        return self.subscores
 
 
 # ---------------------------------------------------------------------------
