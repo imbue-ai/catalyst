@@ -3,6 +3,12 @@ import logging
 from typing import Any, Callable, List, Dict
 from ..models import Task
 
+from orchestrator.prompts import (
+    get_write_n_theories_prompt,
+    get_review_theory_prompt,
+    get_score_theories_prompt,
+)
+
 logger = logging.getLogger(__name__)
 from .base import (
     DEFAULT_EVOLVE_ITERATIONS,
@@ -164,9 +170,12 @@ class DevelopTheoryWorkflow(Workflow):
             task,
             run_step,
             "write-n-theories",
-            f"Please run the write-n-theories skill to generate {num_theories} theories for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
-            f"Use exploration_id: {exploration_id} and literature_review_id: {lit_review_id}. "
-            "When you are done, return ONLY a JSON object with the key 'theory_ids' containing a list of the generated theory IDs.",
+            get_write_n_theories_prompt(
+                num_theories,
+                task.workflow_inputs.get("phenomenon"),
+                exploration_id,
+                lit_review_id,
+            ),
         )
 
         theory_ids = theories_data.get("theory_ids") if theories_data else None
@@ -188,8 +197,7 @@ class DevelopTheoryWorkflow(Workflow):
                         task,
                         run_step,
                         review_stage,
-                        f"Please run the review-theory skill for theory_id: {tid}. "
-                        "When you are done, return ONLY a JSON object with the key 'review_ids' containing the list of generated review IDs.",
+                        get_review_theory_prompt(tid),
                     )
                     review_results[tid] = res
                 except Exception as e:
@@ -214,8 +222,7 @@ class DevelopTheoryWorkflow(Workflow):
                 task,
                 run_step,
                 "score-theories",
-                f"Please run the score-theories skill for the following theory_ids: {', '.join(theory_ids)}. "
-                "When you are done, return ONLY a JSON object mapping each theory ID to its assigned scores object (including subscores).",
+                get_score_theories_prompt(theory_ids),
             )
 
             # Step 6: Evolve Loop

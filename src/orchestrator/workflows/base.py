@@ -6,6 +6,13 @@ import random
 import threading
 import logging
 from ..models import Task, StepStatus
+from orchestrator.prompts import (
+    get_summarize_title_prompt,
+    get_review_theory_prompt,
+    get_refine_theory_prompt,
+    get_streamline_theory_variations_prompt,
+    get_score_theories_prompt,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -64,8 +71,7 @@ def run_summarize_title(task: Task, run_step_fn: Callable, content_desc: str) ->
             task,
             run_step_fn,
             "summarize-title",
-            f"Please provide a very short, summarized title (maximum 5 words) for the following research:\n```\n{content_desc}\n```\n"
-            "Return ONLY a JSON object with the key 'title'.",
+            get_summarize_title_prompt(content_desc),
         )
         if title_data and isinstance(title_data, dict):
             task.title = title_data.get("title")
@@ -87,8 +93,7 @@ def run_refinement_loop(
             task,
             run_step_fn,
             f"{stage_prefix}review-theory-{i}",
-            f"Please run the review-theory skill for the following theory_id: {theory_id}. "
-            "When you are done, return ONLY a JSON object with the key 'review_ids' (a list of strings).",
+            get_review_theory_prompt(theory_id),
         )
 
         if not review_data:
@@ -103,16 +108,11 @@ def run_refinement_loop(
             break
 
         # Refine
-        prompt = f"Please run the refine-theory skill for the following theory_id: {theory_id}. "
-        if lit_review_id:
-            prompt += f"Use literature_review_id: {lit_review_id}. "
-        prompt += "When you are done, return ONLY a JSON object with the keys 'theory_id' and 'major_changes' (boolean) to indicate if any major changes have been made to the theory."
-
-        if not apply_extensions:
-            prompt += "\n\nCRITICAL: Do not apply extensions."
-
         refine_data = run_step_if_needed(
-            task, run_step_fn, f"{stage_prefix}refine-theory-{i}", prompt
+            task, 
+            run_step_fn, 
+            f"{stage_prefix}refine-theory-{i}", 
+            get_refine_theory_prompt(theory_id, apply_extensions, lit_review_id, request_major_changes=True)
         )
 
         if not refine_data:

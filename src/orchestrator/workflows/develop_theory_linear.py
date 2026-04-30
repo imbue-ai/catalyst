@@ -1,6 +1,7 @@
 import threading
 import logging
 from typing import Any, Callable, List, Dict
+import logging
 from ..models import Task
 from .base import (
     Workflow,
@@ -9,7 +10,7 @@ from .base import (
     run_refinement_loop,
     run_summarize_title,
 )
-
+from orchestrator.prompts import get_write_theory_prompt
 logger = logging.getLogger(__name__)
 
 
@@ -137,9 +138,11 @@ class DevelopTheoryLinearWorkflow(Workflow):
             task,
             run_step,
             "write-theory",
-            f"Please run the write-theory skill for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
-            f"Use exploration_id: {exploration_id} and literature_review_id: {lit_review_id}. "
-            "When you are done, return ONLY a JSON object with the key 'theory_id'.",
+            get_write_theory_prompt(
+                task.workflow_inputs.get("phenomenon"),
+                exploration_id,
+                lit_review_id,
+            ),
         )
         theory_id = theory_data.get("theory_id") if theory_data else None
         if not theory_id and not (theory_data and theory_data.get("_canceled")):

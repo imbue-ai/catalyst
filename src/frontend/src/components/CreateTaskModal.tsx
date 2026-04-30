@@ -288,7 +288,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                 list="templates-list"
                 value={templateFolder}
                 onChange={e => setTemplateFolder(e.target.value)}
-                placeholder="Select or enter path (e.g. ../templates/learning_mechanics)"
+                placeholder="Select or enter path"
                 className="w-full p-3 outline-none text-sm font-bold bg-transparent"
               />
               <datalist id="templates-list">
