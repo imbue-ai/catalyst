@@ -41,11 +41,12 @@ export function InnerStepCard({ label, step, isRunning, isSelected, taskStatus, 
       <div className="flex justify-between items-center">
         <span className={`text-[10px] font-black ${isRunning ? 'text-blue-600' : ''}`}>{label}</span>
         <div className="flex items-center gap-2">
-          {step?.status === 'failed' && taskStatus !== 'running' && (
-            <button 
-              onClick={onRetry}
-              className="p-1 hover:bg-red-200 rounded-sm text-red-600 transition-colors"
-              title="Retry this step"
+          {step?.status === 'failed' && (
+            <button
+              onClick={(e) => { e.stopPropagation(); onRetry(e); }}
+              disabled={isRunning || taskStatus === 'running'}
+              className={`p-1 rounded-sm transition-colors ${(isRunning || taskStatus === 'running') ? 'text-gray-300 cursor-not-allowed' : 'hover:bg-red-200 text-red-600'}`}
+              title={(isRunning || taskStatus === 'running') ? 'Waiting for parallel steps to finish...' : 'Retry this step'}
             >
               <RefreshCw size={10} strokeWidth={3} />
             </button>
