@@ -118,6 +118,12 @@ function App() {
               </a>
             ))}
           </div>
+
+          <div className="p-4 border-t border-black bg-white flex justify-between items-center text-[9px] font-bold text-gray-400 tracking-[0.2em] mt-auto">
+            <span className={isBackendDown ? "text-red-500 animate-pulse" : "text-black"}>
+              {isBackendDown ? "● Disconnected" : "● Connected"}
+            </span>
+          </div>
         </aside>
 
         {/* Main Content */}

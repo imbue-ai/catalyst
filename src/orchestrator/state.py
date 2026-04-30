@@ -178,10 +178,11 @@ def initialize_state():
 
             if task.status == TaskStatus.RUNNING or task.status == TaskStatus.PENDING:
                 task.status = TaskStatus.PAUSED
-                for step in task.steps:
-                    if step.status == StepStatus.RUNNING:
-                        step.status = StepStatus.PAUSED
                 modified = True
+            for step in task.steps:
+                if step.status == StepStatus.RUNNING:
+                    step.status = StepStatus.PAUSED
+                    modified = True
         if modified:
             _save_state(state)
 
@@ -207,10 +208,11 @@ def shutdown_all():
         for task in state.tasks:
             if task.status == TaskStatus.RUNNING or task.status == TaskStatus.PENDING:
                 task.status = TaskStatus.PAUSED
-                for step in task.steps:
-                    if step.status == StepStatus.RUNNING:
-                        step.status = StepStatus.PAUSED
                 modified = True
+            for step in task.steps:
+                if step.status == StepStatus.RUNNING:
+                    step.status = StepStatus.PAUSED
+                    modified = True
         if modified:
             _save_state(state)
     
