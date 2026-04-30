@@ -4,8 +4,11 @@ import threading
 import subprocess
 import signal
 import time
+import logging
 from typing import List, Optional, Dict
 from .models import Task, TasksState, TaskStatus, StepStatus
+
+logger = logging.getLogger(__name__)
 
 STATE_FILE = "tasks_state.json"
 _lock = threading.Lock()
@@ -46,13 +49,13 @@ def cancel_task_process(task_id: str, timeout: int = 15):
     if not processes_to_cancel:
         return
 
-    print(f"[PROCESS] Pausing {len(processes_to_cancel)} processes for task {task_id[:8]}")
+    logger.info(f"[PROCESS] Pausing {len(processes_to_cancel)} processes for task {task_id[:8]}")
 
     for proc in processes_to_cancel:
         try:
             os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
         except Exception as e:
-            print(f"[PROCESS] Failed to SIGTERM group for pid {proc.pid}: {e}")
+            logger.error(f"[PROCESS] Failed to SIGTERM group for pid {proc.pid}: {e}")
     
     deadline = time.time() + timeout
     for proc in processes_to_cancel:
@@ -60,12 +63,12 @@ def cancel_task_process(task_id: str, timeout: int = 15):
         try:
             proc.wait(timeout=remaining)
         except subprocess.TimeoutExpired:
-            print(f"[PROCESS] PID {proc.pid} didn't exit after {timeout}s, sending SIGKILL to group")
+            logger.warning(f"[PROCESS] PID {proc.pid} didn't exit after {timeout}s, sending SIGKILL to group")
             try:
                 os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
                 proc.wait(timeout=5)
             except Exception as e:
-                print(f"[PROCESS] Failed to SIGKILL group for pid {proc.pid}: {e}")
+                logger.error(f"[PROCESS] Failed to SIGKILL group for pid {proc.pid}: {e}")
         except Exception:
             pass
             
@@ -212,7 +215,7 @@ def shutdown_all():
             _save_state(state)
     
     if task_ids:
-        print(f"[SHUTDOWN] Terminating agent processes for {len(task_ids)} tasks...")
+        logger.info(f"[SHUTDOWN] Terminating agent processes for {len(task_ids)} tasks...")
         # Use a shorter timeout during shutdown to avoid hanging the server exit
         for tid in task_ids:
             cancel_task_process(tid, timeout=5)

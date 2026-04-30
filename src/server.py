@@ -1,6 +1,7 @@
 import uuid
 import os
 import shutil
+import logging
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -13,13 +14,25 @@ from orchestrator.state import get_tasks, get_task, add_task, update_task, cance
 from orchestrator.orchestrator import start_task
 from context_manager import PREFIX_TO_CATEGORY, CATEGORY_MD_MAP
 
+# Setup logging
+logging.basicConfig(level=logging.INFO, format="%(levelname)-9s %(message)s")
+logger = logging.getLogger(__name__)
+
+class EndpointFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        msg = record.getMessage()
+        return not ('"GET ' in msg and ' 200 ' in msg)
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # Apply filter to uvicorn access logger
+    logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
+    
     # Initialize state on startup (move RUNNING to PAUSED)
     initialize_state()
     yield
     # Clean up processes on shutdown
-    print("[SERVER] Shutting down, cleaning up processes...")
+    logger.info("[SERVER] Shutting down, cleaning up processes...")
     shutdown_all()
 
 app = FastAPI(title="AI Scientist Orchestrator", lifespan=lifespan)
@@ -252,7 +265,7 @@ def remove_task(task_id: str):
             else:
                 os.remove(task.env_folder)
         except Exception as e:
-            print(f"Error deleting env_folder {task.env_folder}: {e}")
+            logger.error(f"Error deleting env_folder {task.env_folder}: {e}")
 
     # 3. Remove from state
     delete_task(task_id)

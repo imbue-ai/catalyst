@@ -1,7 +1,10 @@
 import os
 import shlex
+import logging
 from typing import Dict, Any, Optional, Tuple, Callable
 from .cli_base import BaseCliAgentRunner
+
+logger = logging.getLogger(__name__)
 
 
 class GeminiAgentRunner(BaseCliAgentRunner):
@@ -12,7 +15,7 @@ class GeminiAgentRunner(BaseCliAgentRunner):
         env_folder: str,
         model: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
-        on_status: Optional[Callable[[str], None]] = None
+        on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
         env = os.environ.copy()
         abs_env_folder = os.path.abspath(env_folder)
@@ -30,8 +33,8 @@ class GeminiAgentRunner(BaseCliAgentRunner):
             cmd.extend(["--model", model])
         cmd.extend(["-p", prompt])
 
-        print(f"[AGENT] Starting Gemini for task {task_id[:8]}")
-        print(f"[AGENT] Executing: {shlex.join(cmd)}")
+        logger.debug(f"[AGENT] Starting Gemini for task {task_id[:8]}")
+        logger.debug(f"[AGENT] Executing: {shlex.join(cmd)}")
 
         assistant_content = []
 
@@ -60,7 +63,7 @@ class GeminiAgentRunner(BaseCliAgentRunner):
                 on_status,
             )
 
-            print(
+            logger.debug(
                 f"[AGENT] [{task_id[:8]}] Gemini finished with exit code {returncode}"
             )
 

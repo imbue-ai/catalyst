@@ -4,7 +4,10 @@ import os
 import subprocess
 import random
 import threading
+import logging
 from ..models import Task, StepStatus
+
+logger = logging.getLogger(__name__)
 
 DEFAULT_EVOLVE_ITERATIONS = 3
 DEFAULT_NUM_PARENTS = 3
@@ -45,12 +48,12 @@ def run_step_if_needed(
         # Check if already canceled to avoid logging "Running"
         for s in task.steps:
             if s.stage == stage and s.status == StepStatus.CANCELED:
-                print(
+                logger.debug(
                     f"[ORCHESTRATOR] [{task.id[:8]}] Skipping canceled step {stage}..."
                 )
                 return {"_canceled": True}
 
-        print(f"[ORCHESTRATOR] [{task.id[:8]}] Running {stage}...")
+        logger.debug(f"[ORCHESTRATOR] [{task.id[:8]}] Running {stage}...")
         out = run_step_fn(task, stage, prompt)
     return out
 
@@ -139,7 +142,9 @@ def run_evolve_loop(
     stage_prefix: str = "",
 ) -> None:
     for i in range(1, iterations + 1):
-        print(f"[ORCHESTRATOR] [{task.id[:8]}] Evolve Loop Iteration {i}/{iterations}")
+        logger.debug(
+            f"[ORCHESTRATOR] [{task.id[:8]}] Evolve Loop Iteration {i}/{iterations}"
+        )
 
         # 1. Sample Parents
         sample_out = run_context_manager(
@@ -155,13 +160,13 @@ def run_evolve_loop(
         parent_ids = [tid.strip() for tid in sample_out.split(",") if tid.strip()]
 
         if not parent_ids:
-            print(
+            logger.debug(
                 f"[ORCHESTRATOR] [{task.id[:8]}] No parent theories available to sample. Skipping iteration."
             )
             continue
 
         # 2. Mutate (Nested Parallel)
-        print(
+        logger.debug(
             f"[ORCHESTRATOR] [{task.id[:8]}] Mutating {len(parent_ids)} parents in parallel..."
         )
         new_theory_ids: Set[str] = set()
@@ -216,13 +221,13 @@ def run_evolve_loop(
         new_theory_ids_list = list(new_theory_ids)
 
         if not new_theory_ids_list:
-            print(
+            logger.debug(
                 f"[ORCHESTRATOR] [{task.id[:8]}] No new theories were generated. Skipping review and score."
             )
             continue
 
         # 3. Review (Nested Parallel)
-        print(
+        logger.debug(
             f"[ORCHESTRATOR] [{task.id[:8]}] Reviewing {len(new_theory_ids_list)} new theories in parallel..."
         )
         review_errors = []
@@ -270,7 +275,9 @@ def run_evolve_loop(
 
         # 5. Score Union
         union_ids = list(set(new_theory_ids_list + scoring_sample_ids))
-        print(f"[ORCHESTRATOR] [{task.id[:8]}] Scoring {len(union_ids)} theories...")
+        logger.debug(
+            f"[ORCHESTRATOR] [{task.id[:8]}] Scoring {len(union_ids)} theories..."
+        )
         run_step_if_needed(
             task,
             run_step_fn,
@@ -299,5 +306,5 @@ class Workflow(ABC):
     def init_db(self, task: Task) -> None:
         db_path = os.path.join(task.env_folder, ".ai-scientist-db")
         if not os.path.exists(db_path):
-            print(f"[ORCHESTRATOR] [{task.id[:8]}] Initializing DB folder...")
+            logger.debug(f"[ORCHESTRATOR] [{task.id[:8]}] Initializing DB folder...")
             run_context_manager(task, ["init"])
