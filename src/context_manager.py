@@ -27,7 +27,7 @@ from darwinian_evolver.population import Population, WeightedSamplingPopulation
 from darwinian_evolver.problem import (
     EvaluationResult,
     Organism,
-    EvaluationFailureCase,  # noqa: F401
+    EvaluationFailureCase,
 )
 
 
@@ -224,6 +224,14 @@ class TheoryEvaluationResult(EvaluationResult):
         return self.subscores
 
 
+class TheoryEvaluationFailureCase(EvaluationFailureCase):
+    """Represents a review that has been performed on a theory."""
+
+    review_id: str = Field(
+        description="Review ID (e.g. 'R_20260414_150000_a1b2c3') stored in the context_manager DB."
+    )
+
+
 # ---------------------------------------------------------------------------
 # Core operations
 # ---------------------------------------------------------------------------
@@ -348,6 +356,34 @@ def _record_theory_in_population(
     _save_population(population, path)
 
 
+def _record_review_in_population(
+    db_root: Path, theory_id: str | None, review_id: str
+) -> None:
+    """Add a newly-stored review to population.json by attaching it to its parent theory."""
+    if theory_id is None:
+        raise RuntimeError(
+            f"Attempting to record review {review_id!r} without a parent theory; "
+            f"refusing to add it to the population."
+        )
+    path = _population_path(db_root)
+    population = _load_population(path)
+    if population is None:
+        raise RuntimeError(
+            f"Attempting to record review {review_id!r} for theory {theory_id!r} but no population exists yet."
+        )
+    found = _find_organism_by_theory_id(population, theory_id)
+    if found is None:
+        raise RuntimeError(
+            f"Parent theory {theory_id!r} for review {review_id!r} is not in the population; refusing to add the review."
+        )
+    org, result = found
+    assert isinstance(result, TheoryEvaluationResult)
+    result.trainable_failure_cases.append(
+        TheoryEvaluationFailureCase(review_id=review_id)
+    )
+    _save_population(population, path)
+
+
 def store_results(
     from_agent_type: str,
     from_folder: Path,
@@ -445,6 +481,12 @@ def store_results(
                 db_root=db_root,
                 theory_id=new_id,
                 parent_theory_id=parent_theory,
+            )
+        elif category == "review":
+            _record_review_in_population(
+                db_root=db_root,
+                theory_id=parent_theory,
+                review_id=new_id,
             )
 
     return new_id
@@ -1170,15 +1212,11 @@ def sample_theories(
                     len(population.organisms),
                     num_theories,
                 ),
-                exclude_untrainable=False,
                 replace=False,
                 novelty_weight=0.0,
             )
         elif purpose == "mutation":
-            samples = population.sample_parents(
-                k=num_theories,
-                exclude_untrainable=False,
-            )
+            samples = population.sample_parents(k=num_theories)
         else:
             raise ValueError(f"Unknown sampling purpose {purpose!r}")
 
