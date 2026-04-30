@@ -10,11 +10,11 @@ interface CreateTaskModalProps {
 
 export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTaskModalProps) {
   const [activeTab, setActiveTab] = useState<'develop-theory' | 'develop-theory-linear' | 'refine-theory-idea' | 'refine-theory-idea-linear' | 'import-theory'>('develop-theory')
-  
+
   // Develop Theory Inputs
   const [newPhenomenon, setNewPhenomenon] = useState('')
   const [numRootTheories, setNumRootTheories] = useState(3)
-  
+
   // Refine Theory Idea Inputs
   const [newIdea, setNewIdea] = useState('')
   const [applyExtensions, setApplyExtensions] = useState(false)
@@ -27,7 +27,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
   const [newFramework, setNewFramework] = useState('claude')
   const [newModel, setNewModel] = useState('')
   const [maxRefinements, setMaxRefinements] = useState(3)
-  
+
   // Evolve Parameters
   const [evolveIterations, setEvolveIterations] = useState(3)
   const [numParents, setNumParents] = useState(3)
@@ -36,12 +36,12 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     let workflow_inputs: any = {}
     if (activeTab === 'develop-theory') {
-      workflow_inputs = { 
-        phenomenon: newPhenomenon, 
-        num_root_theories: numRootTheories, 
+      workflow_inputs = {
+        phenomenon: newPhenomenon,
+        num_root_theories: numRootTheories,
         max_refinements: maxRefinements,
         evolve_iterations: evolveIterations,
         num_parents: numParents,
@@ -51,9 +51,9 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     } else if (activeTab === 'develop-theory-linear') {
       workflow_inputs = { phenomenon: newPhenomenon, max_refinements: maxRefinements }
     } else if (activeTab === 'refine-theory-idea') {
-      workflow_inputs = { 
-        idea: newIdea, 
-        apply_extensions: applyExtensions, 
+      workflow_inputs = {
+        idea: newIdea,
+        apply_extensions: applyExtensions,
         max_refinements: maxRefinements,
         evolve_iterations: evolveIterations,
         num_parents: numParents,
@@ -127,13 +127,13 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
             Import
           </button>
         </div>
-        
+
         <form onSubmit={handleCreate} className="flex flex-col gap-6 overflow-y-auto custom-scrollbar pr-2">
           {activeTab === 'develop-theory' || activeTab === 'develop-theory-linear' ? (
             <>
               <div>
                 <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Phenomenon to Explain</label>
-                <textarea 
+                <textarea
                   autoFocus
                   required
                   rows={8}
@@ -147,7 +147,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                 {activeTab === 'develop-theory' && (
                   <div>
                     <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Number of Root Theories</label>
-                    <input 
+                    <input
                       type="number"
                       min="1"
                       max="20"
@@ -157,19 +157,20 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
                     />
                   </div>
-                )}
-                <div>
-                  <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Refinement Iterations</label>
-                  <input 
-                    type="number"
-                    min="0"
-                    max="10"
-                    required
-                    value={maxRefinements}
-                    onChange={e => setMaxRefinements(parseInt(e.target.value, 10))}
-                    className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
-                  />
-                </div>
+                ) || (
+                    <div>
+                      <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Refinement Iterations</label>
+                      <input
+                        type="number"
+                        min="0"
+                        max="10"
+                        required
+                        value={maxRefinements}
+                        onChange={e => setMaxRefinements(parseInt(e.target.value, 10))}
+                        className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                      />
+                    </div>
+                  )}
               </div>
 
               {activeTab === 'develop-theory' && (
@@ -184,7 +185,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                   </div>
                   <div>
                     <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamline Prob (0-1)</label>
-                    <input type="number" step="0.1" min="0" max="1" required value={streamlineProb} onChange={e => setStreamlineProb(parseFloat(e.target.value))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
+                    <input type="number" min="0" max="1" step="any" required value={streamlineProb} onChange={e => setStreamlineProb(parseFloat(e.target.value))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
                   </div>
                   <div>
                     <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Scores</label>
@@ -197,7 +198,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
             <>
               <div>
                 <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Idea / File Path</label>
-                <textarea 
+                <textarea
                   autoFocus
                   required
                   rows={8}
@@ -210,7 +211,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
               {activeTab === 'refine-theory-idea-linear' && (
                 <div>
                   <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Refinement Iterations</label>
-                  <input 
+                  <input
                     type="number"
                     min="0"
                     max="10"
@@ -234,7 +235,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                   </div>
                   <div>
                     <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamline Prob (0-1)</label>
-                    <input type="number" step="0.1" min="0" max="1" required value={streamlineProb} onChange={e => setStreamlineProb(parseFloat(e.target.value))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
+                    <input type="number" min="0" max="1" step="any" required value={streamlineProb} onChange={e => setStreamlineProb(parseFloat(e.target.value))} className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold" />
                   </div>
                   <div>
                     <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Scores</label>
@@ -242,10 +243,10 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                   </div>
                 </div>
               )}
-              
+
               <label className="flex items-center gap-3 cursor-pointer group mt-4">
                 <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
-                  <input 
+                  <input
                     type="checkbox"
                     className="absolute opacity-0 w-full h-full cursor-pointer"
                     checked={applyExtensions}
@@ -259,7 +260,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
           ) : (
             <div>
               <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">File Path to Import</label>
-              <input 
+              <input
                 autoFocus
                 required
                 value={importFilePath}
@@ -276,7 +277,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Local Environment Path</label>
             <div className="flex items-center gap-2 border-b border-gray-200 focus-within:border-black transition-colors">
               <Folder size={16} className="text-gray-300" />
-              <input 
+              <input
                 required
                 value={newEnvFolder}
                 onChange={e => setNewEnvFolder(e.target.value)}
@@ -289,7 +290,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
           <div className="grid grid-cols-2 gap-8">
             <div>
               <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Agent Framework</label>
-              <select 
+              <select
                 value={newFramework}
                 onChange={e => setNewFramework(e.target.value)}
                 className="w-full border border-black p-3 outline-none font-bold text-sm bg-white appearance-none cursor-pointer"
@@ -302,7 +303,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
               <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Model Identifier</label>
               <div className="flex items-center gap-2 border-b border-gray-200 focus-within:border-black transition-colors">
                 <Cpu size={16} className="text-gray-300" />
-                <input 
+                <input
                   value={newModel}
                   onChange={e => setNewModel(e.target.value)}
                   placeholder="Default"
@@ -313,7 +314,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
           </div>
 
           <div className="flex gap-4 mt-8 pt-4 border-t border-gray-100">
-            <button 
+            <button
               type="submit"
               disabled={isBackendDown}
               className="flex-1 bg-black text-white p-4 font-black text-sm tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"

@@ -59,7 +59,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
             <span>Warning: Adding a step to an incomplete workflow will cancel any remaining steps in the current workflow sequence.</span>
           </div>
         )}
-        
+
         {availableTheoryIds.length === 0 && !isTheoryIdDisabled ? (
           <div className="text-sm font-bold text-red-600 mb-6">
             No theories have been generated yet in this task. Please wait for a step to output a theory_id.
@@ -68,7 +68,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
           <form onSubmit={handleCreate} className="flex flex-col gap-6">
             <div>
               <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Target Theory ID</label>
-              <select 
+              <select
                 required={!isTheoryIdDisabled}
                 disabled={isTheoryIdDisabled}
                 value={isTheoryIdDisabled ? '' : theoryId}
@@ -84,7 +84,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
 
             <div>
               <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Add-on Skill</label>
-              <select 
+              <select
                 value={addonType}
                 onChange={e => setAddonType(e.target.value)}
                 className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
@@ -100,7 +100,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
             {addonType === 'streamline-theory' && (
               <div>
                 <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamlining Direction (Optional)</label>
-                <input 
+                <input
                   type="text"
                   value={direction}
                   onChange={e => setDirection(e.target.value)}
@@ -114,7 +114,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
               <>
                 <div>
                   <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Refinement Iterations</label>
-                  <input 
+                  <input
                     type="number"
                     min="1"
                     max="10"
@@ -126,7 +126,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                 </div>
                 <label className="flex items-center gap-3 cursor-pointer group">
                   <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
-                    <input 
+                    <input
                       type="checkbox"
                       className="absolute opacity-0 w-full h-full cursor-pointer"
                       checked={applyExtensions}
@@ -144,7 +144,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Iterations</label>
-                    <input 
+                    <input
                       type="number" min="1" max="10" required
                       value={evolveIterations} onChange={e => setEvolveIterations(parseInt(e.target.value, 10))}
                       className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
@@ -152,7 +152,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                   </div>
                   <div>
                     <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Num Parents</label>
-                    <input 
+                    <input
                       type="number" min="1" max="10" required
                       value={numParents} onChange={e => setNumParents(parseInt(e.target.value, 10))}
                       className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
@@ -160,15 +160,15 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                   </div>
                   <div>
                     <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamline Prob (0-1)</label>
-                    <input 
-                      type="number" step="0.1" min="0" max="1" required
+                    <input
+                      type="number" min="0" max="1" step="any" required
                       value={streamlineProb} onChange={e => setStreamlineProb(parseFloat(e.target.value))}
                       className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
                     />
                   </div>
                   <div>
                     <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Scores</label>
-                    <input 
+                    <input
                       type="number" min="0" max="10" required
                       value={numExtraScores} onChange={e => setNumExtraScores(parseInt(e.target.value, 10))}
                       className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
@@ -177,7 +177,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                 </div>
               </>
             )}
-            
+
             <div className="flex gap-4 mt-8 pt-4 border-t border-gray-100">
               <button
                 type="submit"
