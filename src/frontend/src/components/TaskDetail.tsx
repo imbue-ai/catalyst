@@ -212,21 +212,21 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
 
         {/* Right Panel Tabs & Content */}
         <div className="w-1/2 flex flex-col h-full border-l border-black bg-gray-50/50">
-          <div className="flex border-b border-black">
+          <div className="flex border-b-2 border-black bg-white">
             <button
               onClick={() => setActiveRightTab('stepDetails')}
-              className={`flex-1 py-3 text-[10px] font-black tracking-widest transition-colors ${activeRightTab === 'stepDetails'
-                  ? 'bg-white text-black'
-                  : 'bg-gray-100 text-gray-400 hover:bg-gray-50 hover:text-black border-b border-black'
+              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors ${activeRightTab === 'stepDetails'
+                  ? 'bg-black text-white'
+                  : 'text-black hover:bg-gray-100'
                 }`}
             >
               Step Details
             </button>
             <button
               onClick={() => setActiveRightTab('topTheories')}
-              className={`flex-1 py-3 text-[10px] font-black tracking-widest transition-colors ${activeRightTab === 'topTheories'
-                  ? 'bg-white text-black'
-                  : 'bg-gray-100 text-gray-400 hover:bg-gray-50 hover:text-black border-b border-black border-l border-black'
+              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors ${activeRightTab === 'topTheories'
+                  ? 'bg-black text-white'
+                  : 'text-black hover:bg-gray-100'
                 }`}
             >
               Theories
