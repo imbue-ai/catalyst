@@ -117,6 +117,20 @@ export async function getTemplates(): Promise<string[]> {
   return res.json();
 }
 
+export async function exportArtifact(taskId: string, artifactId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/tasks/${taskId}/artifacts/${artifactId}/export`);
+  if (!res.ok) throw new Error("Failed to export artifact");
+  const blob = await res.blob();
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${artifactId}.zip`;
+  document.body.appendChild(a);
+  a.click();
+  window.URL.revokeObjectURL(url);
+  document.body.removeChild(a);
+}
+
 export async function cancelStep(taskId: string, stage: string): Promise<void> {
   const res = await fetch(`${API_BASE}/tasks/${taskId}/steps/${stage}/cancel`, { method: "POST" });
   if (!res.ok) {

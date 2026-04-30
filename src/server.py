@@ -4,7 +4,10 @@ import shutil
 import logging
 import subprocess
 import json
-from fastapi import FastAPI, HTTPException
+import io
+import zipfile
+import re
+from fastapi import FastAPI, HTTPException, Response
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -430,6 +433,70 @@ def get_artifact_file(task_id: str, artifact_id: str, file_path: str):
         raise HTTPException(status_code=404, detail="File not found")
 
     return FileResponse(full_path)
+
+
+@app.get("/api/tasks/{task_id}/artifacts/{artifact_id}/export")
+def export_artifact(task_id: str, artifact_id: str):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    prefix = artifact_id.split("_")[0]
+    category = PREFIX_TO_CATEGORY.get(prefix)
+    if not category:
+        raise HTTPException(status_code=400, detail="Invalid artifact ID prefix")
+
+    md_filename = CATEGORY_MD_MAP.get(category)
+    if not md_filename:
+        raise HTTPException(
+            status_code=500, detail="No primary markdown configured for category"
+        )
+
+    artifact_dir = os.path.join(
+        task.env_folder, ".ai-scientist-db", category, artifact_id
+    )
+    md_path = os.path.join(artifact_dir, md_filename)
+
+    if not os.path.exists(md_path):
+        raise HTTPException(status_code=404, detail="Artifact file not found")
+
+    with open(md_path, "r", encoding="utf-8") as f:
+        md_content = f.read()
+
+    # Extract relative images
+    image_paths = []
+    # Markdown ![alt](path)
+    image_paths.extend(re.findall(r"!\[.*?\]\((?!http|/)(.*?)\)", md_content))
+    # HTML <img src="path" />
+    image_paths.extend(
+        re.findall(r'<img[^>]+src=["\'](?!http|/)([^"\']+)["\']', md_content)
+    )
+
+    # Dedup and sanitize (remove anchors/queries if any)
+    sanitized_paths = []
+    for p in set(image_paths):
+        p_clean = p.split("#")[0].split("?")[0].strip()
+        if p_clean:
+            sanitized_paths.append(p_clean)
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, "w", zipfile.ZIP_DEFLATED) as zip_file:
+        # Markdown file inside folder
+        zip_file.write(md_path, os.path.join(artifact_id, md_filename))
+
+        # Images inside folder, preserving subpaths
+        for img_rel_path in sanitized_paths:
+            img_full_path = os.path.join(artifact_dir, img_rel_path)
+            # Ensure it is still within artifact_dir to prevent path traversal
+            if os.path.abspath(img_full_path).startswith(os.path.abspath(artifact_dir)):
+                if os.path.exists(img_full_path) and os.path.isfile(img_full_path):
+                    zip_file.write(img_full_path, os.path.join(artifact_id, img_rel_path))
+
+    return Response(
+        content=zip_buffer.getvalue(),
+        media_type="application/zip",
+        headers={"Content-Disposition": f'attachment; filename="{artifact_id}.zip"'},
+    )
 
 
 if __name__ == "__main__":
