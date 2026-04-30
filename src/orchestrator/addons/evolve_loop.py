@@ -1,7 +1,7 @@
 from typing import Dict, Any, Callable
 from ..models import Addon, Task
 from .base import AddonHandler
-from ..workflows.base import (
+from ..workflows.common import (
     run_evolve_loop, 
     DEFAULT_EVOLVE_ITERATIONS, 
     DEFAULT_NUM_PARENTS, 

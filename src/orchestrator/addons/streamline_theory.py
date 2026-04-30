@@ -1,6 +1,6 @@
 from ..models import Addon
 from .base import AddonHandler
-
+from orchestrator.prompts import get_streamline_theory_prompt
 
 class StreamlineTheoryAddon(AddonHandler):
     @property
@@ -8,10 +8,4 @@ class StreamlineTheoryAddon(AddonHandler):
         return "streamline-theory"
 
     def get_prompt(self, addon: Addon) -> str:
-        prompt = f"Please run the streamline-theory skill for the following theory_id: {addon.theory_id}."
-        if addon.direction:
-            prompt += f" Direction: {addon.direction}"
-        prompt += (
-            "\nWhen you are done, return ONLY a JSON object with the key 'theory_id'."
-        )
-        return prompt
+        return get_streamline_theory_prompt(addon.theory_id, getattr(addon, 'direction', None))

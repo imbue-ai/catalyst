@@ -1,6 +1,8 @@
 from typing import Any, Callable, List, Dict
 from ..models import Task
-from .base import Workflow, run_step_if_needed, run_refinement_loop, run_summarize_title
+from .base import Workflow, run_step_if_needed
+from .common import run_refinement_loop, run_summarize_title
+from orchestrator.prompts import get_support_idea_prompt
 
 class RefineTheoryIdeaLinearWorkflow(Workflow):
     @property
@@ -53,8 +55,7 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
             task,
             run_step,
             "support-idea",
-            f"Please run the support-idea skill for the following idea:\n```\n{idea}\n```\n"
-            "When you are done, return ONLY a JSON object with the key 'theory_id'.",
+            get_support_idea_prompt(idea),
         )
         theory_id = support_data.get("theory_id") if support_data else None
         if not theory_id and not (support_data and support_data.get("_canceled")):
