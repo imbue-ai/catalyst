@@ -104,7 +104,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 run_step,
                 "score-theories",
                 f"Please run the score-theories skill for the following theory_id: {theory_id}. "
-                "When you are done, return ONLY a JSON object mapping each theory ID to its assigned score.",
+                "When you are done, return ONLY a JSON object mapping each theory ID to its assigned scores object (including subscores).",
             )
 
             # Step 4: Evolve Loop
