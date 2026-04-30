@@ -30,7 +30,6 @@ export interface Task {
   env_folder: string;
   framework: string;
   model?: string;
-  db_path: string;
   status: "pending" | "running" | "completed" | "failed" | "paused";
   current_stage?: string;
   steps: Step[];
@@ -52,7 +51,7 @@ export async function getTask(id: string): Promise<Task> {
 export async function createTask(data: {
   workflow_name: string;
   workflow_inputs: any;
-  env_folder: string;
+  template_folder?: string;
   framework: string;
   model?: string;
 }): Promise<Task> {

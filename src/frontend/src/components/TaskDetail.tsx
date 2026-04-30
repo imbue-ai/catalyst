@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Activity, Folder, Cpu, Terminal, Loader2, Square, Play, Trash2, Database, Copy, Check, Layers, Plus, XCircle } from 'lucide-react'
+import { Activity, Folder, Cpu, Terminal, Loader2, Square, Play, Trash2, Layers, Plus, XCircle, Copy, Check } from 'lucide-react'
 import * as api from '../api'
 import { StatusBadge } from './StatusBadge'
 import { DataSection } from './DataSection'
@@ -317,19 +317,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
       {/* Footer Info */}
       <div className="p-4 border-t border-black bg-white flex justify-between items-center text-[9px] font-bold text-gray-400 tracking-[0.2em]">
         <div className="flex items-center gap-4">
-          <span className="flex items-center gap-1">
-            <Database size={10} /> 
-            {task.db_path}
-            <button 
-              onClick={() => handleCopy(task.db_path)}
-              className="text-gray-400 hover:text-black transition-colors p-1"
-              title="Copy to clipboard"
-            >
-              {copied ? <Check size={10} /> : <Copy size={10} />}
-            </button>
-          </span>
-        </div>
-        <div className="flex items-center gap-4">
+        </div>        <div className="flex items-center gap-4">
           <span className={isBackendDown ? "text-red-500 animate-pulse" : "text-black"}>
             {isBackendDown ? "● Disconnected" : "● Connected"}
           </span>

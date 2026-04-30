@@ -44,7 +44,6 @@ class Task(BaseModel):
     env_folder: str
     framework: str # "gemini" or "claude"
     model: Optional[str] = None
-    db_path: str
     status: TaskStatus = TaskStatus.PENDING
     current_stage: Optional[str] = None
     steps: List[Step] = []

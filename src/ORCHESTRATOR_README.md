@@ -58,3 +58,12 @@ The dashboard will be available at `http://localhost:5173`.
 ## Persistence
 
 The service maintains its state in `tasks_state.json`. You can stop and restart the backend server without losing track of ongoing or completed research tasks.
+
+
+## Troubleshooting
+
+### Claude fails to run bash commands: `bwrap: loopback: Failed RTM_NEWADDR: Operation not permitted`
+If you're on Ubuntu 24.04, follow https://www.jdhodges.com/blog/codex-sandbox-ubuntu-24-04-fix/
+
+### Claude can't enable sandbox
+Follow the prerequisites steps from https://code.claude.com/docs/en/sandboxing#prerequisites

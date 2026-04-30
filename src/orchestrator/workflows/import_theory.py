@@ -1,7 +1,6 @@
 from typing import Any, Callable, List, Dict
 from ..models import Task
-from .base import Workflow, run_step_if_needed
-
+from .base import Workflow, run_step_if_needed, run_summarize_title
 
 class ImportTheoryWorkflow(Workflow):
     @property
@@ -20,16 +19,7 @@ class ImportTheoryWorkflow(Workflow):
         file_path = task.workflow_inputs.get("file_path", "")
 
         # Step 0: Summarize Title
-        if not task.title:
-            title_data = run_step_if_needed(
-                task,
-                run_step,
-                "summarize-title",
-                f"Please read the following file and provide a very short, summarized title (maximum 5 words) for the theory it contains: {file_path}. "
-                "Return a JSON object with the key 'title'.",
-            )
-            if title_data and isinstance(title_data, dict):
-                task.title = title_data.get("title")
+        run_summarize_title(task, run_step, f"theory file: {file_path}")
 
         # Step 1: Import Theory
         import_data = run_step_if_needed(

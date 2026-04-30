@@ -8,9 +8,7 @@ build/
 logs/
 /output/
 /organisms/org_*
-/bifurcation_gym/tmp/*
-/sharpening_gym/tmp/*
-/tmp/
-.ai-scientist-db*/
+/research/*
+/src/research/*
 scheduled_tasks.lock
 tasks_state.json

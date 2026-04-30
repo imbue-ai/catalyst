@@ -28,4 +28,4 @@ include = ["shallow_mlps*"]
 exclude-newer = "2 week"
 
 [tool.uv.sources]
-darwinian-evolver = { path = "../darwinian_evolver", editable = true }
+darwinian-evolver = { path = "darwinian_evolver", editable = true }

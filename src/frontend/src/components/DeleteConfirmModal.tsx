@@ -11,10 +11,9 @@ export function DeleteConfirmModal({ onClose, onDelete, deleteInput, setDeleteIn
       <div className="bg-white border-2 border-red-600 p-8 w-full max-w-md shadow-[12px_12px_0px_0px_rgba(220,38,38,1)]">
         <h2 className="text-2xl font-black tracking-tighter text-red-600 mb-4">Confirm Deletion</h2>
         <p className="text-sm font-bold text-gray-500 mb-6 tracking-tight leading-relaxed">
-          This will permanently delete the research project and its temporary database folder. 
+          This will permanently delete the research project and its ENTIRE environment folder.
           This action cannot be undone.
-        </p>
-        <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Type "delete" to confirm</label>
+        </p>        <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Type "delete" to confirm</label>
         <input 
           autoFocus
           value={deleteInput}

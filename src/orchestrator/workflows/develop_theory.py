@@ -1,8 +1,7 @@
 import threading
 from typing import Any, Callable, List, Dict
 from ..models import Task
-from .base import Workflow, get_step_output, run_step_if_needed, run_evolve_loop
-
+from .base import Workflow, get_step_output, run_step_if_needed, run_evolve_loop, run_summarize_title
 
 class DevelopTheoryWorkflow(Workflow):
     @property
@@ -80,16 +79,7 @@ class DevelopTheoryWorkflow(Workflow):
         self.init_db(task)
 
         # Step 0: Summarize Title
-        if not task.title:
-            title_data = run_step_if_needed(
-                task,
-                run_step,
-                "summarize-title",
-                f"Please provide a very short, summarized title (maximum 5 words) for the following research phenomenon: {task.workflow_inputs.get('phenomenon')}. "
-                "Return a JSON object with the key 'title'.",
-            )
-            if title_data and isinstance(title_data, dict):
-                task.title = title_data.get("title")
+        run_summarize_title(task, run_step, f"phenomenon: {task.workflow_inputs.get('phenomenon')}")
 
         # Step 1 & 2: Literature Review and Exploration in Parallel
         lit_out = get_step_output(task, "literature-review")

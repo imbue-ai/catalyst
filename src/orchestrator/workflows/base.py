@@ -14,9 +14,19 @@ DEFAULT_NUM_EXTRA_SCORES = 5
 
 def run_context_manager(task: Task, args: List[str]) -> str:
     env = os.environ.copy()
-    env["AI_SCIENTIST_DB_PATH"] = task.db_path
-    cmd = ["uv", "run", "python", "context_manager.py"] + args
-    result = subprocess.run(cmd, env=env, check=True, capture_output=True, text=True)
+
+    ctx_mgr_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "..", "context_manager.py")
+    )
+    cmd = ["uv", "run", "python", ctx_mgr_path] + args
+    result = subprocess.run(
+        cmd,
+        env=env,
+        cwd=os.path.abspath(task.env_folder),
+        check=True,
+        capture_output=True,
+        text=True,
+    )
     return result.stdout.strip()
 
 
@@ -43,6 +53,19 @@ def run_step_if_needed(
         print(f"[ORCHESTRATOR] [{task.id[:8]}] Running {stage}...")
         out = run_step_fn(task, stage, prompt)
     return out
+
+
+def run_summarize_title(task: Task, run_step_fn: Callable, content_desc: str) -> None:
+    if not task.title:
+        title_data = run_step_if_needed(
+            task,
+            run_step_fn,
+            "summarize-title",
+            f"Please provide a very short, summarized title (maximum 5 words) for the following research:\n```\n{content_desc}\n```\n"
+            "Return ONLY a JSON object with the key 'title'.",
+        )
+        if title_data and isinstance(title_data, dict):
+            task.title = title_data.get("title")
 
 
 def run_refinement_loop(
@@ -274,6 +297,7 @@ class Workflow(ABC):
         pass
 
     def init_db(self, task: Task) -> None:
-        if not os.path.exists(task.db_path):
+        db_path = os.path.join(task.env_folder, ".ai-scientist-db")
+        if not os.path.exists(db_path):
             print(f"[ORCHESTRATOR] [{task.id[:8]}] Initializing DB folder...")
             run_context_manager(task, ["init"])
