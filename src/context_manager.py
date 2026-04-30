@@ -1257,7 +1257,7 @@ def main(argv: list[str] | None = None) -> None:
     sub = parser.add_subparsers(dest="command", required=True)
 
     # -- init ----------------------------------------------------------------
-    sp_init = sub.add_parser("init", help="Initialize a new database")
+    sub.add_parser("init", help="Initialize a new database")
 
     # -- store_results -------------------------------------------------------
     sp_store = sub.add_parser(

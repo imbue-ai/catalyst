@@ -1,7 +1,6 @@
 import threading
 import logging
 from typing import Any, Callable, List, Dict
-import logging
 from ..models import Task
 from .base import (
     Workflow,

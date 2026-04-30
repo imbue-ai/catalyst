@@ -15,6 +15,7 @@ from orchestrator.prompts import (
     get_score_theories_prompt,
 )
 
+
 class RefineTheoryIdeaWorkflow(Workflow):
     @property
     def name(self) -> str:
@@ -92,7 +93,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
 
         if theory_id:
             # Step 2: Review Theory
-            review_data = run_step_if_needed(
+            run_step_if_needed(
                 task,
                 run_step,
                 "review-theory",
@@ -100,7 +101,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
             )
 
             # Step 3: Score Theories
-            score_data = run_step_if_needed(
+            run_step_if_needed(
                 task,
                 run_step,
                 "score-theories",
