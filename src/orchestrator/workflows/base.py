@@ -239,7 +239,7 @@ def run_evolve_loop(
                     run_step_fn,
                     f"{stage_prefix}review-theory-{i}-{idx}",
                     f"Please run the review-theory skill for theory_id: {tid}. "
-                    "Return a JSON object with the key 'review_id'.",
+                    "When you are done, return ONLY a JSON object with the key 'review_ids' containing the list of generated review IDs.",
                 )
             except Exception as e:
                 review_errors.append(e)

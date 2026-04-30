@@ -36,6 +36,7 @@ export interface Task {
   addons: Addon[];
   workflow_name: string;
   workflow_structure: any[];
+  created_at?: string;
 }
 
 export interface TheoryArtifact {

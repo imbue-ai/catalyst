@@ -19,6 +19,14 @@ export function StepIndicator({ status, isRunning }: { status: string | undefine
   )
 }
 
+export function formatStageName(name: string): string {
+  return name
+    .replace(/-/g, ' ')
+    .split(' ')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ')
+}
+
 interface InnerStepCardProps {
   label: string;
   step?: api.Step;
@@ -121,7 +129,7 @@ export function InnerParallelCard({ name, stages, task, selectedStage, onSelect,
       <div className="flex justify-between items-center mb-3">
         <div className="flex items-center gap-2">
           <LayoutGrid size={12} />
-          <span className="text-[10px] font-black">{name}</span>
+          <span className="text-[10px] font-black">{formatStageName(name)}</span>
         </div>
         {task.status !== 'completed' && (
           <CancelStepsButton task={task} stagesToCancel={stages} onRefresh={onRefresh} label="Cancel Tasks" />
@@ -134,7 +142,7 @@ export function InnerParallelCard({ name, stages, task, selectedStage, onSelect,
             return (
               <InnerStepCard
                 key={stage}
-                label={stage.replace(/-/g, ' ')}
+                label={formatStageName(stage)}
                 step={step}
                 isRunning={isRunning}
                 isSelected={selectedStage === stage}
