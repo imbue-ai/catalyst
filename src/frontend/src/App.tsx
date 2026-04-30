@@ -101,7 +101,7 @@ function App() {
 
       {/* Sidebar */}
       <div className="flex h-screen overflow-hidden">
-        <aside className="w-80 border-r border-black flex flex-col bg-white">
+        <aside className="w-96 border-r border-black flex flex-col bg-white">
           <div
             className="p-6 border-b border-black flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
             onClick={() => { window.location.hash = ''; }}
@@ -147,9 +147,20 @@ function App() {
                   <StatusBadge status={task.status} />
                 </div>
                 <div className={`text-[10px] flex flex-col gap-1 ${selectedTaskId === task.id ? 'text-gray-400' : 'text-gray-500'}`}>
-                  <div className="flex items-center gap-1 truncate"><Folder size={10} /> {task.env_folder}</div>
-                </div>
-              </a>
+                  <div className="flex items-center gap-1 min-w-0">
+                    <Folder size={10} className="shrink-0" />
+                    <span
+                      className="overflow-hidden whitespace-nowrap text-ellipsis min-w-0 flex-1"
+                      style={{ direction: 'rtl', textAlign: 'left' }}
+                      title={task.env_folder}
+                    >
+                      {/* Using unicode-bidi: plaintext to keep path characters (slashes, etc) in order but allow RTL truncation (ellipsis on left) */}
+                      <span style={{ unicodeBidi: 'plaintext' }}>
+                        {task.env_folder}
+                      </span>
+                    </span>
+                  </div>
+                </div>              </a>
             ))}
           </div>
 
