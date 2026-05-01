@@ -73,7 +73,7 @@ Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its f
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type expand-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
-   Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the result of this skill.
+   Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the result of this skill and include it in your final message.
 
 ## Theory Output Format
 Your `theory.md` file must be a fully self-contained, updated version of the original theory with the new expansions integrated. Do NOT include notes about the expansion process. The file should read as a standalone scientific document presenting the expanded theory and all supporting evidence.
