@@ -1,11 +1,13 @@
 import threading
 import logging
+import uuid
 from typing import List, Any, Dict
 from .models import Task, Step, TaskStatus, StepStatus
 from .state import update_task, get_task, get_task_lock
 from .agents import get_agent_runner
 from .workflows import get_workflow
 from .addons import get_addon_handler
+from .utils import run_context_manager
 
 logger = logging.getLogger(__name__)
 
@@ -141,11 +143,14 @@ def _run_step(task: Task, stage: str, prompt: str) -> Any:
             update_task(task)
         raise Exception(error)
 
+    tx_id = f"tx_{uuid.uuid4().hex}"
+
     output, session_id, error = runner.run(
         task_id=task.id,
         prompt=prompt,
         env_folder=task.env_folder,
         model=task.model,
+        tx_id=tx_id,
         on_session_id=on_sid,
         on_status=on_status
     )
@@ -168,6 +173,19 @@ def _run_step(task: Task, stage: str, prompt: str) -> Any:
             update_task(task)
             raise Exception(error)
 
+    # Success: Commit the transaction
+    try:
+        run_context_manager(task, ["commit", tx_id])
+    except Exception as commit_err:
+        error_msg = f"Transaction commit failed: {commit_err}"
+        logger.error(f"[ORCHESTRATOR] [{task.id[:8]}] {error_msg}")
+        with lock:
+            step.status = StepStatus.FAILED
+            step.error = error_msg
+            update_task(task)
+        raise Exception(error_msg)
+
+    with lock:
         step.status = StepStatus.COMPLETED
         step.outputs = output
         update_task(task)

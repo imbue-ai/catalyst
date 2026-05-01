@@ -1,10 +1,9 @@
-from typing import Any, Callable, Dict, List, Optional, Set
-import os
-import subprocess
+from typing import Any, Callable, Dict, Optional, Set
 import random
 import threading
 import logging
 from ..models import Task
+from ..utils import run_context_manager
 from .base import run_step_if_needed, run_local_step_if_needed
 from orchestrator.prompts import (
     get_summarize_title_prompt,
@@ -20,24 +19,6 @@ DEFAULT_EVOLVE_ITERATIONS = 3
 DEFAULT_NUM_PARENTS = 3
 DEFAULT_STREAMLINE_PROB = 0.25
 DEFAULT_NUM_EXTRA_SCORES = 5
-
-
-def run_context_manager(task: Task, args: List[str]) -> str:
-    env = os.environ.copy()
-
-    ctx_mgr_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "context_manager.py")
-    )
-    cmd = ["uv", "run", "python", ctx_mgr_path] + args
-    result = subprocess.run(
-        cmd,
-        env=env,
-        cwd=os.path.abspath(task.env_folder),
-        check=True,
-        capture_output=True,
-        text=True,
-    )
-    return result.stdout.strip()
 
 
 def run_summarize_title(task: Task, run_step_fn: Callable, content_desc: str) -> None:

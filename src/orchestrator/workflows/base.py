@@ -75,7 +75,7 @@ class Workflow(ABC):
         pass
 
     def init_db(self, task: Task) -> None:
-        from .common import run_context_manager
+        from ..utils import run_context_manager
         db_path = os.path.join(task.env_folder, ".ai-scientist-db")
         if not os.path.exists(db_path):
             logger.debug(f"[ORCHESTRATOR] [{task.id[:8]}] Initializing DB folder...")

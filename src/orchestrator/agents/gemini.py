@@ -14,11 +14,14 @@ class GeminiAgentRunner(BaseCliAgentRunner):
         prompt: str,
         env_folder: str,
         model: Optional[str] = None,
+        tx_id: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
         env = os.environ.copy()
         del env["VIRTUAL_ENV"]
+        if tx_id:
+            env["CONTEXT_TRANSACTION_ID"] = tx_id
         abs_env_folder = os.path.abspath(env_folder)
 
         cmd = [
