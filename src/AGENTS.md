@@ -6,3 +6,4 @@ When working on the (Python) backend:
 
 When working on the frontend:
 * We don't use all-cap titles or labels. All titles and labels should follow Chicago style capitalization. (only exceptions: task/step state labels and the "AI SCIENTIST" title)
+* Run `cd frontend && npm run build` to validate frontend changes.
