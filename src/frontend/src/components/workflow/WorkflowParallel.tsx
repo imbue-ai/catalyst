@@ -55,7 +55,7 @@ export function WorkflowParallel({ name, stages, task, onSelect, selectedStage, 
           )}
         </div>
 
-        <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
           {stages.map(stage => {
             const step = task.steps.find(s => s.stage === stage)
             const isRunning = step?.status === 'running' || (task.current_stage === stage && !step)
