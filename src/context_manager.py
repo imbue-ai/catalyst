@@ -186,12 +186,162 @@ class StoredMetadata(BaseModel):
     staged_for_transaction: str | None = None
 
 
-def _is_visible(metadata: dict) -> bool:
-    """Return True if the object is committed or staged for the current transaction."""
-    staged = metadata.get("staged_for_transaction")
-    if not staged:
-        return True
-    return staged == os.environ.get("CONTEXT_TRANSACTION_ID")
+class DatabaseSession:
+    """A view of the database providing transactional isolation and population state."""
+
+    def __init__(self, db_root: Path):
+        self.db_root = db_root
+        self.tx_id = os.environ.get("CONTEXT_TRANSACTION_ID")
+        self._lock = DatabaseLock(db_root)
+        self._population: Population | None = None
+        self._population_loaded = False
+        self._population_modified = False
+
+    def __enter__(self) -> "DatabaseSession":
+        self._lock.__enter__()
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        if (
+            exc_type is None
+            and self._population_modified
+            and self._population is not None
+        ):
+            _save_population(self._population, self.db_root / POPULATION_FILENAME)
+        self._lock.__exit__(exc_type, exc_val, exc_tb)
+
+    def is_visible(self, data: dict) -> bool:
+        """Return True if the object is committed or staged for the current transaction."""
+        staged = data.get("staged_for_transaction")
+        if not staged:
+            return True
+        return staged == self.tx_id
+
+    def get_metadata(self, category: str, item_id: str) -> dict | None:
+        """Safely fetch and parse metadata if visible."""
+        meta_path = self.db_root / category / item_id / "metadata.json"
+        if not meta_path.is_file():
+            return None
+        try:
+            data = json.loads(meta_path.read_text())
+            if self.is_visible(data):
+                return data
+        except (json.JSONDecodeError, OSError):
+            pass
+        return None
+
+    def iter_metadata(self, category: str):
+        """Iterate over all visible metadata in a category."""
+        cat_dir = self.db_root / category
+        if not cat_dir.is_dir():
+            return
+        for meta_path in cat_dir.glob("*/metadata.json"):
+            try:
+                data = json.loads(meta_path.read_text())
+                if self.is_visible(data):
+                    yield meta_path, data
+            except (json.JSONDecodeError, OSError):
+                continue
+
+    def iter_all_metadata(self):
+        """Iterate over all visible metadata in all categories."""
+        for category in VALID_CATEGORIES:
+            yield from self.iter_metadata(category)
+
+    def get_population(self) -> Population | None:
+        """Lazy-load the population snapshot."""
+        if not self._population_loaded:
+            self._population = _load_population(self.db_root / POPULATION_FILENAME)
+            self._population_loaded = True
+        return self._population
+
+    def set_population(self, pop: Population) -> None:
+        """Explicitly set and mark the population as modified."""
+        self._population = pop
+        self._population_loaded = True
+        self._population_modified = True
+
+    def mark_population_modified(self) -> None:
+        """Flag the population for saving on session exit."""
+        self._population_modified = True
+
+    def record_theory(self, theory_id: str, parent_theory_id: str | None) -> None:
+        """Add a newly-stored theory to the population state."""
+        pop = self.get_population()
+        if pop is None:
+            if parent_theory_id is not None:
+                raise RuntimeError(
+                    f"Attempting to record child theory {theory_id!r} with parent "
+                    f"{parent_theory_id!r} but no population exists yet."
+                )
+            organism = TheoryOrganism(theory_id=theory_id)
+            result = TheoryEvaluationResult(
+                score=INITIAL_ROOT_SCORE, trainable_failure_cases=[]
+            )
+            pop = WeightedSamplingPopulation(
+                organism,
+                result,
+                midpoint_score_percentile=None,
+                fixed_midpoint_score=0.5,
+                sharpness=10.0,
+            )
+            self.set_population(pop)
+            return
+
+        parent_org: TheoryOrganism | None = None
+        if parent_theory_id is not None:
+            found = _find_organism_by_theory_id(pop, parent_theory_id)
+            if found is None:
+                raise RuntimeError(
+                    f"Parent theory {parent_theory_id!r} is not in the population; "
+                    f"refusing to add child {theory_id!r}"
+                )
+            parent_org, _ = found
+
+        score = 0.0 if parent_org else INITIAL_ROOT_SCORE
+        organism = TheoryOrganism(theory_id=theory_id, parent=parent_org)
+        result = TheoryEvaluationResult(score=score, trainable_failure_cases=[])
+        pop.add(organism, result)
+        self.mark_population_modified()
+
+    def record_review(self, theory_id: str | None, review_id: str) -> None:
+        """Attach a newly-stored review to its parent theory in the population."""
+        if theory_id is None:
+            raise RuntimeError(
+                f"Attempting to record review {review_id!r} without a parent theory."
+            )
+        pop = self.get_population()
+        if pop is None:
+            raise RuntimeError(
+                f"Attempting to record review {review_id!r} for theory {theory_id!r} but no population exists yet."
+            )
+        found = _find_organism_by_theory_id(pop, theory_id)
+        if found is None:
+            raise RuntimeError(
+                f"Parent theory {theory_id!r} for review {review_id!r} is not in the population."
+            )
+        _, result = found
+        assert isinstance(result, TheoryEvaluationResult)
+        result.trainable_failure_cases.append(
+            TheoryEvaluationFailureCase(review_id=review_id, data_point_id=review_id)
+        )
+        self.mark_population_modified()
+
+
+def copy_artifact(src: Path, dst: Path, exclude_results: bool = False) -> None:
+    """Helper to copy an artifact, optionally omitting results, and restoring write permissions."""
+    if dst.exists():
+        raise ValueError(f"Destination already exists: {dst}")
+
+    ignore_pattern = IGNORE_METADATA_PATTERN
+    if exclude_results:
+        # Ignore everything that's NOT either "script.py" or "description.md"
+        ignore_pattern = lambda _, names: [  # noqa: E731
+            n for n in names if n not in ("script.py", "description.md")
+        ]
+
+    shutil.copytree(src, dst, ignore=ignore_pattern)
+    _make_writable(dst)
 
 
 class TheoryOrganism(Organism):
@@ -313,86 +463,6 @@ def _load_population(path: Path) -> Population | None:
     return WeightedSamplingPopulation.from_snapshot(path.read_bytes())
 
 
-def _record_theory_in_population(
-    db_root: Path, theory_id: str, parent_theory_id: str | None
-) -> None:
-    """Add a newly-stored theory to population.json, initializing the file if needed.
-
-    Score policy: parentless theories get ``INITIAL_ROOT_SCORE``; theories
-    with a parent inherit the parent's current score. (This is a placeholder
-    heuristic — will be revisited.)
-    """
-    path = _population_path(db_root)
-    population = _load_population(path)
-
-    if population is None:
-        if parent_theory_id is not None:
-            raise RuntimeError(
-                f"Attempting to record child theory {theory_id!r} with parent "
-                f"{parent_theory_id!r} but no population exists yet. The parent "
-                f"theory must have been stored before the child."
-            )
-        organism = TheoryOrganism(theory_id=theory_id)
-        result = TheoryEvaluationResult(
-            score=INITIAL_ROOT_SCORE, trainable_failure_cases=[]
-        )
-        population = WeightedSamplingPopulation(
-            organism,
-            result,
-            # Since our scores are largely based on ranking and hence will naturally be centered, we use a fixed midpoint.
-            midpoint_score_percentile=None,
-            fixed_midpoint_score=0.5,
-            sharpness=10.0,
-        )
-        _save_population(population, path)
-        return
-
-    parent_org: TheoryOrganism | None = None
-    if parent_theory_id is not None:
-        found = _find_organism_by_theory_id(population, parent_theory_id)
-        if found is None:
-            raise RuntimeError(
-                f"Parent theory {parent_theory_id!r} is not in the population; "
-                f"refusing to add child {theory_id!r}"
-            )
-        parent_org, parent_result = found
-
-    # Initialize scores for new children to 0 - they should get rescored later.
-    score = 0.0 if parent_org else INITIAL_ROOT_SCORE
-    organism = TheoryOrganism(theory_id=theory_id, parent=parent_org)
-    result = TheoryEvaluationResult(score=score, trainable_failure_cases=[])
-    population.add(organism, result)
-    _save_population(population, path)
-
-
-def _record_review_in_population(
-    db_root: Path, theory_id: str | None, review_id: str
-) -> None:
-    """Add a newly-stored review to population.json by attaching it to its parent theory."""
-    if theory_id is None:
-        raise RuntimeError(
-            f"Attempting to record review {review_id!r} without a parent theory; "
-            f"refusing to add it to the population."
-        )
-    path = _population_path(db_root)
-    population = _load_population(path)
-    if population is None:
-        raise RuntimeError(
-            f"Attempting to record review {review_id!r} for theory {theory_id!r} but no population exists yet."
-        )
-    found = _find_organism_by_theory_id(population, theory_id)
-    if found is None:
-        raise RuntimeError(
-            f"Parent theory {theory_id!r} for review {review_id!r} is not in the population; refusing to add the review."
-        )
-    org, result = found
-    assert isinstance(result, TheoryEvaluationResult)
-    result.trainable_failure_cases.append(
-        TheoryEvaluationFailureCase(review_id=review_id, data_point_id=review_id)
-    )
-    _save_population(population, path)
-
-
 def store_results(
     from_agent_type: str,
     from_folder: Path,
@@ -446,7 +516,7 @@ def store_results(
                 f"in the database (expected {theory_dir})"
             )
 
-    with DatabaseLock(db_root):
+    with DatabaseSession(db_root) as session:
         new_id = generate_id(category)
 
         # --- determine target directory ---
@@ -467,7 +537,6 @@ def store_results(
         shutil.copytree(from_folder, target_dir, ignore=IGNORE_METADATA_PATTERN)
 
         # --- write metadata ---
-        tx_id = os.environ.get("CONTEXT_TRANSACTION_ID")
         meta = StoredMetadata(
             id=new_id,
             agent_type=from_agent_type,
@@ -477,7 +546,7 @@ def store_results(
             if from_agent_type in parent_theory_allowed_agents
             else None,
             extra=metadata_extra or {},
-            staged_for_transaction=tx_id,
+            staged_for_transaction=session.tx_id,
         )
         (target_dir / "metadata.json").write_text(
             json.dumps(meta.model_dump(), indent=2) + "\n"
@@ -487,16 +556,14 @@ def store_results(
         _make_readonly(target_dir)
 
         # --- add to the theory population ---
-        if not tx_id:
+        if not session.tx_id:
             if category == "theory":
-                _record_theory_in_population(
-                    db_root=db_root,
+                session.record_theory(
                     theory_id=new_id,
                     parent_theory_id=parent_theory,
                 )
             elif category == "review":
-                _record_review_in_population(
-                    db_root=db_root,
+                session.record_review(
                     theory_id=parent_theory,
                     review_id=new_id,
                 )
@@ -504,377 +571,19 @@ def store_results(
     return new_id
 
 
-def _get_ancestor_theories(db_root: Path, base_theories: list[str]) -> set[str]:
+def _get_ancestor_theories(session: DatabaseSession, base_theories: list[str]) -> set[str]:
     """Recursively collect the given theories and all of their ancestors."""
     target_theories = set(base_theories)
     to_visit = list(target_theories)
     while to_visit:
         curr_tid = to_visit.pop()
-        curr_meta_path = db_root / "theory" / curr_tid / "metadata.json"
-        if curr_meta_path.is_file():
-            try:
-                tdata = json.loads(curr_meta_path.read_text())
-                if not _is_visible(tdata):
-                    continue
-                parent_tid = tdata.get("parent_theory")
-                if parent_tid and parent_tid not in target_theories:
-                    target_theories.add(parent_tid)
-                    to_visit.append(parent_tid)
-            except (json.JSONDecodeError, OSError):
-                pass
+        tdata = session.get_metadata("theory", curr_tid)
+        if tdata:
+            parent_tid = tdata.get("parent_theory")
+            if parent_tid and parent_tid not in target_theories:
+                target_theories.add(parent_tid)
+                to_visit.append(parent_tid)
     return target_theories
-
-
-def _assemble_write_theory(
-    target_folder: Path,
-    exploration_dir: Path | None,
-    literature_dirs: list[tuple[str, Path]],
-) -> None:
-    dst = target_folder / "exploration"
-    shutil.copytree(
-        exploration_dir,  # type: ignore[possibly-undefined]
-        dst,
-        ignore=IGNORE_METADATA_PATTERN,
-    )
-    _make_writable(dst)
-    if literature_dirs:
-        _, lit_dir = literature_dirs[0]
-        ldst = target_folder / "literature"
-        shutil.copytree(lit_dir, ldst, ignore=IGNORE_METADATA_PATTERN)
-        _make_writable(ldst)
-
-
-def _assemble_theory_copy(
-    target_folder: Path, theory_dirs: list[tuple[str, Path]]
-) -> None:
-    dst = target_folder / "theory"
-    shutil.copytree(
-        theory_dirs[0][1],
-        dst,
-        ignore=IGNORE_METADATA_PATTERN,
-    )
-    _make_writable(dst)
-
-
-def _assemble_refine_expand(
-    db_root: Path,
-    target_folder: Path,
-    theory_dirs: list[tuple[str, Path]],
-    from_reviews: list[str] | None,
-    literature_dirs: list[tuple[str, Path]],
-) -> None:
-    dst = target_folder / "theory"
-    shutil.copytree(
-        theory_dirs[0][1],
-        dst,
-        ignore=IGNORE_METADATA_PATTERN,
-    )
-    _make_writable(dst)
-    reviews_root = target_folder / "reviews"
-    reviews_root.mkdir(exist_ok=True)
-    for rid in from_reviews:  # type: ignore[union-attr]
-        src = db_root / "review" / rid
-        rdst = reviews_root / rid
-        shutil.copytree(src, rdst, ignore=IGNORE_METADATA_PATTERN)
-        _make_writable(rdst)
-    if literature_dirs:
-        lit_root = target_folder / "literature"
-        lit_root.mkdir(exist_ok=True)
-        for lid, lit_dir in literature_dirs:
-            ldst = lit_root / lid
-            shutil.copytree(lit_dir, ldst, ignore=IGNORE_METADATA_PATTERN)
-            _make_writable(ldst)
-
-
-def _assemble_review_theory(
-    target_folder: Path, theory_dirs: list[tuple[str, Path]]
-) -> None:
-    dst = target_folder / "theory.md"
-    src_theory_md = theory_dirs[0][1] / "theory.md"
-    if src_theory_md.exists():
-        shutil.copy2(src_theory_md, dst)
-        _make_writable(dst)
-
-
-def _assemble_predict_experiments(
-    target_folder: Path,
-    theory_dirs: list[tuple[str, Path]],
-    from_experiments: list[str] | None,
-) -> None:
-    dst = target_folder / "theory"
-    shutil.copytree(
-        theory_dirs[0][1],
-        dst,
-        ignore=IGNORE_METADATA_PATTERN,
-    )
-    _make_writable(dst)
-    for exp_id in from_experiments:  # type: ignore[union-attr]
-        fetch_experiment(target_folder, exp_id, exclude_results=True)
-
-
-def _assemble_rank_predictions(
-    db_root: Path,
-    target_folder: Path,
-    from_predictions: list[str] | None,
-    from_experiments: list[str] | None,
-) -> None:
-    preds_root = target_folder / "predictions"
-    preds_root.mkdir(exist_ok=True)
-    for pid in from_predictions:  # type: ignore[union-attr]
-        src = db_root / "prediction" / pid
-        pdst = preds_root / pid
-        shutil.copytree(src, pdst, ignore=IGNORE_METADATA_PATTERN)
-        _make_writable(pdst)
-
-    exp_id = from_experiments[0]  # type: ignore[index]
-    exp_src = db_root / "experiment" / exp_id
-    exp_dst = target_folder / "experiment"
-    shutil.copytree(exp_src, exp_dst, ignore=IGNORE_METADATA_PATTERN)
-    _make_writable(exp_dst)
-
-
-def _assemble_score_theories(
-    db_root: Path,
-    target_folder: Path,
-    theory_dirs: list[tuple[str, Path]],
-    from_theories: list[str] | None,
-) -> None:
-    theories_root = target_folder / "theories"
-    theories_root.mkdir(exist_ok=True)
-    for tid, tdir in theory_dirs:
-        dst = theories_root / tid
-        shutil.copytree(tdir, dst, ignore=IGNORE_METADATA_PATTERN)
-        _make_writable(dst)
-
-    matched_experiments_by_base: dict[str, list[tuple[str, str]]] = {
-        tid: [] for tid in (from_theories or [])
-    }
-    exp_root = db_root / "experiment"
-    if exp_root.is_dir() and from_theories:
-        base_ancestors = {
-            tid: _get_ancestor_theories(db_root, [tid]) for tid in from_theories
-        }
-        for meta_path in exp_root.glob("*/metadata.json"):
-            try:
-                data = json.loads(meta_path.read_text())
-                if not _is_visible(data):
-                    continue
-                parent_theory = data.get("parent_theory")
-                if parent_theory:
-                    eid = data.get("id")
-                    created_at = data.get("created_at", "")
-                    if eid:
-                        for base_tid, ancestors in base_ancestors.items():
-                            if parent_theory in ancestors:
-                                matched_experiments_by_base[base_tid].append(
-                                    (created_at, eid)
-                                )
-            except (json.JSONDecodeError, OSError):
-                continue
-
-    for exps in matched_experiments_by_base.values():
-        exps.sort(key=lambda x: x[0], reverse=True)
-
-    num_experiments_to_include = 30
-    selected_eids: set[str] = set()
-
-    if from_theories:
-        pointers = {tid: 0 for tid in from_theories}
-        while len(selected_eids) < num_experiments_to_include:
-            added_in_round = False
-            for tid in from_theories:
-                exps = matched_experiments_by_base[tid]
-                while pointers[tid] < len(exps):
-                    _, eid = exps[pointers[tid]]
-                    pointers[tid] += 1
-                    if eid not in selected_eids:
-                        selected_eids.add(eid)
-                        added_in_round = True
-                        break
-                if len(selected_eids) >= num_experiments_to_include:
-                    break
-            if not added_in_round:
-                break
-
-    for exp_id in selected_eids:
-        fetch_experiment(target_folder, exp_id, exclude_results=True)
-
-
-def _assemble_score_soundness(
-    db_root: Path, target_folder: Path, theory_dirs: list[tuple[str, Path]]
-) -> None:
-    dst = target_folder / "theory"
-    shutil.copytree(
-        theory_dirs[0][1],
-        dst,
-        ignore=IGNORE_METADATA_PATTERN,
-    )
-    _make_writable(dst)
-
-    reviews_root = target_folder / "reviews"
-    reviews_root.mkdir(exist_ok=True)
-    review_root_dir = db_root / "review"
-    tid = theory_dirs[0][0]
-    if review_root_dir.is_dir():
-        for meta_path in sorted(review_root_dir.glob("*/metadata.json")):
-            try:
-                data = json.loads(meta_path.read_text())
-                if not _is_visible(data):
-                    continue
-                if (
-                    data.get("parent_theory") == tid
-                    and data.get("agent_type") == "falsify-hypothesis"
-                ):
-                    rid = data.get("id")
-                    if rid:
-                        src_review = review_root_dir / rid
-                        rdst = reviews_root / rid
-                        shutil.copytree(
-                            src_review, rdst, ignore=IGNORE_METADATA_PATTERN
-                        )
-                        _make_writable(rdst)
-            except (json.JSONDecodeError, OSError):
-                continue
-
-
-def _assemble_rank_predictive_power(
-    db_root: Path,
-    target_folder: Path,
-    theory_dirs: list[tuple[str, Path]],
-    from_theories: list[str] | None,
-) -> None:
-    theories_root = target_folder / "theories"
-    theories_root.mkdir(exist_ok=True)
-    for tid, tdir in theory_dirs:
-        dst = theories_root / tid
-        shutil.copytree(tdir, dst, ignore=IGNORE_METADATA_PATTERN)
-        _make_writable(dst)
-
-    reviews_root = target_folder / "reviews"
-    reviews_root.mkdir(exist_ok=True)
-    review_root_dir = db_root / "review"
-    if review_root_dir.is_dir():
-        for meta_path in sorted(review_root_dir.glob("*/metadata.json")):
-            try:
-                data = json.loads(meta_path.read_text())
-                if not _is_visible(data):
-                    continue
-                if (
-                    data.get("parent_theory") in from_theories
-                    and data.get("agent_type") == "suggest-expansions"
-                ):
-                    rid = data.get("id")
-                    if rid:
-                        src_review = review_root_dir / rid
-                        rdst = reviews_root / rid
-                        shutil.copytree(
-                            src_review, rdst, ignore=IGNORE_METADATA_PATTERN
-                        )
-                        _make_writable(rdst)
-            except (json.JSONDecodeError, OSError):
-                continue
-
-
-def _resolve_context_paths(
-    db_root: Path,
-    from_exploration: str | None,
-    from_literatures: list[str] | None,
-    from_theories: list[str] | None,
-    from_reviews: list[str] | None,
-    from_predictions: list[str] | None,
-) -> tuple[Path | None, list[tuple[str, Path]], list[tuple[str, Path]]]:
-    exploration_dir = None
-    if from_exploration:
-        exploration_dir = db_root / "exploration" / from_exploration
-        if not exploration_dir.is_dir():
-            raise ValueError(
-                f"Exploration {from_exploration!r} not found in database "
-                f"(expected {exploration_dir})"
-            )
-        # Check visibility
-        meta_path = exploration_dir / "metadata.json"
-        if meta_path.is_file():
-            try:
-                data = json.loads(meta_path.read_text())
-                if not _is_visible(data):
-                    raise ValueError(f"Exploration {from_exploration!r} is not visible")
-            except (json.JSONDecodeError, OSError):
-                pass
-
-    literature_dirs: list[tuple[str, Path]] = []
-    if from_literatures:
-        for lid in from_literatures:
-            lit_dir = db_root / "literature" / lid
-            if not lit_dir.is_dir():
-                raise ValueError(
-                    f"Literature review {lid!r} not found in database "
-                    f"(expected {lit_dir})"
-                )
-            # Check visibility
-            meta_path = lit_dir / "metadata.json"
-            if meta_path.is_file():
-                try:
-                    data = json.loads(meta_path.read_text())
-                    if not _is_visible(data):
-                        raise ValueError(f"Literature {lid!r} is not visible")
-                except (json.JSONDecodeError, OSError):
-                    pass
-            literature_dirs.append((lid, lit_dir))
-
-    theory_dirs: list[tuple[str, Path]] = []
-    if from_theories:
-        for tid in from_theories:
-            theory_dir = db_root / "theory" / tid
-            if not theory_dir.is_dir():
-                raise ValueError(
-                    f"Theory {tid!r} not found in database (expected {theory_dir})"
-                )
-            # Check visibility
-            meta_path = theory_dir / "metadata.json"
-            if meta_path.is_file():
-                try:
-                    data = json.loads(meta_path.read_text())
-                    if not _is_visible(data):
-                        raise ValueError(f"Theory {tid!r} is not visible")
-                except (json.JSONDecodeError, OSError):
-                    pass
-            theory_dirs.append((tid, theory_dir))
-
-    if from_reviews:
-        for rid in from_reviews:
-            review_dir = db_root / "review" / rid
-            if not review_dir.is_dir():
-                raise ValueError(
-                    f"Review {rid!r} not found in database (expected {review_dir})"
-                )
-            # Check visibility
-            meta_path = review_dir / "metadata.json"
-            if meta_path.is_file():
-                try:
-                    data = json.loads(meta_path.read_text())
-                    if not _is_visible(data):
-                        raise ValueError(f"Review {rid!r} is not visible")
-                except (json.JSONDecodeError, OSError):
-                    pass
-
-    if from_predictions:
-        for pid in from_predictions:
-            pred_dir = db_root / "prediction" / pid
-            if not pred_dir.is_dir():
-                raise ValueError(
-                    f"Prediction {pid!r} not found in database (expected {pred_dir})"
-                )
-            # Check visibility
-            meta_path = pred_dir / "metadata.json"
-            if meta_path.is_file():
-                try:
-                    data = json.loads(meta_path.read_text())
-                    if not _is_visible(data):
-                        raise ValueError(f"Prediction {pid!r} is not visible")
-                except (json.JSONDecodeError, OSError):
-                    pass
-
-    return exploration_dir, literature_dirs, theory_dirs
 
 
 def _validate_create_context_args(
@@ -972,7 +681,6 @@ def create_context(
     """Assemble upstream artifacts into *target_folder* for the next agent."""
     db_root = get_db_path()
 
-    # --- validate required references per agent type ---
     _validate_create_context_args(
         for_agent_type=for_agent_type,
         from_exploration=from_exploration,
@@ -983,86 +691,151 @@ def create_context(
         from_predictions=from_predictions,
     )
 
-    with DatabaseLock(db_root):
-        # --- resolve and validate paths ---
-        exploration_dir, literature_dirs, theory_dirs = _resolve_context_paths(
-            db_root=db_root,
-            from_exploration=from_exploration,
-            from_literatures=from_literatures,
-            from_theories=from_theories,
-            from_reviews=from_reviews,
-            from_predictions=from_predictions,
-        )
-
-        # --- create target and copy ---
+    with DatabaseSession(db_root) as session:
         target_folder.mkdir(parents=True, exist_ok=True)
 
-        if for_agent_type == "write-theory":
-            _assemble_write_theory(
-                target_folder=target_folder,
-                exploration_dir=exploration_dir,
-                literature_dirs=literature_dirs,
-            )
+        # 1. Exploration
+        if from_exploration:
+            if session.get_metadata("exploration", from_exploration):
+                copy_artifact(
+                    db_root / "exploration" / from_exploration,
+                    target_folder / "exploration",
+                )
+            else:
+                raise ValueError(
+                    f"Exploration {from_exploration!r} not found or invisible"
+                )
 
-        elif for_agent_type in (
-            "falsify-hypothesis",
-            "suggest-expansions",
-            "polish-theory",
-            "streamline-theory",
-        ):
-            _assemble_theory_copy(target_folder=target_folder, theory_dirs=theory_dirs)
+        # 2. Literature
+        if from_literatures:
+            if for_agent_type == "write-theory":
+                # Special case: flat literature layout
+                copy_artifact(
+                    db_root / "literature" / from_literatures[0],
+                    target_folder / "literature",
+                )
+            else:
+                lit_root = target_folder / "literature"
+                lit_root.mkdir(exist_ok=True)
+                for lid in from_literatures:
+                    if session.get_metadata("literature", lid):
+                        copy_artifact(db_root / "literature" / lid, lit_root / lid)
+                    else:
+                        raise ValueError(f"Literature {lid!r} not found or invisible")
 
-        elif for_agent_type in ("refine-hypothesis", "expand-theory"):
-            _assemble_refine_expand(
-                db_root=db_root,
-                target_folder=target_folder,
-                theory_dirs=theory_dirs,
-                from_reviews=from_reviews,
-                literature_dirs=literature_dirs,
-            )
+        # 3. Theories (The dispatch for different layout requirements)
+        if from_theories:
+            if for_agent_type == "review-theory":
+                # Special case: theory.md file only
+                theory_md = db_root / "theory" / from_theories[0] / "theory.md"
+                if theory_md.exists():
+                    shutil.copy2(theory_md, target_folder / "theory.md")
+                    _make_writable(target_folder / "theory.md")
+            elif for_agent_type in ("score-theories", "rank-predictive-power"):
+                # Multiple theories in theories/ folder
+                theories_root = target_folder / "theories"
+                theories_root.mkdir(exist_ok=True)
+                for tid in from_theories:
+                    copy_artifact(db_root / "theory" / tid, theories_root / tid)
+            else:
+                # Single theory in theory/ folder
+                copy_artifact(
+                    db_root / "theory" / from_theories[0], target_folder / "theory"
+                )
 
-        elif for_agent_type == "review-theory":
-            _assemble_review_theory(
-                target_folder=target_folder, theory_dirs=theory_dirs
-            )
+        # 4. Reviews
+        if from_reviews:
+            reviews_root = target_folder / "reviews"
+            reviews_root.mkdir(exist_ok=True)
+            for rid in from_reviews:
+                copy_artifact(db_root / "review" / rid, reviews_root / rid)
 
-        elif for_agent_type == "predict-experiments":
-            _assemble_predict_experiments(
-                target_folder=target_folder,
-                theory_dirs=theory_dirs,
-                from_experiments=from_experiments,
-            )
+        # 5. Experiments
+        if from_experiments:
+            if for_agent_type == "predict-experiments":
+                for exp_id in from_experiments:
+                    fetch_experiment(target_folder, exp_id, exclude_results=True)
+            elif for_agent_type == "rank-predictions":
+                copy_artifact(
+                    db_root / "experiment" / from_experiments[0],
+                    target_folder / "experiment",
+                )
 
-        elif for_agent_type == "rank-predictions":
-            _assemble_rank_predictions(
-                db_root=db_root,
-                target_folder=target_folder,
-                from_predictions=from_predictions,
-                from_experiments=from_experiments,
-            )
+        # 6. Predictions
+        if from_predictions:
+            preds_root = target_folder / "predictions"
+            preds_root.mkdir(exist_ok=True)
+            for pid in from_predictions:
+                copy_artifact(db_root / "prediction" / pid, preds_root / pid)
 
-        elif for_agent_type == "score-theories":
-            _assemble_score_theories(
-                db_root=db_root,
-                target_folder=target_folder,
-                theory_dirs=theory_dirs,
-                from_theories=from_theories,
-            )
+        # --- Post-processing: Advanced Data Gathering ---
+
+        if for_agent_type == "score-theories":
+            # Add up to 30 experiments relevant to the theories being scored
+            matched_experiments_by_base: dict[str, list[tuple[str, str]]] = {
+                tid: [] for tid in from_theories
+            }
+            base_ancestors = {
+                tid: _get_ancestor_theories(session, [tid]) for tid in from_theories
+            }
+
+            for meta_path, data in session.iter_metadata("experiment"):
+                parent_theory = data.get("parent_theory")
+                if parent_theory:
+                    eid = data.get("id")
+                    created_at = data.get("created_at", "")
+                    for base_tid, ancestors in base_ancestors.items():
+                        if parent_theory in ancestors:
+                            matched_experiments_by_base[base_tid].append(
+                                (created_at, eid)
+                            )
+
+            for exps in matched_experiments_by_base.values():
+                exps.sort(key=lambda x: x[0], reverse=True)
+
+            selected_eids: set[str] = set()
+            pointers = {tid: 0 for tid in from_theories}
+            while len(selected_eids) < 30:
+                added = False
+                for tid in from_theories:
+                    exps = matched_experiments_by_base[tid]
+                    if pointers[tid] < len(exps):
+                        selected_eids.add(exps[pointers[tid]][1])
+                        pointers[tid] += 1
+                        added = True
+                if not added:
+                    break
+
+            for eid in selected_eids:
+                fetch_experiment(target_folder, eid, exclude_results=True)
 
         elif for_agent_type == "score-soundness":
-            _assemble_score_soundness(
-                db_root=db_root,
-                target_folder=target_folder,
-                theory_dirs=theory_dirs,
-            )
+            # Add all 'falsify-hypothesis' reviews for the given theory
+            reviews_root = target_folder / "reviews"
+            reviews_root.mkdir(exist_ok=True)
+            tid = from_theories[0]
+            for _, data in session.iter_metadata("review"):
+                if (
+                    data.get("parent_theory") == tid
+                    and data.get("agent_type") == "falsify-hypothesis"
+                ):
+                    copy_artifact(
+                        db_root / "review" / data["id"], reviews_root / data["id"]
+                    )
 
         elif for_agent_type == "rank-predictive-power":
-            _assemble_rank_predictive_power(
-                db_root=db_root,
-                target_folder=target_folder,
-                theory_dirs=theory_dirs,
-                from_theories=from_theories,
-            )
+            # Add all 'suggest-expansions' reviews for the theories
+            reviews_root = target_folder / "reviews"
+            reviews_root.mkdir(exist_ok=True)
+            tids = set(from_theories)
+            for _, data in session.iter_metadata("review"):
+                if (
+                    data.get("parent_theory") in tids
+                    and data.get("agent_type") == "suggest-expansions"
+                ):
+                    copy_artifact(
+                        db_root / "review" / data["id"], reviews_root / data["id"]
+                    )
 
 
 def fetch_experiment(
@@ -1072,39 +845,17 @@ def fetch_experiment(
     ``experiments/<experiment_id>/``.
     """
     db_root = get_db_path()
-    exp_dir = db_root / "experiment" / experiment_id
-    if not exp_dir.is_dir():
-        raise ValueError(
-            f"Experiment {experiment_id!r} not found in database (expected {exp_dir})"
-        )
-    if not target_folder.is_dir():
-        raise ValueError(f"Target folder does not exist: {target_folder}")
-
-    with DatabaseLock(db_root):
-        meta_path = exp_dir / "metadata.json"
-        if meta_path.is_file():
-            try:
-                data = json.loads(meta_path.read_text())
-                if not _is_visible(data):
-                    raise ValueError(
-                        f"Experiment {experiment_id!r} is not visible (staged for another transaction)"
-                    )
-            except (json.JSONDecodeError, OSError):
-                pass
+    with DatabaseSession(db_root) as session:
+        if not session.get_metadata("experiment", experiment_id):
+            raise ValueError(f"Experiment {experiment_id!r} not found or invisible")
 
         dst_root = target_folder / "experiments"
         dst_root.mkdir(exist_ok=True)
-        dst = dst_root / experiment_id
-        if dst.exists():
-            raise ValueError(f"Experiment {experiment_id!r} already present at {dst}")
-        ignore_pattern = IGNORE_METADATA_PATTERN
-        if exclude_results:
-            # Ignore everything that's NOT either "script.py" or "description.md"
-            ignore_pattern = lambda _, names: [  # noqa: E731
-                n for n in names if n not in ("script.py", "description.md")
-            ]
-        shutil.copytree(exp_dir, dst, ignore=ignore_pattern)
-        _make_writable(dst)
+        copy_artifact(
+            db_root / "experiment" / experiment_id,
+            dst_root / experiment_id,
+            exclude_results=exclude_results,
+        )
 
 
 def search_experiments(
@@ -1128,20 +879,8 @@ def search_experiments(
 
     results: list[tuple[int, str, dict]] = []
 
-    with DatabaseLock(db_root):
-        exp_root = db_root / "experiment"
-        if not exp_root.is_dir():
-            return []
-
-        for meta_path in sorted(exp_root.glob("*/metadata.json")):
-            try:
-                data = json.loads(meta_path.read_text())
-            except (json.JSONDecodeError, OSError):
-                continue
-
-            if not _is_visible(data):
-                continue
-
+    with DatabaseSession(db_root) as session:
+        for meta_path, data in session.iter_metadata("experiment"):
             extra = data.get("extra") or {}
 
             if parent_theory and data.get("parent_theory") != parent_theory:
@@ -1198,34 +937,15 @@ def fetch_literature(target_folder: Path, literature_id: str) -> None:
     ``literature/<literature_id>/``.
     """
     db_root = get_db_path()
-    lit_dir = db_root / "literature" / literature_id
-    if not lit_dir.is_dir():
-        raise ValueError(
-            f"Literature review {literature_id!r} not found in database "
-            f"(expected {lit_dir})"
-        )
-    if not target_folder.is_dir():
-        raise ValueError(f"Target folder does not exist: {target_folder}")
-
-    with DatabaseLock(db_root):
-        meta_path = lit_dir / "metadata.json"
-        if meta_path.is_file():
-            try:
-                data = json.loads(meta_path.read_text())
-                if not _is_visible(data):
-                    raise ValueError(
-                        f"Literature review {literature_id!r} is not visible (staged for another transaction)"
-                    )
-            except (json.JSONDecodeError, OSError):
-                pass
+    with DatabaseSession(db_root) as session:
+        if not session.get_metadata("literature", literature_id):
+            raise ValueError(
+                f"Literature review {literature_id!r} not found or invisible"
+            )
 
         dst_root = target_folder / "literature"
         dst_root.mkdir(exist_ok=True)
-        dst = dst_root / literature_id
-        if dst.exists():
-            raise ValueError(f"Literature {literature_id!r} already present at {dst}")
-        shutil.copytree(lit_dir, dst, ignore=IGNORE_METADATA_PATTERN)
-        _make_writable(dst)
+        copy_artifact(db_root / "literature" / literature_id, dst_root / literature_id)
 
 
 def list_entries(
@@ -1248,29 +968,20 @@ def list_entries(
 
     results: list[dict] = []
 
-    with DatabaseLock(db_root):
-        pattern = db_root / entry_type / "*" / "metadata.json"
-
-        for meta_path in sorted(db_root.glob(str(pattern.relative_to(db_root)))):
-            try:
-                data = json.loads(meta_path.read_text())
-                if not _is_visible(data):
-                    continue
-                if (
-                    entry_type in ("review", "experiment")
-                    and parent_theory
-                    and data.get("parent_theory") != parent_theory
-                ):
-                    continue
-                results.append(data)
-            except (json.JSONDecodeError, OSError):
+    with DatabaseSession(db_root) as session:
+        for _, data in session.iter_metadata(entry_type):
+            if (
+                entry_type in ("review", "experiment")
+                and parent_theory
+                and data.get("parent_theory") != parent_theory
+            ):
                 continue
+            results.append(data)
 
         if sort_by == "created_at":
             results.sort(key=lambda d: d.get("created_at", ""))
         elif sort_by == "score":
-            population_path = _population_path(db_root)
-            population = _load_population(population_path)
+            population = session.get_population()
             scores = {}
             if population:
                 for organism, eval_result in population.organisms:
@@ -1293,9 +1004,8 @@ def sample_theories(
     num_theories: int, purpose: Literal["scoring", "mutation"]
 ) -> list[str]:
     db_root = get_db_path()
-    with DatabaseLock(db_root):
-        population_path = _population_path(db_root)
-        population = _load_population(population_path)
+    with DatabaseSession(db_root) as session:
+        population = session.get_population()
         if not population:
             return []
         if purpose == "scoring":
@@ -1317,13 +1027,12 @@ def sample_theories(
 
 def rescore_theories(theory_scores: dict[str, dict[str, float]]) -> None:
     db_root = get_db_path()
-    with DatabaseLock(db_root):
-        population_path = _population_path(db_root)
-        population = _load_population(population_path)
+    with DatabaseSession(db_root) as session:
+        population = session.get_population()
         if not population:
             raise RuntimeError("Population is empty; cannot rescore theories")
 
-        # Step 1: Update scores for the procvided theories
+        # Step 1: Update scores for the provided theories
         updated_theories = set()
         for organism, score in population.organisms:
             if organism.theory_id in theory_scores:
@@ -1347,25 +1056,17 @@ def rescore_theories(theory_scores: dict[str, dict[str, float]]) -> None:
             if organism.theory_id not in updated_theories:
                 score.score *= SCORE_DECAY_RATE
 
-        _save_population(population, population_path)
+        session.mark_population_modified()
 
 
 def commit_transaction(transaction_id: str) -> None:
     """Commit a transaction by finalizing staged objects and adding to population."""
     db_root = get_db_path()
-    with DatabaseLock(db_root):
+    with DatabaseSession(db_root) as session:
         staged_items = []
-        for category in VALID_CATEGORIES:
-            cat_dir = db_root / category
-            if not cat_dir.is_dir():
-                continue
-            for meta_path in cat_dir.glob("*/metadata.json"):
-                try:
-                    data = json.loads(meta_path.read_text())
-                    if data.get("staged_for_transaction") == transaction_id:
-                        staged_items.append((meta_path, data))
-                except (json.JSONDecodeError, OSError):
-                    continue
+        for meta_path, data in session.iter_all_metadata():
+            if data.get("staged_for_transaction") == transaction_id:
+                staged_items.append((meta_path, data))
 
         if not staged_items:
             return
@@ -1390,8 +1091,7 @@ def commit_transaction(transaction_id: str) -> None:
         theories = [d for _, d in staged_items if d.get("category") == "theory"]
         theories.sort(key=lambda d: d.get("created_at", ""))
         for t in theories:
-            _record_theory_in_population(
-                db_root=db_root,
+            session.record_theory(
                 theory_id=t.get("id"),
                 parent_theory_id=t.get("parent_theory"),
             )
@@ -1399,8 +1099,7 @@ def commit_transaction(transaction_id: str) -> None:
         # 3. Update population (Reviews)
         reviews = [d for _, d in staged_items if d.get("category") == "review"]
         for r in reviews:
-            _record_review_in_population(
-                db_root=db_root,
+            session.record_review(
                 theory_id=r.get("parent_theory"),
                 review_id=r.get("id"),
             )
@@ -1409,9 +1108,8 @@ def commit_transaction(transaction_id: str) -> None:
 def export_theory_population(dest_path: Path) -> None:
     """Export the theory population to a single-line JSON file."""
     db_root = get_db_path()
-    with DatabaseLock(db_root):
-        population_path = _population_path(db_root)
-        population = _load_population(population_path)
+    with DatabaseSession(db_root) as session:
+        population = session.get_population()
         if not population:
             raise RuntimeError("Population is empty; cannot export")
 
@@ -1428,7 +1126,7 @@ def export_theory_population(dest_path: Path) -> None:
 def main(argv: list[str] | None = None) -> None:
     db_root = get_db_path(ensure_exists=False)
     if db_root.exists():
-        with DatabaseLock(db_root):
+        with DatabaseSession(db_root):
             log_path = db_root / "access.log"
             actual_argv = sys.argv if argv is None else [sys.argv[0]] + argv
             with open(log_path, "a", encoding="utf-8") as f:
