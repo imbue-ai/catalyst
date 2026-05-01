@@ -69,7 +69,14 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
   }, []);
 
   const processContent = (text: string) => {
-    const parts = text.split(/(```[\s\S]*?```|`[^`]+`)/g);
+    // Ensure display math blocks ($$ ... $$) are robustly handled.
+    // remark-math v6+ requires delimiters to be on their own lines for block math.
+    // This transforms $$math$$ -> $$\nmath\n$$ and also ensures blank lines around it.
+    const withNewlines = text.replace(/\$\$(.*?)\$\$/gs, (_, content) => {
+      return `\n\n$$\n${content.trim()}\n$$\n\n`;
+    });
+
+    const parts = withNewlines.split(/(```[\s\S]*?```|`[^`]+`|\$\$[\s\S]*?\$\$)/g);
     return parts.map((part, i) => {
       if (i % 2 === 0) {
         return part.replace(/\b([ELTRXP]_\d{8}_\d{6}_[a-f0-9]{6})\b/g, `[$1](#/task/${taskId}/artifact/$1?from=artifact)`);
@@ -80,21 +87,21 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
 
   const toc = useMemo(() => {
     if (!content) return [];
-    
+
     const slugger = new GithubSlugger();
     const lines = content.split('\n');
     const entries: TocEntry[] = [];
-    
+
     // basic regex to find markdown headings. Note this doesn't handle code blocks perfectly but works for most standard use cases.
     const headingRegex = /^(#{1,4})\s+(.+)$/;
-    
+
     let inCodeBlock = false;
     for (const line of lines) {
       if (line.startsWith('```')) {
         inCodeBlock = !inCodeBlock;
         continue;
       }
-      
+
       if (!inCodeBlock) {
         const match = line.match(headingRegex);
         if (match) {
@@ -109,7 +116,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
         }
       }
     }
-    
+
     return entries;
   }, [content]);
 
@@ -124,14 +131,14 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
 
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-8 print:static print:bg-transparent print:p-0 print:block" onClick={onClose}>
-      <div 
+      <div
         className="bg-white w-full h-full max-w-7xl rounded-sm border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col overflow-hidden print:border-none print:shadow-none print:max-w-none print:overflow-visible print:h-auto print:block print:w-full"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-black bg-gray-50 print:hidden">
           <div className="flex items-center gap-3">
             {hasPreviousArtifact && (
-              <button 
+              <button
                 onClick={() => window.history.back()}
                 className="p-1 hover:bg-gray-200 rounded transition-colors"
                 title="Go Back"
@@ -142,7 +149,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
             <span className="font-black text-sm tracking-widest">{artifactId}</span>
           </div>
           <div className="flex items-center gap-2">
-            <button 
+            <button
               onClick={handleExport}
               disabled={exporting || loading}
               className="p-1 hover:bg-gray-200 rounded transition-colors disabled:opacity-50"
@@ -150,14 +157,14 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
             >
               {exporting ? <Loader2 size={20} strokeWidth={3} className="animate-spin" /> : <Download size={20} strokeWidth={3} />}
             </button>
-            <button 
+            <button
               onClick={() => window.print()}
               className="p-1 hover:bg-gray-200 rounded transition-colors"
               title="Print Artifact"
             >
               <Printer size={20} strokeWidth={3} />
             </button>
-            <button 
+            <button
               onClick={onClose}
               className="p-1 hover:bg-gray-200 rounded transition-colors"
             >
@@ -177,7 +184,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
               <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
                 <ul className="space-y-2">
                   {toc.map((entry, idx) => (
-                    <li 
+                    <li
                       key={`${entry.id}-${idx}`}
                       style={{ paddingLeft: `${(entry.level - 1) * 0.75}rem` }}
                     >
@@ -212,7 +219,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
               <div className="prose prose-sm md:prose-base max-w-none md:max-w-4xl lg:max-w-5xl mx-auto prose-img:border-2 prose-img:border-black prose-img:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] prose-pre:border-2 prose-pre:border-black prose-pre:rounded-none prose-pre:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] prose-headings:font-black">
                 <ReactMarkdown
                   remarkPlugins={[remarkMath, remarkGfm]}
-                  rehypePlugins={[rehypeSlug, rehypeKatex]}
+                  rehypePlugins={[rehypeSlug, [rehypeKatex, { strict: 'ignore' }]]}
                   components={{
                     img({ node, src, alt, ...props }) {
                       if (src && !src.startsWith('http') && !src.startsWith('data:')) {
