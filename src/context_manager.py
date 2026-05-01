@@ -183,6 +183,15 @@ class StoredMetadata(BaseModel):
     created_at: str
     parent_theory: str | None = None
     extra: dict[str, str] = Field(default_factory=dict)
+    staged_for_transaction: str | None = None
+
+
+def _is_visible(metadata: dict) -> bool:
+    """Return True if the object is committed or staged for the current transaction."""
+    staged = metadata.get("staged_for_transaction")
+    if not staged:
+        return True
+    return staged == os.environ.get("CONTEXT_TRANSACTION_ID")
 
 
 class TheoryOrganism(Organism):
@@ -458,6 +467,7 @@ def store_results(
         shutil.copytree(from_folder, target_dir, ignore=IGNORE_METADATA_PATTERN)
 
         # --- write metadata ---
+        tx_id = os.environ.get("CONTEXT_TRANSACTION_ID")
         meta = StoredMetadata(
             id=new_id,
             agent_type=from_agent_type,
@@ -467,6 +477,7 @@ def store_results(
             if from_agent_type in parent_theory_allowed_agents
             else None,
             extra=metadata_extra or {},
+            staged_for_transaction=tx_id,
         )
         (target_dir / "metadata.json").write_text(
             json.dumps(meta.model_dump(), indent=2) + "\n"
@@ -476,18 +487,19 @@ def store_results(
         _make_readonly(target_dir)
 
         # --- add to the theory population ---
-        if category == "theory":
-            _record_theory_in_population(
-                db_root=db_root,
-                theory_id=new_id,
-                parent_theory_id=parent_theory,
-            )
-        elif category == "review":
-            _record_review_in_population(
-                db_root=db_root,
-                theory_id=parent_theory,
-                review_id=new_id,
-            )
+        if not tx_id:
+            if category == "theory":
+                _record_theory_in_population(
+                    db_root=db_root,
+                    theory_id=new_id,
+                    parent_theory_id=parent_theory,
+                )
+            elif category == "review":
+                _record_review_in_population(
+                    db_root=db_root,
+                    theory_id=parent_theory,
+                    review_id=new_id,
+                )
 
     return new_id
 
@@ -502,6 +514,8 @@ def _get_ancestor_theories(db_root: Path, base_theories: list[str]) -> set[str]:
         if curr_meta_path.is_file():
             try:
                 tdata = json.loads(curr_meta_path.read_text())
+                if not _is_visible(tdata):
+                    continue
                 parent_tid = tdata.get("parent_theory")
                 if parent_tid and parent_tid not in target_theories:
                     target_theories.add(parent_tid)
@@ -643,6 +657,8 @@ def _assemble_score_theories(
         for meta_path in exp_root.glob("*/metadata.json"):
             try:
                 data = json.loads(meta_path.read_text())
+                if not _is_visible(data):
+                    continue
                 parent_theory = data.get("parent_theory")
                 if parent_theory:
                     eid = data.get("id")
@@ -703,6 +719,8 @@ def _assemble_score_soundness(
         for meta_path in sorted(review_root_dir.glob("*/metadata.json")):
             try:
                 data = json.loads(meta_path.read_text())
+                if not _is_visible(data):
+                    continue
                 if (
                     data.get("parent_theory") == tid
                     and data.get("agent_type") == "falsify-hypothesis"
@@ -739,6 +757,8 @@ def _assemble_rank_predictive_power(
         for meta_path in sorted(review_root_dir.glob("*/metadata.json")):
             try:
                 data = json.loads(meta_path.read_text())
+                if not _is_visible(data):
+                    continue
                 if (
                     data.get("parent_theory") in from_theories
                     and data.get("agent_type") == "suggest-expansions"
@@ -771,6 +791,15 @@ def _resolve_context_paths(
                 f"Exploration {from_exploration!r} not found in database "
                 f"(expected {exploration_dir})"
             )
+        # Check visibility
+        meta_path = exploration_dir / "metadata.json"
+        if meta_path.is_file():
+            try:
+                data = json.loads(meta_path.read_text())
+                if not _is_visible(data):
+                    raise ValueError(f"Exploration {from_exploration!r} is not visible")
+            except (json.JSONDecodeError, OSError):
+                pass
 
     literature_dirs: list[tuple[str, Path]] = []
     if from_literatures:
@@ -781,6 +810,15 @@ def _resolve_context_paths(
                     f"Literature review {lid!r} not found in database "
                     f"(expected {lit_dir})"
                 )
+            # Check visibility
+            meta_path = lit_dir / "metadata.json"
+            if meta_path.is_file():
+                try:
+                    data = json.loads(meta_path.read_text())
+                    if not _is_visible(data):
+                        raise ValueError(f"Literature {lid!r} is not visible")
+                except (json.JSONDecodeError, OSError):
+                    pass
             literature_dirs.append((lid, lit_dir))
 
     theory_dirs: list[tuple[str, Path]] = []
@@ -791,6 +829,15 @@ def _resolve_context_paths(
                 raise ValueError(
                     f"Theory {tid!r} not found in database (expected {theory_dir})"
                 )
+            # Check visibility
+            meta_path = theory_dir / "metadata.json"
+            if meta_path.is_file():
+                try:
+                    data = json.loads(meta_path.read_text())
+                    if not _is_visible(data):
+                        raise ValueError(f"Theory {tid!r} is not visible")
+                except (json.JSONDecodeError, OSError):
+                    pass
             theory_dirs.append((tid, theory_dir))
 
     if from_reviews:
@@ -800,6 +847,15 @@ def _resolve_context_paths(
                 raise ValueError(
                     f"Review {rid!r} not found in database (expected {review_dir})"
                 )
+            # Check visibility
+            meta_path = review_dir / "metadata.json"
+            if meta_path.is_file():
+                try:
+                    data = json.loads(meta_path.read_text())
+                    if not _is_visible(data):
+                        raise ValueError(f"Review {rid!r} is not visible")
+                except (json.JSONDecodeError, OSError):
+                    pass
 
     if from_predictions:
         for pid in from_predictions:
@@ -808,6 +864,15 @@ def _resolve_context_paths(
                 raise ValueError(
                     f"Prediction {pid!r} not found in database (expected {pred_dir})"
                 )
+            # Check visibility
+            meta_path = pred_dir / "metadata.json"
+            if meta_path.is_file():
+                try:
+                    data = json.loads(meta_path.read_text())
+                    if not _is_visible(data):
+                        raise ValueError(f"Prediction {pid!r} is not visible")
+                except (json.JSONDecodeError, OSError):
+                    pass
 
     return exploration_dir, literature_dirs, theory_dirs
 
@@ -1016,6 +1081,17 @@ def fetch_experiment(
         raise ValueError(f"Target folder does not exist: {target_folder}")
 
     with DatabaseLock(db_root):
+        meta_path = exp_dir / "metadata.json"
+        if meta_path.is_file():
+            try:
+                data = json.loads(meta_path.read_text())
+                if not _is_visible(data):
+                    raise ValueError(
+                        f"Experiment {experiment_id!r} is not visible (staged for another transaction)"
+                    )
+            except (json.JSONDecodeError, OSError):
+                pass
+
         dst_root = target_folder / "experiments"
         dst_root.mkdir(exist_ok=True)
         dst = dst_root / experiment_id
@@ -1061,6 +1137,9 @@ def search_experiments(
             try:
                 data = json.loads(meta_path.read_text())
             except (json.JSONDecodeError, OSError):
+                continue
+
+            if not _is_visible(data):
                 continue
 
             extra = data.get("extra") or {}
@@ -1129,6 +1208,17 @@ def fetch_literature(target_folder: Path, literature_id: str) -> None:
         raise ValueError(f"Target folder does not exist: {target_folder}")
 
     with DatabaseLock(db_root):
+        meta_path = lit_dir / "metadata.json"
+        if meta_path.is_file():
+            try:
+                data = json.loads(meta_path.read_text())
+                if not _is_visible(data):
+                    raise ValueError(
+                        f"Literature review {literature_id!r} is not visible (staged for another transaction)"
+                    )
+            except (json.JSONDecodeError, OSError):
+                pass
+
         dst_root = target_folder / "literature"
         dst_root.mkdir(exist_ok=True)
         dst = dst_root / literature_id
@@ -1164,6 +1254,8 @@ def list_entries(
         for meta_path in sorted(db_root.glob(str(pattern.relative_to(db_root)))):
             try:
                 data = json.loads(meta_path.read_text())
+                if not _is_visible(data):
+                    continue
                 if (
                     entry_type in ("review", "experiment")
                     and parent_theory
@@ -1256,6 +1348,62 @@ def rescore_theories(theory_scores: dict[str, dict[str, float]]) -> None:
                 score.score *= SCORE_DECAY_RATE
 
         _save_population(population, population_path)
+
+
+def commit_transaction(transaction_id: str) -> None:
+    """Commit a transaction by finalizing staged objects and adding to population."""
+    db_root = get_db_path()
+    with DatabaseLock(db_root):
+        staged_items = []
+        for category in VALID_CATEGORIES:
+            cat_dir = db_root / category
+            if not cat_dir.is_dir():
+                continue
+            for meta_path in cat_dir.glob("*/metadata.json"):
+                try:
+                    data = json.loads(meta_path.read_text())
+                    if data.get("staged_for_transaction") == transaction_id:
+                        staged_items.append((meta_path, data))
+                except (json.JSONDecodeError, OSError):
+                    continue
+
+        if not staged_items:
+            return
+
+        # 1. Unstage everything
+        for meta_path, data in staged_items:
+            del data["staged_for_transaction"]
+
+            if MAKE_READONLY:
+                os.chmod(meta_path, os.stat(meta_path).st_mode | stat.S_IWUSR)
+
+            meta_path.write_text(json.dumps(data, indent=2) + "\n")
+
+            if MAKE_READONLY:
+                os.chmod(
+                    meta_path,
+                    os.stat(meta_path).st_mode
+                    & ~(stat.S_IWUSR | stat.S_IWGRP | stat.S_IWOTH),
+                )
+
+        # 2. Update population (Theories first, sorted by created_at)
+        theories = [d for _, d in staged_items if d.get("category") == "theory"]
+        theories.sort(key=lambda d: d.get("created_at", ""))
+        for t in theories:
+            _record_theory_in_population(
+                db_root=db_root,
+                theory_id=t.get("id"),
+                parent_theory_id=t.get("parent_theory"),
+            )
+
+        # 3. Update population (Reviews)
+        reviews = [d for _, d in staged_items if d.get("category") == "review"]
+        for r in reviews:
+            _record_review_in_population(
+                db_root=db_root,
+                theory_id=r.get("parent_theory"),
+                review_id=r.get("id"),
+            )
 
 
 def export_theory_population(dest_path: Path) -> None:
@@ -1484,6 +1632,12 @@ def main(argv: list[str] | None = None) -> None:
         help="Output as JSON instead of a table",
     )
 
+    # -- commit --------------------------------------------------------------
+    sp_commit = sub.add_parser(
+        "commit", help="Commit a transaction, finalizing staged objects"
+    )
+    sp_commit.add_argument("transaction_id", help="The transaction ID to commit")
+
     # -- list ----------------------------------------------------------------
     sp_list = sub.add_parser("list", help="List stored entries")
     sp_list.add_argument(
@@ -1629,6 +1783,10 @@ def main(argv: list[str] | None = None) -> None:
                         preview = h.get("preview")
                         if preview:
                             print(f"  {preview}")
+
+        elif args.command == "commit":
+            commit_transaction(args.transaction_id)
+            print(f"Committed transaction {args.transaction_id}")
 
         elif args.command == "list":
             entries = list_entries(
