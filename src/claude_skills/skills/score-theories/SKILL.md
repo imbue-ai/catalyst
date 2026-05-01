@@ -53,7 +53,7 @@ We will use the following methods for converting from a rank `r` (1...n) to a sc
 14. **Determine theory lengths**: For each theory, determine the length of its `theory.md` in number of words, excluding any appendices, supplementary materials, and introductions:
   - Determine the line range corresponding to the main body of the theory by scanning its markdown headings.
   - Count the number of words in that line range using standard Unix tools (e.g. `head -n 500 <CONTEXT_DIR>/theories/<theory_id>/theory.md | tail -n +50 | wc -w`).
-15. **Score Length**: Calculate a length score for each theory using the formula `Length Score = min(1, 1 / (words_in_main_body / 3000)**2)`, where `words_in_main_body` is the number of words in the main body of the theory.
+15. **Score Length**: Calculate a length score for each theory using the formula `Length Score = min(1, 1 / (words_in_main_body / 4000)**2)`, where `words_in_main_body` is the number of words in the main body of the theory.
 16. **Overall Theory Score**: Combine the scores for each theory into a final score using the formula: `Overall Score = (0.7 * Prediction Accuracy Score + 0.3 * Soundness Score) * (0.4 + (0.3 * Predictive Power Score + 0.3 * Prediction Coverage Score) * Length Score)`.
 17. **Save Scores**: Save the overall scores and the detailed subscores to a database, using this bash command:
   ```bash
