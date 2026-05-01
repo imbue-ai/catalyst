@@ -45,7 +45,7 @@ def get_refine_theory_prompt(
     if lit_review_id:
         prompt += f"Use literature_review_id: {lit_review_id}. "
 
-    prompt += "When you are done, return ONLY a JSON object with the keys 'theory_id' (the ID of the new, refined theory), and 'major_changes' (boolean - whether any major changes have been made to the theory)."
+    prompt += "When you are done, return ONLY a JSON object with the keys 'theory_id' (the ID of the new, final theory), and 'major_changes' (boolean - whether any major changes have been made to the theory)."
 
     if not apply_extensions:
         prompt += "\n\nDo NOT apply extension reviews."
