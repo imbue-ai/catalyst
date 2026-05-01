@@ -134,7 +134,7 @@ function App() {
                 No active research threads.
               </div>
             )}
-            {[...tasks].sort((a, b) => (a.created_at || '').localeCompare(b.created_at || '')).map(task => (
+            {[...tasks].sort((a, b) => (b.created_at || '').localeCompare(a.created_at || '')).map(task => (
               <a
                 key={task.id}
                 href={`#/task/${task.id}`}
