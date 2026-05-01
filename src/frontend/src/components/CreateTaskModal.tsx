@@ -149,10 +149,10 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                   <textarea
                     autoFocus
                     required
-                    rows={6}
+                    rows={8}
                     value={inputs.phenomenon}
                     onChange={e => updateInput('phenomenon', e.target.value)}
-                    placeholder="Describe the scientific phenomenon in detail..."
+                    placeholder="Describe the phenomenon that you want me to research..."
                     className="w-full border-2 border-black p-4 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none transition-colors"
                   />
                 </div>
@@ -164,10 +164,10 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                   <textarea
                     autoFocus
                     required
-                    rows={6}
+                    rows={8}
                     value={inputs.idea}
                     onChange={e => updateInput('idea', e.target.value)}
-                    placeholder="Provide a theoretical idea or path to a markdown file..."
+                    placeholder="Provide a theory idea or path to a markdown file..."
                     className="w-full border-2 border-black p-4 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none transition-colors"
                   />
                 </div>
