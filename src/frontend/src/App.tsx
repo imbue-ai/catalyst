@@ -111,7 +111,7 @@ function App() {
               <FlaskConical size={20} />
             </div>
             <h1 className="text-lg font-black tracking-tight leading-none uppercase">
-              AI Scientist<br /><span className="text-gray-400">Orchestrator</span>
+              AI Scientist<br /><span className="text-gray-400">Catalyst</span>
             </h1>
           </div>
 
