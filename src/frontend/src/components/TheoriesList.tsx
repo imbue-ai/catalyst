@@ -104,11 +104,14 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
                   </div>
                   <div className="text-[10px] text-gray-500 font-bold mb-1.5 flex items-center gap-2 uppercase tracking-wider">
                     <Briefcase size={12} className="text-gray-400 group-hover:text-black transition-colors" />
-                    {theory.agent_type.replace(/-/g, ' ')}
+                    {(theory.agent_type || (theory as any).type || 'unknown').replace(/-/g, ' ')}
                   </div>
                   <div className="text-[9px] text-gray-400 font-bold flex items-center gap-2 tracking-widest uppercase opacity-70">
                     <Clock size={12} className="text-gray-300" />
-                    {new Date(theory.created_at).toLocaleDateString()} {new Date(theory.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    {theory.created_at || (theory as any).timestamp 
+                      ? new Date(theory.created_at || (theory as any).timestamp).toLocaleDateString() + ' ' + 
+                        new Date(theory.created_at || (theory as any).timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                      : 'Unknown Date'}
                   </div>
                 </a>
               </li>
