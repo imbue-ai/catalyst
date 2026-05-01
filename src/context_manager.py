@@ -230,7 +230,7 @@ class DatabaseSession:
             pass
         return None
 
-    def iter_metadata(self, category: str):
+    def iter_metadata(self, category: str, include_uncommitted: bool = False):
         """Iterate over all visible metadata in a category."""
         cat_dir = self.db_root / category
         if not cat_dir.is_dir():
@@ -238,15 +238,15 @@ class DatabaseSession:
         for meta_path in cat_dir.glob("*/metadata.json"):
             try:
                 data = json.loads(meta_path.read_text())
-                if self.is_visible(data):
+                if include_uncommitted or self.is_visible(data):
                     yield meta_path, data
             except (json.JSONDecodeError, OSError):
                 continue
 
-    def iter_all_metadata(self):
+    def iter_all_metadata(self, include_uncommitted: bool = False):
         """Iterate over all visible metadata in all categories."""
         for category in VALID_CATEGORIES:
-            yield from self.iter_metadata(category)
+            yield from self.iter_metadata(category, include_uncommitted=include_uncommitted)
 
     def get_population(self) -> Population | None:
         """Lazy-load the population snapshot."""
@@ -1034,15 +1034,15 @@ def rescore_theories(theory_scores: dict[str, dict[str, float]]) -> None:
 
         # Step 1: Update scores for the provided theories
         updated_theories = set()
-        for organism, score in population.organisms:
+        for organism, eval_result in population.organisms:
             if organism.theory_id in theory_scores:
                 theory_score = theory_scores[organism.theory_id]
                 if "score" not in theory_score:
                     raise ValueError(
                         f"Missing 'score' for theory ID {organism.theory_id!r} in input"
                     )
-                score.score = theory_score["score"]
-                score.subscores = theory_score
+                eval_result.score = theory_score["score"]
+                eval_result.subscores = theory_score
                 updated_theories.add(organism.theory_id)
 
         if set(theory_scores.keys()) - updated_theories:
@@ -1064,7 +1064,7 @@ def commit_transaction(transaction_id: str) -> None:
     db_root = get_db_path()
     with DatabaseSession(db_root) as session:
         staged_items = []
-        for meta_path, data in session.iter_all_metadata():
+        for meta_path, data in session.iter_all_metadata(include_uncommitted=True):
             if data.get("staged_for_transaction") == transaction_id:
                 staged_items.append((meta_path, data))
 
