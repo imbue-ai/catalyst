@@ -11,6 +11,7 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
   const [theories, setTheories] = useState<TheoryArtifact[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [showZeroScored, setShowZeroScored] = useState(false);
 
   const fetchTheories = async () => {
     setLoading(true);
@@ -28,6 +29,8 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
   useEffect(() => {
     fetchTheories();
   }, [taskId]);
+
+  const filteredTheories = theories.filter(t => showZeroScored || (t.score != null && t.score !== 0.0));
 
   const validScores = theories.map(t => t.score).filter(s => s != null && s !== 0.0) as number[];
   const minScore = validScores.length > 0 ? Math.min(...validScores) : 0;
@@ -58,16 +61,30 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
   return (
     <div className="flex flex-col h-full bg-white text-gray-800 font-mono">
       <div className="flex justify-between items-center px-6 py-4 border-b border-black flex-shrink-0 bg-white">
-        <h2 className="text-xs font-black text-black tracking-widest uppercase">Top Theories</h2>
-        <button
-          onClick={fetchTheories}
-          className="p-1 text-black hover:bg-gray-100 transition-colors focus:outline-none border border-black"
-          title="Refresh Theories"
-        >
-          <svg className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-          </svg>
-        </button>
+        <h2 className="text-xs font-black text-black tracking-widest">Top Theories</h2>
+        <div className="flex items-center gap-4">
+          <label className="flex items-center gap-2 cursor-pointer group">
+            <div className={`w-3 h-3 border-2 border-black flex items-center justify-center transition-colors ${showZeroScored ? 'bg-black' : 'bg-white'}`}>
+              {showZeroScored && <div className="w-1.5 h-1.5 bg-white" />}
+              <input 
+                type="checkbox" 
+                className="hidden" 
+                checked={showZeroScored} 
+                onChange={e => setShowZeroScored(e.target.checked)} 
+              />
+            </div>
+            <span className="text-[10px] font-black tracking-widest text-gray-400 group-hover:text-black transition-colors">Show Unscored</span>
+          </label>
+          <button
+            onClick={fetchTheories}
+            className="p-1 text-black hover:bg-gray-100 transition-colors focus:outline-none border border-black"
+            title="Refresh Theories"
+          >
+            <svg className={`w-3 h-3 ${loading ? 'animate-spin' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
@@ -79,13 +96,13 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
           <div className="p-4 bg-red-50 text-red-700 text-[10px] font-bold border border-red-200 tracking-widest">
             {error}
           </div>
-        ) : theories.length === 0 ? (
+        ) : filteredTheories.length === 0 ? (
           <div className="text-center text-gray-400 py-10 text-[10px] font-black tracking-widest uppercase">
-            No theories found
+            {theories.length > 0 ? "No scored theories found" : "No theories found"}
           </div>
         ) : (
           <ul className="space-y-4">
-            {theories.map((theory) => (
+            {filteredTheories.map((theory) => (
               <li key={theory.id}>
                 <a 
                   href={`#/task/${taskId}/artifact/${theory.id}`}
@@ -96,13 +113,13 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
                       {theory.id}
                     </span>
                     <span 
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase shrink-0 border ${getScoreStyle(theory.score).className}`}
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black shrink-0 border ${getScoreStyle(theory.score).className}`}
                       style={getScoreStyle(theory.score).style}
                     >
                       {theory.score != null ? theory.score.toFixed(4) : "N/A"}
                     </span>
                   </div>
-                  <div className="text-[10px] text-gray-500 font-bold mb-1.5 flex items-center gap-2 uppercase tracking-wider">
+                  <div className="text-[10px] text-gray-500 font-bold mb-1.5 flex items-center gap-2 tracking-wider capitalize">
                     <Briefcase size={12} className="text-gray-400 group-hover:text-black transition-colors" />
                     {(theory.agent_type || (theory as any).type || 'unknown').replace(/-/g, ' ')}
                   </div>
