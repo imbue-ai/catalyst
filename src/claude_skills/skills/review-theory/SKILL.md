@@ -29,5 +29,5 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --
    - For each theorem, lemma, corollary, and observation, spawn a `falsify-hypothesis` agent instructed to invoke the `falsify-hypothesis` skill, passing the required `<THEORY_ID>` and theorem/lemma/corollary/observation name.
    - Spawn **one** `suggest-expansions` agent instructed to invoke the `suggest-expansions` skill, passing only `<THEORY_ID>`. This agent reviews the entire theory at once.
    - Use the available tools to spawn independent agents (e.g., via `Agent`). All agents can run in parallel.
-4. **Collection**: Wait for each subagent to finish and collect their result IDs.
-5. **Final Output**: Report the list of all result IDs (falsification reviews and the expansion review) as the skill's final result.
+4. **Collection**: Wait for each subagent to finish and collect their responses. Each agent's response should contain a review ID (e.g. `R_20260414_143200_g7h8i9`).
+5. **Final Output**: Report the list of all review IDs (from the falsification reviews and the expansion review) as the skill's final result.

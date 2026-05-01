@@ -18,6 +18,7 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
         env = os.environ.copy()
+        del env["VIRTUAL_ENV"]
         abs_env_folder = os.path.abspath(env_folder)
 
         cmd = [

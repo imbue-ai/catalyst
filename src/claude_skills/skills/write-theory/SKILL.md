@@ -63,7 +63,7 @@ Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audi
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type write-theory --from_folder <OUTPUT_DIR>
    ```
-   Note down the returned theory ID (e.g. `T_20260414_143100_d4e5f6`) as the result of this skill.
+   Note down the returned theory ID (e.g. `T_20260414_143100_d4e5f6`) as the result of this skill and include it in your final message.
 
 ## Theory Output Format
 Your `theory.md` file must contain your theory:
