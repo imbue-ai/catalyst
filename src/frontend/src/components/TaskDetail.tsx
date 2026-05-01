@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { Activity, Folder, Cpu, Loader2, Square, Play, Trash2, Workflow, Plus, XCircle, Copy, Check } from 'lucide-react'
 import * as api from '../api'
 import { StatusBadge } from './StatusBadge'
@@ -25,13 +25,6 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
   const [isProcessing, setIsProcessing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAddonModal, setShowAddonModal] = useState(false)
-  const timelineRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (timelineRef.current) {
-      timelineRef.current.scrollTop = timelineRef.current.scrollHeight;
-    }
-  }, [task.id])
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -124,7 +117,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
 
       <div className="flex-1 flex overflow-hidden">
         {/* Timeline */}
-        <div ref={timelineRef} className="w-1/2 p-8 overflow-y-auto border-r border-gray-100">
+        <div className="w-1/2 p-8 overflow-y-auto border-r border-gray-100">
           <div className="flex items-center justify-between mb-8">
             <h3 className="font-black text-xs tracking-widest flex items-center gap-2">
               Workflow
