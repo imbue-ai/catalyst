@@ -2,6 +2,11 @@
   "sandbox": {
     "enabled": true,
     "failIfUnavailable": true,
-    "allowUnsandboxedCommands": false
+    "allowUnsandboxedCommands": false,
+    "network": {
+      "allowedDomains": [
+        "arxiv.org"
+      ]
+    }
   }
 }
