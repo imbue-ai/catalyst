@@ -1,4 +1,3 @@
-import unittest
 from unittest.mock import patch, MagicMock
 from .helpers import OrchestratorTestCase
 from ..orchestrator import _run_step, _orchestrate_task
