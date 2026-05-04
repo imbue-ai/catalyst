@@ -55,5 +55,6 @@ Some general guidelines:
 - Include plots, figures and specific data points to provide intuition and illustrate the evidence for a statement. Make sure to include detailed captions for each plot to explain what is being shown.
 - Image references in the markdown file need to be relative to `<OUTPUT_DIR>`.
 - Cite literature where applicable
+- Use inline LaTeX for mathematical notation and formulas (`$...$` for inline math, and `$$...$$` for display math). Do NOT put formulas into code blocks.
 
 As a general guideline, write the theory in a way that resembles a well-written main part of a scientific paper or textbook chapter.
