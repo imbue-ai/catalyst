@@ -52,11 +52,11 @@ Target arXiv specifically (include `arxiv` or `site:arxiv.org` in queries). Goog
    Use the arXiv ID as filename. Verify each download succeeded (file >10KB).
 5. **Read and extract**: Read each PDF with the `Read` tool. For each paper, note only the content that speaks to the query — the specific finding, the relevant method, the directly applicable result or bound. Skip the rest.
 6. **Synthesize**: Write `<OUTPUT_DIR>/summary.md` per the format below. Frame the synthesis around the query, not as a general landscape survey.
-7. **Store results**: Persist your output and return the literature ID:
+7. **Store results**: Persist your output:
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type search-literature --from_folder <OUTPUT_DIR>
    ```
-   Note down the returned literature ID (e.g. `L_20260416_143052_a1b2c3`) as the result of this skill.
+   Note down the returned literature ID (e.g. `L_20260416_143052_a1b2c3`) as the result of this skill and continue with any remaining steps in your current workflow.
 
 ## Summary File Format
 
