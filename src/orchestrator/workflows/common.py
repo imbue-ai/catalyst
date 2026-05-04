@@ -95,6 +95,7 @@ def run_evolve_loop(
     max_streamline_prob: float,
     num_extra_scores: int,
     apply_expansions: Optional[str] = None,
+    lit_review_id: Optional[str] = None,
     stage_prefix: str = "",
 ) -> None:
     for i in range(1, iterations + 1):
@@ -170,6 +171,7 @@ def run_evolve_loop(
                         get_refine_theory_prompt(
                             tid,
                             apply_expansions=apply_expansions,
+                            lit_review_id=lit_review_id,
                         ),
                     )
                     mutation_results[stage_name] = res
