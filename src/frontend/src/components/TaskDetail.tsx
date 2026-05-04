@@ -81,6 +81,12 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
       .flatMap(s => s.outputs.theory_id ? [s.outputs.theory_id] : s.outputs.theory_ids)
   )).reverse(), [task.steps])
 
+  const availableReviewIds = useMemo(() => Array.from(new Set(
+    task.steps
+      .filter(s => s.outputs && (s.outputs.review_id || s.outputs.review_ids))
+      .flatMap(s => s.outputs.review_id ? [s.outputs.review_id] : s.outputs.review_ids)
+  )).reverse(), [task.steps])
+
   return (
     <div className="flex flex-col h-full">
       {/* Task Header */}
@@ -370,12 +376,13 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
         <CreateAddonModal
           task={task}
           availableTheoryIds={availableTheoryIds}
+          availableReviewIds={availableReviewIds}
           onClose={() => setShowAddonModal(false)}
           onCreated={() => {
             setShowAddonModal(false)
             onRefresh()
           }}
-          isBackendDown={isBackendDown || false}
+          isBackendDown={!!isBackendDown}
         />
       )}
     </div>

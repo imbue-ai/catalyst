@@ -69,7 +69,7 @@ def get_refine_hypothesis_prompt(theory_id: str, review_id: str) -> str:
     )
 
 
-def get_review_hypothesis_prompt(theory_id: str, hypothesis_title: str) -> str:
+def get_falsify_hypothesis_prompt(theory_id: str, hypothesis_title: str) -> str:
     return (
         f"Please run the falsify-hypothesis skill for theory_id: {theory_id} and hypothesis title: '{hypothesis_title}'. "
         "When you are done, return ONLY a JSON object with the key 'review_id'."

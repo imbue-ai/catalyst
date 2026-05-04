@@ -7,7 +7,7 @@ from .refinement_loop import RefinementLoopAddon
 from .evolve_loop import EvolveLoopAddon
 from .polish_theory import PolishTheoryAddon
 from .refine_hypothesis import RefineHypothesisAddon
-from .review_hypothesis import ReviewHypothesisAddon
+from .falsify_hypothesis import FalsifyHypothesisAddon
 from .suggest_expansions import SuggestExpansionsAddon
 from .expand_theory import ExpandTheoryAddon
 from .streamline_theory_variations import StreamlineTheoryVariationsAddon
@@ -21,7 +21,7 @@ _ADDONS: Dict[str, AddonHandler] = {
     "evolve-loop": EvolveLoopAddon(),
     "polish-theory": PolishTheoryAddon(),
     "refine-hypothesis": RefineHypothesisAddon(),
-    "review-hypothesis": ReviewHypothesisAddon(),
+    "falsify-hypothesis": FalsifyHypothesisAddon(),
     "suggest-expansions": SuggestExpansionsAddon(),
     "expand-theory": ExpandTheoryAddon(),
     "streamline-theory-variations": StreamlineTheoryVariationsAddon(),
