@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, memo } from 'react';
 import { createPortal } from 'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
@@ -9,6 +9,16 @@ import GithubSlugger from 'github-slugger';
 import 'katex/dist/katex.min.css';
 import { X, Loader2, Printer, List as ListIcon, ArrowLeft, Download } from 'lucide-react';
 import * as api from '../api';
+
+const MemoizedMarkdown = memo(({ content, components, remarkPlugins, rehypePlugins }: any) => (
+  <ReactMarkdown
+    remarkPlugins={remarkPlugins}
+    rehypePlugins={rehypePlugins}
+    components={components}
+  >
+    {content}
+  </ReactMarkdown>
+));
 
 interface ArtifactViewerModalProps {
   taskId: string;
@@ -136,6 +146,53 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
 
   const hasPreviousArtifact = window.location.hash.includes('from=artifact');
 
+  const markdownComponents = useMemo(() => ({
+    img({ node, src, alt, className, ...props }: any) {
+      const combinedClassName = className ? `${className} print:break-inside-avoid` : 'print:break-inside-avoid';
+      const imgStyle = { pageBreakInside: 'avoid', breakInside: 'avoid' } as React.CSSProperties;
+      const wrapperStyle = { display: 'inline-block', pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%' } as React.CSSProperties;
+      
+      let resolvedSrc = src;
+      if (src && !src.startsWith('http') && !src.startsWith('data:')) {
+        // rewrite local relative paths to our files endpoint
+        resolvedSrc = `${api.API_BASE_URL}/api/tasks/${taskId}/artifacts/${artifactId}/files/${src.replace(/^\.\//, '')}`;
+      }
+
+      return (
+        <span className="print:break-inside-avoid" style={wrapperStyle}>
+          <img src={resolvedSrc} alt={alt} className={combinedClassName} style={imgStyle} {...props} />
+        </span>
+      );
+    },
+    pre({ node, className, children, ...props }: any) {
+      const wrapperStyle = { display: 'inline-block', pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%' } as React.CSSProperties;
+      return (
+        <div className="print:break-inside-avoid" style={wrapperStyle}>
+          <pre className={className} {...props}>{children}</pre>
+        </div>
+      );
+    },
+    div({ node, className, children, ...props }: any) {
+      if (className && (className.includes('math-display') || className.includes('katex-display'))) {
+        const wrapperStyle = { display: 'inline-block', pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%' } as React.CSSProperties;
+        const combinedClassName = `${className} print:break-inside-avoid`;
+        return <div className={combinedClassName} style={wrapperStyle} {...props}>{children}</div>;
+      }
+      return <div className={className} {...props}>{children}</div>;
+    },
+    span({ node, className, children, ...props }: any) {
+      if (className && (className.includes('math-display') || className.includes('katex-display'))) {
+        const wrapperStyle = { display: 'inline-block', pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%' } as React.CSSProperties;
+        const combinedClassName = `${className} print:break-inside-avoid`;
+        return <span className={combinedClassName} style={wrapperStyle} {...props}>{children}</span>;
+      }
+      return <span className={className} {...props}>{children}</span>;
+    }
+  }), [taskId, artifactId]);
+
+  const remarkPlugins = useMemo(() => [remarkMath, remarkGfm], []);
+  const rehypePlugins = useMemo(() => [rehypeSlug, [rehypeKatex, { strict: 'ignore' }]], []);
+
   return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-8 print:static print:bg-transparent print:p-0 print:block" onClick={onClose}>
       <div
@@ -224,55 +281,12 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
             )}
             {!loading && !error && content && (
               <div className="prose prose-sm md:prose-base max-w-none md:max-w-4xl lg:max-w-5xl mx-auto prose-img:border-2 prose-img:border-black prose-img:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] prose-pre:border-2 prose-pre:border-black prose-pre:rounded-none prose-pre:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] prose-headings:font-black">
-                <ReactMarkdown
-                  remarkPlugins={[remarkMath, remarkGfm]}
-                  rehypePlugins={[rehypeSlug, [rehypeKatex, { strict: 'ignore' }]]}
-                  components={{
-                    img({ node, src, alt, className, ...props }) {
-                      const combinedClassName = className ? `${className} print:break-inside-avoid` : 'print:break-inside-avoid';
-                      const imgStyle = { pageBreakInside: 'avoid', breakInside: 'avoid' } as React.CSSProperties;
-                      const wrapperStyle = { display: 'inline-block', pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%' } as React.CSSProperties;
-                      
-                      let resolvedSrc = src;
-                      if (src && !src.startsWith('http') && !src.startsWith('data:')) {
-                        // rewrite local relative paths to our files endpoint
-                        resolvedSrc = `${api.API_BASE_URL}/api/tasks/${taskId}/artifacts/${artifactId}/files/${src.replace(/^\.\//, '')}`;
-                      }
-
-                      return (
-                        <span className="print:break-inside-avoid" style={wrapperStyle}>
-                          <img src={resolvedSrc} alt={alt} className={combinedClassName} style={imgStyle} {...props} />
-                        </span>
-                      );
-                    },
-                    pre({ node, className, children, ...props }) {
-                      const wrapperStyle = { display: 'inline-block', pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%' } as React.CSSProperties;
-                      return (
-                        <div className="print:break-inside-avoid" style={wrapperStyle}>
-                          <pre className={className} {...props}>{children}</pre>
-                        </div>
-                      );
-                    },
-                    div({ node, className, children, ...props }) {
-                      if (className && (className.includes('math-display') || className.includes('katex-display'))) {
-                        const wrapperStyle = { display: 'inline-block', pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%' } as React.CSSProperties;
-                        const combinedClassName = `${className} print:break-inside-avoid`;
-                        return <div className={combinedClassName} style={wrapperStyle} {...props}>{children}</div>;
-                      }
-                      return <div className={className} {...props}>{children}</div>;
-                    },
-                    span({ node, className, children, ...props }) {
-                      if (className && (className.includes('math-display') || className.includes('katex-display'))) {
-                        const wrapperStyle = { display: 'inline-block', pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%' } as React.CSSProperties;
-                        const combinedClassName = `${className} print:break-inside-avoid`;
-                        return <span className={combinedClassName} style={wrapperStyle} {...props}>{children}</span>;
-                      }
-                      return <span className={className} {...props}>{children}</span>;
-                    }
-                  }}
-                >
-                  {processedContent}
-                </ReactMarkdown>
+                <MemoizedMarkdown
+                  content={processedContent}
+                  remarkPlugins={remarkPlugins}
+                  rehypePlugins={rehypePlugins}
+                  components={markdownComponents}
+                />
               </div>
             )}
           </div>
