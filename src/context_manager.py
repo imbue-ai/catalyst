@@ -46,6 +46,7 @@ AGENT_TYPE_MAP: dict[str, str] = {
     "suggest-expansions": "review",
     "expand-theory": "theory",
     "polish-theory": "theory",
+    "edit-theory": "theory",
     "streamline-theory": "theory",
     "support-idea": "theory",
     "import-theory": "theory",
@@ -496,6 +497,7 @@ def store_results(
         "predict-experiments",
         "refine-hypothesis",
         "polish-theory",
+        "edit-theory",
         "streamline-theory",
         "expand-theory",
     )
@@ -601,13 +603,14 @@ def _validate_create_context_args(
         if from_literatures and len(from_literatures) > 1:
             raise ValueError(
                 "write-theory accepts at most one --from_literature "
-                "(refine-hypothesis and expand-theory support multiple)"
+                "(refine-hypothesis, edit-theory and expand-theory support multiple)"
             )
     elif for_agent_type in (
         "falsify-hypothesis",
         "suggest-expansions",
         "polish-theory",
         "streamline-theory",
+        "edit-theory",
     ):
         if not from_theories or len(from_theories) != 1:
             raise ValueError(
@@ -662,7 +665,7 @@ def _validate_create_context_args(
         raise ValueError(
             f"Unknown target agent type {for_agent_type!r}. "
             f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, "
-            f"review-theory, suggest-expansions, expand-theory, "
+            f"review-theory, suggest-expansions, expand-theory, edit-theory, "
             f"predict-experiments, rank-predictions, score-theories, score-soundness, "
             f"rank-predictive-power"
         )
@@ -1196,6 +1199,7 @@ def main(argv: list[str] | None = None) -> None:
             "review-theory",
             "suggest-expansions",
             "expand-theory",
+            "edit-theory",
             "predict-experiments",
             "rank-predictions",
             "score-theories",
@@ -1203,6 +1207,7 @@ def main(argv: list[str] | None = None) -> None:
             "rank-predictive-power",
             "polish-theory",
             "streamline-theory",
+            "search-literature",
         ],
         help="Type of agent to prepare context for",
     )
@@ -1219,7 +1224,7 @@ def main(argv: list[str] | None = None) -> None:
         default=[],
         dest="from_literatures",
         help=(
-            "Literature review ID. Repeatable for refine-hypothesis and "
+            "Literature review ID. Repeatable for refine-hypothesis, edit-theory, and "
             "expand-theory (each lands in literature/<L_ID>/); write-theory "
             "accepts at most one and uses a flat literature/ layout."
         ),
