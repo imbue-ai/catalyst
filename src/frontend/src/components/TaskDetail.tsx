@@ -54,8 +54,8 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
 
   const availableTheoryIds = Array.from(new Set(
     task.steps
-      .filter(s => s.outputs && s.outputs.theory_id)
-      .map(s => s.outputs.theory_id)
+      .filter(s => s.outputs && (s.outputs.theory_id || s.outputs.theory_ids))
+      .flatMap(s => s.outputs.theory_id ? [s.outputs.theory_id] : s.outputs.theory_ids)
   )).reverse()
 
   return (
@@ -209,8 +209,8 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             <button
               onClick={() => setActiveRightTab('stepDetails')}
               className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors ${activeRightTab === 'stepDetails'
-                  ? 'bg-black text-white'
-                  : 'text-black hover:bg-gray-100'
+                ? 'bg-black text-white'
+                : 'text-black hover:bg-gray-100'
                 }`}
             >
               Step Details
@@ -218,8 +218,8 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             <button
               onClick={() => setActiveRightTab('topTheories')}
               className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors ${activeRightTab === 'topTheories'
-                  ? 'bg-black text-white'
-                  : 'text-black hover:bg-gray-100'
+                ? 'bg-black text-white'
+                : 'text-black hover:bg-gray-100'
                 }`}
             >
               Theories
@@ -289,15 +289,15 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                                 >
                                   {copied ? <Check size={14} /> : <Copy size={14} />}
                                 </button>
-                                </div>
-                                <div className="flex items-center gap-2">
+                              </div>
+                              <div className="flex items-center gap-2">
                                 <span className="text-gray-400">$</span>
                                 <code className="select-all">
-                                  {task.framework === 'gemini' 
-                                    ? `cd "${task.env_folder}" && gemini --resume ${step.session_id}` 
+                                  {task.framework === 'gemini'
+                                    ? `cd "${task.env_folder}" && gemini --resume ${step.session_id}`
                                     : `cd "${task.env_folder}" && claude --resume ${step.session_id}`}
                                 </code>
-                                </div>                            </div>
+                              </div>                            </div>
                           </div>
                         )}
 
