@@ -1,7 +1,7 @@
 ---
 name: search-literature
 description: "Run a targeted literature search on specific findings or questions that emerged during theory development"
-argument-hint: "specific findings, questions, or phenomena to investigate (optionally referencing a theory/review ID for background)"
+argument-hint: "specific findings, questions, or phenomena to investigate"
 ---
 
 You are a **Targeted Literature Investigator**. Your goal is to find prior work that *directly* bears on the query and produce a focused summary a writing skill can fold back into its own context.
@@ -16,7 +16,7 @@ You are a **Targeted Literature Investigator**. Your goal is to find prior work 
 ## Input
 Arguments: $ARGUMENTS
 
-The arguments describe the findings or questions to investigate. They may embed references to a prior theory ID (`T_...`), review ID (`R_...`), or exploration ID (`E_...`) for background — treat these as informational pointers, not required inputs. If useful, you can inspect the referenced artifacts in `${AI_SCIENTIST_DB_PATH:-.ai-scientist-db}/{theory,review,exploration}/<ID>/` to better frame your searches. Do not require these IDs; the skill must work from a plain-text query alone.
+The arguments describe the findings or questions to investigate.
 
 ## Folder setup
 Set up an output folder for your artifacts:
