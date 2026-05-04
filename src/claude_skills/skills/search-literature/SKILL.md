@@ -42,22 +42,16 @@ Target arXiv specifically (include `arxiv` or `site:arxiv.org` in queries). Goog
 
 ## Execution Steps
 
-1. **Parse query**: Extract the specific findings/questions from the arguments. If the arguments reference a theory/review/exploration ID for background, skim the relevant `*.md` file(s) in `${AI_SCIENTIST_DB_PATH:-.ai-scientist-db}/` to sharpen your queries — but do not copy those artifacts into your output.
-
+1. **Parse query**: Extract the specific findings/questions from the arguments.
 2. **Search**: Run 2–4 focused `WebSearch` queries following the strategy above. Identify candidate papers.
-
 3. **Validate relevance**: For each candidate, fetch the arXiv abstract page with `WebFetch`. Keep only papers that directly address the query. Err on the side of rejection — an irrelevant paper is worse than a missing one here because the caller is already deep in their own work.
-
 4. **Download PDFs**: For each kept paper:
    ```bash
    curl -sL "https://arxiv.org/pdf/XXXX.XXXXX" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
    ```
    Use the arXiv ID as filename. Verify each download succeeded (file >10KB).
-
 5. **Read and extract**: Read each PDF with the `Read` tool. For each paper, note only the content that speaks to the query — the specific finding, the relevant method, the directly applicable result or bound. Skip the rest.
-
 6. **Synthesize**: Write `<OUTPUT_DIR>/summary.md` per the format below. Frame the synthesis around the query, not as a general landscape survey.
-
 7. **Store results**: Persist your output and return the literature ID:
    ```bash
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type search-literature --from_folder <OUTPUT_DIR>
