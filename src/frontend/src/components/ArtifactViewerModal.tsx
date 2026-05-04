@@ -226,13 +226,46 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
                   remarkPlugins={[remarkMath, remarkGfm]}
                   rehypePlugins={[rehypeSlug, [rehypeKatex, { strict: 'ignore' }]]}
                   components={{
-                    img({ node, src, alt, ...props }) {
+                    img({ node, src, alt, className, ...props }) {
+                      const combinedClassName = className ? `${className} print:break-inside-avoid` : 'print:break-inside-avoid';
+                      const imgStyle = { pageBreakInside: 'avoid', breakInside: 'avoid' } as React.CSSProperties;
+                      const wrapperStyle = { display: 'inline-block', pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%' } as React.CSSProperties;
+                      
+                      let resolvedSrc = src;
                       if (src && !src.startsWith('http') && !src.startsWith('data:')) {
                         // rewrite local relative paths to our files endpoint
-                        const newSrc = `${api.API_BASE_URL}/api/tasks/${taskId}/artifacts/${artifactId}/files/${src.replace(/^\.\//, '')}`;
-                        return <img src={newSrc} alt={alt} {...props} />;
+                        resolvedSrc = `${api.API_BASE_URL}/api/tasks/${taskId}/artifacts/${artifactId}/files/${src.replace(/^\.\//, '')}`;
                       }
-                      return <img src={src} alt={alt} {...props} />;
+
+                      return (
+                        <span className="print:break-inside-avoid" style={wrapperStyle}>
+                          <img src={resolvedSrc} alt={alt} className={combinedClassName} style={imgStyle} {...props} />
+                        </span>
+                      );
+                    },
+                    pre({ node, className, children, ...props }) {
+                      const wrapperStyle = { display: 'inline-block', pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%' } as React.CSSProperties;
+                      return (
+                        <div className="print:break-inside-avoid" style={wrapperStyle}>
+                          <pre className={className} {...props}>{children}</pre>
+                        </div>
+                      );
+                    },
+                    div({ node, className, children, ...props }) {
+                      if (className && (className.includes('math-display') || className.includes('katex-display'))) {
+                        const wrapperStyle = { display: 'inline-block', pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%' } as React.CSSProperties;
+                        const combinedClassName = `${className} print:break-inside-avoid`;
+                        return <div className={combinedClassName} style={wrapperStyle} {...props}>{children}</div>;
+                      }
+                      return <div className={className} {...props}>{children}</div>;
+                    },
+                    span({ node, className, children, ...props }) {
+                      if (className && (className.includes('math-display') || className.includes('katex-display'))) {
+                        const wrapperStyle = { display: 'inline-block', pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%' } as React.CSSProperties;
+                        const combinedClassName = `${className} print:break-inside-avoid`;
+                        return <span className={combinedClassName} style={wrapperStyle} {...props}>{children}</span>;
+                      }
+                      return <span className={className} {...props}>{children}</span>;
                     }
                   }}
                 >
