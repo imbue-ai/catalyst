@@ -68,12 +68,14 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
     };
   }, []);
 
-  const processContent = (text: string) => {
+  const processedContent = useMemo(() => {
+    if (!content) return '';
+    
     // Ensure display math blocks ($$ ... $$) are robustly handled.
     // remark-math v6+ requires delimiters to be on their own lines for block math.
     // This transforms $$math$$ -> $$\nmath\n$$ and also ensures blank lines around it.
-    const withNewlines = text.replace(/\$\$(.*?)\$\$/gs, (_, content) => {
-      return `\n\n$$\n${content.trim()}\n$$\n\n`;
+    const withNewlines = content.replace(/\$\$(.*?)\$\$/gs, (_, mathContent) => {
+      return `\n\n$$\n${mathContent.trim()}\n$$\n\n`;
     });
 
     const parts = withNewlines.split(/(```[\s\S]*?```|`[^`]+`|\$\$[\s\S]*?\$\$)/g);
@@ -88,7 +90,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
         return part;
       }
     }).join('');
-  };
+  }, [content, taskId]);
 
   const toc = useMemo(() => {
     if (!content) return [];
@@ -269,7 +271,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
                     }
                   }}
                 >
-                  {processContent(content)}
+                  {processedContent}
                 </ReactMarkdown>
               </div>
             )}
