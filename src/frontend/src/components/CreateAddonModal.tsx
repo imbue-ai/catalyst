@@ -5,12 +5,28 @@ import * as api from '../api'
 interface CreateAddonModalProps {
   task: api.Task;
   availableTheoryIds: string[];
+  availableReviewIds: string[];
   onClose: () => void;
   onCreated: (task: api.Task) => void;
   isBackendDown: boolean;
 }
 
-export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated, isBackendDown }: CreateAddonModalProps) {
+const ADDON_DESCRIPTIONS: Record<string, string> = {
+  'edit-theory': "Apply a custom modification to a theory",
+  'evolve-loop': "Perform a Darwinian evolution on a population of theories, iteratively sampling parents, mutating them (via streamlining or refinement), and rescoring the results.",
+  'expand-theory': "Expand a theory by applying suggested expansion reviews",
+  'falsify-hypothesis': "Attempt to falsify a given hypothesis",
+  'polish-theory': "Polish a theory to improve its clarity and make it easier to read. Does not add or remove any content, just rewords and restructures it.",
+  'refine-hypothesis': "Attempt to refine a given hypothesis",
+  'refine-theory': "Refine a theory by sequentially applying all its available reviews",
+  'refinement-loop': "Systematically improve a theory by iteratively reviewing its components and applying refinements until no major changes are needed.",
+  'review-theory': "Review all theorems/lemmas in a theory and suggest expansions",
+  'streamline-theory': "Streamline a theory down to its core essence.",
+  'streamline-theory-variations': "Streamline a theory down to its core essence, selecting a few different options.",
+  'suggest-expansions': "Review an entire theory and suggest concrete areas for expansion"
+};
+
+export function CreateAddonModal({ task, availableTheoryIds, availableReviewIds, onClose, onCreated, isBackendDown }: CreateAddonModalProps) {
   const [addonType, setAddonType] = useState('streamline-theory')
   const [theoryId, setTheoryId] = useState(availableTheoryIds[0] || '')
   const [direction, setDirection] = useState('')
@@ -20,7 +36,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
   const [numParents, setNumParents] = useState(3)
   const [maxStreamlineProb, setMaxStreamlineProb] = useState(0.5)
   const [numExtraScores, setNumExtraScores] = useState(5)
-  const [reviewId, setReviewId] = useState('')
+  const [reviewId, setReviewId] = useState(availableReviewIds[0] || '')
   const [hypothesisTitle, setHypothesisTitle] = useState('')
   const [instruction, setInstruction] = useState('')
 
@@ -38,7 +54,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
         max_streamline_prob: addonType === 'evolve-loop' ? maxStreamlineProb : undefined,
         num_extra_scores: addonType === 'evolve-loop' ? numExtraScores : undefined,
         review_id: (addonType === 'refine-hypothesis' || addonType === 'expand-theory') ? reviewId : undefined,
-        hypothesis_title: addonType === 'review-hypothesis' ? hypothesisTitle : undefined,
+        hypothesis_title: addonType === 'falsify-hypothesis' ? hypothesisTitle : undefined,
         instruction: addonType === 'edit-theory' ? instruction : undefined
       })
       onCreated(updatedTask)
@@ -102,13 +118,20 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                 <option value="refine-hypothesis">Refine Hypothesis</option>
                 <option value="refine-theory">Refine Theory</option>
                 <option value="refinement-loop">Refinement Loop</option>
-                <option value="review-hypothesis">Review Hypothesis</option>
+                <option value="falsify-hypothesis">Falsify Hypothesis</option>
                 <option value="review-theory">Review Theory</option>
                 <option value="streamline-theory">Streamline Theory</option>
                 <option value="streamline-theory-variations">Streamline Theory Variations</option>
                 <option value="suggest-expansions">Suggest Expansions</option>
               </select>
+              {ADDON_DESCRIPTIONS[addonType] && (
+                <p className="mt-2 text-[10px] font-bold text-gray-500 leading-relaxed italic">
+                  {ADDON_DESCRIPTIONS[addonType]}
+                </p>
+              )}
             </div>
+
+            <div className="border-b border-gray-100 -mt-2" />
 
             {addonType === 'streamline-theory' && (
               <div>
@@ -126,18 +149,31 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
             {(addonType === 'refine-hypothesis' || addonType === 'expand-theory') && (
               <div>
                 <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Review ID</label>
-                <input
-                  type="text"
-                  required
-                  value={reviewId}
-                  onChange={e => setReviewId(e.target.value)}
-                  placeholder="R_YYYYMMDD_..."
-                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
-                />
+                {availableReviewIds.length > 0 ? (
+                  <select
+                    required
+                    value={reviewId}
+                    onChange={e => setReviewId(e.target.value)}
+                    className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
+                  >
+                    {availableReviewIds.map(id => (
+                      <option key={id} value={id}>{id}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <input
+                    type="text"
+                    required
+                    value={reviewId}
+                    onChange={e => setReviewId(e.target.value)}
+                    placeholder="R_YYYYMMDD_..."
+                    className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
+                  />
+                )}
               </div>
             )}
 
-            {addonType === 'review-hypothesis' && (
+            {addonType === 'falsify-hypothesis' && (
               <div>
                 <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Hypothesis Title</label>
                 <input

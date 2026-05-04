@@ -1,6 +1,6 @@
 ---
 name: review-theory
-description: "Review a theory, extract theorems/lemmas, and spawn agents to refine them"
+description: "Review all theorems/lemmas in a theory and suggest expansions"
 argument-hint: "theory ID (e.g. T_20260414_143100_d4e5f6)"
 ---
 
