@@ -9,7 +9,7 @@ class RefinementLoopAddon(AddonHandler):
         return "refinement-loop"
 
     def get_structure(self, addon: Addon, index: int, task: Task) -> Dict[str, Any]:
-        max_iters = addon.max_refinements if hasattr(addon, 'max_refinements') and addon.max_refinements is not None else 3
+        max_iters = addon.max_refinements if addon.max_refinements is not None else 3
         return {
             "type": "loop",
             "name": "Refinement Loop",
@@ -18,8 +18,8 @@ class RefinementLoopAddon(AddonHandler):
         }
 
     def run(self, task: Task, run_step: Callable, addon: Addon, index: int) -> None:
-        max_refinements = addon.max_refinements if hasattr(addon, 'max_refinements') and addon.max_refinements is not None else 3
-        apply_extensions = addon.apply_extensions if hasattr(addon, 'apply_extensions') and addon.apply_extensions is not None else False
+        max_refinements = addon.max_refinements if addon.max_refinements is not None else 3
+        apply_extensions = addon.apply_extensions if addon.apply_extensions is not None else False
         
         run_refinement_loop(
             task=task,

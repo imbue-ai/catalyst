@@ -149,6 +149,12 @@ class CreateAddonRequest(BaseModel):
     type: str
     theory_id: str
     direction: Optional[str] = None
+    max_refinements: Optional[int] = None
+    apply_extensions: Optional[bool] = None
+    evolve_iterations: Optional[int] = None
+    num_parents: Optional[int] = None
+    streamline_prob: Optional[float] = None
+    num_extra_scores: Optional[int] = None
 
 
 @app.post("/api/tasks/{task_id}/addons", response_model=Task)
@@ -202,7 +208,17 @@ def create_addon(task_id: str, req: CreateAddonRequest):
             # Actually, start_task doesn't check for COMPLETED, it just checks for RUNNING.
             # However, if it's FAILED or PAUSED, it resumes.
 
-    addon = Addon(type=req.type, theory_id=req.theory_id, direction=req.direction)
+    addon = Addon(
+        type=req.type,
+        theory_id=req.theory_id,
+        direction=req.direction,
+        max_refinements=req.max_refinements,
+        apply_extensions=req.apply_extensions,
+        evolve_iterations=req.evolve_iterations,
+        num_parents=req.num_parents,
+        streamline_prob=req.streamline_prob,
+        num_extra_scores=req.num_extra_scores,
+    )
     task.addons.append(addon)
 
     from orchestrator.orchestrator import get_full_structure
