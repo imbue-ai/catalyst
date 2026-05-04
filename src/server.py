@@ -155,6 +155,9 @@ class CreateAddonRequest(BaseModel):
     num_parents: Optional[int] = None
     max_streamline_prob: Optional[float] = None
     num_extra_scores: Optional[int] = None
+    review_id: Optional[str] = None
+    hypothesis_title: Optional[str] = None
+    instruction: Optional[str] = None
 
 
 @app.post("/api/tasks/{task_id}/addons", response_model=Task)
@@ -218,6 +221,9 @@ def create_addon(task_id: str, req: CreateAddonRequest):
         num_parents=req.num_parents,
         max_streamline_prob=req.max_streamline_prob,
         num_extra_scores=req.num_extra_scores,
+        review_id=req.review_id,
+        hypothesis_title=req.hypothesis_title,
+        instruction=req.instruction,
     )
     task.addons.append(addon)
 
@@ -519,3 +525,4 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
+

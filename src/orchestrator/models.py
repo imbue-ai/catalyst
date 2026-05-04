@@ -37,6 +37,9 @@ class Addon(BaseModel):
     num_parents: Optional[int] = None
     max_streamline_prob: Optional[float] = None
     num_extra_scores: Optional[int] = None
+    review_id: Optional[str] = None
+    hypothesis_title: Optional[str] = None
+    instruction: Optional[str] = None
 
 class Task(BaseModel):
     id: str

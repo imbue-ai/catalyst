@@ -21,6 +21,9 @@ export interface Addon {
   num_parents?: number;
   max_streamline_prob?: number;
   num_extra_scores?: number;
+  review_id?: string;
+  hypothesis_title?: string;
+  instruction?: string;
 }
 
 export interface Task {

@@ -20,6 +20,9 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
   const [numParents, setNumParents] = useState(3)
   const [maxStreamlineProb, setMaxStreamlineProb] = useState(0.5)
   const [numExtraScores, setNumExtraScores] = useState(5)
+  const [reviewId, setReviewId] = useState('')
+  const [hypothesisTitle, setHypothesisTitle] = useState('')
+  const [instruction, setInstruction] = useState('')
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -33,7 +36,10 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
         evolve_iterations: addonType === 'evolve-loop' ? evolveIterations : undefined,
         num_parents: addonType === 'evolve-loop' ? numParents : undefined,
         max_streamline_prob: addonType === 'evolve-loop' ? maxStreamlineProb : undefined,
-        num_extra_scores: addonType === 'evolve-loop' ? numExtraScores : undefined
+        num_extra_scores: addonType === 'evolve-loop' ? numExtraScores : undefined,
+        review_id: (addonType === 'refine-hypothesis' || addonType === 'expand-theory') ? reviewId : undefined,
+        hypothesis_title: addonType === 'review-hypothesis' ? hypothesisTitle : undefined,
+        instruction: addonType === 'edit-theory' ? instruction : undefined
       })
       onCreated(updatedTask)
     } catch (e: any) {
@@ -89,11 +95,18 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                 onChange={e => setAddonType(e.target.value)}
                 className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
               >
-                <option value="streamline-theory">Streamline Theory</option>
-                <option value="review-theory">Review Theory</option>
+                <option value="edit-theory">Edit Theory</option>
+                <option value="evolve-loop">Evolve Theory Loop</option>
+                <option value="expand-theory">Expand Theory</option>
+                <option value="polish-theory">Polish Theory</option>
+                <option value="refine-hypothesis">Refine Hypothesis</option>
                 <option value="refine-theory">Refine Theory</option>
                 <option value="refinement-loop">Refinement Loop</option>
-                <option value="evolve-loop">Evolve Theory Loop</option>
+                <option value="review-hypothesis">Review Hypothesis</option>
+                <option value="review-theory">Review Theory</option>
+                <option value="streamline-theory">Streamline Theory</option>
+                <option value="streamline-theory-variations">Streamline Theory Variations</option>
+                <option value="suggest-expansions">Suggest Expansions</option>
               </select>
             </div>
 
@@ -106,6 +119,48 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                   onChange={e => setDirection(e.target.value)}
                   placeholder="e.g., focus on aspect XY"
                   className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
+                />
+              </div>
+            )}
+
+            {(addonType === 'refine-hypothesis' || addonType === 'expand-theory') && (
+              <div>
+                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Review ID</label>
+                <input
+                  type="text"
+                  required
+                  value={reviewId}
+                  onChange={e => setReviewId(e.target.value)}
+                  placeholder="R_YYYYMMDD_..."
+                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
+                />
+              </div>
+            )}
+
+            {addonType === 'review-hypothesis' && (
+              <div>
+                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Hypothesis Title</label>
+                <input
+                  type="text"
+                  required
+                  value={hypothesisTitle}
+                  onChange={e => setHypothesisTitle(e.target.value)}
+                  placeholder="Enter the title of the hypothesis to review"
+                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
+                />
+              </div>
+            )}
+
+            {addonType === 'edit-theory' && (
+              <div>
+                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Edit Instructions</label>
+                <textarea
+                  required
+                  rows={5}
+                  value={instruction}
+                  onChange={e => setInstruction(e.target.value)}
+                  placeholder="Describe the edits you want to make to the theory..."
+                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none"
                 />
               </div>
             )}
