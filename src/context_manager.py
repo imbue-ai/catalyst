@@ -983,13 +983,16 @@ def list_entries(
         elif sort_by == "score":
             population = session.get_population()
             scores = {}
+            subscores = {}
             if population:
                 for organism, eval_result in population.organisms:
                     if hasattr(organism, "theory_id"):
                         scores[organism.theory_id] = eval_result.score
+                        subscores[organism.theory_id] = eval_result.subscores if hasattr(eval_result, "subscores") else {}
 
             for d in results:
                 d["score"] = scores.get(d.get("id"))
+                d["subscores"] = subscores.get(d.get("id"))
 
             results.sort(
                 key=lambda d: (
@@ -1002,7 +1005,7 @@ def list_entries(
 
 def sample_theories(
     num_theories: int, purpose: Literal["scoring", "mutation"]
-) -> list[str]:
+) -> list[dict]:
     db_root = get_db_path()
     with DatabaseSession(db_root) as session:
         population = session.get_population()
@@ -1022,7 +1025,14 @@ def sample_theories(
         else:
             raise ValueError(f"Unknown sampling purpose {purpose!r}")
 
-        return [o.theory_id for o, _ in samples]
+        return [
+            {
+                "id": o.theory_id,
+                "score": r.score,
+                "subscores": r.subscores if hasattr(r, "subscores") else {}
+            }
+            for o, r in samples
+        ]
 
 
 def rescore_theories(theory_scores: dict[str, dict[str, float]]) -> None:
@@ -1379,6 +1389,12 @@ def main(argv: list[str] | None = None) -> None:
         required=True,
         help="Intended use of the sampled theories (may influence sampling strategy)",
     )
+    sp_sample.add_argument(
+        "--json",
+        action="store_true",
+        dest="json_output",
+        help="Output as JSON instead of a table",
+    )
 
     # -- rescore ----------------------------------------------------------------
     sp_rescore = sub.add_parser(
@@ -1499,10 +1515,16 @@ def main(argv: list[str] | None = None) -> None:
                     print(f"No {args.entry_type} entries found.")
                 else:
                     if args.sort_by == "score":
-                        print(
-                            f"{'ID':<40} {'Score':<20} {'Created At':<28} {'Agent Type':<20}"
-                        )
-                        print("-" * 110)
+                        subscore_keys = set()
+                        for e in entries:
+                            subscore_keys.update(e.get("subscores", {}).keys() if e.get("subscores") else [])
+                        subscore_keys = sorted(list(subscore_keys))
+
+                        header = f"{'ID':<40} {'Score':<20} {'Created At':<28} {'Agent Type':<20}"
+                        for k in subscore_keys:
+                            header += f" {k.capitalize():<20}"
+                        print(header)
+                        print("-" * len(header))
                         for e in entries:
                             score_val = e.get("score")
                             score_str = (
@@ -1510,12 +1532,12 @@ def main(argv: list[str] | None = None) -> None:
                                 if isinstance(score_val, float)
                                 else "N/A"
                             )
-                            print(
-                                f"{e.get('id', '?'):<40} "
-                                f"{score_str:<20} "
-                                f"{e.get('created_at', '?'):<28} "
-                                f"{e.get('agent_type', '?'):<20}"
-                            )
+                            row = f"{e.get('id', '?'):<40} {score_str:<20} {e.get('created_at', '?'):<28} {e.get('agent_type', '?'):<20}"
+                            for k in subscore_keys:
+                                val = e.get("subscores", {}).get(k) if e.get("subscores") else None
+                                val_str = f"{val:.4f}" if isinstance(val, (int, float)) else str(val) if val is not None else "N/A"
+                                row += f" {val_str:<20}"
+                            print(row)
                     else:
                         print(f"{'ID':<40} {'Created At':<28} {'Agent Type':<20}")
                         print("-" * 88)
@@ -1527,10 +1549,33 @@ def main(argv: list[str] | None = None) -> None:
                             )
 
         elif args.command == "sample_theories":
-            sampled_ids = sample_theories(
+            sampled_theories = sample_theories(
                 num_theories=args.num_theories, purpose=args.purpose
             )
-            print(", ".join(sampled_ids))
+            if getattr(args, "json_output", False):
+                print(json.dumps(sampled_theories, indent=2))
+            else:
+                if not sampled_theories:
+                    print("No theories sampled.")
+                else:
+                    # build headers based on dynamic subscores
+                    subscore_keys = set()
+                    for t in sampled_theories:
+                        subscore_keys.update(t.get("subscores", {}).keys())
+                    subscore_keys = sorted(list(subscore_keys))
+                    
+                    header = f"{'ID':<40} {'Score':<20}"
+                    for k in subscore_keys:
+                        header += f" {k.capitalize():<20}"
+                    print(header)
+                    print("-" * len(header))
+                    for t in sampled_theories:
+                        row = f"{t['id']:<40} {t['score']:<20.4f}"
+                        for k in subscore_keys:
+                            val = t.get("subscores", {}).get(k)
+                            val_str = f"{val:.4f}" if isinstance(val, (int, float)) else str(val) if val is not None else "N/A"
+                            row += f" {val_str:<20}"
+                        print(row)
 
         elif args.command == "rescore_theories":
             theory_score_dict = json.loads(args.theory_score_dict)
@@ -1547,6 +1592,6 @@ def main(argv: list[str] | None = None) -> None:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
 
-
 if __name__ == "__main__":
     main()
+

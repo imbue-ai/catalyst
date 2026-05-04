@@ -5,7 +5,7 @@ from .common import (
     DEFAULT_EVOLVE_ITERATIONS,
     DEFAULT_NUM_EXTRA_SCORES,
     DEFAULT_NUM_PARENTS,
-    DEFAULT_STREAMLINE_PROB,
+    DEFAULT_MAX_STREAMLINE_PROB,
     run_evolve_loop,
     run_summarize_title,
 )
@@ -122,8 +122,8 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 num_parents = int(
                     task.workflow_inputs.get("num_parents", DEFAULT_NUM_PARENTS)
                 )
-                streamline_prob = float(
-                    task.workflow_inputs.get("streamline_prob", DEFAULT_STREAMLINE_PROB)
+                max_streamline_prob = float(
+                    task.workflow_inputs.get("max_streamline_prob", DEFAULT_MAX_STREAMLINE_PROB)
                 )
                 num_extra_scores = int(
                     task.workflow_inputs.get(
@@ -137,7 +137,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
                     run_step,
                     iterations=evolve_iterations,
                     num_parents=num_parents,
-                    streamline_prob=streamline_prob,
+                    max_streamline_prob=max_streamline_prob,
                     num_extra_scores=num_extra_scores,
                     apply_extensions=apply_extensions,
                 )

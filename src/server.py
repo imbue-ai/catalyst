@@ -153,7 +153,7 @@ class CreateAddonRequest(BaseModel):
     apply_extensions: Optional[bool] = None
     evolve_iterations: Optional[int] = None
     num_parents: Optional[int] = None
-    streamline_prob: Optional[float] = None
+    max_streamline_prob: Optional[float] = None
     num_extra_scores: Optional[int] = None
 
 
@@ -216,7 +216,7 @@ def create_addon(task_id: str, req: CreateAddonRequest):
         apply_extensions=req.apply_extensions,
         evolve_iterations=req.evolve_iterations,
         num_parents=req.num_parents,
-        streamline_prob=req.streamline_prob,
+        max_streamline_prob=req.max_streamline_prob,
         num_extra_scores=req.num_extra_scores,
     )
     task.addons.append(addon)

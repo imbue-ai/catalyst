@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_EVOLVE_ITERATIONS = 3
 DEFAULT_NUM_PARENTS = 3
-DEFAULT_STREAMLINE_PROB = 0.25
+DEFAULT_MAX_STREAMLINE_PROB = 0.5
 DEFAULT_NUM_EXTRA_SCORES = 5
 
 
@@ -92,7 +92,7 @@ def run_evolve_loop(
     run_step_fn: Callable,
     iterations: int,
     num_parents: int,
-    streamline_prob: float,
+    max_streamline_prob: float,
     num_extra_scores: int,
     apply_extensions: bool = True,
     stage_prefix: str = "",
@@ -112,11 +112,15 @@ def run_evolve_loop(
                     str(num_parents),
                     "--purpose",
                     "mutation",
+                    "--json",
                 ],
             )
-            return {
-                "parent_ids": [tid.strip() for tid in out.split(",") if tid.strip()]
-            }
+            import json
+            try:
+                samples = json.loads(out)
+                return {"parents": samples}
+            except Exception:
+                return {"parents": []}
 
         sample_res = run_local_step_if_needed(
             task, f"{stage_prefix}sample-parents-{i}", _sample_parents
@@ -124,9 +128,10 @@ def run_evolve_loop(
         if sample_res and sample_res.get("_canceled"):
             continue
 
-        parent_ids = sorted(sample_res.get("parent_ids", []) if sample_res else [])
+        parents = sample_res.get("parents", []) if sample_res else []
+        parents = sorted(parents, key=lambda p: p.get("id", ""))
 
-        if not parent_ids:
+        if not parents:
             logger.debug(
                 f"[ORCHESTRATOR] [{task.id[:8]}] No parent theories available to sample. Skipping iteration."
             )
@@ -134,15 +139,18 @@ def run_evolve_loop(
 
         # 2. Mutate (Nested Parallel)
         logger.debug(
-            f"[ORCHESTRATOR] [{task.id[:8]}] Mutating {len(parent_ids)} parents in parallel..."
+            f"[ORCHESTRATOR] [{task.id[:8]}] Mutating {len(parents)} parents in parallel..."
         )
         new_theory_ids: Set[str] = set()
         mutation_errors = []
         mutation_results = {}
 
-        def run_mutation(tid: str, idx: int):
+        def run_mutation(parent: dict, idx: int):
             try:
+                tid = parent.get("id", "")
                 deterministic_rng = random.Random(f"{tid}:{idx}:{stage_prefix}:{i}")
+                length_score = parent.get("subscores", {}).get("length", 0.0)
+                streamline_prob = max_streamline_prob * (1.0 - length_score)
                 is_streamline = deterministic_rng.random() < streamline_prob
                 if is_streamline:
                     stage_name = f"{stage_prefix}mutate-streamline-{i}-{idx}"
@@ -169,8 +177,8 @@ def run_evolve_loop(
                 mutation_errors.append(e)
 
         threads = []
-        for idx, tid in enumerate(parent_ids):
-            t = threading.Thread(target=run_mutation, args=(tid, idx))
+        for idx, parent in enumerate(parents):
+            t = threading.Thread(target=run_mutation, args=(parent, idx))
             t.daemon = True
             threads.append(t)
 
@@ -238,11 +246,17 @@ def run_evolve_loop(
                     str(num_extra_scores),
                     "--purpose",
                     "scoring",
+                    "--json",
                 ],
             )
-            return {
-                "scoring_ids": [tid.strip() for tid in out.split(",") if tid.strip()]
-            }
+            import json
+            try:
+                samples = json.loads(out)
+                return {
+                    "scoring_ids": [s["id"] for s in samples]
+                }
+            except Exception:
+                return {"scoring_ids": []}
 
         score_sample_res = run_local_step_if_needed(
             task, f"{stage_prefix}sample-scoring-{i}", _sample_scoring
