@@ -130,7 +130,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
                         "num_extra_scores", DEFAULT_NUM_EXTRA_SCORES
                     )
                 )
-                apply_extensions = task.workflow_inputs.get("apply_extensions", False)
+                apply_expansions = task.workflow_inputs.get("apply_expansions")
 
                 run_evolve_loop(
                     task,
@@ -139,5 +139,5 @@ class RefineTheoryIdeaWorkflow(Workflow):
                     num_parents=num_parents,
                     max_streamline_prob=max_streamline_prob,
                     num_extra_scores=num_extra_scores,
-                    apply_extensions=apply_extensions,
+                    apply_expansions=apply_expansions,
                 )

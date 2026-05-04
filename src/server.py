@@ -150,7 +150,7 @@ class CreateAddonRequest(BaseModel):
     theory_id: str
     direction: Optional[str] = None
     max_refinements: Optional[int] = None
-    apply_extensions: Optional[bool] = None
+    apply_expansions: Optional[str] = None
     evolve_iterations: Optional[int] = None
     num_parents: Optional[int] = None
     max_streamline_prob: Optional[float] = None
@@ -213,7 +213,7 @@ def create_addon(task_id: str, req: CreateAddonRequest):
         theory_id=req.theory_id,
         direction=req.direction,
         max_refinements=req.max_refinements,
-        apply_extensions=req.apply_extensions,
+        apply_expansions=req.apply_expansions,
         evolve_iterations=req.evolve_iterations,
         num_parents=req.num_parents,
         max_streamline_prob=req.max_streamline_prob,

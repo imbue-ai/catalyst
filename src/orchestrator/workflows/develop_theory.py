@@ -246,6 +246,8 @@ class DevelopTheoryWorkflow(Workflow):
                         "num_extra_scores", DEFAULT_NUM_EXTRA_SCORES
                     )
                 )
+                apply_expansions = task.workflow_inputs.get("apply_expansions")
+
                 run_evolve_loop(
                     task,
                     run_step,
@@ -253,4 +255,5 @@ class DevelopTheoryWorkflow(Workflow):
                     num_parents=num_parents,
                     max_streamline_prob=max_streamline_prob,
                     num_extra_scores=num_extra_scores,
+                    apply_expansions=apply_expansions,
                 )

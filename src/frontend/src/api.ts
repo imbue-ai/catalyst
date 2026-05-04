@@ -16,7 +16,7 @@ export interface Addon {
   theory_id: string;
   direction?: string;
   max_refinements?: number;
-  apply_extensions?: boolean;
+  apply_expansions?: string;
   evolve_iterations?: number;
   num_parents?: number;
   max_streamline_prob?: number;

@@ -45,7 +45,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     numParents: 3,
     maxStreamlineProb: 0.5,
     numExtraScores: 5,
-    applyExtensions: false,
+    applyExpansions: '',
     templateFolder: '',
     framework: 'claude',
     model: ''
@@ -67,14 +67,15 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         evolve_iterations: inputs.evolveIterations,
         num_parents: inputs.numParents,
         max_streamline_prob: inputs.maxStreamlineProb,
-        num_extra_scores: inputs.numExtraScores
+        num_extra_scores: inputs.numExtraScores,
+        apply_expansions: inputs.applyExpansions || undefined
       }
     } else if (activeTab === 'develop-theory-linear') {
-      workflow_inputs = { phenomenon: inputs.phenomenon, max_refinements: inputs.maxRefinements }
+      workflow_inputs = { phenomenon: inputs.phenomenon, max_refinements: inputs.maxRefinements, apply_expansions: inputs.applyExpansions || undefined }
     } else if (activeTab === 'refine-theory-idea') {
       workflow_inputs = {
         idea: inputs.idea,
-        apply_extensions: inputs.applyExtensions,
+        apply_expansions: inputs.applyExpansions || undefined,
         max_refinements: inputs.maxRefinements,
         evolve_iterations: inputs.evolveIterations,
         num_parents: inputs.numParents,
@@ -82,7 +83,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         num_extra_scores: inputs.numExtraScores
       }
     } else if (activeTab === 'refine-theory-idea-linear') {
-      workflow_inputs = { idea: inputs.idea, apply_extensions: inputs.applyExtensions, max_refinements: inputs.maxRefinements }
+      workflow_inputs = { idea: inputs.idea, apply_expansions: inputs.applyExpansions || undefined, max_refinements: inputs.maxRefinements }
     } else if (activeTab === 'import-theory') {
       workflow_inputs = { file_path: inputs.importFilePath }
     }
@@ -344,20 +345,18 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       </>
                     )}
 
-                    {(activeTab === 'refine-theory-idea' || activeTab === 'refine-theory-idea-linear') && (
-                      <div className="col-span-2 md:col-span-4 mt-2">
-                        <label className="flex items-center gap-3 cursor-pointer group">
-                          <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
-                            <input
-                              type="checkbox"
-                              className="absolute opacity-0 w-full h-full cursor-pointer"
-                              checked={inputs.applyExtensions}
-                              onChange={e => updateInput('applyExtensions', e.target.checked)}
-                            />
-                            {inputs.applyExtensions && <div className="w-3 h-3 bg-black" />}
-                          </div>
-                          <span className="text-[10px] font-black tracking-widest">Apply Extensions</span>
-                        </label>
+                    {!isImport && (
+                      <div className="col-span-1">
+                        <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Apply Expansion Reviews</label>
+                        <select
+                          value={inputs.applyExpansions}
+                          onChange={e => updateInput('applyExpansions', e.target.value)}
+                          className="w-full border-2 border-black p-2 outline-none text-sm font-bold bg-white cursor-pointer"
+                        >
+                          <option value="">Auto (Default)</option>
+                          <option value="always">Always</option>
+                          <option value="never">Never</option>
+                        </select>
                       </div>
                     )}
                   </div>

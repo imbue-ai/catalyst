@@ -1,7 +1,7 @@
 ---
 name: refine-theory
 description: "Refine a theory by sequentially applying all its available reviews"
-argument-hint: "theory ID (e.g. T_20260414_143100_d4e5f6), and optionally one or multiple literature review IDs (e.g. L_20260414_143100_a1b2c3), and optionally an instruction to skip the expansion step (e.g. 'skip expansion')"
+argument-hint: "theory ID (e.g. T_20260414_143100_d4e5f6), and optionally one or multiple literature review IDs (e.g. L_20260414_143100_a1b2c3), and optionally an instruction to skip or always run the expansion step (e.g. 'skip expansion' or 'always apply expansions')"
 ---
 
 You are the **Theory Refinement Coordinator**. Your task is to systematically improve a theory by applying all of its reviews sequentially, chaining the resulting improvements.
@@ -10,7 +10,7 @@ You are the **Theory Refinement Coordinator**. Your task is to systematically im
 Arguments: $ARGUMENTS
 
 Parse the initial theory ID (e.g., `T_20260414_...`) from the arguments. You might also receive one or multiple literature review IDs (e.g., `L_20260414_...`) as part of your arguments.
-Optionally, the arguments might instruct you to skip the expansion step.
+Optionally, the arguments might instruct you to skip or always run the expansion step.
 
 ## Execution Steps
 
@@ -35,8 +35,9 @@ Optionally, the arguments might instruct you to skip the expansion step.
      - **CRITICAL**: Do not run these in parallel. The output of one refinement must be the input to the next.
 
 4. **Expansion** (expansion reviews):
-   Skip this step if ANY of the `refine-hypothesis` subagents reported that they've made significant changes to the theory, or if the arguments instructed to skip the expansion step. Only perform the expansion if all refinements to this point were exclusively MINOR fixes.
-   If there are any expansion reviews, and all refinements so far were minor, spawn a single subagent instructed to invoke the `expand-theory` skill.
+   First determine if this step should be run: If the input arguments specify that expansions should always be applied or never be applied, follow those instructions to determine whether or not to perform this step.
+   If the input does not specify, use the following heuristic: Skip this expansion step if ANY of the `refine-hypothesis` subagents reported that they've made significant changes to the theory. Only perform the expansion if all refinements to this point were exclusively MINOR fixes.
+   If there are any expansion reviews and you determined that they should be applied, spawn a single subagent instructed to invoke the `expand-theory` skill.
    - Provide the subagent with `CURRENT_THEORY_ID` (the latest theory after all refinements) and **all** expansion review IDs. Also pass any literature review IDs you might have. It should pass these as arguments to the `expand-theory` skill.
    - Wait for the subagent to finish and retrieve the new theory ID it returns.
    - Update `CURRENT_THEORY_ID` to this new theory ID.

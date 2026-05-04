@@ -19,14 +19,14 @@ class RefinementLoopAddon(AddonHandler):
 
     def run(self, task: Task, run_step: Callable, addon: Addon, index: int) -> None:
         max_refinements = addon.max_refinements if addon.max_refinements is not None else 3
-        apply_extensions = addon.apply_extensions if addon.apply_extensions is not None else False
+        apply_expansions = addon.apply_expansions
         
         run_refinement_loop(
             task=task,
             run_step_fn=run_step,
             theory_id=addon.theory_id,
             lit_review_id=None,
-            apply_extensions=apply_extensions,
+            apply_expansions=apply_expansions,
             max_refinements=max_refinements,
             stage_prefix=f"addon-{index}-"
         )

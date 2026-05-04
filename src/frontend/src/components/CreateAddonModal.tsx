@@ -15,7 +15,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
   const [theoryId, setTheoryId] = useState(availableTheoryIds[0] || '')
   const [direction, setDirection] = useState('')
   const [maxRefinements, setMaxRefinements] = useState(3)
-  const [applyExtensions, setApplyExtensions] = useState(false)
+  const [applyExpansions, setApplyExpansions] = useState('')
   const [evolveIterations, setEvolveIterations] = useState(3)
   const [numParents, setNumParents] = useState(3)
   const [maxStreamlineProb, setMaxStreamlineProb] = useState(0.5)
@@ -29,7 +29,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
         theory_id: addonType === 'evolve-loop' ? 'none' : theoryId, // Evolve loop doesn't strictly need a theory ID
         direction: addonType === 'streamline-theory' && direction ? direction : undefined,
         max_refinements: addonType === 'refinement-loop' ? maxRefinements : undefined,
-        apply_extensions: addonType === 'refinement-loop' ? applyExtensions : undefined,
+        apply_expansions: (addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory') ? (applyExpansions || undefined) : undefined,
         evolve_iterations: addonType === 'evolve-loop' ? evolveIterations : undefined,
         num_parents: addonType === 'evolve-loop' ? numParents : undefined,
         max_streamline_prob: addonType === 'evolve-loop' ? maxStreamlineProb : undefined,
@@ -124,19 +124,22 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                     className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
                   />
                 </div>
-                <label className="flex items-center gap-3 cursor-pointer group">
-                  <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
-                    <input
-                      type="checkbox"
-                      className="absolute opacity-0 w-full h-full cursor-pointer"
-                      checked={applyExtensions}
-                      onChange={e => setApplyExtensions(e.target.checked)}
-                    />
-                    {applyExtensions && <div className="w-3 h-3 bg-black" />}
-                  </div>
-                  <span className="text-xs font-bold tracking-widest">Apply Extensions</span>
-                </label>
               </>
+            )}
+
+            {(addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory') && (
+              <div>
+                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Apply Expansion Reviews</label>
+                <select
+                  value={applyExpansions}
+                  onChange={e => setApplyExpansions(e.target.value)}
+                  className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
+                >
+                  <option value="">Auto (Default)</option>
+                  <option value="always">Always</option>
+                  <option value="never">Never</option>
+                </select>
+              </div>
             )}
 
             {addonType === 'evolve-loop' && (

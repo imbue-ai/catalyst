@@ -52,7 +52,7 @@ class EvolveLoopAddon(AddonHandler):
         num_parents = addon.num_parents if hasattr(addon, 'num_parents') and addon.num_parents is not None else DEFAULT_NUM_PARENTS
         max_streamline_prob = addon.max_streamline_prob if hasattr(addon, 'max_streamline_prob') and addon.max_streamline_prob is not None else DEFAULT_MAX_STREAMLINE_PROB
         num_extra_scores = addon.num_extra_scores if hasattr(addon, 'num_extra_scores') and addon.num_extra_scores is not None else DEFAULT_NUM_EXTRA_SCORES
-        apply_extensions = addon.apply_extensions if hasattr(addon, 'apply_extensions') and addon.apply_extensions is not None else False
+        apply_expansions = addon.apply_expansions if hasattr(addon, 'apply_expansions') and addon.apply_expansions is not None else None
         
         run_evolve_loop(
             task=task,
@@ -61,7 +61,7 @@ class EvolveLoopAddon(AddonHandler):
             num_parents=num_parents,
             max_streamline_prob=max_streamline_prob,
             num_extra_scores=num_extra_scores,
-            apply_extensions=apply_extensions,
+            apply_expansions=apply_expansions,
             stage_prefix=f"addon-{index}-"
         )
 
