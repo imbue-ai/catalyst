@@ -148,7 +148,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
                      const isRunning = step?.status === 'running' || (task.current_stage === item.stage && !step)
                      return (
                         <InnerStepCard
-                          key={item.stage}
+                          key={`loop-step-${item.stage}-${idx}-${activeIteration}`}
                           label={formatStageName(item.stage)}
                           step={step}
                           isRunning={isRunning}
@@ -161,7 +161,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
                  } else if (item.type === 'parallel') {
                      return (
                         <InnerParallelCard
-                           key={idx}
+                           key={`loop-parallel-${item.name}-${idx}-${activeIteration}`}
                            name={item.name}
                            stages={item.stages}
                            task={task}
@@ -175,14 +175,14 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
                  return null;
              })
           ) : baseStages ? (
-              baseStages.map(baseStage => {
+              baseStages.map((baseStage, idx) => {
                 const stageName = `${baseStage}-${activeIteration}`
                 const step = getStepForIteration(activeIteration, baseStage)
                 const isRunning = step?.status === 'running' || (task.current_stage === stageName && !step)
                 
                 return (
                   <InnerStepCard
-                    key={baseStage}
+                    key={`loop-base-${baseStage}-${idx}-${activeIteration}`}
                     label={formatStageName(baseStage)}
                     step={step}
                     isRunning={isRunning}
