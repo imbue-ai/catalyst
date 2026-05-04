@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { RotateCw } from 'lucide-react'
 import * as api from '../../api'
 import { InnerStepCard, InnerParallelCard, CancelStepsButton, StepIndicator, formatStageName } from './shared'
@@ -65,40 +65,45 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
     return task.steps.find(s => s.stage === stage)
   }
 
-  // Pre-calculate stages to cancel
-  const stagesToCancel: string[] = [];
-  for (let i = 1; i <= iterations; i++) {
-    if (iterationStructures && iterationStructures[i.toString()]) {
-        iterationStructures[i.toString()].forEach((item: any) => {
-            if (item.type === 'step') {
-                stagesToCancel.push(item.stage)
-            } else if (item.type === 'parallel') {
-                stagesToCancel.push(...item.stages)
-            }
-        })
-    } else if (baseStages) {
-        baseStages.forEach(bs => stagesToCancel.push(`${bs}-${i}`));
+  // Pre-calculate stages to cancel and overall status
+  const { stagesToCancel, overallStatus } = useMemo(() => {
+    const stages: string[] = [];
+    for (let i = 1; i <= iterations; i++) {
+        if (iterationStructures && iterationStructures[i.toString()]) {
+            iterationStructures[i.toString()].forEach((item: any) => {
+                if (item.type === 'step') {
+                    stages.push(item.stage)
+                } else if (item.type === 'parallel') {
+                    stages.push(...item.stages)
+                }
+            })
+        } else if (baseStages) {
+            baseStages.forEach(bs => stages.push(`${bs}-${i}`));
+        }
     }
-  }
+
+    const innerSteps = stages.map(stage => task.steps.find(s => s.stage === stage)).filter(Boolean)
+    
+    const hasRunning = stages.some(stage => task.current_stage === stage && (!task.steps.find(s => s.stage === stage) || task.steps.find(s => s.stage === stage)?.status === 'running')) || innerSteps.some(s => s?.status === 'running')
+    const hasFailed = innerSteps.some(s => s?.status === 'failed')
+    const hasPaused = innerSteps.some(s => s?.status === 'paused')
+    const allCompleted = stages.length > 0 && stages.every(stage => task.steps.find(s => s.stage === stage)?.status === 'completed')
+    const allCanceled = stages.length > 0 && stages.every(stage => task.steps.find(s => s.stage === stage)?.status === 'canceled')
+
+    const status = allCompleted ? 'completed' : 
+                   hasFailed ? 'failed' :
+                   hasPaused ? 'paused' :
+                   hasRunning ? 'running' :
+                   allCanceled ? 'canceled' : 'upcoming'
+
+    return { stagesToCancel: stages, overallStatus: status }
+  }, [task, iterations, iterationStructures, baseStages])
 
   const activeStructure = iterationStructures ? iterationStructures[activeIteration.toString()] : null;
 
-  const innerSteps = stagesToCancel.map(stage => task.steps.find(s => s.stage === stage)).filter(Boolean)
-  
-  const hasRunning = stagesToCancel.some(stage => task.current_stage === stage && (!task.steps.find(s => s.stage === stage) || task.steps.find(s => s.stage === stage)?.status === 'running')) || innerSteps.some(s => s?.status === 'running')
-  const hasFailed = innerSteps.some(s => s?.status === 'failed')
-  const hasPaused = innerSteps.some(s => s?.status === 'paused')
-  const allCompleted = stagesToCancel.length > 0 && stagesToCancel.every(stage => task.steps.find(s => s.stage === stage)?.status === 'completed')
-  const allCanceled = stagesToCancel.length > 0 && stagesToCancel.every(stage => task.steps.find(s => s.stage === stage)?.status === 'canceled')
-
-  const overallStatus = allCompleted ? 'completed' : 
-                        hasFailed ? 'failed' :
-                        hasPaused ? 'paused' :
-                        hasRunning ? 'running' :
-                        allCanceled ? 'canceled' : 'upcoming'
-
   return (
     <div className={`relative pl-8 group transition-all mb-6`}>
+
       {/* Connector line */}
       {showConnector && (
         <div className="absolute left-[9px] top-5 w-[2px] h-full bg-gray-100 group-hover:bg-black transition-colors" />

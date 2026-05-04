@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
 import { Activity, Folder, Cpu, Loader2, Square, Play, Trash2, Workflow, Plus, XCircle, Copy, Check } from 'lucide-react'
 import * as api from '../api'
 import { StatusBadge } from './StatusBadge'
@@ -25,12 +25,24 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
   const [isProcessing, setIsProcessing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAddonModal, setShowAddonModal] = useState(false)
+  const copyTimeoutRef = useRef<number | null>(null)
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text)
     setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    if (copyTimeoutRef.current) {
+      window.clearTimeout(copyTimeoutRef.current)
+    }
+    copyTimeoutRef.current = window.setTimeout(() => setCopied(false), 2000)
   }
+
+  useEffect(() => {
+    return () => {
+      if (copyTimeoutRef.current) {
+        window.clearTimeout(copyTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const handleCancel = async () => {
     setIsProcessing(true)
@@ -52,11 +64,11 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
     }
   }
 
-  const availableTheoryIds = Array.from(new Set(
+  const availableTheoryIds = useMemo(() => Array.from(new Set(
     task.steps
       .filter(s => s.outputs && (s.outputs.theory_id || s.outputs.theory_ids))
       .flatMap(s => s.outputs.theory_id ? [s.outputs.theory_id] : s.outputs.theory_ids)
-  )).reverse()
+  )).reverse(), [task.steps])
 
   return (
     <div className="flex flex-col h-full">
