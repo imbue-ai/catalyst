@@ -75,7 +75,7 @@ class TestContextManager(unittest.TestCase):
             # Add parent theory if allowed/required
             parent_theory_required_agents = (
                 "falsify-hypothesis", "suggest-expansions", "predict-experiments",
-                "refine-hypothesis", "polish-theory", "streamline-theory", "expand-theory"
+                "refine-hypothesis", "polish-theory", "streamline-theory", "expand-theory", "edit-theory",
             )
             parent_theory_allowed_agents = parent_theory_required_agents + ("run-experiment", "support-idea")
             
@@ -131,6 +131,7 @@ class TestContextManager(unittest.TestCase):
             ("rank-predictive-power", {"--from_theory": t_id}),
             ("polish-theory", {"--from_theory": t_id}),
             ("streamline-theory", {"--from_theory": t_id}),
+            ("edit-theory", {"--from_theory": t_id}),
         ]
 
         for agent, flags in target_agents:
