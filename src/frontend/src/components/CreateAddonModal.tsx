@@ -6,6 +6,7 @@ interface CreateAddonModalProps {
   task: api.Task;
   availableTheoryIds: string[];
   availableReviewIds: string[];
+  availableLiteratureIds: string[];
   onClose: () => void;
   onCreated: (task: api.Task) => void;
   isBackendDown: boolean;
@@ -26,7 +27,7 @@ const ADDON_DESCRIPTIONS: Record<string, string> = {
   'suggest-expansions': "Review an entire theory and suggest concrete areas for expansion"
 };
 
-export function CreateAddonModal({ task, availableTheoryIds, availableReviewIds, onClose, onCreated, isBackendDown }: CreateAddonModalProps) {
+export function CreateAddonModal({ task, availableTheoryIds, availableReviewIds, availableLiteratureIds, onClose, onCreated, isBackendDown }: CreateAddonModalProps) {
   const [addonType, setAddonType] = useState('streamline-theory')
   const [theoryId, setTheoryId] = useState(availableTheoryIds[0] || '')
   const [direction, setDirection] = useState('')
@@ -39,6 +40,7 @@ export function CreateAddonModal({ task, availableTheoryIds, availableReviewIds,
   const [reviewId, setReviewId] = useState(availableReviewIds[0] || '')
   const [hypothesisTitle, setHypothesisTitle] = useState('')
   const [instruction, setInstruction] = useState('')
+  const [litReviewId, setLitReviewId] = useState(availableLiteratureIds[0] || '')
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -55,7 +57,8 @@ export function CreateAddonModal({ task, availableTheoryIds, availableReviewIds,
         num_extra_scores: addonType === 'evolve-loop' ? numExtraScores : undefined,
         review_id: (addonType === 'refine-hypothesis' || addonType === 'expand-theory') ? reviewId : undefined,
         hypothesis_title: addonType === 'falsify-hypothesis' ? hypothesisTitle : undefined,
-        instruction: addonType === 'edit-theory' ? instruction : undefined
+        instruction: addonType === 'edit-theory' ? instruction : undefined,
+        lit_review_id: (['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop'].includes(addonType)) ? (litReviewId || undefined) : undefined
       })
       onCreated(updatedTask)
     } catch (e: any) {
@@ -216,6 +219,22 @@ export function CreateAddonModal({ task, availableTheoryIds, availableReviewIds,
                   />
                 </div>
               </>
+            )}
+
+            {['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop'].includes(addonType) && availableLiteratureIds.length > 0 && (
+              <div>
+                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Literature Review ID (Optional)</label>
+                <select
+                  value={litReviewId}
+                  onChange={e => setLitReviewId(e.target.value)}
+                  className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
+                >
+                  <option value="">None (Optional)</option>
+                  {availableLiteratureIds.map(id => (
+                    <option key={id} value={id}>{id}</option>
+                  ))}
+                </select>
+              </div>
             )}
 
             {(addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory') && (

@@ -40,6 +40,7 @@ class Addon(BaseModel):
     review_id: Optional[str] = None
     hypothesis_title: Optional[str] = None
     instruction: Optional[str] = None
+    lit_review_id: Optional[str] = None
 
 class Task(BaseModel):
     id: str
