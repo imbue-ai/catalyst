@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
 import { Activity, Folder, Cpu, Loader2, Square, Play, Trash2, Workflow, Plus, XCircle, Copy, Check } from 'lucide-react'
 import * as api from '../api'
 import { StatusBadge } from './StatusBadge'
@@ -44,20 +44,31 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
     }
   }, [])
 
+  const handleRefresh = useCallback(() => {
+    onRefresh()
+  }, [onRefresh])
+
+  const handleResume = useCallback(async () => {
+    setIsProcessing(true)
+    try {
+      await api.resumeTask(task.id)
+      onRefresh()
+    } catch (e: any) {
+      alert(e.message || "Failed to resume task")
+    } finally {
+      setIsProcessing(false)
+    }
+  }, [task.id, onRefresh])
+
+  const handleSelectStage = useCallback((stage: string) => {
+    setSelectedStage(stage)
+    setActiveRightTab('stepDetails')
+  }, [])
+
   const handleCancel = async () => {
     setIsProcessing(true)
     try {
       await api.cancelTask(task.id)
-      onRefresh()
-    } finally {
-      setIsProcessing(false)
-    }
-  }
-
-  const handleResume = async () => {
-    setIsProcessing(true)
-    try {
-      await api.resumeTask(task.id)
       onRefresh()
     } finally {
       setIsProcessing(false)
@@ -147,10 +158,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     stage={item.stage}
                     task={task}
                     isSelected={selectedStage === item.stage}
-                    onSelect={(stage) => {
-                      setSelectedStage(stage)
-                      setActiveRightTab('stepDetails')
-                    }}
+                    onSelect={handleSelectStage}
                     onRetry={handleResume}
                     showConnector={showConnector}
                   />
@@ -164,13 +172,10 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     name={item.name}
                     stages={item.stages}
                     task={task}
-                    onSelect={(stage) => {
-                      setSelectedStage(stage)
-                      setActiveRightTab('stepDetails')
-                    }}
+                    onSelect={handleSelectStage}
                     selectedStage={selectedStage || undefined}
                     onRetry={handleResume}
-                    onRefresh={onRefresh}
+                    onRefresh={handleRefresh}
                     showConnector={showConnector}
                   />
                 )
@@ -185,13 +190,10 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     iterationStructures={item.iteration_structures}
                     iterations={item.iterations}
                     task={task}
-                    onSelect={(stage) => {
-                      setSelectedStage(stage)
-                      setActiveRightTab('stepDetails')
-                    }}
+                    onSelect={handleSelectStage}
                     selectedStage={selectedStage || undefined}
                     onRetry={handleResume}
-                    onRefresh={onRefresh}
+                    onRefresh={handleRefresh}
                     showConnector={showConnector}
                   />
                 )
