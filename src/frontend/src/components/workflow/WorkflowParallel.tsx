@@ -56,13 +56,13 @@ export function WorkflowParallel({ name, stages, task, onSelect, selectedStage, 
         </div>
 
         <div className="grid grid-cols-2 gap-4">
-          {stages.map(stage => {
+          {stages.map((stage, idx) => {
             const step = task.steps.find(s => s.stage === stage)
             const isRunning = step?.status === 'running' || (task.current_stage === stage && !step)
             
             return (
               <InnerStepCard
-                key={stage}
+                key={`parallel-item-${stage}-${idx}`}
                 label={formatStageName(stage)}
                 step={step}
                 isRunning={isRunning}

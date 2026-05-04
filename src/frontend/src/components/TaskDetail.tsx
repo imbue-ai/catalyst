@@ -154,7 +154,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               if (item.type === 'step') {
                 return (
                   <WorkflowStep
-                    key={item.stage}
+                    key={`step-${item.stage}-${idx}`}
                     stage={item.stage}
                     task={task}
                     isSelected={selectedStage === item.stage}
@@ -168,7 +168,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               if (item.type === 'parallel') {
                 return (
                   <WorkflowParallel
-                    key={idx}
+                    key={`parallel-${item.name}-${idx}`}
                     name={item.name}
                     stages={item.stages}
                     task={task}
@@ -184,7 +184,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               if (item.type === 'loop') {
                 return (
                   <WorkflowLoop
-                    key={item.name}
+                    key={`loop-${item.name}-${idx}`}
                     name={item.name}
                     baseStages={item.base_stages}
                     iterationStructures={item.iteration_structures}
