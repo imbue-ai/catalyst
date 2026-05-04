@@ -19,7 +19,7 @@ export interface Addon {
   apply_extensions?: boolean;
   evolve_iterations?: number;
   num_parents?: number;
-  streamline_prob?: number;
+  max_streamline_prob?: number;
   num_extra_scores?: number;
 }
 
@@ -47,6 +47,7 @@ export interface TheoryArtifact {
   parent_theory: string | null;
   extra: Record<string, string>;
   score?: number | null;
+  subscores?: Record<string, number>;
 }
 
 export const getTasks = async (): Promise<Task[]> => {

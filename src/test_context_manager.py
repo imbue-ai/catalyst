@@ -237,8 +237,8 @@ class TestContextManager(unittest.TestCase):
         self.assertEqual(entries[1]["id"], t1) # 0.9 is higher
         
         # Sample
-        res = self.run_cmd("sample_theories", "--num_theories", "1", "--purpose", "mutation")
-        sampled = res.stdout.strip().split(", ")
+        res = self.run_cmd("sample_theories", "--num_theories", "1", "--purpose", "mutation", "--json")
+        sampled = [t["id"] for t in json.loads(res.stdout)]
         self.assertEqual(len(sampled), 1)
         self.assertIn(sampled[0], [t1, t2])
 

@@ -18,7 +18,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
   const [applyExtensions, setApplyExtensions] = useState(false)
   const [evolveIterations, setEvolveIterations] = useState(3)
   const [numParents, setNumParents] = useState(3)
-  const [streamlineProb, setStreamlineProb] = useState(0.25)
+  const [maxStreamlineProb, setMaxStreamlineProb] = useState(0.5)
   const [numExtraScores, setNumExtraScores] = useState(5)
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -32,7 +32,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
         apply_extensions: addonType === 'refinement-loop' ? applyExtensions : undefined,
         evolve_iterations: addonType === 'evolve-loop' ? evolveIterations : undefined,
         num_parents: addonType === 'evolve-loop' ? numParents : undefined,
-        streamline_prob: addonType === 'evolve-loop' ? streamlineProb : undefined,
+        max_streamline_prob: addonType === 'evolve-loop' ? maxStreamlineProb : undefined,
         num_extra_scores: addonType === 'evolve-loop' ? numExtraScores : undefined
       })
       onCreated(updatedTask)
@@ -162,7 +162,7 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
                     <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamline Prob (0-1)</label>
                     <input
                       type="number" min="0" max="1" step="any" required
-                      value={streamlineProb} onChange={e => setStreamlineProb(parseFloat(e.target.value))}
+                      value={maxStreamlineProb} onChange={e => setMaxStreamlineProb(parseFloat(e.target.value))}
                       className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
                     />
                   </div>
@@ -193,3 +193,4 @@ export function CreateAddonModal({ task, availableTheoryIds, onClose, onCreated,
     </div>
   )
 }
+

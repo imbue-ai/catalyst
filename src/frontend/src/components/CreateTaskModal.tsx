@@ -43,7 +43,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     maxRefinements: 3,
     evolveIterations: 3,
     numParents: 3,
-    streamlineProb: 0.25,
+    maxStreamlineProb: 0.5,
     numExtraScores: 5,
     applyExtensions: false,
     templateFolder: '',
@@ -66,7 +66,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         max_refinements: inputs.maxRefinements,
         evolve_iterations: inputs.evolveIterations,
         num_parents: inputs.numParents,
-        streamline_prob: inputs.streamlineProb,
+        max_streamline_prob: inputs.maxStreamlineProb,
         num_extra_scores: inputs.numExtraScores
       }
     } else if (activeTab === 'develop-theory-linear') {
@@ -78,7 +78,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         max_refinements: inputs.maxRefinements,
         evolve_iterations: inputs.evolveIterations,
         num_parents: inputs.numParents,
-        streamline_prob: inputs.streamlineProb,
+        max_streamline_prob: inputs.maxStreamlineProb,
         num_extra_scores: inputs.numExtraScores
       }
     } else if (activeTab === 'refine-theory-idea-linear') {
@@ -327,8 +327,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                           <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamline Prob</label>
                           <input
                             type="number" min="0" max="1" step="any" required
-                            value={inputs.streamlineProb}
-                            onChange={e => updateInput('streamlineProb', parseFloat(e.target.value))}
+                            value={inputs.maxStreamlineProb}
+                            onChange={e => updateInput('maxStreamlineProb', parseFloat(e.target.value))}
                             className="w-full border-2 border-black p-2 outline-none text-sm font-bold"
                           />
                         </div>

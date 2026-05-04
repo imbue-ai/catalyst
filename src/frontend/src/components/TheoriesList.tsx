@@ -115,6 +115,9 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
                     <span 
                       className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black shrink-0 border ${getScoreStyle(theory.score).className}`}
                       style={getScoreStyle(theory.score).style}
+                      title={theory.subscores && Object.keys(theory.subscores).length > 0
+                        ? Object.entries(theory.subscores).map(([k, v]) => `${k.charAt(0).toUpperCase() + k.slice(1)}: ${typeof v === 'number' ? v.toFixed(4) : v}`).join('\n')
+                        : undefined}
                     >
                       {theory.score != null ? theory.score.toFixed(4) : "N/A"}
                     </span>
