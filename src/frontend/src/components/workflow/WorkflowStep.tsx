@@ -1,3 +1,4 @@
+import React from 'react'
 import { Terminal, RefreshCw } from 'lucide-react'
 import * as api from '../../api'
 import { StepIndicator, formatStageName } from './shared'
@@ -12,7 +13,7 @@ interface WorkflowStepProps {
   showConnector?: boolean;
 }
 
-export function WorkflowStep({ stage, task, onSelect, isSelected, onRetry, isPlaceholder, showConnector = true }: WorkflowStepProps) {
+export const WorkflowStep = React.memo(({ stage, task, onSelect, isSelected, onRetry, isPlaceholder, showConnector = true }: WorkflowStepProps) => {
   const step = task.steps.find(s => s.stage === stage)
   const isRunning = step?.status === 'running' || (task.current_stage === stage && !step)
   
@@ -65,4 +66,16 @@ export function WorkflowStep({ stage, task, onSelect, isSelected, onRetry, isPla
       </div>
     </div>
   )
-}
+}, (prev, next) => {
+  const prevStep = prev.task.steps.find(s => s.stage === prev.stage);
+  const nextStep = next.task.steps.find(s => s.stage === next.stage);
+  
+  return prev.stage === next.stage &&
+         prev.isSelected === next.isSelected &&
+         prev.isPlaceholder === next.isPlaceholder &&
+         prev.showConnector === next.showConnector &&
+         prev.task.current_stage === next.task.current_stage &&
+         prev.task.status === next.task.status &&
+         prevStep?.status === nextStep?.status &&
+         prevStep?.session_id === nextStep?.session_id;
+});

@@ -68,7 +68,7 @@ function renderJsonValue(val: any, taskId?: string): React.ReactNode {
   return <span>{String(val)}</span>;
 }
 
-export function DataSection({ label, data, primary, taskId }: DataSectionProps) {
+export const DataSection = React.memo(({ label, data, primary, taskId }: DataSectionProps) => {
   const isPromptOnly = data && typeof data === 'object' && 'prompt' in data && Object.keys(data).length === 1;
 
   return (
@@ -89,4 +89,9 @@ export function DataSection({ label, data, primary, taskId }: DataSectionProps) 
       </div>
     </div>
   )
-}
+}, (prev, next) => {
+  return prev.label === next.label && 
+         prev.primary === next.primary && 
+         prev.taskId === next.taskId && 
+         JSON.stringify(prev.data) === JSON.stringify(next.data);
+});

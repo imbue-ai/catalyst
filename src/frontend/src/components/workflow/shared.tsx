@@ -37,7 +37,7 @@ interface InnerStepCardProps {
   onRetry: (e: React.MouseEvent) => void;
 }
 
-export function InnerStepCard({ label, step, isRunning, isSelected, taskStatus, onSelect, onRetry }: InnerStepCardProps) {
+export const InnerStepCard = React.memo(({ label, step, isRunning, isSelected, taskStatus, onSelect, onRetry }: InnerStepCardProps) => {
   return (
     <div 
       onClick={onSelect}
@@ -71,7 +71,14 @@ export function InnerStepCard({ label, step, isRunning, isSelected, taskStatus, 
       </div>
     </div>
   )
-}
+}, (prev, next) => {
+  return prev.label === next.label &&
+         prev.isRunning === next.isRunning &&
+         prev.isSelected === next.isSelected &&
+         prev.taskStatus === next.taskStatus &&
+         prev.step?.status === next.step?.status &&
+         prev.step?.session_id === next.step?.session_id;
+});
 
 interface CancelStepsButtonProps {
   task: api.Task;
@@ -114,7 +121,7 @@ interface InnerParallelCardProps {
   onRefresh: () => void;
 }
 
-export function InnerParallelCard({ name, stages, task, selectedStage, onSelect, onRetry, onRefresh }: InnerParallelCardProps) {
+export const InnerParallelCard = React.memo(({ name, stages, task, selectedStage, onSelect, onRetry, onRefresh }: InnerParallelCardProps) => {
   if (!stages || stages.length === 0) {
       return (
          <div className="p-3 border-2 border-dashed border-gray-200 opacity-40">
@@ -155,5 +162,15 @@ export function InnerParallelCard({ name, stages, task, selectedStage, onSelect,
       </div>
     </div>
   )
-}
+}, (prev, next) => {
+  const prevStepStatuses = prev.stages.map(s => prev.task.steps.find(st => st.stage === s)?.status).join(',');
+  const nextStepStatuses = next.stages.map(s => next.task.steps.find(st => st.stage === s)?.status).join(',');
+
+  return prev.name === next.name &&
+         prev.selectedStage === next.selectedStage &&
+         prev.task.status === next.task.status &&
+         prev.task.current_stage === next.task.current_stage &&
+         prevStepStatuses === nextStepStatuses &&
+         JSON.stringify(prev.stages) === JSON.stringify(next.stages);
+});
 
