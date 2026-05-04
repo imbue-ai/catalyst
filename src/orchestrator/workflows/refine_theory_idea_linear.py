@@ -45,7 +45,7 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
         self.init_db(task)
 
         idea = task.workflow_inputs.get("idea", "")
-        apply_extensions = task.workflow_inputs.get("apply_extensions", False)
+        apply_expansions = task.workflow_inputs.get("apply_expansions")
 
         # Step 0: Summarize Title
         run_summarize_title(task, run_step, f"idea: {idea}")
@@ -69,6 +69,6 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
                 run_step,
                 theory_id,
                 lit_review_id=None,
-                apply_extensions=apply_extensions,
+                apply_expansions=apply_expansions,
                 max_refinements=max_refinements,
             )

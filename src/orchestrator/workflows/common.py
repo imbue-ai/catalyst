@@ -38,7 +38,7 @@ def run_refinement_loop(
     run_step_fn: Callable,
     theory_id: str,
     lit_review_id: Optional[str],
-    apply_extensions: bool,
+    apply_expansions: Optional[str],
     max_refinements: int,
     stage_prefix: str = "",
 ) -> str:
@@ -68,7 +68,7 @@ def run_refinement_loop(
             task,
             run_step_fn,
             f"{stage_prefix}refine-theory-{i}",
-            get_refine_theory_prompt(theory_id, apply_extensions, lit_review_id),
+            get_refine_theory_prompt(theory_id, apply_expansions, lit_review_id),
         )
 
         if not refine_data:
@@ -94,7 +94,7 @@ def run_evolve_loop(
     num_parents: int,
     max_streamline_prob: float,
     num_extra_scores: int,
-    apply_extensions: bool = True,
+    apply_expansions: Optional[str] = None,
     stage_prefix: str = "",
 ) -> None:
     for i in range(1, iterations + 1):
@@ -169,7 +169,7 @@ def run_evolve_loop(
                         stage_name,
                         get_refine_theory_prompt(
                             tid,
-                            apply_extensions=apply_extensions,
+                            apply_expansions=apply_expansions,
                         ),
                     )
                     mutation_results[stage_name] = res

@@ -8,4 +8,4 @@ class RefineTheoryAddon(AddonHandler):
         return "refine-theory"
 
     def get_prompt(self, addon: Addon) -> str:
-        return get_refine_theory_prompt(addon.theory_id)
+        return get_refine_theory_prompt(addon.theory_id, apply_expansions=addon.apply_expansions)

@@ -32,7 +32,7 @@ class Addon(BaseModel):
     theory_id: str
     direction: Optional[str] = None
     max_refinements: Optional[int] = None
-    apply_extensions: Optional[bool] = None
+    apply_expansions: Optional[str] = None
     evolve_iterations: Optional[int] = None
     num_parents: Optional[int] = None
     max_streamline_prob: Optional[float] = None

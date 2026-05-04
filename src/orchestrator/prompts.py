@@ -38,17 +38,20 @@ def get_score_theories_prompt(theory_ids: List[str]) -> str:
 
 def get_refine_theory_prompt(
     theory_id: str,
-    apply_extensions: bool = True,
+    apply_expansions: Optional[str] = None,
     lit_review_id: Optional[str] = None,
 ) -> str:
     prompt = f"Please run the refine-theory skill for theory_id: {theory_id}. "
     if lit_review_id:
-        prompt += f"Use literature_review_id: {lit_review_id}. "
+        prompt += f"Also pass literature_review_id: {lit_review_id}. "
 
-    prompt += "When you are done, return ONLY a JSON object with the keys 'theory_id' (the ID of the new, final theory), and 'major_changes' (boolean - whether any major changes have been made to the theory)."
+    if apply_expansions == "never":
+        prompt += "Tell the skill: Do NOT apply expansion reviews."
+    elif apply_expansions == "always":
+        prompt += "Tell the skill: ALWAYS apply expansion reviews."
 
-    if not apply_extensions:
-        prompt += "\n\nDo NOT apply extension reviews."
+    prompt += "\n\nWhen you are done, return ONLY a JSON object with the keys 'theory_id' (the ID of the new, final theory), and 'major_changes' (boolean - whether any major changes have been made to the theory)."
+
     return prompt
 
 

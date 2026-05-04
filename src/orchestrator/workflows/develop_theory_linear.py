@@ -149,11 +149,12 @@ class DevelopTheoryLinearWorkflow(Workflow):
         if theory_id:
             # Step 4: Iterative Review and Refinement
             max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
+            apply_expansions = task.workflow_inputs.get("apply_expansions", "always")
             run_refinement_loop(
                 task,
                 run_step,
                 theory_id,
                 lit_review_id,
-                apply_extensions=True,
+                apply_expansions=apply_expansions,
                 max_refinements=max_refinements,
             )
