@@ -42,8 +42,9 @@ function App() {
 
       // Detect changes
       if (prevTasksRef.current.length > 0) {
+        const oldTaskMap = new Map(prevTasksRef.current.map(t => [t.id, t]));
         data.forEach(task => {
-          const oldTask = prevTasksRef.current.find(t => t.id === task.id);
+          const oldTask = oldTaskMap.get(task.id);
           if (oldTask && oldTask.status !== task.status) {
             if (Notification.permission === "granted") {
               const notification = new Notification("Research Status Update", {
