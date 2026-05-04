@@ -62,11 +62,14 @@ def get_polish_theory_prompt(theory_id: str) -> str:
     )
 
 
-def get_refine_hypothesis_prompt(theory_id: str, review_id: str) -> str:
-    return (
-        f"Please run the refine-hypothesis skill for theory_id: {theory_id} using review_id: {review_id}. "
-        "When you are done, return ONLY a JSON object with the key 'theory_id'."
-    )
+def get_refine_hypothesis_prompt(
+    theory_id: str, review_id: str, lit_review_id: Optional[str] = None
+) -> str:
+    prompt = f"Please run the refine-hypothesis skill for theory_id: {theory_id} using review_id: {review_id}. "
+    if lit_review_id:
+        prompt += f"Also pass literature_review_id: {lit_review_id}. "
+    prompt += "When you are done, return ONLY a JSON object with the key 'theory_id'."
+    return prompt
 
 
 def get_falsify_hypothesis_prompt(theory_id: str, hypothesis_title: str) -> str:
@@ -83,18 +86,24 @@ def get_suggest_expansions_prompt(theory_id: str) -> str:
     )
 
 
-def get_expand_theory_prompt(theory_id: str, review_id: str) -> str:
-    return (
-        f"Please run the expand-theory skill for theory_id: {theory_id} using review_id: {review_id}. "
-        "When you are done, return ONLY a JSON object with the key 'theory_id'."
-    )
+def get_expand_theory_prompt(
+    theory_id: str, review_id: str, lit_review_id: Optional[str] = None
+) -> str:
+    prompt = f"Please run the expand-theory skill for theory_id: {theory_id} using review_id: {review_id}. "
+    if lit_review_id:
+        prompt += f"Also pass literature_review_id: {lit_review_id}. "
+    prompt += "When you are done, return ONLY a JSON object with the key 'theory_id'."
+    return prompt
 
 
-def get_edit_theory_prompt(theory_id: str, instruction: str) -> str:
-    return (
-        f"Please run the edit-theory skill for theory_id: {theory_id} with the following instruction:\n```\n{instruction}\n```\n"
-        "When you are done, return ONLY a JSON object with the key 'theory_id'."
-    )
+def get_edit_theory_prompt(
+    theory_id: str, instruction: str, lit_review_id: Optional[str] = None
+) -> str:
+    prompt = f"Please run the edit-theory skill for theory_id: {theory_id} with the following instruction:\n```\n{instruction}\n```\n"
+    if lit_review_id:
+        prompt += f"Also pass literature_review_id: {lit_review_id}. "
+    prompt += "When you are done, return ONLY a JSON object with the key 'theory_id'."
+    return prompt
 
 
 def get_streamline_theory_variations_prompt(theory_id: str) -> str:

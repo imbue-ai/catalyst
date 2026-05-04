@@ -8,4 +8,4 @@ class RefineHypothesisAddon(AddonHandler):
         return "refine-hypothesis"
 
     def get_prompt(self, addon: Addon) -> str:
-        return get_refine_hypothesis_prompt(addon.theory_id, addon.review_id)
+        return get_refine_hypothesis_prompt(addon.theory_id, addon.review_id, lit_review_id=addon.lit_review_id)

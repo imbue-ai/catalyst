@@ -62,6 +62,7 @@ class EvolveLoopAddon(AddonHandler):
             max_streamline_prob=max_streamline_prob,
             num_extra_scores=num_extra_scores,
             apply_expansions=apply_expansions,
+            lit_review_id=addon.lit_review_id,
             stage_prefix=f"addon-{index}-"
         )
 

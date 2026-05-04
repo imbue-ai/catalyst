@@ -24,6 +24,7 @@ export interface Addon {
   review_id?: string;
   hypothesis_title?: string;
   instruction?: string;
+  lit_review_id?: string;
 }
 
 export interface Task {

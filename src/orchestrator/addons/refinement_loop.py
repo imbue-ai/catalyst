@@ -25,7 +25,7 @@ class RefinementLoopAddon(AddonHandler):
             task=task,
             run_step_fn=run_step,
             theory_id=addon.theory_id,
-            lit_review_id=None,
+            lit_review_id=addon.lit_review_id,
             apply_expansions=apply_expansions,
             max_refinements=max_refinements,
             stage_prefix=f"addon-{index}-"

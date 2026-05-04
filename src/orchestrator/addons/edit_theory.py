@@ -8,4 +8,4 @@ class EditTheoryAddon(AddonHandler):
         return "edit-theory"
 
     def get_prompt(self, addon: Addon) -> str:
-        return get_edit_theory_prompt(addon.theory_id, addon.instruction or "")
+        return get_edit_theory_prompt(addon.theory_id, addon.instruction or "", lit_review_id=addon.lit_review_id)

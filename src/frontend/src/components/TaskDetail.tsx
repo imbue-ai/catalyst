@@ -87,6 +87,12 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
       .flatMap(s => s.outputs.review_id ? [s.outputs.review_id] : s.outputs.review_ids)
   )).reverse(), [task.steps])
 
+  const availableLiteratureIds = useMemo(() => Array.from(new Set(
+    task.steps
+      .filter(s => s.outputs && s.outputs.literature_review_id)
+      .map(s => s.outputs.literature_review_id)
+  )).reverse(), [task.steps])
+
   return (
     <div className="flex flex-col h-full">
       {/* Task Header */}
@@ -377,6 +383,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
           task={task}
           availableTheoryIds={availableTheoryIds}
           availableReviewIds={availableReviewIds}
+          availableLiteratureIds={availableLiteratureIds}
           onClose={() => setShowAddonModal(false)}
           onCreated={() => {
             setShowAddonModal(false)

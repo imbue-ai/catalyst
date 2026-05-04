@@ -158,6 +158,7 @@ class CreateAddonRequest(BaseModel):
     review_id: Optional[str] = None
     hypothesis_title: Optional[str] = None
     instruction: Optional[str] = None
+    lit_review_id: Optional[str] = None
 
 
 @app.post("/api/tasks/{task_id}/addons", response_model=Task)
@@ -224,6 +225,7 @@ def create_addon(task_id: str, req: CreateAddonRequest):
         review_id=req.review_id,
         hypothesis_title=req.hypothesis_title,
         instruction=req.instruction,
+        lit_review_id=req.lit_review_id,
     )
     task.addons.append(addon)
 
