@@ -2,6 +2,10 @@ import unittest
 from unittest.mock import patch, MagicMock, mock_open
 from fastapi.testclient import TestClient
 from fastapi import Response
+import logging
+
+# Silence logs during tests
+logging.disable(logging.CRITICAL)
 
 from server import app
 from orchestrator.models import Task, TaskStatus, Step, StepStatus
