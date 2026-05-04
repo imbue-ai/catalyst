@@ -482,7 +482,7 @@ def export_artifact(task_id: str, artifact_id: str):
     # Extract relative images
     image_paths = []
     # Markdown ![alt](path)
-    image_paths.extend(re.findall(r"!\[.*?\]\((?!http|/)(.*?)\)", md_content))
+    image_paths.extend(re.findall(r"!\[.*?\]\((?!http|/)(.*?)\)", md_content, flags=re.DOTALL))
     # HTML <img src="path" />
     image_paths.extend(
         re.findall(r'<img[^>]+src=["\'](?!http|/)([^"\']+)["\']', md_content)

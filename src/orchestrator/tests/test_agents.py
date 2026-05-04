@@ -1,6 +1,5 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from ..agents.cli_base import BaseCliAgentRunner
 from ..agents.gemini import GeminiAgentRunner
 from ..agents.claude import ClaudeAgentRunner
 
