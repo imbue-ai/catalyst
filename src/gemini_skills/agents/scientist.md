@@ -2,7 +2,6 @@
 name: scientist
 description: For use in all ai-scientist tasks.
 kind: local
-model: gemini-3.1-pro-preview
 max_turns: 500
 timeout_mins: 120
 tools: ["*"]
