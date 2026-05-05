@@ -327,7 +327,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                           />
                         </div>
                         <div className="col-span-1">
-                          <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamline Prob</label>
+                          <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Streamline Prob</label>
                           <input
                             type="number" min="0" max="1" step="any" required
                             value={inputs.maxStreamlineProb}

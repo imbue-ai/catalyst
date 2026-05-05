@@ -272,7 +272,7 @@ export function CreateAddonModal({ task, availableTheoryIds, availableReviewIds,
                     />
                   </div>
                   <div>
-                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamline Prob (0-1)</label>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Streamline Prob</label>
                     <input
                       type="number" min="0" max="1" step="any" required
                       value={maxStreamlineProb} onChange={e => setMaxStreamlineProb(parseFloat(e.target.value))}

@@ -24,7 +24,7 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
             env["CONTEXT_TRANSACTION_ID"] = tx_id
         abs_env_folder = os.path.abspath(env_folder)
         env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
-        env["AI_SCIENTIST_DB_PATH"] = os.path.join(abs_env_folder, ".ai_scientist_db")
+        env["AI_SCIENTIST_DB_PATH"] = os.path.join(abs_env_folder, ".ai-scientist-db")
 
         cmd = [
             "claude",
