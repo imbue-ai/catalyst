@@ -83,22 +83,36 @@ class BaseCliAgentRunner(AgentRunner):
         if isinstance(raw_result, dict):
             return raw_result
 
+        text = str(raw_result)
+
         # 1. Try to find the last ```json block
-        json_blocks = re.findall(r"```json\s*(.*?)\s*```", str(raw_result), re.DOTALL)
+        json_blocks = re.findall(r"```json\s*(.*?)\s*```", text, re.DOTALL)
         if json_blocks:
             try:
                 return json.loads(json_blocks[-1])
             except json.JSONDecodeError:
                 pass
 
-        # 2. Try to find the last {...}
-        all_objects = re.findall(r"(\{.*?\})", str(raw_result), re.DOTALL)
-        if all_objects:
-            for obj_str in reversed(all_objects):
-                try:
-                    data = json.loads(obj_str)
-                    if isinstance(data, dict):
-                        return data
-                except json.JSONDecodeError:
-                    continue
+        # 2. Try to find the last matching {...} by scanning backwards
+        last_brace = text.rfind("}")
+        while last_brace != -1:
+            balance = 0
+            for i in range(last_brace, -1, -1):
+                if text[i] == "}":
+                    balance += 1
+                elif text[i] == "{":
+                    balance -= 1
+                    if balance == 0:
+                        # Found matching bracket!
+                        obj_str = text[i : last_brace + 1]
+                        try:
+                            data = json.loads(obj_str)
+                            if isinstance(data, dict):
+                                return data
+                        except json.JSONDecodeError:
+                            break  # This brace pair is invalid JSON, try the next '}'
+            
+            # Try the next '}' to the left
+            last_brace = text.rfind("}", 0, last_brace)
+
         return None

@@ -41,7 +41,7 @@ class TestUtils(unittest.TestCase):
 
     @patch("subprocess.run")
     def test_run_context_manager_failure(self, mock_run):
-        mock_run.side_effect = subprocess.CalledProcessError(1, "cmd", stderr="error")
+        mock_run.side_effect = subprocess.CalledProcessError(1, "cmd", stderr="error message")
         
         task = Task(
             id="t1",
@@ -51,5 +51,5 @@ class TestUtils(unittest.TestCase):
             workflow_inputs={}
         )
         
-        with self.assertRaises(subprocess.CalledProcessError):
+        with self.assertRaisesRegex(Exception, "Stderr:\nerror message"):
             run_context_manager(task, ["fail"])
