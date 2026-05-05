@@ -18,10 +18,11 @@ Arguments: $ARGUMENTS
 
 ## Folder setup
 Create a separate output folder for your artifacts:
-OUTPUT_DIR=`mktemp -d -p ./tmp literature-review-XXXX`
+OUTPUT_DIR: `mktemp -d -p ./tmp literature-review-XXXX`
 
+Then create a subfolder for storing downloaded PDFs:
 ```bash
-mkdir -p "<OUTPUT_DIR>/papers"
+mkdir "<OUTPUT_DIR>/papers"
 ```
 
 - `<OUTPUT_DIR>/papers/` — downloaded PDFs go here
