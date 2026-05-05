@@ -75,18 +75,6 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
     }
   }
 
-  const availableTheoryIds = useMemo(() => Array.from(new Set(
-    task.steps
-      .filter(s => s.outputs && (s.outputs.theory_id || s.outputs.theory_ids))
-      .flatMap(s => s.outputs.theory_id ? [s.outputs.theory_id] : s.outputs.theory_ids)
-  )).reverse(), [task.steps])
-
-  const availableReviewIds = useMemo(() => Array.from(new Set(
-    task.steps
-      .filter(s => s.outputs && (s.outputs.review_id || s.outputs.review_ids))
-      .flatMap(s => s.outputs.review_id ? [s.outputs.review_id] : s.outputs.review_ids)
-  )).reverse(), [task.steps])
-
   const availableLiteratureIds = useMemo(() => Array.from(new Set(
     task.steps
       .filter(s => s.outputs && s.outputs.literature_review_id)
@@ -381,8 +369,6 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
       {showAddonModal && (
         <CreateAddonModal
           task={task}
-          availableTheoryIds={availableTheoryIds}
-          availableReviewIds={availableReviewIds}
           availableLiteratureIds={availableLiteratureIds}
           onClose={() => setShowAddonModal(false)}
           onCreated={() => {

@@ -435,6 +435,53 @@ def get_task_theories(task_id: str):
         raise HTTPException(status_code=500, detail="Failed to parse theories")
 
 
+@app.get("/api/tasks/{task_id}/reviews")
+def get_task_reviews(task_id: str):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    ctx_mgr_path = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "context_manager.py")
+    )
+
+    env = os.environ.copy()
+    env["AI_SCIENTIST_DB_PATH"] = os.path.join(
+        os.path.abspath(task.env_folder), ".ai-scientist-db"
+    )
+
+    cmd = [
+        "uv",
+        "run",
+        "python",
+        ctx_mgr_path,
+        "list",
+        "--type",
+        "review",
+        "--json",
+    ]
+    try:
+        result = subprocess.run(
+            cmd,
+            env=env,
+            cwd=os.path.abspath(task.env_folder),
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+        data = json.loads(result.stdout)
+        data.reverse()
+        return data
+    except subprocess.CalledProcessError as e:
+        logger.error(
+            f"Error running context_manager list for task {task_id}: {e.stderr}"
+        )
+        raise HTTPException(status_code=500, detail="Failed to retrieve reviews")
+    except json.JSONDecodeError as e:
+        logger.error(f"Error decoding context_manager output for task {task_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to parse reviews")
+
+
 @app.get("/api/tasks/{task_id}/artifacts/{artifact_id}/primary")
 def get_artifact_primary(task_id: str, artifact_id: str):
     task = get_task(task_id)

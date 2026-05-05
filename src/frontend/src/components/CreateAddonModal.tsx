@@ -1,11 +1,9 @@
 import React, { useState } from 'react'
-import { XCircle, ChevronRight, ChevronDown, FileText, Users, Settings2, MessageSquare } from 'lucide-react'
+import { XCircle, ChevronRight, ChevronDown, FileText, Users, Settings2, MessageSquare, Loader2 } from 'lucide-react'
 import * as api from '../api'
 
 interface CreateAddonModalProps {
   task: api.Task;
-  availableTheoryIds: string[];
-  availableReviewIds: string[];
   availableLiteratureIds: string[];
   onClose: () => void;
   onCreated: (task: api.Task) => void;
@@ -62,14 +60,51 @@ const getAvailableSkills = (cat: InputCategory, reviewed: boolean): { id: string
   return [];
 };
 
-export function CreateAddonModal({ task, availableTheoryIds, availableReviewIds, availableLiteratureIds, onClose, onCreated, isBackendDown }: CreateAddonModalProps) {
-  const [inputCategory, setInputCategory] = useState<InputCategory>('population')
+export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCreated, isBackendDown }: CreateAddonModalProps) {
+  const [availableTheories, setAvailableTheories] = useState<api.TheoryArtifact[]>([])
+  const [availableReviews, setAvailableReviews] = useState<api.ReviewArtifact[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  const [inputCategory, setInputCategory] = useState<InputCategory>('theory')
   const [isReviewed, setIsReviewed] = useState(false)
+
+  const sortedAndFilteredTheories = React.useMemo(() => {
+    let theories = [...availableTheories].sort((a, b) => {
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+    });
+    if (isReviewed) {
+      theories = theories.filter(t => availableReviews.some(r => r.parent_theory === t.id));
+    }
+    return theories;
+  }, [availableTheories, availableReviews, isReviewed]);
   
-  const initialSkills = getAvailableSkills('population', false)
+  const initialSkills = getAvailableSkills('theory', false)
   const [addonType, setAddonType] = useState(initialSkills.length > 0 ? initialSkills[0].id : '')
   
-  const [theoryId, setTheoryId] = useState(availableTheoryIds[0] || '')
+  const [theoryId, setTheoryId] = useState('')
+
+  React.useEffect(() => {
+    setIsLoading(true)
+    Promise.all([
+      api.getTheories(task.id),
+      api.getReviews(task.id)
+    ])
+    .then(([theories, reviews]) => {
+      setAvailableTheories(theories)
+      setAvailableReviews(reviews)
+    })
+    .catch(console.error)
+    .finally(() => setIsLoading(false))
+  }, [task.id])
+
+  React.useEffect(() => {
+    if (sortedAndFilteredTheories.length > 0 && !sortedAndFilteredTheories.find(t => t.id === theoryId)) {
+      setTheoryId(sortedAndFilteredTheories[0].id)
+    } else if (sortedAndFilteredTheories.length === 0) {
+      setTheoryId('')
+    }
+  }, [sortedAndFilteredTheories, theoryId])
+
   const [direction, setDirection] = useState('')
   const [maxRefinements, setMaxRefinements] = useState(3)
   const [applyExpansions, setApplyExpansions] = useState('')
@@ -77,7 +112,19 @@ export function CreateAddonModal({ task, availableTheoryIds, availableReviewIds,
   const [numParents, setNumParents] = useState(3)
   const [maxStreamlineProb, setMaxStreamlineProb] = useState(0.5)
   const [numExtraScores, setNumExtraScores] = useState(5)
-  const [reviewId, setReviewId] = useState(availableReviewIds[0] || '')
+  
+  const filteredReviews = availableReviews.filter(r => r.parent_theory === theoryId)
+  const [reviewId, setReviewId] = useState(filteredReviews[0]?.id || '')
+
+  // Update reviewId if filteredReviews changes and doesn't contain current reviewId
+  React.useEffect(() => {
+    if (filteredReviews.length > 0 && !filteredReviews.find(r => r.id === reviewId)) {
+      setReviewId(filteredReviews[0].id)
+    } else if (filteredReviews.length === 0) {
+      setReviewId('')
+    }
+  }, [filteredReviews, reviewId])
+
   const [hypothesisTitle, setHypothesisTitle] = useState('')
   const [instruction, setInstruction] = useState('')
   const [litReviewId, setLitReviewId] = useState(availableLiteratureIds[0] || '')
@@ -125,7 +172,7 @@ export function CreateAddonModal({ task, availableTheoryIds, availableReviewIds,
   }
 
   const isPopulation = inputCategory === 'population';
-  const showTheoryWarning = availableTheoryIds.length === 0 && !isPopulation;
+  const showTheoryWarning = !isLoading && availableTheories.length === 0 && !isPopulation;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -151,23 +198,23 @@ export function CreateAddonModal({ task, availableTheoryIds, availableReviewIds,
           <div>
             <h3 className="text-sm font-black mb-4">Step 1: I have a...</h3>
             <div className="flex flex-col md:flex-row gap-4">
-              <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'population' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheoryIds.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'population' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <div className="flex items-center gap-3">
-                  <input type="radio" checked={inputCategory === 'population'} onChange={() => handleCategoryChange('population')} disabled={availableTheoryIds.length === 0} />
+                  <input type="radio" checked={inputCategory === 'population'} onChange={() => handleCategoryChange('population')} disabled={availableTheories.length === 0} />
                   <Users size={18} className="text-gray-600" />
                   <span className="font-black text-sm">Population of Theories</span>
                 </div>
               </label>
-              <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'theory' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheoryIds.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'theory' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <div className="flex items-center gap-3">
-                  <input type="radio" checked={inputCategory === 'theory'} onChange={() => handleCategoryChange('theory')} disabled={availableTheoryIds.length === 0} />
+                  <input type="radio" checked={inputCategory === 'theory'} onChange={() => handleCategoryChange('theory')} disabled={availableTheories.length === 0} />
                   <FileText size={18} className="text-gray-600" />
                   <span className="font-black text-sm">Theory</span>
                 </div>
               </label>
-              <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'statement' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheoryIds.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'statement' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <div className="flex items-center gap-3">
-                  <input type="radio" checked={inputCategory === 'statement'} onChange={() => handleCategoryChange('statement')} disabled={availableTheoryIds.length === 0} />
+                  <input type="radio" checked={inputCategory === 'statement'} onChange={() => handleCategoryChange('statement')} disabled={availableTheories.length === 0} />
                   <MessageSquare size={18} className="text-gray-600" />
                   <span className="font-black text-sm">Statement Within a Theory</span>
                 </div>
@@ -175,27 +222,27 @@ export function CreateAddonModal({ task, availableTheoryIds, availableReviewIds,
             </div>
             
             <div className="mt-4">
-              <label className={`flex items-center gap-3 cursor-pointer group w-fit ${(inputCategory !== 'population' && availableReviewIds.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <label className={`flex items-center gap-3 cursor-pointer group w-fit ${(inputCategory !== 'population' && availableReviews.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}>
                 <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
                   <input
                     type="checkbox"
                     className="absolute opacity-0 w-full h-full cursor-pointer"
                     checked={isReviewed}
                     onChange={e => handleReviewedChange(e.target.checked)}
-                    disabled={inputCategory !== 'population' && availableReviewIds.length === 0}
+                    disabled={inputCategory !== 'population' && availableReviews.length === 0}
                   />
                   {isReviewed && <div className="w-3 h-3 bg-black" />}
                 </div>
                 <span className="text-sm font-bold">...which has already been reviewed</span>
               </label>
-              {inputCategory !== 'population' && availableReviewIds.length === 0 && (
+              {!isLoading && inputCategory !== 'population' && availableReviews.length === 0 && (
                 <div className="text-[10px] text-red-500 font-bold mt-1 ml-8">Requires at least one review.</div>
               )}
             </div>
 
             {showTheoryWarning && (
               <div className="text-sm font-bold text-red-600 mt-4">
-                No theories have been generated yet in this task. Please wait for a step to output a theory_id.
+                No theories have been generated yet in this task. Please wait for a step to generate a theory.
               </div>
             )}
           </div>
@@ -234,48 +281,55 @@ export function CreateAddonModal({ task, availableTheoryIds, availableReviewIds,
               {!isPopulation && (
                 <div>
                   <h3 className="text-sm font-black mb-4">Step 3: Select Targets</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Target Theory ID</label>
-                      <select
-                        required
-                        value={theoryId}
-                        onChange={e => setTheoryId(e.target.value)}
-                        className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
-                      >
-                        {availableTheoryIds.map(id => (
-                          <option key={id} value={id}>{id}</option>
-                        ))}
-                      </select>
+                  {isLoading ? (
+                    <div className="flex items-center justify-center p-8 border-2 border-gray-100 text-sm font-bold text-gray-400 gap-3">
+                      <Loader2 size={16} className="animate-spin" />
+                      Loading targets...
                     </div>
-
-                    {(addonType === 'refine-hypothesis' || addonType === 'expand-theory') && (
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
-                        <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Review ID</label>
-                        {availableReviewIds.length > 0 ? (
-                          <select
-                            required
-                            value={reviewId}
-                            onChange={e => setReviewId(e.target.value)}
-                            className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
-                          >
-                            {availableReviewIds.map(id => (
-                              <option key={id} value={id}>{id}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            type="text"
-                            required
-                            value={reviewId}
-                            onChange={e => setReviewId(e.target.value)}
-                            placeholder="R_YYYYMMDD_..."
-                            className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
-                          />
-                        )}
+                        <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Target Theory</label>
+                        <select
+                          required
+                          value={theoryId}
+                          onChange={e => setTheoryId(e.target.value)}
+                          className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
+                        >
+                          {sortedAndFilteredTheories.map(t => (
+                            <option key={t.id} value={t.id}>{t.headline ? `${t.headline} (${t.id})` : t.id}</option>
+                          ))}
+                        </select>
                       </div>
-                    )}
-                  </div>
+
+                      {(addonType === 'refine-hypothesis' || addonType === 'expand-theory') && (
+                        <div>
+                          <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Review</label>
+                          {filteredReviews.length > 0 ? (
+                            <select
+                              required
+                              value={reviewId}
+                              onChange={e => setReviewId(e.target.value)}
+                              className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
+                            >
+                              {filteredReviews.map(r => (
+                                <option key={r.id} value={r.id}>{r.headline ? `${r.headline} (${r.id})` : r.id}</option>
+                              ))}
+                            </select>
+                          ) : (
+                            <input
+                              type="text"
+                              required
+                              value={reviewId}
+                              onChange={e => setReviewId(e.target.value)}
+                              placeholder="R_YYYYMMDD_..."
+                              className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
+                            />
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
               )}
 

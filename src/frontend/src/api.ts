@@ -48,10 +48,18 @@ export interface TheoryArtifact {
   agent_type: string;
   category: string;
   created_at: string;
+  headline?: string;
   parent_theory: string | null;
   extra: Record<string, string>;
   score?: number | null;
   subscores?: Record<string, number>;
+}
+
+export interface ReviewArtifact {
+  id: string;
+  headline?: string;
+  parent_theory?: string;
+  created_at?: string;
 }
 
 export const getTasks = async (): Promise<Task[]> => {
@@ -126,6 +134,12 @@ export async function resumeTask(id: string): Promise<Task> {
 export async function getTheories(id: string): Promise<TheoryArtifact[]> {
   const res = await fetch(`${API_BASE}/tasks/${id}/theories`);
   if (!res.ok) throw new Error("Failed to get theories");
+  return res.json();
+}
+
+export async function getReviews(id: string): Promise<ReviewArtifact[]> {
+  const res = await fetch(`${API_BASE}/tasks/${id}/reviews`);
+  if (!res.ok) throw new Error("Failed to get reviews");
   return res.json();
 }
 

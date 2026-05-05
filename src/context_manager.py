@@ -182,6 +182,7 @@ class StoredMetadata(BaseModel):
     agent_type: str
     category: str
     created_at: str
+    headline: str = ""
     parent_theory: str | None = None
     extra: dict[str, str] = Field(default_factory=dict)
     staged_for_transaction: str | None = None
@@ -540,12 +541,25 @@ def store_results(
         # --- copy files ---
         shutil.copytree(from_folder, target_dir, ignore=IGNORE_METADATA_PATTERN)
 
+        # --- extract headline ---
+        headline = ""
+        primary_md_path = target_dir / expected_md
+        if primary_md_path.is_file():
+            try:
+                with open(primary_md_path, "r", encoding="utf-8") as f:
+                    first_line = f.readline().strip()
+                    if first_line:
+                        headline = first_line.lstrip("#").strip()
+            except Exception:
+                pass
+
         # --- write metadata ---
         meta = StoredMetadata(
             id=new_id,
             agent_type=from_agent_type,
             category=category,
             created_at=datetime.now(timezone.utc).isoformat(),
+            headline=headline,
             parent_theory=parent_theory
             if from_agent_type in parent_theory_allowed_agents
             else None,

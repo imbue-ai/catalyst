@@ -109,8 +109,8 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
                   className="block p-4 bg-white border-2 border-gray-200 hover:border-black transition-all group cursor-pointer"
                 >
                   <div className="flex justify-between items-start mb-3">
-                    <span className="font-black text-xs text-black truncate mr-3 tracking-tight" title={theory.id}>
-                      {theory.id}
+                    <span className="font-black text-xs text-black truncate mr-3 tracking-tight" title={theory.headline ? `${theory.headline} (${theory.id})` : theory.id}>
+                      {theory.headline ? `${theory.headline} (${theory.id})` : theory.id}
                     </span>
                     <span 
                       className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black shrink-0 border ${getScoreStyle(theory.score).className}`}
