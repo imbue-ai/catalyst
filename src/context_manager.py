@@ -247,7 +247,9 @@ class DatabaseSession:
     def iter_all_metadata(self, include_uncommitted: bool = False):
         """Iterate over all visible metadata in all categories."""
         for category in VALID_CATEGORIES:
-            yield from self.iter_metadata(category, include_uncommitted=include_uncommitted)
+            yield from self.iter_metadata(
+                category, include_uncommitted=include_uncommitted
+            )
 
     def get_population(self) -> Population | None:
         """Lazy-load the population snapshot."""
@@ -573,7 +575,9 @@ def store_results(
     return new_id
 
 
-def _get_ancestor_theories(session: DatabaseSession, base_theories: list[str]) -> set[str]:
+def _get_ancestor_theories(
+    session: DatabaseSession, base_theories: list[str]
+) -> set[str]:
     """Recursively collect the given theories and all of their ancestors."""
     target_theories = set(base_theories)
     to_visit = list(target_theories)
@@ -991,7 +995,11 @@ def list_entries(
                 for organism, eval_result in population.organisms:
                     if hasattr(organism, "theory_id"):
                         scores[organism.theory_id] = eval_result.score
-                        subscores[organism.theory_id] = eval_result.subscores if hasattr(eval_result, "subscores") else {}
+                        subscores[organism.theory_id] = (
+                            eval_result.subscores
+                            if hasattr(eval_result, "subscores")
+                            else {}
+                        )
 
             for d in results:
                 d["score"] = scores.get(d.get("id"))
@@ -1017,7 +1025,13 @@ def sample_theories(
         if purpose == "scoring":
             samples = population.sample_parents(
                 k=min(
-                    len(population.organisms),
+                    len(
+                        [
+                            o
+                            for o, r in population.organisms
+                            if r.trainable_failure_cases
+                        ]
+                    ),
                     num_theories,
                 ),
                 replace=False,
@@ -1032,7 +1046,7 @@ def sample_theories(
             {
                 "id": o.theory_id,
                 "score": r.score,
-                "subscores": r.subscores if hasattr(r, "subscores") else {}
+                "subscores": r.subscores if hasattr(r, "subscores") else {},
             }
             for o, r in samples
         ]
@@ -1522,7 +1536,11 @@ def main(argv: list[str] | None = None) -> None:
                     if args.sort_by == "score":
                         subscore_keys = set()
                         for e in entries:
-                            subscore_keys.update(e.get("subscores", {}).keys() if e.get("subscores") else [])
+                            subscore_keys.update(
+                                e.get("subscores", {}).keys()
+                                if e.get("subscores")
+                                else []
+                            )
                         subscore_keys = sorted(list(subscore_keys))
 
                         header = f"{'ID':<40} {'Score':<20} {'Created At':<28} {'Agent Type':<20}"
@@ -1539,8 +1557,18 @@ def main(argv: list[str] | None = None) -> None:
                             )
                             row = f"{e.get('id', '?'):<40} {score_str:<20} {e.get('created_at', '?'):<28} {e.get('agent_type', '?'):<20}"
                             for k in subscore_keys:
-                                val = e.get("subscores", {}).get(k) if e.get("subscores") else None
-                                val_str = f"{val:.4f}" if isinstance(val, (int, float)) else str(val) if val is not None else "N/A"
+                                val = (
+                                    e.get("subscores", {}).get(k)
+                                    if e.get("subscores")
+                                    else None
+                                )
+                                val_str = (
+                                    f"{val:.4f}"
+                                    if isinstance(val, (int, float))
+                                    else str(val)
+                                    if val is not None
+                                    else "N/A"
+                                )
                                 row += f" {val_str:<20}"
                             print(row)
                     else:
@@ -1568,7 +1596,7 @@ def main(argv: list[str] | None = None) -> None:
                     for t in sampled_theories:
                         subscore_keys.update(t.get("subscores", {}).keys())
                     subscore_keys = sorted(list(subscore_keys))
-                    
+
                     header = f"{'ID':<40} {'Score':<20}"
                     for k in subscore_keys:
                         header += f" {k.capitalize():<20}"
@@ -1578,7 +1606,13 @@ def main(argv: list[str] | None = None) -> None:
                         row = f"{t['id']:<40} {t['score']:<20.4f}"
                         for k in subscore_keys:
                             val = t.get("subscores", {}).get(k)
-                            val_str = f"{val:.4f}" if isinstance(val, (int, float)) else str(val) if val is not None else "N/A"
+                            val_str = (
+                                f"{val:.4f}"
+                                if isinstance(val, (int, float))
+                                else str(val)
+                                if val is not None
+                                else "N/A"
+                            )
                             row += f" {val_str:<20}"
                         print(row)
 
@@ -1597,6 +1631,6 @@ def main(argv: list[str] | None = None) -> None:
         print(f"Error: {exc}", file=sys.stderr)
         sys.exit(1)
 
+
 if __name__ == "__main__":
     main()
-
