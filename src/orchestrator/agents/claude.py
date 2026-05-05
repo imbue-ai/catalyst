@@ -2,6 +2,8 @@ import os
 import shlex
 import logging
 from typing import Dict, Any, Optional, Tuple, Callable
+
+from context_manager import DEFAULT_DB_DIR
 from .cli_base import BaseCliAgentRunner
 
 logger = logging.getLogger(__name__)
@@ -24,7 +26,7 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
             env["CONTEXT_TRANSACTION_ID"] = tx_id
         abs_env_folder = os.path.abspath(env_folder)
         env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
-        env["AI_SCIENTIST_DB_PATH"] = os.path.join(abs_env_folder, ".ai-scientist-db")
+        env["AI_SCIENTIST_DB_PATH"] = os.path.join(abs_env_folder, DEFAULT_DB_DIR)
 
         cmd = [
             "claude",
