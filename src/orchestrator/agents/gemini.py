@@ -18,13 +18,23 @@ class GeminiAgentRunner(BaseCliAgentRunner):
         on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
+        custom_env = {}
+        if tx_id:
+            custom_env["CONTEXT_TRANSACTION_ID"] = tx_id
+        abs_env_folder = os.path.abspath(env_folder)
+        custom_env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
+        custom_env["AI_SCIENTIST_DB_PATH"] = os.path.join(
+            abs_env_folder, ".ai_scientist_db"
+        )
+
         env = os.environ.copy()
         del env["VIRTUAL_ENV"]
-        if tx_id:
-            env["CONTEXT_TRANSACTION_ID"] = tx_id
-        abs_env_folder = os.path.abspath(env_folder)
-        env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
-        env["AI_SCIENTIST_DB_PATH"] = os.path.join(abs_env_folder, ".ai_scientist_db")
+        env.update(custom_env)
+
+        # Gemini CLI sandboxing requires environment variables to be specified via SANDBOX_ENV:
+        env["SANDBOX_ENV"] = ",".join(
+            f"{key}={value}" for key, value in custom_env.items()
+        )
 
         cmd = [
             "gemini",
