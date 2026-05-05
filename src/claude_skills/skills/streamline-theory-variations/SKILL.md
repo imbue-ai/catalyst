@@ -18,4 +18,4 @@ In particular:
 4. Launch one subagent to run `streamline-theory` with the instruction to focus on "the most universally applicable aspect". Also pass it the input theory ID.
 5. Launch one subagent to run `streamline-theory` with the instruction to focus on "the most speculative and ambitious aspect". Also pass it the input theory ID.
 
-All subagents can run in parallel. Each one will report back a new theory ID (e.g. `T_20260414_150000_x1y2z3`). Wait for all subagents to finish and collect their returned theory IDs, which will be the output of this skill.
+All subagents can run in parallel. Each one will report back a new theory ID (e.g. `T_20260414_150000_x1y2z3`). Wait for all subagents to finish and collect their result messages containing the returned theory IDs. Report the list of returned theory IDs as the output of this skill.
