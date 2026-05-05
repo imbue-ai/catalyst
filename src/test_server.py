@@ -1,4 +1,5 @@
 import unittest
+import json
 import logging
 from unittest.mock import patch, MagicMock, mock_open
 from fastapi.testclient import TestClient
@@ -59,10 +60,36 @@ class TestServerEndpoints(unittest.TestCase):
             "workflow_inputs": {"phenomenon": "new"},
             "framework": "claude"
         }
-        response = client.post("/api/tasks", json=task_req)
+        response = client.post("/api/tasks", data={"request": json.dumps(task_req)})
         self.assertEqual(response.status_code, 200)
         self.assertTrue(mock_add_task.called)
         self.assertTrue(mock_start_task.called)
+
+    @patch("server.subprocess.run")
+    @patch("server.add_task")
+    @patch("server.start_task")
+    @patch("server.shutil.copyfileobj")
+    @patch("server.zipfile.ZipFile")
+    @patch("server.os.makedirs")
+    @patch("server.os.remove")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_create_task_with_file(self, mock_file, mock_remove, mock_makedirs, mock_zip, mock_copy, mock_start_task, mock_add_task, mock_run):
+        task_req = {
+            "workflow_name": "import-theory",
+            "workflow_inputs": {},
+            "framework": "claude"
+        }
+        file_content = b"fake zip content"
+        file = ("test.zip", file_content, "application/zip")
+        
+        response = client.post(
+            "/api/tasks",
+            data={"request": json.dumps(task_req)},
+            files={"file": file}
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(mock_zip.called)
+        self.assertEqual(response.json()["workflow_inputs"]["file_path"], "tmp/import (a zip archive was unpacked into this folder)")
 
     @patch("server.get_task")
     @patch("server.update_task")

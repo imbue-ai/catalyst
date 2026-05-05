@@ -7,7 +7,7 @@ import json
 import io
 import zipfile
 import re
-from fastapi import FastAPI, HTTPException, Response
+from fastapi import FastAPI, HTTPException, Response, File, Form, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
@@ -100,7 +100,16 @@ def list_templates():
     return sorted(templates)
 
 @app.post("/api/tasks", response_model=Task)
-def create_task(req: CreateTaskRequest):
+def create_task(
+    request: str = Form(...),
+    file: Optional[UploadFile] = File(None)
+):
+    try:
+        req_data = json.loads(request)
+        req = CreateTaskRequest(**req_data)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid request data: {e}")
+
     task_id = str(uuid.uuid4())
 
     # Generate unique target path inside ./research
@@ -126,6 +135,25 @@ def create_task(req: CreateTaskRequest):
 
     # Inject summary into workflow_inputs
     inputs = dict(req.workflow_inputs)
+    
+    if file:
+        import_dir = os.path.join(target_path, "tmp", "import")
+        os.makedirs(import_dir, exist_ok=True)
+        if file.filename.endswith('.zip'):
+            zip_path = os.path.join(import_dir, "upload.zip")
+            with open(zip_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+                zip_ref.extractall(import_dir)
+            os.remove(zip_path)
+            inputs["file_path"] = "tmp/import (a zip archive was unpacked into this folder)"
+        else:
+            filename = file.filename
+            file_save_path = os.path.join(import_dir, filename)
+            with open(file_save_path, "wb") as buffer:
+                shutil.copyfileobj(file.file, buffer)
+            inputs["file_path"] = f"tmp/import/{filename}"
+
     summary_candidate = inputs.get("phenomenon") or inputs.get("idea") or ""
     inputs["summary"] = summary_candidate
 

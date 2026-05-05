@@ -75,11 +75,24 @@ export async function createTask(data: {
   template_folder?: string;
   framework: string;
   model?: string;
+  file?: File;
 }): Promise<Task> {
+  const formData = new FormData();
+  const requestData = {
+    workflow_name: data.workflow_name,
+    workflow_inputs: data.workflow_inputs,
+    template_folder: data.template_folder,
+    framework: data.framework,
+    model: data.model
+  };
+  formData.append('request', JSON.stringify(requestData));
+  if (data.file) {
+    formData.append('file', data.file);
+  }
+
   const res = await fetch(`${API_BASE}/tasks`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
+    body: formData,
   });
   if (!res.ok) {
     const error = await res.json();

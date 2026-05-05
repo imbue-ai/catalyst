@@ -130,11 +130,14 @@ def get_summarize_title_prompt(content_desc: str) -> str:
     )
 
 
-def get_support_idea_prompt(idea: str) -> str:
-    return (
-        f"Please run the support-idea skill for the following idea:\n```\n{idea}\n```\n"
-        "When you are done, return ONLY a JSON object with the key 'theory_id'."
-    )
+def get_support_idea_prompt(idea: str, file_path: Optional[str] = None) -> str:
+    prompt = "Please run the support-idea skill."
+    if idea:
+        prompt += f" Idea:\n```\n{idea}\n```\n"
+    if file_path:
+        prompt += f" You can find the relevant uploaded files at `{file_path}`. "
+    prompt += "When you are done, return ONLY a JSON object with the key 'theory_id'."
+    return prompt
 
 
 def get_import_theory_prompt(file_path: str) -> str:

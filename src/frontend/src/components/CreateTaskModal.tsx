@@ -35,10 +35,10 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
   }, [])
 
   // State for all inputs
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [inputs, setInputs] = useState({
     phenomenon: '',
     idea: '',
-    importFilePath: '',
     numRootTheories: 3,
     maxRefinements: 3,
     evolveIterations: 3,
@@ -85,7 +85,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     } else if (activeTab === 'refine-theory-idea-linear') {
       workflow_inputs = { idea: inputs.idea, apply_expansions: inputs.applyExpansions || undefined, max_refinements: inputs.maxRefinements }
     } else if (activeTab === 'import-theory') {
-      workflow_inputs = { file_path: inputs.importFilePath }
+      workflow_inputs = {}
     }
 
     try {
@@ -94,7 +94,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         workflow_inputs,
         template_folder: inputs.templateFolder || undefined,
         framework: inputs.framework,
-        model: inputs.model || undefined
+        model: inputs.model || undefined,
+        file: selectedFile || undefined
       })
       onCreated(task)
     } catch (e: any) {
@@ -160,30 +161,41 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
               )}
 
               {(activeTab === 'refine-theory-idea' || activeTab === 'refine-theory-idea-linear') && (
-                <div>
-                  <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Idea or File Path</label>
-                  <textarea
-                    autoFocus
-                    required
-                    rows={8}
-                    value={inputs.idea}
-                    onChange={e => updateInput('idea', e.target.value)}
-                    placeholder="Provide a theory idea or path to a markdown file..."
-                    className="w-full border-2 border-black p-4 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none transition-colors"
-                  />
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Theory Idea</label>
+                    <textarea
+                      autoFocus
+                      required={!selectedFile}
+                      rows={8}
+                      value={inputs.idea}
+                      onChange={e => updateInput('idea', e.target.value)}
+                      placeholder="Provide a theory idea..."
+                      className="w-full border-2 border-black p-4 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Optional: Upload Context File (.md, .tex, .pdf, .zip)</label>
+                    <input
+                      type="file"
+                      accept=".md,.tex,.pdf,.zip"
+                      onChange={e => setSelectedFile(e.target.files?.[0] || null)}
+                      className="w-full border-2 border-black p-4 outline-none focus:bg-gray-50 text-sm font-bold transition-colors file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-black file:tracking-widest file:bg-black file:text-white hover:file:bg-gray-800 cursor-pointer"
+                    />
+                  </div>
                 </div>
               )}
 
               {activeTab === 'import-theory' && (
                 <div>
-                  <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">File Path to Import</label>
+                  <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Theory File to Import (.md, .tex, .pdf, .zip)</label>
                   <input
                     autoFocus
+                    type="file"
                     required
-                    value={inputs.importFilePath}
-                    onChange={e => updateInput('importFilePath', e.target.value)}
-                    placeholder="/absolute/path/to/theory.md"
-                    className="w-full border-2 border-black p-4 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 transition-colors"
+                    accept=".md,.tex,.pdf,.zip"
+                    onChange={e => setSelectedFile(e.target.files?.[0] || null)}
+                    className="w-full border-2 border-black p-4 outline-none focus:bg-gray-50 text-sm font-bold transition-colors file:mr-4 file:py-2 file:px-4 file:border-0 file:text-xs file:font-black file:tracking-widest file:bg-black file:text-white hover:file:bg-gray-800 cursor-pointer"
                   />
                 </div>
               )}
