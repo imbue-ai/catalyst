@@ -21,7 +21,7 @@ class ImportTheoryWorkflow(Workflow):
         file_path = task.workflow_inputs.get("file_path", "")
 
         # Step 0: Summarize Title
-        run_summarize_title(task, run_step, f"theory file: {file_path}")
+        run_summarize_title(task, run_step, f"theory file at: {file_path}")
 
         # Step 1: Import Theory
         import_data = run_step_if_needed(

@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class ClaudeAgentRunner(BaseCliAgentRunner):
+    _ADDITIONAL_SYSTEM_PROMPT = "If you encounter any issues with following the instructions in a skill, or run into issues with your execution environment (e.g. missing permission, error while running a pre-provided script, etc.), please take a second to append a short, one-line issue description to `./tmp/agent_friction_log.txt`."
+
     def run(
         self,
         task_id: str,
@@ -34,6 +36,8 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
             "--output-format",
             "stream-json",
             "--verbose",
+            "--append-system-prompt",
+            self._ADDITIONAL_SYSTEM_PROMPT,
         ]
         if model:
             cmd.extend(["--model", model])

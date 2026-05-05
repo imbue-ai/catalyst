@@ -82,16 +82,21 @@ class RefineTheoryIdeaWorkflow(Workflow):
         self.init_db(task)
 
         idea = task.workflow_inputs.get("idea", "")
+        file_path = task.workflow_inputs.get("file_path")
+
+        content_desc = f"idea: {idea}"
+        if file_path:
+            content_desc += f" (with uploaded files at {file_path})"
 
         # Step 0: Summarize Title
-        run_summarize_title(task, run_step, f"idea: {idea}")
+        run_summarize_title(task, run_step, content_desc)
 
         # Step 1: Support Idea
         support_data = run_step_if_needed(
             task,
             run_step,
             "support-idea",
-            get_support_idea_prompt(idea),
+            get_support_idea_prompt(idea, file_path),
         )
         theory_id = support_data.get("theory_id") if support_data else None
         if not theory_id and not (support_data and support_data.get("_canceled")):
