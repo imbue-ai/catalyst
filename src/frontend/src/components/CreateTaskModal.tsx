@@ -294,15 +294,17 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       </div>
                     )}
 
-                    <div className="col-span-1">
-                      <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Refinements</label>
-                      <input
-                        type="number" min="0" max="10" required
-                        value={inputs.maxRefinements}
-                        onChange={e => updateInput('maxRefinements', parseInt(e.target.value, 10))}
-                        className="w-full border-2 border-black p-2 outline-none text-sm font-bold"
-                      />
-                    </div>
+                    {(activeTab === 'develop-theory-linear' || activeTab === 'refine-theory-idea-linear') && (
+                      <div className="col-span-1">
+                        <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Refinements</label>
+                        <input
+                          type="number" min="0" max="10" required
+                          value={inputs.maxRefinements}
+                          onChange={e => updateInput('maxRefinements', parseInt(e.target.value, 10))}
+                          className="w-full border-2 border-black p-2 outline-none text-sm font-bold"
+                        />
+                      </div>
+                    )}
 
                     {isEvolve && (
                       <>
