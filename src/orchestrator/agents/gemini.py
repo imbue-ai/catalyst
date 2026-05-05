@@ -23,7 +23,8 @@ class GeminiAgentRunner(BaseCliAgentRunner):
         if tx_id:
             env["CONTEXT_TRANSACTION_ID"] = tx_id
         abs_env_folder = os.path.abspath(env_folder)
-        env["UV_CACHE_DIR"] = "./tmp/uv_cache"
+        env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
+        env["AI_SCIENTIST_DB_PATH"] = os.path.join(abs_env_folder, ".ai_scientist_db")
 
         cmd = [
             "gemini",
