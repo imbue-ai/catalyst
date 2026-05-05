@@ -24,7 +24,7 @@ class GeminiAgentRunner(BaseCliAgentRunner):
         abs_env_folder = os.path.abspath(env_folder)
         custom_env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
         custom_env["AI_SCIENTIST_DB_PATH"] = os.path.join(
-            abs_env_folder, ".ai_scientist_db"
+            abs_env_folder, ".ai-scientist-db"
         )
 
         env = os.environ.copy()
