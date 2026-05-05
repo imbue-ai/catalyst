@@ -18,6 +18,14 @@ class TestAgents(unittest.TestCase):
         # Multiple JSONs, should pick the last one
         raw = '{"first": 1} ... some text ... {"last": 2}'
         self.assertEqual(runner._parse_json_result(raw), {"last": 2})
+
+        # Nested JSON, should correctly find the outer boundaries
+        raw = 'Random text before {"outer": {"inner": 42}, "other": "val"} text after'
+        self.assertEqual(runner._parse_json_result(raw), {"outer": {"inner": 42}, "other": "val"})
+
+        # Multiple JSONs with nesting
+        raw = '{"first": {"a": 1}} some noise {"last": {"b": 2}}'
+        self.assertEqual(runner._parse_json_result(raw), {"last": {"b": 2}})
         
         # Malformed
         self.assertIsNone(runner._parse_json_result("not json"))

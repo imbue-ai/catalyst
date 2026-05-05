@@ -5,7 +5,7 @@ import logging
 
 from context_manager import DEFAULT_DB_DIR
 from ..models import Task, StepStatus, Step
-from ..state import update_task
+from ..state import update_task, get_task_lock
 
 logger = logging.getLogger(__name__)
 
@@ -33,16 +33,31 @@ def run_local_step_if_needed(
 
     logger.debug(f"[ORCHESTRATOR] [{task.id[:8]}] Running local step {stage}...")
 
+    lock = get_task_lock(task.id)
+
+    with lock:
+        step = next((s for s in task.steps if s.stage == stage), None)
+        if not step:
+            step = Step(stage=stage, status=StepStatus.RUNNING, inputs={})
+            task.steps.append(step)
+        else:
+            step.status = StepStatus.RUNNING
+            step.error = None
+            step.outputs = None
+        update_task(task)
+
     try:
         out = fn()
-        step = Step(stage=stage, status=StepStatus.COMPLETED, inputs={}, outputs=out)
-        task.steps.append(step)
-        update_task(task)
+        with lock:
+            step.status = StepStatus.COMPLETED
+            step.outputs = out
+            update_task(task)
         return out
     except Exception as e:
-        step = Step(stage=stage, status=StepStatus.FAILED, inputs={}, error=str(e))
-        task.steps.append(step)
-        update_task(task)
+        with lock:
+            step.status = StepStatus.FAILED
+            step.error = str(e)
+            update_task(task)
         raise e
 
 
