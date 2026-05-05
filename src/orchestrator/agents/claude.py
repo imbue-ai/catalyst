@@ -23,6 +23,7 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
         if tx_id:
             env["CONTEXT_TRANSACTION_ID"] = tx_id
         abs_env_folder = os.path.abspath(env_folder)
+        env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
 
         cmd = [
             "claude",
