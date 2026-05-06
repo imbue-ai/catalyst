@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { XCircle, ChevronRight, ChevronDown, FileText, Users, Settings2, MessageSquare, Loader2 } from 'lucide-react'
+import { XCircle, ChevronRight, ChevronDown, FileText, Users, Settings2, MessageSquare } from 'lucide-react'
 import * as api from '../api'
 
 interface CreateAddonModalProps {
@@ -172,7 +172,6 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
   }
 
   const isPopulation = inputCategory === 'population';
-  const showTheoryWarning = !isLoading && availableTheories.length === 0 && !isPopulation;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -198,21 +197,30 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
           <div>
             <h3 className="text-sm font-black mb-4">Step 1: I have a...</h3>
             <div className="flex flex-col md:flex-row gap-4">
-              <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'population' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <label 
+                className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'population' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
+              >
                 <div className="flex items-center gap-3">
                   <input type="radio" checked={inputCategory === 'population'} onChange={() => handleCategoryChange('population')} disabled={availableTheories.length === 0} />
                   <Users size={18} className="text-gray-600" />
                   <span className="font-black text-sm">Population of Theories</span>
                 </div>
               </label>
-              <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'theory' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <label 
+                className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'theory' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
+              >
                 <div className="flex items-center gap-3">
                   <input type="radio" checked={inputCategory === 'theory'} onChange={() => handleCategoryChange('theory')} disabled={availableTheories.length === 0} />
                   <FileText size={18} className="text-gray-600" />
                   <span className="font-black text-sm">Theory</span>
                 </div>
               </label>
-              <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'statement' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <label 
+                className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'statement' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
+              >
                 <div className="flex items-center gap-3">
                   <input type="radio" checked={inputCategory === 'statement'} onChange={() => handleCategoryChange('statement')} disabled={availableTheories.length === 0} />
                   <MessageSquare size={18} className="text-gray-600" />
@@ -222,7 +230,10 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
             </div>
             
             <div className="mt-4">
-              <label className={`flex items-center gap-3 cursor-pointer group w-fit ${(inputCategory !== 'population' && availableReviews.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}>
+              <label 
+                className={`flex items-center gap-3 cursor-pointer group w-fit ${(inputCategory !== 'population' && availableReviews.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                title={inputCategory !== 'population' && availableReviews.length === 0 ? "Requires at least one review." : ""}
+              >
                 <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
                   <input
                     type="checkbox"
@@ -235,21 +246,10 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                 </div>
                 <span className="text-sm font-bold">...which has already been reviewed</span>
               </label>
-              {!isLoading && inputCategory !== 'population' && availableReviews.length === 0 && (
-                <div className="text-[10px] text-red-500 font-bold mt-1 ml-8">Requires at least one review.</div>
-              )}
             </div>
-
-            {showTheoryWarning && (
-              <div className="text-sm font-bold text-red-600 mt-4">
-                No theories have been generated yet in this task. Please wait for a step to generate a theory.
-              </div>
-            )}
           </div>
 
-          {(!showTheoryWarning) && (
-            <>
-              {/* STEP 2: Action */}
+          {/* STEP 2: Action */}
               <div>
                 <h3 className="text-sm font-black mb-4">
                   Step 2: And I want to...
@@ -281,55 +281,62 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
               {!isPopulation && (
                 <div>
                   <h3 className="text-sm font-black mb-4">Step 3: Select Targets</h3>
-                  {isLoading ? (
-                    <div className="flex items-center justify-center p-8 border-2 border-gray-100 text-sm font-bold text-gray-400 gap-3">
-                      <Loader2 size={16} className="animate-spin" />
-                      Loading targets...
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Target Theory</label>
-                        <select
-                          required
-                          value={theoryId}
-                          onChange={e => setTheoryId(e.target.value)}
-                          className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
-                        >
-                          {sortedAndFilteredTheories.map(t => (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Target Theory</label>
+                      <select
+                        required
+                        value={theoryId}
+                        onChange={e => setTheoryId(e.target.value)}
+                        className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={isLoading || sortedAndFilteredTheories.length === 0}
+                      >
+                        {isLoading ? (
+                          <option value="">Loading...</option>
+                        ) : sortedAndFilteredTheories.length === 0 ? (
+                          <option value="">No theories found</option>
+                        ) : (
+                          sortedAndFilteredTheories.map(t => (
                             <option key={t.id} value={t.id}>{t.headline ? `${t.headline} (${t.id})` : t.id}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {(addonType === 'refine-hypothesis' || addonType === 'expand-theory') && (
-                        <div>
-                          <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Review</label>
-                          {filteredReviews.length > 0 ? (
-                            <select
-                              required
-                              value={reviewId}
-                              onChange={e => setReviewId(e.target.value)}
-                              className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
-                            >
-                              {filteredReviews.map(r => (
-                                <option key={r.id} value={r.id}>{r.headline ? `${r.headline} (${r.id})` : r.id}</option>
-                              ))}
-                            </select>
-                          ) : (
-                            <input
-                              type="text"
-                              required
-                              value={reviewId}
-                              onChange={e => setReviewId(e.target.value)}
-                              placeholder="R_YYYYMMDD_..."
-                              className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
-                            />
-                          )}
-                        </div>
-                      )}
+                          ))
+                        )}
+                      </select>
                     </div>
-                  )}
+
+                    {(addonType === 'refine-hypothesis' || addonType === 'expand-theory') && (
+                      <div>
+                        <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Review</label>
+                        {isLoading ? (
+                          <select
+                            disabled
+                            className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-not-allowed opacity-50"
+                          >
+                            <option value="">Loading...</option>
+                          </select>
+                        ) : filteredReviews.length > 0 ? (
+                          <select
+                            required
+                            value={reviewId}
+                            onChange={e => setReviewId(e.target.value)}
+                            className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
+                          >
+                            {filteredReviews.map(r => (
+                              <option key={r.id} value={r.id}>{r.headline ? `${r.headline} (${r.id})` : r.id}</option>
+                            ))}
+                          </select>
+                        ) : (
+                          <input
+                            type="text"
+                            required
+                            value={reviewId}
+                            onChange={e => setReviewId(e.target.value)}
+                            placeholder="R_YYYYMMDD_..."
+                            className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
+                          />
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
@@ -488,21 +495,17 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                   </div>
                 </div>
               )}
-            </>
-          )}
-          </div>
+            </div>
 
-          {(!showTheoryWarning || isPopulation) && (
-            <div className="flex gap-4 pt-6 border-t border-gray-100 shrink-0">
+            <div className="flex gap-4 pt-6 border-t border-gray-100 shrink-0 mt-4">
               <button
                 type="submit"
-                disabled={isBackendDown || !addonType}
+                disabled={isBackendDown || !addonType || (!isPopulation && !theoryId)}
                 className="flex-1 bg-black text-white p-4 font-black text-sm tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
               >
                 {isBackendDown ? 'Backend Offline' : 'Add Step'} <ChevronRight size={18} />
               </button>
             </div>
-          )}
         </form>
       </div>
     </div>
