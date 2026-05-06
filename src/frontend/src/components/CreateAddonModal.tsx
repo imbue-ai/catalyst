@@ -298,7 +298,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
 
                   {(addonType === 'refine-hypothesis' || addonType === 'expand-theory') && (
                     <div>
-                      <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Target Review</label>
+                      <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Apply Review</label>
                       {isLoading ? (
                         <select
                           disabled
