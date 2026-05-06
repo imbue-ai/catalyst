@@ -86,12 +86,14 @@ Your `theory.md` file must be: A revised theory that contains your refined hypot
 
 The revised theory must be a fully self-contained, updated version of the original theory. Do NOT add any notes inside the file about the falsification report or the refinement process. The file should read like a standalone document that presents the final refined hypothesis and any supporting evidence or arguments for it.
 
-Stylistic guidelines for the `theory.md` file:
-- Structure your theory into a set of precise definitions, conjectures, observations, lemmas and/or theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally prove it! Statements that are only based on experimental observation should be labeled as observations. Later lemmas/theorems can build on earlier ones.
-- Provide intuition for the mechanisms behind each statement. Then follow up with rigorous mathematical definitions, proofs, and experimental evidence.
+Please maintain the following guidelines for the expanded theory:
+- Start with a brief definition of the phenomenon and provide any necessary context, including a brief summary of the relevant literature.
+- Provide intuition for the mechanisms behind your theory. Then follow up with rigorous mathematical statements or empirical observations.
+- Structure your theory into a set of precise definitions, conjectures, observations, lemmas and theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally prove it! Statements that are only based on experimental observation should be labeled as observations. Later statements can build on earlier ones.
+- Include a table that lists all statements in your theory upfront, with a note of whether you have verified them through mathematical proof or experimental evidence.
 - Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
-- Explicitly lay out the evidence you have for each statement, either a mathematical proof/derivation, or empirical evidence from experiments. Perform thorough mathematical derivations and proofs when possible. You can also cite prior literature to support your statements.
-- Include plots, figures and specific data points from your experiments to provide intuition and illustrate the evidence for your statements. Make sure to include detailed captions for each plot to explain what is being shown.
+- Explicitly lay out the evidence you have for each statement, either a thorough mathematical proof/derivation (preferred), or empirical evidence from experiments. You can also cite prior literature to support your statements. Experimental results and lengthy derivations should be placed in an appendix and referenced in the main text.
+- Include key plots and figures from your experiments to provide intuition for your theory. Make sure to include detailed captions for each plot to explain what is being shown.
 - Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. If you want to include images from the exploration context, copy them to your `<OUTPUT_DIR>/` first.
 - Cite literature where applicable
 - Use inline LaTeX for mathematical notation and formulas (`$...$` for inline math, and `$$...$$` for display math). Do NOT put formulas into code blocks.
