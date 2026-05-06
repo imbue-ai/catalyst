@@ -204,11 +204,11 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
 
             <div className="flex justify-center mt-8">
               <button
-                disabled={task.status === 'running' || isProcessing}
+                disabled={isProcessing}
                 onClick={() => setShowAddonModal(true)}
-                className={`flex flex-col items-center gap-2 transition-colors ${task.status === 'running' ? 'opacity-30 cursor-not-allowed text-gray-400' : 'text-gray-400 hover:text-black'}`}
+                className={`flex flex-col items-center gap-2 transition-colors ${isProcessing ? 'opacity-30 cursor-not-allowed text-gray-400' : 'text-gray-400 hover:text-black'}`}
               >
-                <div className={`p-1 rounded-full ${task.status === 'running' ? 'bg-gray-400' : 'bg-black text-white'}`}>
+                <div className={`p-1 rounded-full ${isProcessing ? 'bg-gray-400' : 'bg-black text-white'}`}>
                   <Plus size={16} />
                 </div>
                 <span className="text-[10px] font-black tracking-widest">Add step</span>

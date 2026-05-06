@@ -70,8 +70,7 @@ def _orchestrate_task(task_id: str):
         task.workflow_structure = get_full_structure(workflow, task)
         update_task(task)
 
-        if not task.base_workflow_canceled:
-            workflow.run(task, run_step_wrapper)
+        workflow.run(task, run_step_wrapper)
 
         # Process Addons
         for i, addon in enumerate(task.addons):

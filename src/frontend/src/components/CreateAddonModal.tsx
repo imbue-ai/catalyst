@@ -77,10 +77,10 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     }
     return theories;
   }, [availableTheories, availableReviews, isReviewed]);
-  
+
   const initialSkills = getAvailableSkills('theory', false)
   const [addonType, setAddonType] = useState(initialSkills.length > 0 ? initialSkills[0].id : '')
-  
+
   const [theoryId, setTheoryId] = useState('')
 
   React.useEffect(() => {
@@ -89,12 +89,12 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
       api.getTheories(task.id),
       api.getReviews(task.id)
     ])
-    .then(([theories, reviews]) => {
-      setAvailableTheories(theories)
-      setAvailableReviews(reviews)
-    })
-    .catch(console.error)
-    .finally(() => setIsLoading(false))
+      .then(([theories, reviews]) => {
+        setAvailableTheories(theories)
+        setAvailableReviews(reviews)
+      })
+      .catch(console.error)
+      .finally(() => setIsLoading(false))
   }, [task.id])
 
   React.useEffect(() => {
@@ -112,7 +112,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
   const [numParents, setNumParents] = useState(3)
   const [maxStreamlineProb, setMaxStreamlineProb] = useState(0.5)
   const [numExtraScores, setNumExtraScores] = useState(5)
-  
+
   const filteredReviews = availableReviews.filter(r => r.parent_theory === theoryId)
   const [reviewId, setReviewId] = useState(filteredReviews[0]?.id || '')
 
@@ -131,9 +131,9 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
   const [showAdditional, setShowAdditional] = useState(false)
 
   const hasRequiredConfig = ['falsify-hypothesis', 'edit-theory'].includes(addonType);
-  const hasOptionalConfig = addonType === 'streamline-theory' || 
-                            ['refinement-loop', 'evolve-loop', 'refine-theory'].includes(addonType) || 
-                            (['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop'].includes(addonType) && availableLiteratureIds.length > 0);
+  const hasOptionalConfig = addonType === 'streamline-theory' ||
+    ['refinement-loop', 'evolve-loop', 'refine-theory'].includes(addonType) ||
+    (['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop'].includes(addonType) && availableLiteratureIds.length > 0);
 
   const handleCategoryChange = (cat: InputCategory) => {
     setInputCategory(cat);
@@ -183,329 +183,322 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
           </button>
         </div>
 
-        {task.status !== 'completed' && task.status !== 'running' && (
-          <div className="text-xs font-bold text-yellow-700 bg-yellow-100 p-4 border border-yellow-300 mb-6 flex gap-2 items-start shrink-0">
-            <span className="shrink-0 mt-0.5">⚠️</span>
-            <span>Warning: Adding a step to an incomplete workflow will cancel any remaining steps in the current workflow sequence.</span>
-          </div>
-        )}
-
         <form onSubmit={handleCreate} className="flex-1 flex flex-col min-h-0">
           <div className="flex-1 overflow-y-auto custom-scrollbar pr-4 flex flex-col gap-10 pb-4">
-          
-          {/* STEP 1: Input Type */}
-          <div>
-            <h3 className="text-sm font-black mb-4">Step 1: I have a...</h3>
-            <div className="flex flex-col md:flex-row gap-4">
-              <label 
-                className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'population' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
-              >
-                <div className="flex items-center gap-3">
-                  <input type="radio" checked={inputCategory === 'population'} onChange={() => handleCategoryChange('population')} disabled={availableTheories.length === 0} />
-                  <Users size={18} className="text-gray-600" />
-                  <span className="font-black text-sm">Population of Theories</span>
-                </div>
-              </label>
-              <label 
-                className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'theory' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
-              >
-                <div className="flex items-center gap-3">
-                  <input type="radio" checked={inputCategory === 'theory'} onChange={() => handleCategoryChange('theory')} disabled={availableTheories.length === 0} />
-                  <FileText size={18} className="text-gray-600" />
-                  <span className="font-black text-sm">Theory</span>
-                </div>
-              </label>
-              <label 
-                className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'statement' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
-              >
-                <div className="flex items-center gap-3">
-                  <input type="radio" checked={inputCategory === 'statement'} onChange={() => handleCategoryChange('statement')} disabled={availableTheories.length === 0} />
-                  <MessageSquare size={18} className="text-gray-600" />
-                  <span className="font-black text-sm">Statement Within a Theory</span>
-                </div>
-              </label>
-            </div>
-            
-            <div className="mt-4">
-              <label 
-                className={`flex items-center gap-3 cursor-pointer group w-fit ${(inputCategory !== 'population' && availableReviews.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                title={inputCategory !== 'population' && availableReviews.length === 0 ? "Requires at least one review." : ""}
-              >
-                <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
-                  <input
-                    type="checkbox"
-                    className="absolute opacity-0 w-full h-full cursor-pointer"
-                    checked={isReviewed}
-                    onChange={e => handleReviewedChange(e.target.checked)}
-                    disabled={inputCategory !== 'population' && availableReviews.length === 0}
-                  />
-                  {isReviewed && <div className="w-3 h-3 bg-black" />}
-                </div>
-                <span className="text-sm font-bold">...which has already been reviewed</span>
-              </label>
-            </div>
-          </div>
 
-          {/* STEP 2: Action */}
-              <div>
-                <h3 className="text-sm font-black mb-4">
-                  Step 2: And I want to...
-                </h3>
-                {getAvailableSkills(inputCategory, isReviewed).length === 0 ? (
-                  <div className="text-sm font-bold text-gray-500 italic p-4 border-2 border-dashed border-gray-200">
-                    No skills available for this context. Please ensure you have generated theories or reviews as required, or check the 'already reviewed' option if applicable.
+            {/* STEP 1: Input Type */}
+            <div>
+              <h3 className="text-sm font-black mb-4">Step 1: I have a...</h3>
+              <div className="flex flex-col md:flex-row gap-4">
+                <label
+                  className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'population' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
+                >
+                  <div className="flex items-center gap-3">
+                    <input type="radio" checked={inputCategory === 'population'} onChange={() => handleCategoryChange('population')} disabled={availableTheories.length === 0} />
+                    <Users size={18} className="text-gray-600" />
+                    <span className="font-black text-sm">Population of Theories</span>
                   </div>
-                ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {getAvailableSkills(inputCategory, isReviewed).map(skill => (
-                      <label key={skill.id} className={`border-2 p-4 cursor-pointer transition-colors flex flex-col gap-2 ${addonType === skill.id ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
-                        <div className="flex items-start gap-3">
-                          <input type="radio" name="addonSkill" className="mt-1" checked={addonType === skill.id} onChange={() => setAddonType(skill.id)} />
-                          <div>
-                            <span className="font-black text-sm">{skill.label}</span>
-                            <p className="text-[10px] text-gray-500 font-bold leading-relaxed mt-2">
-                              {ADDON_DESCRIPTIONS[skill.id]}
-                            </p>
-                          </div>
-                        </div>
-                      </label>
-                    ))}
+                </label>
+                <label
+                  className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'theory' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
+                >
+                  <div className="flex items-center gap-3">
+                    <input type="radio" checked={inputCategory === 'theory'} onChange={() => handleCategoryChange('theory')} disabled={availableTheories.length === 0} />
+                    <FileText size={18} className="text-gray-600" />
+                    <span className="font-black text-sm">Theory</span>
                   </div>
-                )}
+                </label>
+                <label
+                  className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'statement' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
+                >
+                  <div className="flex items-center gap-3">
+                    <input type="radio" checked={inputCategory === 'statement'} onChange={() => handleCategoryChange('statement')} disabled={availableTheories.length === 0} />
+                    <MessageSquare size={18} className="text-gray-600" />
+                    <span className="font-black text-sm">Statement Within a Theory</span>
+                  </div>
+                </label>
               </div>
 
-              {/* STEP 3: Targets */}
-              {!isPopulation && (
-                <div>
-                  <h3 className="text-sm font-black mb-4">Step 3: Select Targets</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Target Theory</label>
-                      <select
-                        required
-                        value={theoryId}
-                        onChange={e => setTheoryId(e.target.value)}
-                        className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                        disabled={isLoading || sortedAndFilteredTheories.length === 0}
-                      >
-                        {isLoading ? (
-                          <option value="">Loading...</option>
-                        ) : sortedAndFilteredTheories.length === 0 ? (
-                          <option value="">No theories found</option>
-                        ) : (
-                          sortedAndFilteredTheories.map(t => (
-                            <option key={t.id} value={t.id}>{t.headline ? `${t.headline} (${t.id})` : t.id}</option>
-                          ))
-                        )}
-                      </select>
-                    </div>
-
-                    {(addonType === 'refine-hypothesis' || addonType === 'expand-theory') && (
-                      <div>
-                        <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Review</label>
-                        {isLoading ? (
-                          <select
-                            disabled
-                            className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-not-allowed opacity-50"
-                          >
-                            <option value="">Loading...</option>
-                          </select>
-                        ) : filteredReviews.length > 0 ? (
-                          <select
-                            required
-                            value={reviewId}
-                            onChange={e => setReviewId(e.target.value)}
-                            className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
-                          >
-                            {filteredReviews.map(r => (
-                              <option key={r.id} value={r.id}>{r.headline ? `${r.headline} (${r.id})` : r.id}</option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            type="text"
-                            required
-                            value={reviewId}
-                            onChange={e => setReviewId(e.target.value)}
-                            placeholder="R_YYYYMMDD_..."
-                            className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
-                          />
-                        )}
-                      </div>
-                    )}
+              <div className="mt-4">
+                <label
+                  className={`flex items-center gap-3 cursor-pointer group w-fit ${(availableReviews.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  title={availableReviews.length === 0 ? "Requires at least one review." : ""}
+                >
+                  <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
+                    <input
+                      type="checkbox"
+                      className="absolute opacity-0 w-full h-full cursor-pointer"
+                      checked={isReviewed}
+                      onChange={e => handleReviewedChange(e.target.checked)}
+                      disabled={availableReviews.length === 0}
+                    />
+                    {isReviewed && <div className="w-3 h-3 bg-black" />}
                   </div>
+                  <span className="text-sm font-bold">...which has already been reviewed</span>
+                </label>
+              </div>
+            </div>
+
+            {/* STEP 2: Action */}
+            <div>
+              <h3 className="text-sm font-black mb-4">
+                Step 2: And I want to...
+              </h3>
+              {getAvailableSkills(inputCategory, isReviewed).length === 0 ? (
+                <div className="text-sm font-bold text-gray-500 italic p-4 border-2 border-dashed border-gray-200">
+                  No skills available for this context. Please ensure you have generated theories or reviews as required, or check the 'already reviewed' option if applicable.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {getAvailableSkills(inputCategory, isReviewed).map(skill => (
+                    <label key={skill.id} className={`border-2 p-4 cursor-pointer transition-colors flex flex-col gap-2 ${addonType === skill.id ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
+                      <div className="flex items-start gap-3">
+                        <input type="radio" name="addonSkill" className="mt-1" checked={addonType === skill.id} onChange={() => setAddonType(skill.id)} />
+                        <div>
+                          <span className="font-black text-sm">{skill.label}</span>
+                          <p className="text-[10px] text-gray-500 font-bold leading-relaxed mt-2">
+                            {ADDON_DESCRIPTIONS[skill.id]}
+                          </p>
+                        </div>
+                      </div>
+                    </label>
+                  ))}
                 </div>
               )}
+            </div>
 
-              {/* STEP 4: Configuration */}
-              {(hasRequiredConfig || hasOptionalConfig) && (
-                <div>
-                  <h3 className="text-sm font-black mb-4">
-                    {isPopulation ? 'Step 3: Configuration' : 'Step 4: Configuration'}
-                  </h3>
-                  <div className="flex flex-col gap-6">
-                    
-                    {/* Required Configurations */}
-                    {addonType === 'falsify-hypothesis' && (
-                      <div>
-                        <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Hypothesis Title</label>
+            {/* STEP 3: Targets */}
+            {!isPopulation && (
+              <div>
+                <h3 className="text-sm font-black mb-4">Step 3: Select Targets</h3>
+                <div className="flex flex-col gap-6">
+                  <div>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Target Theory</label>
+                    <select
+                      required
+                      value={theoryId}
+                      onChange={e => setTheoryId(e.target.value)}
+                      className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled={isLoading || sortedAndFilteredTheories.length === 0}
+                    >
+                      {isLoading ? (
+                        <option value="">Loading...</option>
+                      ) : sortedAndFilteredTheories.length === 0 ? (
+                        <option value="">No theories found</option>
+                      ) : (
+                        sortedAndFilteredTheories.map(t => (
+                          <option key={t.id} value={t.id}>{t.headline ? `${t.headline} (${t.id})` : t.id}</option>
+                        ))
+                      )}
+                    </select>
+                  </div>
+
+                  {(addonType === 'refine-hypothesis' || addonType === 'expand-theory') && (
+                    <div>
+                      <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Target Review</label>
+                      {isLoading ? (
+                        <select
+                          disabled
+                          className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-not-allowed opacity-50"
+                        >
+                          <option value="">Loading...</option>
+                        </select>
+                      ) : filteredReviews.length > 0 ? (
+                        <select
+                          required
+                          value={reviewId}
+                          onChange={e => setReviewId(e.target.value)}
+                          className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
+                        >
+                          {filteredReviews.map(r => (
+                            <option key={r.id} value={r.id}>{r.headline ? `${r.headline} (${r.id})` : r.id}</option>
+                          ))}
+                        </select>
+                      ) : (
                         <input
                           type="text"
                           required
-                          value={hypothesisTitle}
-                          onChange={e => setHypothesisTitle(e.target.value)}
-                          placeholder="Enter the title of the hypothesis to review"
+                          value={reviewId}
+                          onChange={e => setReviewId(e.target.value)}
+                          placeholder="R_YYYYMMDD_..."
                           className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
                         />
-                      </div>
-                    )}
-
-                    {addonType === 'edit-theory' && (
-                      <div>
-                        <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Edit Instructions</label>
-                        <textarea
-                          required
-                          rows={5}
-                          value={instruction}
-                          onChange={e => setInstruction(e.target.value)}
-                          placeholder="Describe the edits you want to make to the theory..."
-                          className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none"
-                        />
-                      </div>
-                    )}
-
-                    {/* Optional Configurations */}
-                    {hasOptionalConfig && (
-                      <div className="space-y-6">
-                        <button
-                          type="button"
-                          onClick={() => setShowAdditional(!showAdditional)}
-                          className="flex items-center gap-2 text-[10px] font-black tracking-widest hover:text-gray-500 transition-colors group"
-                        >
-                          <Settings2 size={14} />
-                          <span>Additional Parameters</span>
-                          {showAdditional ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-                        </button>
-
-                        {showAdditional && (
-                          <div className="flex flex-col gap-6 p-6 border-2 border-dashed border-gray-200">
-                            {addonType === 'refinement-loop' && (
-                              <div>
-                                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Refinement Iterations</label>
-                                <input
-                                  type="number"
-                                  min="1"
-                                  max="10"
-                                  required
-                                  value={maxRefinements}
-                                  onChange={e => setMaxRefinements(parseInt(e.target.value, 10))}
-                                  className="w-full md:w-1/3 border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
-                                />
-                              </div>
-                            )}
-
-                            {addonType === 'evolve-loop' && (
-                              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                                <div>
-                                  <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Iterations</label>
-                                  <input
-                                    type="number" min="1" max="10" required
-                                    value={evolveIterations} onChange={e => setEvolveIterations(parseInt(e.target.value, 10))}
-                                    className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Num Parents</label>
-                                  <input
-                                    type="number" min="1" max="10" required
-                                    value={numParents} onChange={e => setNumParents(parseInt(e.target.value, 10))}
-                                    className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Streamline Prob</label>
-                                  <input
-                                    type="number" min="0" max="1" step="any" required
-                                    value={maxStreamlineProb} onChange={e => setMaxStreamlineProb(parseFloat(e.target.value))}
-                                    className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
-                                  />
-                                </div>
-                                <div>
-                                  <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Scores</label>
-                                  <input
-                                    type="number" min="0" max="10" required
-                                    value={numExtraScores} onChange={e => setNumExtraScores(parseInt(e.target.value, 10))}
-                                    className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
-                                  />
-                                </div>
-                              </div>
-                            )}
-
-                            {addonType === 'streamline-theory' && (
-                              <div>
-                                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamlining Direction (Optional)</label>
-                                <input
-                                  type="text"
-                                  value={direction}
-                                  onChange={e => setDirection(e.target.value)}
-                                  placeholder="e.g., focus on aspect XY"
-                                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
-                                />
-                              </div>
-                            )}
-
-                            {['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop'].includes(addonType) && availableLiteratureIds.length > 0 && (
-                              <div>
-                                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Literature Review ID (Optional)</label>
-                                <select
-                                  value={litReviewId}
-                                  onChange={e => setLitReviewId(e.target.value)}
-                                  className="w-full md:w-1/2 border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
-                                >
-                                  <option value="">None (Optional)</option>
-                                  {availableLiteratureIds.map(id => (
-                                    <option key={id} value={id}>{id}</option>
-                                  ))}
-                                </select>
-                              </div>
-                            )}
-
-                            {(addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory') && (
-                              <div>
-                                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Apply Expansion Reviews</label>
-                                <select
-                                  value={applyExpansions}
-                                  onChange={e => setApplyExpansions(e.target.value)}
-                                  className="w-full md:w-1/3 border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
-                                >
-                                  <option value="">Auto (Default)</option>
-                                  <option value="always">Always</option>
-                                  <option value="never">Never</option>
-                                </select>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                  </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </div>
+            )}
 
-            <div className="flex gap-4 pt-6 border-t border-gray-100 shrink-0 mt-4">
-              <button
-                type="submit"
-                disabled={isBackendDown || !addonType || (!isPopulation && !theoryId)}
-                className="flex-1 bg-black text-white p-4 font-black text-sm tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
-              >
-                {isBackendDown ? 'Backend Offline' : 'Add Step'} <ChevronRight size={18} />
-              </button>
-            </div>
+            {/* STEP 4: Configuration */}
+            {(hasRequiredConfig || hasOptionalConfig) && (
+              <div>
+                <h3 className="text-sm font-black mb-4">
+                  {isPopulation ? 'Step 3: Configuration' : 'Step 4: Configuration'}
+                </h3>
+                <div className="flex flex-col gap-6">
+
+                  {/* Required Configurations */}
+                  {addonType === 'falsify-hypothesis' && (
+                    <div>
+                      <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Hypothesis Title</label>
+                      <input
+                        type="text"
+                        required
+                        value={hypothesisTitle}
+                        onChange={e => setHypothesisTitle(e.target.value)}
+                        placeholder="Enter the title of the hypothesis to review"
+                        className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
+                      />
+                    </div>
+                  )}
+
+                  {addonType === 'edit-theory' && (
+                    <div>
+                      <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Edit Instructions</label>
+                      <textarea
+                        required
+                        rows={5}
+                        value={instruction}
+                        onChange={e => setInstruction(e.target.value)}
+                        placeholder="Describe the edits you want to make to the theory..."
+                        className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none"
+                      />
+                    </div>
+                  )}
+
+                  {/* Optional Configurations */}
+                  {hasOptionalConfig && (
+                    <div className="space-y-6">
+                      <button
+                        type="button"
+                        onClick={() => setShowAdditional(!showAdditional)}
+                        className="flex items-center gap-2 text-[10px] font-black tracking-widest hover:text-gray-500 transition-colors group"
+                      >
+                        <Settings2 size={14} />
+                        <span>Additional Parameters</span>
+                        {showAdditional ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                      </button>
+
+                      {showAdditional && (
+                        <div className="flex flex-col gap-6 p-6 border-2 border-dashed border-gray-200">
+                          {addonType === 'refinement-loop' && (
+                            <div>
+                              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Refinement Iterations</label>
+                              <input
+                                type="number"
+                                min="1"
+                                max="10"
+                                required
+                                value={maxRefinements}
+                                onChange={e => setMaxRefinements(parseInt(e.target.value, 10))}
+                                className="w-full md:w-1/3 border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                              />
+                            </div>
+                          )}
+
+                          {addonType === 'evolve-loop' && (
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                              <div>
+                                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Iterations</label>
+                                <input
+                                  type="number" min="1" max="10" required
+                                  value={evolveIterations} onChange={e => setEvolveIterations(parseInt(e.target.value, 10))}
+                                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Num Parents</label>
+                                <input
+                                  type="number" min="1" max="10" required
+                                  value={numParents} onChange={e => setNumParents(parseInt(e.target.value, 10))}
+                                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Streamline Prob</label>
+                                <input
+                                  type="number" min="0" max="1" step="any" required
+                                  value={maxStreamlineProb} onChange={e => setMaxStreamlineProb(parseFloat(e.target.value))}
+                                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Scores</label>
+                                <input
+                                  type="number" min="0" max="10" required
+                                  value={numExtraScores} onChange={e => setNumExtraScores(parseInt(e.target.value, 10))}
+                                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                                />
+                              </div>
+                            </div>
+                          )}
+
+                          {addonType === 'streamline-theory' && (
+                            <div>
+                              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamlining Direction (Optional)</label>
+                              <input
+                                type="text"
+                                value={direction}
+                                onChange={e => setDirection(e.target.value)}
+                                placeholder="e.g., focus on aspect XY"
+                                className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200"
+                              />
+                            </div>
+                          )}
+
+                          {['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop'].includes(addonType) && availableLiteratureIds.length > 0 && (
+                            <div>
+                              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Literature Review ID (Optional)</label>
+                              <select
+                                value={litReviewId}
+                                onChange={e => setLitReviewId(e.target.value)}
+                                className="w-full md:w-1/2 border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
+                              >
+                                <option value="">None (Optional)</option>
+                                {availableLiteratureIds.map(id => (
+                                  <option key={id} value={id}>{id}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
+
+                          {(addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory') && (
+                            <div>
+                              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Apply Expansion Reviews</label>
+                              <select
+                                value={applyExpansions}
+                                onChange={e => setApplyExpansions(e.target.value)}
+                                className="w-full md:w-1/3 border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
+                              >
+                                <option value="">Auto (Default)</option>
+                                <option value="always">Always</option>
+                                <option value="never">Never</option>
+                              </select>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="flex gap-4 pt-6 border-t border-gray-100 shrink-0 mt-4">
+            <button
+              type="submit"
+              disabled={isBackendDown || !addonType || (!isPopulation && !theoryId)}
+              className="flex-1 bg-black text-white p-4 font-black text-sm tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
+            >
+              {isBackendDown ? 'Backend Offline' : 'Add Step'} <ChevronRight size={18} />
+            </button>
+          </div>
         </form>
       </div>
     </div>
