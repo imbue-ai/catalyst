@@ -195,50 +195,7 @@ def create_addon(task_id: str, req: CreateAddonRequest):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    from orchestrator.models import Addon, StepStatus, Step
-
-    if task.status not in (TaskStatus.COMPLETED, TaskStatus.RUNNING):
-        # Cancel all remaining steps if adding addon to an incomplete workflow
-        task.base_workflow_canceled = True
-
-        # Mark pending/running/paused/failed base steps and existing addon steps as CANCELED
-        from orchestrator.workflows import get_workflow
-        from orchestrator.orchestrator import get_full_structure
-
-        workflow = get_workflow(task.workflow_name)
-        if workflow:
-            # Get the full structure BEFORE adding the new addon
-            base_struct = get_full_structure(workflow, task)
-
-            # Helper to extract all stages
-            all_stages = []
-            for item in base_struct:
-                if item["type"] == "step":
-                    all_stages.append(item["stage"])
-                elif item["type"] == "parallel":
-                    all_stages.extend(item.get("stages", []))
-                elif item["type"] == "loop":
-                    iterations = item.get("iterations", 3)
-                    for i in range(1, iterations + 1):
-                        for b_stage in item.get("base_stages", []):
-                            all_stages.append(f"{b_stage}-{i}")
-
-            # Now ensure they are in task.steps as CANCELED if not COMPLETED
-            existing_stages = {s.stage: s for s in task.steps}
-            for stage in all_stages:
-                if stage in existing_stages:
-                    if existing_stages[stage].status not in (
-                        StepStatus.COMPLETED,
-                        StepStatus.CANCELED,
-                    ):
-                        existing_stages[stage].status = StepStatus.CANCELED
-                else:
-                    task.steps.append(Step(stage=stage, status=StepStatus.CANCELED))
-
-            # Set the task itself to completed so the orchestrator loop won't hang if we start it just for the addon
-            # wait, if we set it to completed, start_task won't run it?
-            # Actually, start_task doesn't check for COMPLETED, it just checks for RUNNING.
-            # However, if it's FAILED or PAUSED, it resumes.
+    from orchestrator.models import Addon
 
     addon = Addon(
         type=req.type,
