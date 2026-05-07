@@ -28,6 +28,7 @@ class GeminiAgentRunner(BaseCliAgentRunner):
         custom_env["AI_SCIENTIST_DB_PATH"] = os.path.join(
             abs_env_folder, DEFAULT_DB_DIR
         )
+        custom_env["GEMINI_SYSTEM_MD"] = "1"
 
         env = os.environ.copy()
         del env["VIRTUAL_ENV"]
@@ -61,14 +62,13 @@ class GeminiAgentRunner(BaseCliAgentRunner):
                 content = data.get("content")
                 if content:
                     assistant_content.append(content)
-                    if on_status:
-                        last_line = (
-                            "".join(assistant_content)
-                            .replace(".", ".\n")
-                            .strip()
-                            .split("\n")[-1]
-                        )
-                        on_status(last_line)
+            elif (
+                data.get("type") == "tool_use"
+                and data.get("tool_name") == "update_topic"
+            ):
+                summary = data.get("parameters", {}).get("summary")
+                if summary and on_status:
+                    on_status(summary)
 
         try:
             stdout, session_id, returncode, full_output = self._execute_cmd(
