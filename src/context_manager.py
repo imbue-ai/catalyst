@@ -1132,18 +1132,24 @@ def commit_transaction(transaction_id: str) -> None:
         theories = [d for _, d in staged_items if d.get("category") == "theory"]
         theories.sort(key=lambda d: d.get("created_at", ""))
         for t in theories:
-            session.record_theory(
-                theory_id=t.get("id"),
-                parent_theory_id=t.get("parent_theory"),
-            )
+            try:
+                session.record_theory(
+                    theory_id=t.get("id"),
+                    parent_theory_id=t.get("parent_theory"),
+                )
+            except Exception as e:
+                print(f"Error recording theory {t.get('id')!r} in population: {e}")
 
         # 3. Update population (Reviews)
         reviews = [d for _, d in staged_items if d.get("category") == "review"]
         for r in reviews:
-            session.record_review(
-                theory_id=r.get("parent_theory"),
-                review_id=r.get("id"),
-            )
+            try:
+                session.record_review(
+                    theory_id=r.get("parent_theory"),
+                    review_id=r.get("id"),
+                )
+            except Exception as e:
+                print(f"Error recording review {r.get('id')!r} in population: {e}")
 
 
 def export_theory_population(dest_path: Path) -> None:
