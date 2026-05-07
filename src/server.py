@@ -89,21 +89,21 @@ def get_task_details(task_id: str):
 
 @app.get("/api/templates")
 def list_templates():
-    templates_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "templates"))
+    templates_dir = os.path.abspath(
+        os.path.join(os.path.dirname(__file__), "..", "templates")
+    )
     if not os.path.exists(templates_dir) or not os.path.isdir(templates_dir):
         return []
-    
+
     templates = []
     for item in os.listdir(templates_dir):
         if os.path.isdir(os.path.join(templates_dir, item)):
             templates.append(item)
     return sorted(templates)
 
+
 @app.post("/api/tasks", response_model=Task)
-def create_task(
-    request: str = Form(...),
-    file: Optional[UploadFile] = File(None)
-):
+def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None)):
     try:
         req_data = json.loads(request)
         req = CreateTaskRequest(**req_data)
@@ -112,11 +112,16 @@ def create_task(
 
     task_id = str(uuid.uuid4())
 
-    # Generate unique target path inside ./research
-    target_path = os.path.abspath(os.path.join(".", "research", f"task_{task_id[:8]}"))
+    # Generate unique target path inside configured research directory
+    base_research_dir = os.environ.get(
+        "AI_SCIENTIST_RESEARCH_PATH", os.path.expanduser("~/ai-scientist-research")
+    )
+    target_path = os.path.abspath(
+        os.path.join(base_research_dir, f"task_{task_id[:8]}")
+    )
 
     # Run create_environment.py
-    cmd = ["python", "create_environment.py", target_path]
+    cmd = ["uv", "run", "python", "create_environment.py", target_path]
     if req.template_folder:
         abs_template = os.path.abspath(req.template_folder)
         if not os.path.exists(abs_template) or not os.path.isdir(abs_template):
@@ -135,18 +140,20 @@ def create_task(
 
     # Inject summary into workflow_inputs
     inputs = dict(req.workflow_inputs)
-    
+
     if file:
         import_dir = os.path.join(target_path, "tmp", "import")
         os.makedirs(import_dir, exist_ok=True)
-        if file.filename.endswith('.zip'):
+        if file.filename.endswith(".zip"):
             zip_path = os.path.join(import_dir, "upload.zip")
             with open(zip_path, "wb") as buffer:
                 shutil.copyfileobj(file.file, buffer)
-            with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            with zipfile.ZipFile(zip_path, "r") as zip_ref:
                 zip_ref.extractall(import_dir)
             os.remove(zip_path)
-            inputs["file_path"] = "tmp/import (a zip archive was unpacked into this folder)"
+            inputs["file_path"] = (
+                "tmp/import (a zip archive was unpacked into this folder)"
+            )
         else:
             filename = file.filename
             file_save_path = os.path.join(import_dir, filename)
@@ -522,7 +529,9 @@ def export_artifact(task_id: str, artifact_id: str):
     # Extract relative images
     image_paths = []
     # Markdown ![alt](path)
-    image_paths.extend(re.findall(r"!\[.*?\]\((?!http|/)(.*?)\)", md_content, flags=re.DOTALL))
+    image_paths.extend(
+        re.findall(r"!\[.*?\]\((?!http|/)(.*?)\)", md_content, flags=re.DOTALL)
+    )
     # HTML <img src="path" />
     image_paths.extend(
         re.findall(r'<img[^>]+src=["\'](?!http|/)([^"\']+)["\']', md_content)
@@ -546,7 +555,9 @@ def export_artifact(task_id: str, artifact_id: str):
             # Ensure it is still within artifact_dir to prevent path traversal
             if os.path.abspath(img_full_path).startswith(os.path.abspath(artifact_dir)):
                 if os.path.exists(img_full_path) and os.path.isfile(img_full_path):
-                    zip_file.write(img_full_path, os.path.join(artifact_id, img_rel_path))
+                    zip_file.write(
+                        img_full_path, os.path.join(artifact_id, img_rel_path)
+                    )
 
     return Response(
         content=zip_buffer.getvalue(),
@@ -559,4 +570,3 @@ if __name__ == "__main__":
     import uvicorn
 
     uvicorn.run(app, host="0.0.0.0", port=8000)
-
