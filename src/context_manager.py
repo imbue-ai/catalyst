@@ -1483,7 +1483,7 @@ def main(argv: list[str] | None = None) -> None:
                 parent_theory=args.parent_theory,
                 metadata_extra=extra,
             )
-            print(new_id)
+            print(f"Result stored with ID: {new_id}")
 
         elif args.command == "create_context":
             create_context(
@@ -1539,7 +1539,6 @@ def main(argv: list[str] | None = None) -> None:
 
         elif args.command == "commit":
             commit_transaction(args.transaction_id)
-            print(f"Committed transaction {args.transaction_id}")
 
         elif args.command == "list":
             entries = list_entries(
