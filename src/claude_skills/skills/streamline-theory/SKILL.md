@@ -49,8 +49,8 @@ Your `theory.md` file must be a fully self-contained, updated version of the ori
 
 Please maintain the following guidelines for the streamlined theory:
 - Start with a brief definition of the phenomenon and provide any necessary context, including a brief summary of the relevant literature.
-- Provide intuition for the mechanisms behind your theory. Then follow up with rigorous mathematical statements or empirical observations.
-- Structure your theory into a set of precise definitions, conjectures, observations, lemmas and theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally prove it! Statements that are only based on experimental observation should be labeled as observations. Later statements can build on earlier ones.
+- Then, provide a short intuitive explanation of your theory and how it explains the phenomenon. In the sections afterwards, follow up with rigorous mathematical statements or empirical observations to substantiate the intuition.
+- Structure the rigorous part of your theory into a set of precise definitions, conjectures, observations, lemmas and theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally prove it! Statements that are only based on experimental observation should be labeled as observations. Later statements can build on earlier ones.
 - Include a table that lists all statements in your theory upfront, with a note of whether you have verified them through mathematical proof or experimental evidence.
 - Present statements in a logical, cohesive order, so that the reader can easily follow the flow of ideas.
 - Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
