@@ -31,7 +31,9 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
   
   const [showAdditional, setShowAdditional] = useState(false)
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false)
+  const [showModelDropdown, setShowModelDropdown] = useState(false)
   const templateDropdownRef = useRef<HTMLDivElement>(null)
+  const modelDropdownRef = useRef<HTMLDivElement>(null)
 
   // Templates
   const [templates, setTemplates] = useState<string[]>([])
@@ -45,6 +47,9 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     function handleClickOutside(event: MouseEvent) {
       if (templateDropdownRef.current && !templateDropdownRef.current.contains(event.target as Node)) {
         setShowTemplateDropdown(false)
+      }
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(event.target as Node)) {
+        setShowModelDropdown(false)
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
@@ -330,7 +335,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
 
                   <div>
                     <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Model Identifier</label>
-                    <div className="flex items-center gap-3 border-2 border-black p-3 focus-within:bg-gray-50 transition-colors">
+                    <div className="flex items-center gap-3 border-2 border-black p-3 focus-within:bg-gray-50 transition-colors relative" ref={modelDropdownRef}>
                       <Cpu size={18} className="text-black shrink-0" />
                       <input
                         value={inputs.model}
@@ -338,6 +343,35 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         placeholder="Default"
                         className="w-full outline-none text-sm font-bold bg-transparent"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowModelDropdown(!showModelDropdown)}
+                        className="hover:text-gray-500 transition-colors"
+                      >
+                        <ChevronDown size={14} className={`transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
+                      </button>
+
+                      {showModelDropdown && (
+                        <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 max-h-60 overflow-y-auto custom-scrollbar">
+                          <button
+                            type="button"
+                            onClick={() => { updateInput('model', ''); setShowModelDropdown(false); }}
+                            className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-black hover:text-white transition-colors border-b border-gray-100 uppercase tracking-widest"
+                          >
+                            Default
+                          </button>
+                          {(inputs.framework === 'claude' ? ['haiku', 'sonnet', 'opus'] : ['flash-lite', 'flash', 'pro', 'auto']).map(m => (
+                            <button
+                              key={m}
+                              type="button"
+                              onClick={() => { updateInput('model', m); setShowModelDropdown(false); }}
+                              className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-black hover:text-white transition-colors border-b border-gray-100 last:border-0"
+                            >
+                              {m}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
