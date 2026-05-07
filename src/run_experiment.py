@@ -28,7 +28,9 @@ def main():
     parser.add_argument("--experiment_folder", required=True, type=Path)
     parser.add_argument("--agent_type", required=True, type=str)
     parser.add_argument("--parent_theory", default=None, type=str)
-    parser.add_argument("--nice", default=10, type=int, help="Nice value for the subprocess")
+    parser.add_argument(
+        "--nice", default=10, type=int, help="Nice value for the subprocess"
+    )
     args = parser.parse_args()
 
     experiment_folder = args.experiment_folder.resolve()
@@ -42,6 +44,8 @@ def main():
             os.nice(args.nice)
         except OSError:
             pass
+
+    print("Running script.py...")
 
     process = subprocess.Popen(
         [sys.executable, str(script_path)],
