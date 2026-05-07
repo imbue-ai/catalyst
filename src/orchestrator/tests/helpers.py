@@ -10,9 +10,9 @@ class OrchestratorTestCase(unittest.TestCase):
         self.state_fd, self.state_path = tempfile.mkstemp(suffix=".json")
         os.close(self.state_fd)
         
-        # Patch STATE_FILE in orchestrator.state
+        # Patch _get_state_file in orchestrator.state
         # We patch it where it is used.
-        self.patcher = patch("orchestrator.state.STATE_FILE", self.state_path)
+        self.patcher = patch("orchestrator.state._get_state_file", return_value=self.state_path)
         self.patcher.start()
         
         # Reset in-memory state globals in orchestrator.state

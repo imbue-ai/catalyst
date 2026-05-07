@@ -4,6 +4,10 @@ from typing import List
 from .models import Task
 
 
+def get_ai_scientist_path() -> str:
+    return os.environ.get("AI_SCIENTIST_PATH", os.path.expanduser("~/.ai-scientist"))
+
+
 def run_context_manager(task: Task, args: List[str]) -> str:
     abs_env_folder = os.path.abspath(task.env_folder)
     env = os.environ.copy()

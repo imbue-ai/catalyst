@@ -8,10 +8,6 @@ version = "0.1.0"
 description = "AI-driven scientific research agent"
 requires-python = ">=3.11"
 dependencies = [
-    "torch>=2.0",
-    "matplotlib>=3.7",
-    "numpy>=1.24",
-    "anthropic>=0.39",
     "pyyaml>=6.0",
     "pydantic>=2.0",
     "darwinian-evolver",
@@ -20,11 +16,11 @@ dependencies = [
     "python-multipart>=0.0.26",
 ]
 
+[tool.setuptools]
+packages = ["orchestrator"]
+
 [project.scripts]
 shallow-mlps = "shallow_mlps.cli:main"
-
-[tool.setuptools.packages.find]
-include = ["shallow_mlps*"]
 
 [tool.uv]
 exclude-newer = "2 week"

@@ -26,6 +26,11 @@ class TestServerEndpoints(unittest.TestCase):
             workflow_name="develop-theory",
             workflow_structure=[]
         )
+        self.path_patcher = patch("server.get_ai_scientist_path", return_value="/tmp/test_ai_scientist")
+        self.path_patcher.start()
+
+    def tearDown(self):
+        self.path_patcher.stop()
 
     @patch("server.get_tasks")
     def test_get_tasks(self, mock_get_tasks):
