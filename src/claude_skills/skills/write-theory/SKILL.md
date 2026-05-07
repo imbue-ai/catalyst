@@ -72,7 +72,7 @@ Follow these guidelines when writing your theory:
 - Start with a brief definition of the phenomenon and provide any necessary context, including a brief summary of the relevant literature.
 - Then, provide a short intuitive explanation of your theory and how it explains the phenomenon. In the sections afterwards, follow up with rigorous mathematical statements or empirical observations to substantiate the intuition.
 - Structure the rigorous part of your theory into a set of precise definitions, conjectures, observations, lemmas and theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally prove it! Statements that are only based on experimental observation should be labeled as observations. Later statements can build on earlier ones.
-- Include a table that lists all statements in your theory upfront, with a note of whether you have verified them through mathematical proof or experimental evidence.
+- Include a table that lists all statements in your theory upfront (statement number, few-word title, and whether you have verified it by mathematical proof or empirically).
 - Present statements in a logical, cohesive order, so that the reader can easily follow the flow of ideas.
 - Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
 - Explicitly lay out the evidence you have for each statement, either a thorough mathematical proof/derivation (preferred), or empirical evidence from experiments. You can also cite prior literature to support your statements. Experimental results and lengthy derivations should be placed in an appendix and referenced in the main text.
