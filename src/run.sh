@@ -82,12 +82,12 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 echo "Backend and frontend are starting up..."
-echo "Frontend URL: http://localhost:8939"
 echo ""
 
 # Wait briefly to let servers bind their ports, then open browser
 (
     sleep 2
+    echo "Frontend URL: http://localhost:8939"
     echo "Opening browser..."
     if command -v xdg-open &> /dev/null; then
         xdg-open http://localhost:8939 &> /dev/null
