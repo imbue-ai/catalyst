@@ -16,7 +16,7 @@ from orchestrator.prompts import (
 logger = logging.getLogger(__name__)
 
 DEFAULT_EVOLVE_ITERATIONS = 3
-DEFAULT_NUM_PARENTS = 3
+DEFAULT_NUM_PARENTS = 2
 DEFAULT_MAX_STREAMLINE_PROB = 0.5
 DEFAULT_NUM_EXTRA_SCORES = 5
 
@@ -117,6 +117,7 @@ def run_evolve_loop(
                 ],
             )
             import json
+
             try:
                 samples = json.loads(out)
                 return {"parents": samples}
@@ -252,11 +253,10 @@ def run_evolve_loop(
                 ],
             )
             import json
+
             try:
                 samples = json.loads(out)
-                return {
-                    "scoring_ids": [s["id"] for s in samples]
-                }
+                return {"scoring_ids": [s["id"] for s in samples]}
             except Exception:
                 return {"scoring_ids": []}
 

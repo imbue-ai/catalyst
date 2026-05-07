@@ -11,13 +11,17 @@ from .utils import run_context_manager
 
 logger = logging.getLogger(__name__)
 
-MAX_CONCURRENCY_PER_TASK = 3
+MAX_CONCURRENCY_PER_TASK = 2
+
 
 def start_task(task: Task):
-    logger.info(f"[ORCHESTRATOR] Starting task {task.id[:8]}: {task.workflow_inputs.get('summary', '')[:50]}...")
+    logger.info(
+        f"[ORCHESTRATOR] Starting task {task.id[:8]}: {task.workflow_inputs.get('summary', '')[:50]}..."
+    )
     thread = threading.Thread(target=_orchestrate_task, args=(task.id,))
     thread.daemon = True
     thread.start()
+
 
 def get_full_structure(workflow, task: Task) -> List[Dict[str, Any]]:
     structure = workflow.get_structure(task) if workflow else []
@@ -28,6 +32,7 @@ def get_full_structure(workflow, task: Task) -> List[Dict[str, Any]]:
         else:
             structure.append({"type": "step", "stage": f"addon-{addon.type}-{i}"})
     return structure
+
 
 def _orchestrate_task(task_id: str):
     task = get_task(task_id)
@@ -46,7 +51,9 @@ def _orchestrate_task(task_id: str):
         return
 
     is_resume = task.status in [TaskStatus.PAUSED, TaskStatus.FAILED]
-    logger.info(f"[ORCHESTRATOR] Orchestrating task {task_id[:8]} via {workflow.name} (Resume: {is_resume})")
+    logger.info(
+        f"[ORCHESTRATOR] Orchestrating task {task_id[:8]} via {workflow.name} (Resume: {is_resume})"
+    )
     task.status = TaskStatus.RUNNING
     update_task(task)
 
@@ -57,9 +64,12 @@ def _orchestrate_task(task_id: str):
         def run_step_wrapper(t, stage, prompt):
             with semaphore:
                 current_task = get_task(t.id)
-                if current_task and current_task.status not in [TaskStatus.RUNNING, TaskStatus.PENDING]:
+                if current_task and current_task.status not in [
+                    TaskStatus.RUNNING,
+                    TaskStatus.PENDING,
+                ]:
                     return {"_canceled": True}
-                
+
                 res = _run_step(t, stage, prompt)
                 # Update structure after each step to reflect progress
                 t.workflow_structure = get_full_structure(workflow, t)
@@ -77,7 +87,7 @@ def _orchestrate_task(task_id: str):
             handler = get_addon_handler(addon.type)
             if not handler:
                 raise Exception(f"Unknown addon type: {addon.type}")
-            
+
             handler.run(task, run_step_wrapper, addon, i)
 
         task.status = TaskStatus.COMPLETED
@@ -90,17 +100,18 @@ def _orchestrate_task(task_id: str):
         if updated_task and updated_task.status == TaskStatus.PAUSED:
             logger.info(f"[ORCHESTRATOR] Task {task_id[:8]} PAUSED.")
             return
-            
+
         logger.error(f"[ORCHESTRATOR] Task {task_id[:8]} FAILED: {str(e)}")
         task.status = TaskStatus.FAILED
         update_task(task)
 
+
 def _run_step(task: Task, stage: str, prompt: str) -> Any:
     # Check if we should restart a failed/paused step
     existing_step = None
-    
+
     workflow = get_workflow(task.workflow_name)
-    
+
     lock = get_task_lock(task.id)
     with lock:
         for s in task.steps:
@@ -115,7 +126,9 @@ def _run_step(task: Task, stage: str, prompt: str) -> Any:
             step.status = StepStatus.RUNNING
             step.error = None
         else:
-            step = Step(stage=stage, status=StepStatus.RUNNING, inputs={"prompt": prompt})
+            step = Step(
+                stage=stage, status=StepStatus.RUNNING, inputs={"prompt": prompt}
+            )
             task.steps.append(step)
 
         task.current_stage = stage
@@ -151,12 +164,12 @@ def _run_step(task: Task, stage: str, prompt: str) -> Any:
         model=task.model,
         tx_id=tx_id,
         on_session_id=on_sid,
-        on_status=on_status
+        on_status=on_status,
     )
 
     # Check for pause again
     updated_task = get_task(task.id)
-    
+
     with lock:
         if updated_task and updated_task.status == TaskStatus.PAUSED:
             step.status = StepStatus.PAUSED
