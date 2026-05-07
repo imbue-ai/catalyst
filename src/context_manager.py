@@ -1021,7 +1021,8 @@ def list_entries(
 
             results.sort(
                 key=lambda d: (
-                    d.get("score") if d.get("score") is not None else float("-inf")
+                    (d.get("score") if d.get("score") is not None else float("-inf")),
+                    d.get("created_at", ""),
                 )
             )
 
