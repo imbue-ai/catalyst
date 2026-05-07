@@ -1,6 +1,7 @@
 import threading
 import logging
 import uuid
+import os
 from typing import List, Any, Dict
 from .models import Task, Step, TaskStatus, StepStatus
 from .state import update_task, get_task, get_task_lock
@@ -11,7 +12,9 @@ from .utils import run_context_manager
 
 logger = logging.getLogger(__name__)
 
-MAX_CONCURRENCY_PER_TASK = 2
+MAX_CONCURRENCY_PER_TASK = int(
+    os.environ.get("AI_SCIENTIST_MAX_CONCURRENCY_PER_TASK", 2)
+)
 
 
 def start_task(task: Task):

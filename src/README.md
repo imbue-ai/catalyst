@@ -47,6 +47,7 @@ The dashboard will be available at `http://localhost:8939`.
 The system can be configured using the following environment variables:
 
 - `AI_SCIENTIST_PATH`: The base directory where state and research environments are stored. Defaults to `~/.ai-scientist`.
+- `AI_SCIENTIST_MAX_CONCURRENCY_PER_TASK`: The maximum number of concurrent agent steps per task. Defaults to `2`.
 
 ## Usage
 
