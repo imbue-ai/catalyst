@@ -1,6 +1,9 @@
 import os
+import json
+import hashlib
 import shlex
 import logging
+import threading
 from typing import Dict, Any, Optional, Tuple, Callable
 
 from context_manager import DEFAULT_DB_DIR
@@ -10,6 +13,8 @@ logger = logging.getLogger(__name__)
 
 
 class GeminiAgentRunner(BaseCliAgentRunner):
+    _ack_lock = threading.Lock()
+
     def run(
         self,
         task_id: str,
@@ -38,6 +43,8 @@ class GeminiAgentRunner(BaseCliAgentRunner):
         env["SANDBOX_ENV"] = ",".join(
             f"{key}={value}" for key, value in custom_env.items()
         )
+
+        self._acknowledge_scientist(abs_env_folder)
 
         cmd = [
             "gemini",
@@ -110,3 +117,42 @@ class GeminiAgentRunner(BaseCliAgentRunner):
 
         except Exception as e:
             return None, None, f"Gemini execution error: {str(e)}"
+
+    def _acknowledge_scientist(self, env_folder: str) -> None:
+        with self._ack_lock:
+            try:
+                ack_path = os.path.expanduser("~/.gemini/acknowledgments/agents.json")
+                os.makedirs(os.path.dirname(ack_path), exist_ok=True)
+
+                if os.path.exists(ack_path):
+                    with open(ack_path, "r") as f:
+                        try:
+                            data = json.load(f)
+                        except json.JSONDecodeError:
+                            data = {}
+                else:
+                    data = {}
+
+                env_folder_abs = os.path.abspath(env_folder)
+
+                if env_folder_abs not in data:
+                    data[env_folder_abs] = {}
+
+                agent_def_path = os.path.join(
+                    env_folder_abs, ".gemini/agents/scientist.md"
+                )
+                if os.path.exists(agent_def_path):
+                    with open(agent_def_path, "rb") as f:
+                        content = f.read()
+                    current_hash = hashlib.sha256(content).hexdigest()
+                    
+                    if data[env_folder_abs].get("scientist") != current_hash:
+                        data[env_folder_abs]["scientist"] = current_hash
+                        with open(ack_path, "w") as f:
+                            json.dump(data, f, indent=2)
+                else:
+                    logger.warning(
+                        f"Scientist agent definition not found at {agent_def_path}"
+                    )
+            except Exception as e:
+                logger.warning(f"Failed to acknowledge scientist subagent: {e}")
