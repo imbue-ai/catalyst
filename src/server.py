@@ -26,7 +26,8 @@ from orchestrator.state import (
     shutdown_all,
 )
 from orchestrator.orchestrator import start_task
-from context_manager import PREFIX_TO_CATEGORY, CATEGORY_MD_MAP
+from orchestrator.utils import get_ai_scientist_path, run_context_manager
+from context_manager import PREFIX_TO_CATEGORY, CATEGORY_MD_MAP, DEFAULT_DB_DIR
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format="%(levelname)-9s %(message)s")
@@ -113,12 +114,8 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
     task_id = str(uuid.uuid4())
 
     # Generate unique target path inside configured research directory
-    base_research_dir = os.environ.get(
-        "AI_SCIENTIST_RESEARCH_PATH", os.path.expanduser("~/ai-scientist-research")
-    )
-    target_path = os.path.abspath(
-        os.path.join(base_research_dir, f"task_{task_id[:8]}")
-    )
+    base_research_dir = os.path.join(get_ai_scientist_path(), "research")
+    target_path = os.path.abspath(os.path.join(base_research_dir, f"task_{task_id[:8]}"))
 
     # Run create_environment.py
     cmd = ["uv", "run", "python", "create_environment.py", target_path]
@@ -362,7 +359,7 @@ def get_task_theories(task_id: str):
 
     env = os.environ.copy()
     env["AI_SCIENTIST_DB_PATH"] = os.path.join(
-        os.path.abspath(task.env_folder), ".ai-scientist-db"
+        os.path.abspath(task.env_folder), DEFAULT_DB_DIR
     )
 
     cmd = [
@@ -405,35 +402,9 @@ def get_task_reviews(task_id: str):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    ctx_mgr_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "context_manager.py")
-    )
-
-    env = os.environ.copy()
-    env["AI_SCIENTIST_DB_PATH"] = os.path.join(
-        os.path.abspath(task.env_folder), ".ai-scientist-db"
-    )
-
-    cmd = [
-        "uv",
-        "run",
-        "python",
-        ctx_mgr_path,
-        "list",
-        "--type",
-        "review",
-        "--json",
-    ]
     try:
-        result = subprocess.run(
-            cmd,
-            env=env,
-            cwd=os.path.abspath(task.env_folder),
-            check=True,
-            capture_output=True,
-            text=True,
-        )
-        data = json.loads(result.stdout)
+        result = run_context_manager(task, ["list", "--type", "review", "--json"])
+        data = json.loads(result)
         data.reverse()
         return data
     except subprocess.CalledProcessError as e:
@@ -464,7 +435,7 @@ def get_artifact_primary(task_id: str, artifact_id: str):
         )
 
     file_path = os.path.join(
-        task.env_folder, ".ai-scientist-db", category, artifact_id, md_filename
+        task.env_folder, DEFAULT_DB_DIR, category, artifact_id, md_filename
     )
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Artifact file not found")
@@ -490,7 +461,7 @@ def get_artifact_file(task_id: str, artifact_id: str, file_path: str):
         raise HTTPException(status_code=403, detail="Invalid file path")
 
     full_path = os.path.join(
-        task.env_folder, ".ai-scientist-db", category, artifact_id, normalized_path
+        task.env_folder, DEFAULT_DB_DIR, category, artifact_id, normalized_path
     )
     if not os.path.exists(full_path):
         raise HTTPException(status_code=404, detail="File not found")
@@ -516,7 +487,7 @@ def export_artifact(task_id: str, artifact_id: str):
         )
 
     artifact_dir = os.path.join(
-        task.env_folder, ".ai-scientist-db", category, artifact_id
+        task.env_folder, DEFAULT_DB_DIR, category, artifact_id
     )
     md_path = os.path.join(artifact_dir, md_filename)
 

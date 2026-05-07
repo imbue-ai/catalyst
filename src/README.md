@@ -46,7 +46,7 @@ The dashboard will be available at `http://localhost:8939`.
 
 The system can be configured using the following environment variables:
 
-- `AI_SCIENTIST_RESEARCH_PATH`: The base directory where research environment folders are created. Defaults to `~/ai-scientist-research`.
+- `AI_SCIENTIST_PATH`: The base directory where state and research environments are stored. Defaults to `~/.ai-scientist`.
 
 ## Usage
 
@@ -63,8 +63,8 @@ The system can be configured using the following environment variables:
 
 ## Data Persistence
 
-- **Tasks State:** The service maintains its state in `tasks_state.json`. You can stop and restart the backend server without losing track of ongoing or completed research tasks.
-- **Research Environments:** Research artifacts and agent workspaces are stored in the `AI_SCIENTIST_RESEARCH_PATH` (defaults to `~/ai-scientist-research`). Each task gets its own folder named `task_<short_id>`.
+- **Tasks State:** The service maintains its state in `tasks_state.json` inside the `AI_SCIENTIST_PATH` (defaults to `~/.ai-scientist/tasks_state.json`). You can stop and restart the backend server without losing track of ongoing or completed research tasks.
+- **Research Environments:** Research artifacts and agent workspaces are stored in the `research` subfolder of `AI_SCIENTIST_PATH` (defaults to `~/.ai-scientist/research`). Each task gets its own folder named `task_<short_id>`.
 
 
 ## Troubleshooting

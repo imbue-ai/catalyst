@@ -7,10 +7,17 @@ import time
 import logging
 from typing import List, Optional, Dict
 from .models import Task, TasksState, TaskStatus, StepStatus
+from .utils import get_ai_scientist_path
 
 logger = logging.getLogger(__name__)
 
-STATE_FILE = "tasks_state.json"
+
+def _get_state_file() -> str:
+    path = os.path.join(get_ai_scientist_path(), "tasks_state.json")
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    return path
+
+
 _lock = threading.Lock()
 _task_locks: Dict[str, threading.Lock] = {}
 _running_processes: Dict[str, List[subprocess.Popen]] = {}
@@ -95,12 +102,12 @@ def _load_state() -> TasksState:
     if _state_cache is not None:
         return _state_cache
 
-    if not os.path.exists(STATE_FILE):
+    if not os.path.exists(_get_state_file()):
         _state_cache = TasksState(tasks=[])
         _last_written_json = json.dumps(_state_cache.model_dump(), indent=2)
         return _state_cache
     try:
-        with open(STATE_FILE, "r") as f:
+        with open(_get_state_file(), "r") as f:
             content = f.read()
             _last_written_json = content
             data = json.loads(content)
@@ -132,13 +139,13 @@ def _save_state(state: TasksState, disk_save: bool = True):
     if _last_written_json == json_str:
         return
 
-    if os.path.exists(STATE_FILE):
+    if os.path.exists(_get_state_file()):
         try:
-            os.replace(STATE_FILE, f"{STATE_FILE}.bak")
+            os.replace(_get_state_file(), f"{_get_state_file()}.bak")
         except Exception as e:
             logger.warning(f"Could not create backup of state file: {e}")
 
-    with open(STATE_FILE, "w") as f:
+    with open(_get_state_file(), "w") as f:
         f.write(json_str)
 
     _last_written_json = json_str
