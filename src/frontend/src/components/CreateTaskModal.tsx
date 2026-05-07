@@ -28,7 +28,7 @@ const CATEGORY_WORKFLOWS: Record<InputCategory, { id: WorkflowType, label: strin
 export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTaskModalProps) {
   const [inputCategory, setInputCategory] = useState<InputCategory>('phenomenon')
   const [activeTab, setActiveTab] = useState<WorkflowType>('develop-theory')
-  
+
   const [showAdditional, setShowAdditional] = useState(false)
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false)
   const [showModelDropdown, setShowModelDropdown] = useState(false)
@@ -360,7 +360,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                           >
                             Default
                           </button>
-                          {(inputs.framework === 'claude' ? ['haiku', 'sonnet', 'opus'] : ['flash-lite', 'flash', 'pro', 'auto']).map(m => (
+                          {(inputs.framework === 'claude' ? ['opus', 'sonnet', 'haiku'] : ['pro', 'flash']).map(m => (
                             <button
                               key={m}
                               type="button"
