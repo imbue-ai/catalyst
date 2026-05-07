@@ -3,8 +3,12 @@ import subprocess
 from typing import List
 from .models import Task
 
+
 def run_context_manager(task: Task, args: List[str]) -> str:
+    abs_env_folder = os.path.abspath(task.env_folder)
     env = os.environ.copy()
+    env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
+    del env["VIRTUAL_ENV"]
 
     ctx_mgr_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "context_manager.py")
@@ -14,7 +18,7 @@ def run_context_manager(task: Task, args: List[str]) -> str:
         result = subprocess.run(
             cmd,
             env=env,
-            cwd=os.path.abspath(task.env_folder),
+            cwd=abs_env_folder,
             check=True,
             capture_output=True,
             text=True,
