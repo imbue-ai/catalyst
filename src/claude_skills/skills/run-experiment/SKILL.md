@@ -19,4 +19,4 @@ uv run python ${CLAUDE_SKILL_DIR}/scripts/run_experiment.py --experiment_folder 
 6. The wrapper will execute the script in EXPERIMENT_FOLDER_PATH, passing through its stdout and stderr. It will capture all experiment outputs and persist them to a database for record keeping. It will finish its output by printing a unique experiment ID (e.g. `X_20260416_150000_a1b2c3`) that can be used to retrieve the results later.
 
 ## Useful experiment patterns
-- Have the experiment generate plots and visualizations of the data in addition to numerical output. Inspecting the visualizations can oftentimes give a better intuition when analyzing the experiment's results, as well as provide useful illustrations to include in reports and presentations.
+- Have the experiment generate plots and visualizations of the data in addition to numerical output. Inspect the visualizations to gain a better intuition when analyzing the experiment's results and to check for any potential issues with the experiment setup. The plots may also provide useful illustrations to include in your report or theory.
