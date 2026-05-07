@@ -34,6 +34,9 @@ class GeminiAgentRunner(BaseCliAgentRunner):
             abs_env_folder, DEFAULT_DB_DIR
         )
         custom_env["GEMINI_SYSTEM_MD"] = "1"
+        custom_env["MPLCONFIGDIR"] = os.path.join(
+            abs_env_folder, "tmp/matplotlib_cache"
+        )
 
         env = os.environ.copy()
         del env["VIRTUAL_ENV"]
@@ -145,7 +148,7 @@ class GeminiAgentRunner(BaseCliAgentRunner):
                     with open(agent_def_path, "rb") as f:
                         content = f.read()
                     current_hash = hashlib.sha256(content).hexdigest()
-                    
+
                     if data[env_folder_abs].get("scientist") != current_hash:
                         data[env_folder_abs]["scientist"] = current_hash
                         with open(ack_path, "w") as f:
