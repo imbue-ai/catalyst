@@ -6,8 +6,4 @@ __pycache__/
 .env
 dist/
 build/
-/research/*
-/src/research/*
 scheduled_tasks.lock
-tasks_state.json
-tasks_state.json.bak
