@@ -9,6 +9,7 @@ from .base import (
 )
 from .common import run_refinement_loop, run_summarize_title
 from orchestrator.prompts import get_write_theory_prompt
+
 logger = logging.getLogger(__name__)
 
 
@@ -149,7 +150,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
         if theory_id:
             # Step 4: Iterative Review and Refinement
             max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
-            apply_expansions = task.workflow_inputs.get("apply_expansions", "always")
+            apply_expansions = task.workflow_inputs.get("apply_expansions")
             run_refinement_loop(
                 task,
                 run_step,
