@@ -1,4 +1,4 @@
-export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8939";
+export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8139";
 const API_BASE = `${API_BASE_URL}/api`;
 
 export interface Step {
