@@ -41,7 +41,7 @@ Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audi
 
 ## Execution Steps
 1. **Theory Review**: Read `<CONTEXT_DIR>/theory/theory.md` to understand the current theory.
-2. **Planning**: Identify which sections or content to restructure. Prioritize by clarity and readability.
+2. **Planning**: Identify which sections or content to restructure. Prioritize clarity and readability.
 3. **Writing**: Write a new version of the theory in `<OUTPUT_DIR>/theory.md`, restructuring and rewording as needed to improve clarity and readability, while preserving all original content and scientific rigor. Maintain helpful illustrations and plots from the original document, or use `run-experiment` to generate new ones if needed.
 4. **Store results**: Persist your output and return the new theory ID:
    ```bash
