@@ -1,4 +1,4 @@
-export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
+export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8939";
 const API_BASE = `${API_BASE_URL}/api`;
 
 export interface Step {
@@ -172,7 +172,7 @@ export async function cancelStep(taskId: string, stage: string): Promise<void> {
 }
 
 export async function bulkCancelSteps(taskId: string, stages: string[]): Promise<void> {
-  const res = await fetch(`${API_BASE}/tasks/${taskId}/steps/bulk-cancel`, { 
+  const res = await fetch(`${API_BASE}/tasks/${taskId}/steps/bulk-cancel`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ stages })
