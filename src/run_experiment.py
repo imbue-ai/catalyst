@@ -45,7 +45,7 @@ def main():
         except OSError:
             pass
 
-    print("Running script.py...")
+    print("Running script.py...", flush=True)
 
     process = subprocess.Popen(
         [sys.executable, str(script_path)],
