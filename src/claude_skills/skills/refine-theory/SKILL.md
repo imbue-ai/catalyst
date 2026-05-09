@@ -39,7 +39,7 @@ Optionally, the arguments might instruct you to skip or always run the expansion
    If the input does not specify, use the following heuristic: Skip this expansion step if ANY of the `refine-hypothesis` subagents reported that they've made significant changes to the theory. Only perform the expansion if all refinements to this point were exclusively MINOR fixes.
    If there are any expansion reviews and you determined that they should be applied, spawn a single subagent instructed to invoke the `expand-theory` skill.
    - Provide the subagent with `CURRENT_THEORY_ID` (the latest theory after all refinements) and **all** expansion review IDs. Also pass any literature review IDs you might have. It should pass these as arguments to the `expand-theory` skill.
-   - Wait for the subagent to finish and retrieve the new theory ID it returns.
+   - Wait for the subagent to finish and retrieve the new theory ID it returns. Note that the subagent may take a long time to finish (up to several hours), so do not interrupt it prematurely.
    - Update `CURRENT_THEORY_ID` to this new theory ID.
 
 5. **Polish**: After all refinements and expansions are done, spawn a subagent to do a final polish of the theory. Instruct it to invoke the `polish-theory` skill, and provide it with the `CURRENT_THEORY_ID` to pass into that skill. Wait for it to finish and retrieve the new theory ID it returns. Update `CURRENT_THEORY_ID` to this new theory ID.
