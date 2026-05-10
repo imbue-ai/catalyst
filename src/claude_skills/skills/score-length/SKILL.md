@@ -28,9 +28,9 @@ The execution steps below involve several numeric calculations. Always use `uv r
 
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the theory and review files using `context_manager.py`.
-2. **Determine theory lengths**: Determine the length of the `theory.md` in number of words, excluding any appendices, supplementary materials, statement tables and introductions (including phenomenon descriptions, motivation, intuitive overviews, literature reviews etc.):
+2. **Determine theory lengths**: Determine the length of the `theory.md` in number of words, excluding any conclusion sections and appendices, as well as any introductory sections (such as phenomenon descriptions, overviews and summary sections, statement/content tables, prior art comparisons, etc):
   - Extract the line numbers of all headings in the `theory.md` file (e.g. `grep -n '^#' <CONTEXT_DIR>/theory.md`).
-  - Determine the line range corresponding to the main body of the theory by scanning its markdown headings, ignoring and preceding introduction and overview sections, and any succeekding appendices and/or supplementary sections.
+  - Determine the line range corresponding to the (typically contiguous) main body of the theory by scanning its markdown headings, ignoring any preceding introduction, summaries and overview sections, and any succeeding conclusions, appendices and/or supplementary sections.
   - Count the number of words in the main body line range using standard Unix tools (e.g. `head -n 500 <CONTEXT_DIR>/theories/<theory_id>/theory.md | tail -n +50 | wc -w`).
 3. **Score Length**: Calculate a length score for the theory using the formula `Length Score = min(1, 1 / (words_in_main_body / STANDARD_LENGTH)**2)`, where `words_in_main_body` is the number of words in the main body of the theory. Use ad-hoc Python code to perform this calculation, as described above.
 4. **Final Output**: Report the length score for the theory.
