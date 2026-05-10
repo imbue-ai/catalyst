@@ -674,6 +674,9 @@ def _validate_create_context_args(
             raise ValueError(
                 "Exactly one --from_theory is required for score-soundness"
             )
+    elif for_agent_type == "score-length":
+        if not from_theories or len(from_theories) != 1:
+            raise ValueError("Exactly one --from_theory is required for score-length")
     elif for_agent_type == "rank-predictive-power":
         if not from_theories:
             raise ValueError(
@@ -685,7 +688,7 @@ def _validate_create_context_args(
             f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, "
             f"review-theory, suggest-expansions, expand-theory, edit-theory, "
             f"predict-experiments, rank-predictions, score-theories, score-soundness, "
-            f"rank-predictive-power"
+            f"score-length, rank-predictive-power"
         )
 
 
