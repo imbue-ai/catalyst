@@ -40,8 +40,8 @@ We will use the following methods for converting from a rank `r` (1...n) to a sc
 6. **Generate Theory Predictions**: For each of the theory IDs:
   - Spawn a subagent instructed to invoke the `predict-experiments` skill, passing to it the specific theory ID and the list of selected experiment IDs. This subagent will return a prediction ID (e.g. `P_20260414_143052_a1b2c3`). All subagents can run in parallel.
 7. **Collection**: Wait for each subagent to finish and collect their result messages containing the prediction IDs.
-8. **Rank Predictions**: For each of the selected experiment IDs: 
-  - Spawn a subagent instructed to invoke the `rank-predictions` skill, passing to it the list of prediction IDs the previous step and the experiment ID. This subagent will return a ranked list of theory IDs for that experiment. It might report some theory IDs as NO_PREDICTION if those theories do not make predictions for that experiment. All subagents can run in parallel.
+8. **Rank Predictions**: For each of the selected experiment IDs individually:
+  - Spawn a subagent instructed to invoke the `rank-predictions` skill, passing to it the list of prediction IDs from the previous step, and a single experiment ID. This subagent will return a ranked list of theory IDs for that one experiment. It might report some theory IDs as NO_PREDICTION if those theories do not make predictions for that experiment. All subagents can run in parallel.
 9. **Score Soundness**: For each of the theory IDs:
   - Spawn a subagent instructed to invoke the `score-soundness` skill, passing to it the specific theory ID. The subagent will return a soundness score between 0 and 1 for that theory. All subagents can run in parallel.
 10. **Score Length**: For each of the theory IDs:
