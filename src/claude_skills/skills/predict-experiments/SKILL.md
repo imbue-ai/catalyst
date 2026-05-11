@@ -14,6 +14,8 @@ Arguments: $ARGUMENTS
 The arguments contain a theory ID (like `T_20260414_...`) and multiple experiment IDs (like `X_20260414_...`). Parse the theory ID and experiment details from the arguments.
 
 ## Folder setup
+All commands must be run in the current working directory. Do not `cd` anywhere else.
+
 Set up two folders — one for input context, one for your own output:
 CONTEXT_DIR: `mktemp -d -p ./tmp predict-experiments-context-XXXX`
 OUTPUT_DIR: `mktemp -d -p ./tmp predict-experiments-output-XXXX`

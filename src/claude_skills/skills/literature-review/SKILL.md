@@ -18,6 +18,8 @@ You are a **Scientific Literature Reviewer**. Your goal is to find, download, an
 Arguments: $ARGUMENTS
 
 ## Folder setup
+All commands must be run in the current working directory. Do not `cd` anywhere else.
+
 Create a separate output folder for your artifacts:
 OUTPUT_DIR: `mktemp -d -p ./tmp literature-review-XXXX`
 

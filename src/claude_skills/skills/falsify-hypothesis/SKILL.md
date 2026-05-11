@@ -21,6 +21,8 @@ Arguments: $ARGUMENTS
 The arguments contain a theory ID (like `T_20260414_...`) and the specific observation, theorem, lemma or corollary to target. Parse the theory ID and the target hypothesis from the arguments.
 
 ## Folder setup
+All commands must be run in the current working directory. Do not `cd` anywhere else.
+
 Set up two folders — one for input context, one for your own output:
 CONTEXT_DIR: `mktemp -d -p ./tmp falsify-hypothesis-context-XXXX`
 OUTPUT_DIR: `mktemp -d -p ./tmp falsify-hypothesis-output-XXXX`
