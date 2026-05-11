@@ -50,7 +50,7 @@ def get_refine_theory_prompt(
     elif apply_expansions == "always":
         prompt += "Tell the skill: ALWAYS apply expansion reviews."
 
-    prompt += "\n\nWhen you are done, return ONLY a JSON object with the keys 'theory_id' (the ID of the new, final theory), and 'major_changes' (boolean - whether any major changes have been made to the theory)."
+    prompt += "\n\nWhen you are done, return ONLY a JSON object with the keys 'theory_id' (the ID of the new, final theory), 'major_changes' (boolean - whether any major changes have been made to the theory), and 'expansions_applied' (boolean - whether any expansion reviews have been applied)."
 
     return prompt
 
