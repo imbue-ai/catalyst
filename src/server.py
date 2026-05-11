@@ -179,7 +179,8 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
 
 class CreateAddonRequest(BaseModel):
     type: str
-    theory_id: str
+    theory_id: Optional[str] = None
+    theory_ids: Optional[List[str]] = None
     direction: Optional[str] = None
     max_refinements: Optional[int] = None
     apply_expansions: Optional[str] = None
@@ -204,6 +205,7 @@ def create_addon(task_id: str, req: CreateAddonRequest):
     addon = Addon(
         type=req.type,
         theory_id=req.theory_id,
+        theory_ids=req.theory_ids,
         direction=req.direction,
         max_refinements=req.max_refinements,
         apply_expansions=req.apply_expansions,

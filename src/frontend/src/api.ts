@@ -13,7 +13,8 @@ export interface Step {
 
 export interface Addon {
   type: string;
-  theory_id: string;
+  theory_id?: string;
+  theory_ids?: string[];
   direction?: string;
   max_refinements?: number;
   apply_expansions?: string;
