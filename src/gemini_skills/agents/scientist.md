@@ -3,7 +3,7 @@ name: scientist
 description: For use in all ai-scientist tasks.
 kind: local
 max_turns: 500
-timeout_mins: 120
+timeout_mins: 360
 tools: ["*"]
 ---
 
