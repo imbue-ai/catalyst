@@ -29,7 +29,8 @@ class Step(BaseModel):
 
 class Addon(BaseModel):
     type: str # "streamline-theory", "review-theory", "refine-theory", "refinement-loop", "evolve-loop"
-    theory_id: str
+    theory_id: Optional[str] = None
+    theory_ids: Optional[List[str]] = None
     direction: Optional[str] = None
     max_refinements: Optional[int] = None
     apply_expansions: Optional[str] = None

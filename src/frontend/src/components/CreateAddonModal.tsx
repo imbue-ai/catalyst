@@ -22,14 +22,18 @@ const ADDON_DESCRIPTIONS: Record<string, string> = {
   'review-theory': "Perform a full review. Combines reviewing all statements in a theory and suggesting expansions into a single step.",
   'streamline-theory': "Streamline a theory down to its core essence.",
   'streamline-theory-variations': "Derive several different variations of a theory, each one focused on a different key aspect.",
-  'suggest-expansions': "Suggest ways in which a theory can be expanded and/or generalized."
+  'suggest-expansions': "Suggest ways in which a theory can be expanded and/or generalized.",
+  'score-theories': "Score the quality of the given theories relative to each other and update all population scores."
 };
 
 type InputCategory = 'population' | 'theory' | 'statement';
 
 const getAvailableSkills = (cat: InputCategory, reviewed: boolean): { id: string, label: string }[] => {
   if (cat === 'population') {
-    return reviewed ? [{ id: 'evolve-loop', label: 'Evolve Theory Loop' }] : [];
+    return reviewed ? [
+      { id: 'evolve-loop', label: 'Evolve Theory Loop' },
+      { id: 'score-theories', label: 'Score Theories' }
+    ] : [];
   }
   if (cat === 'theory') {
     return reviewed ? [
@@ -82,6 +86,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
   const [addonType, setAddonType] = useState(initialSkills.length > 0 ? initialSkills[0].id : '')
 
   const [theoryId, setTheoryId] = useState('')
+  const [theoryIds, setTheoryIds] = useState<string[]>([])
 
   React.useEffect(() => {
     setIsLoading(true)
@@ -152,7 +157,8 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     try {
       const updatedTask = await api.createAddon(task.id, {
         type: addonType,
-        theory_id: inputCategory === 'population' ? 'none' : theoryId,
+        theory_id: (inputCategory === 'population' || addonType === 'score-theories') ? undefined : theoryId,
+        theory_ids: addonType === 'score-theories' ? theoryIds : undefined,
         direction: addonType === 'streamline-theory' && direction ? direction : undefined,
         max_refinements: addonType === 'refinement-loop' ? maxRefinements : undefined,
         apply_expansions: (addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory') ? (applyExpansions || undefined) : undefined,
@@ -271,29 +277,52 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
             </div>
 
             {/* STEP 3: Targets */}
-            {!isPopulation && (
+            {(!isPopulation || addonType === 'score-theories') && (
               <div>
                 <h3 className="text-sm font-black mb-4">Step 3: Select Targets</h3>
                 <div className="flex flex-col gap-6">
                   <div>
-                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Target Theory</label>
-                    <select
-                      required
-                      value={theoryId}
-                      onChange={e => setTheoryId(e.target.value)}
-                      className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-                      disabled={isLoading || sortedAndFilteredTheories.length === 0}
-                    >
-                      {isLoading ? (
-                        <option value="">Loading...</option>
-                      ) : sortedAndFilteredTheories.length === 0 ? (
-                        <option value="">No theories found</option>
-                      ) : (
-                        sortedAndFilteredTheories.map(t => (
-                          <option key={t.id} value={t.id}>{t.headline ? `${t.id}: ${t.headline}` : t.id}</option>
-                        ))
-                      )}
-                    </select>
+                    <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">
+                      {addonType === 'score-theories' ? 'Target Theories' : 'Target Theory'}
+                    </label>
+                    {addonType === 'score-theories' ? (
+                      <select
+                        multiple
+                        required
+                        value={theoryIds}
+                        onChange={e => setTheoryIds(Array.from(e.target.selectedOptions, option => option.value))}
+                        className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed h-48"
+                        disabled={isLoading || sortedAndFilteredTheories.length === 0}
+                      >
+                        {isLoading ? (
+                          <option value="">Loading...</option>
+                        ) : sortedAndFilteredTheories.length === 0 ? (
+                          <option value="">No theories found</option>
+                        ) : (
+                          sortedAndFilteredTheories.map(t => (
+                            <option key={t.id} value={t.id}>{t.headline ? `${t.id}: ${t.headline}` : t.id}</option>
+                          ))
+                        )}
+                      </select>
+                    ) : (
+                      <select
+                        required
+                        value={theoryId}
+                        onChange={e => setTheoryId(e.target.value)}
+                        className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={isLoading || sortedAndFilteredTheories.length === 0}
+                      >
+                        {isLoading ? (
+                          <option value="">Loading...</option>
+                        ) : sortedAndFilteredTheories.length === 0 ? (
+                          <option value="">No theories found</option>
+                        ) : (
+                          sortedAndFilteredTheories.map(t => (
+                            <option key={t.id} value={t.id}>{t.headline ? `${t.id}: ${t.headline}` : t.id}</option>
+                          ))
+                        )}
+                      </select>
+                    )}
                   </div>
 
                   {(addonType === 'refine-hypothesis' || addonType === 'expand-theory') && (
@@ -493,7 +522,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
           <div className="flex gap-4 pt-6 border-t border-gray-100 shrink-0 mt-4">
             <button
               type="submit"
-              disabled={isBackendDown || !addonType || (!isPopulation && !theoryId)}
+              disabled={isBackendDown || !addonType || (!isPopulation && addonType !== 'score-theories' && !theoryId) || (addonType === 'score-theories' && theoryIds.length === 0)}
               className="flex-1 bg-black text-white p-4 font-black text-sm tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
             >
               {isBackendDown ? 'Backend Offline' : 'Add Step'} <ChevronRight size={18} />
