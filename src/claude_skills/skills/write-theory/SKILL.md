@@ -44,6 +44,17 @@ Any temporary files (including experiment scripts, intermediate results, etc.) m
 Every experiment, test, and validation must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `write-theory`.
 Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audit the supporting evidence.
 
+## Literature grounding
+You may start with a literature review already in `<CONTEXT_DIR>/literature/`. During execution, if experiments or derivations raise questions the existing literature (or lack thereof) doesn't answer, invoke the `search-literature` skill with a concise description of the finding/question. It will return a new literature ID (`L_...`). Fold it into your context without rebuilding the folder:
+
+```bash
+uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_literature \
+    --target_folder <CONTEXT_DIR> \
+    --from_literature <NEW_L_ID>
+```
+
+Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its findings into your refinement. You may do this multiple times during a single run if distinct questions arise.
+
 ## Theory Output Format
 Your `theory.md` file must contain your theory.
 
