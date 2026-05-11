@@ -30,7 +30,6 @@ mkdir -p "<OUTPUT_DIR>/papers"
 - `<OUTPUT_DIR>/summary.md` — your final structured summary (required filename)
 
 ## Search Strategy
-
 Because the query is specific, run **fewer but sharper** searches than a generic review:
 
 1. **Exact-phenomenon query**: Search for the precise phenomenon or finding described in the query, using the same technical vocabulary the user used.
@@ -40,26 +39,7 @@ Because the query is specific, run **fewer but sharper** searches than a generic
 
 Target arXiv specifically (include `arxiv` or `site:arxiv.org` in queries). Google Scholar is acceptable too.
 
-## Execution Steps
-
-1. **Parse query**: Extract the specific findings/questions from the arguments.
-2. **Search**: Run 2–4 focused `WebSearch` queries following the strategy above. Identify candidate papers.
-3. **Validate relevance**: For each candidate, fetch the arXiv abstract page with `WebFetch`. Keep only papers that directly address the query. Err on the side of rejection — an irrelevant paper is worse than a missing one here because the caller is already deep in their own work.
-4. **Download PDFs**: For each kept paper:
-   ```bash
-   curl -sL "https://arxiv.org/pdf/XXXX.XXXXX" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
-   ```
-   Use the arXiv ID as filename. Verify each download succeeded (file >10KB).
-5. **Read and extract**: Read each PDF with the `Read` tool. For each paper, note only the content that speaks to the query — the specific finding, the relevant method, the directly applicable result or bound. Skip the rest.
-6. **Synthesize**: Write `<OUTPUT_DIR>/summary.md` per the format below. Frame the synthesis around the query, not as a general landscape survey.
-7. **Store results**: Persist your output:
-   ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type search-literature --from_folder <OUTPUT_DIR>
-   ```
-   Note down the returned literature ID (e.g. `L_20260416_143052_a1b2c3`) as the result of this skill and continue with any remaining steps in your current workflow.
-
 ## Summary File Format
-
 Your `summary.md` file must follow this structure:
 
 ```
@@ -88,3 +68,21 @@ Your `summary.md` file must follow this structure:
 ## Open Questions
 [What does the literature *not* resolve about the query? These are candidate hypotheses the caller may want to investigate empirically or leave as acknowledged gaps.]
 ```
+
+## Execution Steps
+1. **Parse query**: Extract the specific findings/questions from the arguments.
+2. **Search**: Run 2–4 focused `WebSearch` queries following the strategy above. Identify candidate papers.
+3. **Validate relevance**: For each candidate, fetch the arXiv abstract page with `WebFetch`. Keep only papers that directly address the query. Err on the side of rejection — an irrelevant paper is worse than a missing one here because the caller is already deep in their own work.
+4. **Download PDFs**: For each kept paper:
+   ```bash
+   curl -sL "https://arxiv.org/pdf/XXXX.XXXXX" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
+   ```
+   Use the arXiv ID as filename. Verify each download succeeded (file >10KB).
+5. **Read and extract**: Read each PDF with the `Read` tool. For each paper, note only the content that speaks to the query — the specific finding, the relevant method, the directly applicable result or bound. Skip the rest.
+6. **Synthesize**: Write `<OUTPUT_DIR>/summary.md` per the format below. Frame the synthesis around the query, not as a general landscape survey.
+7. **Store results**: Persist your output:
+   ```bash
+   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type search-literature --from_folder <OUTPUT_DIR>
+   ```
+   Note down the returned literature ID (e.g. `L_20260416_143052_a1b2c3`) as the result of this skill and continue with any remaining steps in your current workflow.
+

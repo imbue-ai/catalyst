@@ -44,6 +44,24 @@ Any temporary files (including experiment scripts, intermediate results, etc.) m
 Every experiment, test, and validation must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `write-theory`.
 Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audit the supporting evidence.
 
+## Theory Output Format
+Your `theory.md` file must contain your theory.
+
+Follow these guidelines when writing your theory:
+- Start with a brief definition of the phenomenon and provide any necessary context, including a brief summary of the relevant literature.
+- Then, provide a short intuitive explanation of your theory and how it explains the phenomenon. In the sections afterwards, follow up with rigorous mathematical statements or empirical observations to substantiate the intuition.
+- Structure the rigorous part of your theory into a set of precise definitions, conjectures, observations, lemmas and theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally prove it! Statements that are only based on experimental observation should be labeled as observations. Later statements can build on earlier ones.
+- Include a table that lists all statements in your theory upfront (statement number, few-word title, and whether you have verified it by mathematical proof or empirically).
+- Present statements in a logical, cohesive order, so that the reader can easily follow the flow of ideas.
+- Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
+- Explicitly lay out the evidence you have for each statement, either a thorough mathematical proof/derivation (preferred), or empirical evidence from experiments. You can also cite prior literature to support your statements. Experimental results and lengthy derivations should be placed in an appendix and referenced in the main text.
+- Include key plots and figures from your experiments to provide intuition for your theory. Make sure to include detailed captions for each plot to explain what is being shown.
+- Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. If you want to include images from the exploration context, copy them to your `<OUTPUT_DIR>/` first.
+- Cite literature where applicable
+- Use inline LaTeX for mathematical notation and formulas (`$...$` for inline math, and `$$...$$` for display math). Do NOT put formulas into code blocks.
+
+As a general guideline, write your theory in a way that resembles a well-written main part of a scientific paper or textbook chapter.
+
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the exploration and literature review results using `context_manager.py`.
 2. **Exploration Review**: Read `<CONTEXT_DIR>/exploration/report.md` to understand prior findings. Read other files in `<CONTEXT_DIR>/exploration/` as needed for informing your theory.
@@ -64,21 +82,3 @@ Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audi
    uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type write-theory --from_folder <OUTPUT_DIR>
    ```
    Note down the returned theory ID (e.g. `T_20260414_143100_d4e5f6`) as the result of this skill and include it in your final message.
-
-## Theory Output Format
-Your `theory.md` file must contain your theory.
-
-Follow these guidelines when writing your theory:
-- Start with a brief definition of the phenomenon and provide any necessary context, including a brief summary of the relevant literature.
-- Then, provide a short intuitive explanation of your theory and how it explains the phenomenon. In the sections afterwards, follow up with rigorous mathematical statements or empirical observations to substantiate the intuition.
-- Structure the rigorous part of your theory into a set of precise definitions, conjectures, observations, lemmas and theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally prove it! Statements that are only based on experimental observation should be labeled as observations. Later statements can build on earlier ones.
-- Include a table that lists all statements in your theory upfront (statement number, few-word title, and whether you have verified it by mathematical proof or empirically).
-- Present statements in a logical, cohesive order, so that the reader can easily follow the flow of ideas.
-- Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
-- Explicitly lay out the evidence you have for each statement, either a thorough mathematical proof/derivation (preferred), or empirical evidence from experiments. You can also cite prior literature to support your statements. Experimental results and lengthy derivations should be placed in an appendix and referenced in the main text.
-- Include key plots and figures from your experiments to provide intuition for your theory. Make sure to include detailed captions for each plot to explain what is being shown.
-- Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. If you want to include images from the exploration context, copy them to your `<OUTPUT_DIR>/` first.
-- Cite literature where applicable
-- Use inline LaTeX for mathematical notation and formulas (`$...$` for inline math, and `$$...$$` for display math). Do NOT put formulas into code blocks.
-
-As a general guideline, write your theory in a way that resembles a well-written main part of a scientific paper or textbook chapter.
