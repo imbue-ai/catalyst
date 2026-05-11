@@ -44,7 +44,7 @@ Any temporary files (including experiment scripts, intermediate results, etc.) m
 
 ## Running experiments
 Every experiment, test, and validation must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `expand-theory`.
-Cite each experiment by its `X_ID` in your expanded `theory.md` so reviewers can audit the evidence.
+Cite each experiment by its `X_...` ID in your expanded `theory.md` so reviewers can audit the evidence.
 
 ## Literature grounding
 You may start with zero, one, or many literature reviews already in `<CONTEXT_DIR>/literature/`. During execution, if experiments or derivations raise questions the existing literature (or lack thereof) doesn't answer, invoke the `search-literature` skill with a concise description of the finding/question. It will return a new literature ID (`L_...`). Fold it into your context without rebuilding the folder:

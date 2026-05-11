@@ -1,6 +1,6 @@
 ---
 name: score-theories
-description: "Score the quality of a set of theories relative to each other."
+description: "Score the quality of the given theories relative to each other and update all population scores."
 argument-hint: "the theory IDs to score (e.g. T_20260414_143100_d4e5f6 T_20260414_143200_g7h8i9)"
 ---
 

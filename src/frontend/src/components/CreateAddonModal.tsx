@@ -290,7 +290,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                         <option value="">No theories found</option>
                       ) : (
                         sortedAndFilteredTheories.map(t => (
-                          <option key={t.id} value={t.id}>{t.headline ? `${t.headline} (${t.id})` : t.id}</option>
+                          <option key={t.id} value={t.id}>{t.headline ? `${t.id}: ${t.headline}` : t.id}</option>
                         ))
                       )}
                     </select>
@@ -314,7 +314,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                           className="w-full border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
                         >
                           {filteredReviews.map(r => (
-                            <option key={r.id} value={r.id}>{r.headline ? `${r.headline} (${r.id})` : r.id}</option>
+                            <option key={r.id} value={r.id}>{r.headline ? `${r.id}: ${r.headline}` : r.id}</option>
                           ))}
                         </select>
                       ) : (
