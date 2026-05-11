@@ -35,9 +35,19 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --
 
 Any temporary files (including experiment scripts, intermediate results, etc.) must be stored only under `<OUTPUT_DIR>`.
 
+## Reviewing cited experiment IDs
+The current version of the hypothesis (and/or an appendix referring to it) may cite specific experiment IDs (`X_...`) as evidence. You can review these experiments by running:
+```bash
+uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
+```
+
+This command will place the experiment description (`description.md`), Python script (`script.py`), and results into the `<CONTEXT_DIR>/experiments/<EXPERIMENT_ID>` folder.
+
+You can use the experiment to inform your falsification ideas, or rule out falsification directions that have already been tested. However, keep in mind that the experiment setup might have been flawed, and hence must still be subject to scrutiny.
+
 ## Running experiments
 Every experiment, test, and validation must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `falsify-hypothesis`.
-Cite each experiment by its `X_ID` in your `review.md` under the relevant falsification idea.
+Cite each experiment by its `X_...` ID in your `review.md` under the relevant falsification idea.
 
 ## Falsification Strategies
 Consider these approaches to generate falsification ideas:
