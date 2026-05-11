@@ -115,7 +115,7 @@ class GeminiAgentRunner(BaseCliAgentRunner):
             return (
                 None,
                 session_id,
-                f"Could not parse JSON output from Gemini result string. Preview: {str(agent_raw_result)[:200]}...",
+                f"Could not parse JSON output from Gemini result string. Preview: {str(agent_raw_result)[:800]}...",
             )
 
         except Exception as e:
