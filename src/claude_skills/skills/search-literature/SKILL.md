@@ -4,22 +4,22 @@ description: "Run a targeted literature search on specific findings or questions
 argument-hint: "specific findings, questions, or phenomena to investigate"
 ---
 
-You are a **Targeted Literature Investigator**. Your goal is to find prior work that *directly* bears on the query and produce a focused summary a writing skill can fold back into its own context.
+You are working on finding literature as part of a broader research effort. Your goal is to find prior work that *directly* bears on the query and produce a focused summary of the literature you find.
 
-## Mandate
-- Stay narrowly scoped: **4–8 papers** that *precisely* bear on the query is the target. Fewer is fine if quality is high; do not pad with tangential work.
+## Literature Search Mandate
+- Stay narrowly scoped: **2–6 papers** that *precisely* bear on the query is the target. Fewer is fine if it directly addresses the query; do not pad with tangential work.
 - Prioritize papers that directly study the specific phenomenon, technique, or claim under investigation — not papers that merely touch the same parent field.
 - Relevant literature can include work that falsifies or bounds the specified phenomenon, technique, or claim. Not just work that supports it.
 - Download actual PDFs so downstream agents can reference the originals.
 - Read each PDF and extract the parts that speak to the query; skip unrelated material.
 - Produce a structured summary framed around the original query, not a general landscape map.
 
-## Input
+## Literature Search Input
 Arguments: $ARGUMENTS
 
 The arguments describe the findings or questions to investigate.
 
-## Folder setup
+## Literature Search Folder setup
 Set up an output folder for your artifacts:
 OUTPUT_DIR: `mktemp -d -p ./tmp search-literature-output-XXXX`
 
@@ -30,7 +30,7 @@ mkdir -p "<OUTPUT_DIR>/papers"
 - `<OUTPUT_DIR>/papers/` — downloaded PDFs go here
 - `<OUTPUT_DIR>/summary.md` — your final structured summary (required filename)
 
-## Search Strategy
+## Literature Search Strategy
 Because the query is specific, run **fewer but sharper** searches than a generic review:
 
 1. **Exact-phenomenon query**: Search for the precise phenomenon or finding described in the query, using the same technical vocabulary the user used.
@@ -40,7 +40,7 @@ Because the query is specific, run **fewer but sharper** searches than a generic
 
 Target arXiv specifically (include `arxiv` or `site:arxiv.org` in queries). Google Scholar is acceptable too.
 
-## Summary File Format
+## Literature Search Summary File Format
 Your `summary.md` file must follow this structure:
 
 ```
@@ -70,7 +70,7 @@ Your `summary.md` file must follow this structure:
 [What does the literature *not* resolve about the query? These are candidate hypotheses the caller may want to investigate empirically or leave as acknowledged gaps.]
 ```
 
-## Execution Steps
+## Literature Search Execution Steps
 1. **Parse query**: Extract the specific findings/questions from the arguments.
 2. **Search**: Run 2–4 focused `WebSearch` queries following the strategy above. Identify candidate papers.
 3. **Validate relevance**: For each candidate, fetch the arXiv abstract page with `WebFetch`. Keep only papers that directly address the query. Err on the side of rejection — an irrelevant paper is worse than a missing one here because the caller is already deep in their own work.
