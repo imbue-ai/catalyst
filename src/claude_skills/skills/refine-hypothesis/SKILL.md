@@ -13,13 +13,6 @@ You are an expert scientific agent. You've previously developed a hypothesis for
 - If you find that the hypothesis is fundamentally flawed or you're unable to find a way to incrementally improve it, please abort and follow the instructions in the "Discarding a flawed hypothesis" section. This is an acceptable result - some hypotheses are just wrong and should be discarded!
 - All experiment execution must go through the `run-experiment` skill. Never run a Python experiment script directly. See the "Running experiments" section below.
 
-## Discarding a flawed hypothesis
-IF you determine that the hypothesis is fundamentally flawed and cannot be reasonably refined, you should remove it from the theory, along with any other hypotheses or sections that were dependent on it, either directly or indirectly:
-1. Carefully review the theory and identify all corollaries, lemmas, theorems, or other sections that either mention the flawed hypothesis, or were clearly relying on it.
-2. Repeat this process recursively until you've identified all hypotheses and sections that are dependent on the flawed hypothesis *either directly or indirectly*.
-3. Remove the flawed hypothesis itself from the theory
-4. For each dependent hypothesis and section, check if there's a straight-forward edit to that hypothesis/section that you can make to avoid the dependency. Otherwise, remove the dependent hypotheses/section from the theory alltogether. Repeat for each dependent hypothesis/section until you've either removed or edited all of them.
-
 ## Input
 Arguments: $ARGUMENTS
 
@@ -64,10 +57,21 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_literature 
 
 Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its findings into your refinement. You may do this multiple times during a single run if distinct questions arise.
 
+## Discarding a flawed hypothesis
+IF you determine that the hypothesis is fundamentally flawed and cannot be reasonably refined to make it correct, you should remove it from the theory. You'll also need to remove any other hypotheses or sections from the theory that were dependent on it, either directly or indirectly:
+1. Carefully review the theory and identify all corollaries, lemmas, theorems, or other sections that either mention the flawed hypothesis, or were clearly relying on it.
+2. Repeat this process recursively until you've identified all hypotheses and sections that are dependent on the flawed hypothesis *either directly or indirectly*.
+3. Remove the flawed hypothesis itself from the theory
+4. For each dependent hypothesis and section, check if there's a straight-forward edit to that hypothesis/section that you can make to avoid the dependency. Otherwise, remove the dependent hypotheses/section from the theory alltogether. Repeat for each dependent hypothesis/section until you've either removed or edited all of them.
+
+If this means that the entire theory becomes empty, so be it.
+
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the existing theory, the falsification reports, and literature review results using `context_manager.py`.
-2. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md`, all review files in `<CONTEXT_DIR>/reviews/*/review.md`, and (if present) each `<CONTEXT_DIR>/literature/*/summary.md` to understand the hypothesis, its identified flaws, and any prior literature grounding.
-3. **Refinement Idea Generation**: Analyze the falsification reports. Generate ideas for how to address the raised flaws in the current hypothesis. Generate at least 2-3 alternative solutions, such as: more rigid prerequisites or assumptions, localized fixes and modifications to the existing hypothesis, or even a full replacement of the hypothesis by an alternative explanation. Think about how each alternative could be tested and what evidence would support or refute it. Exception: If the reviews didn't raise any flaws, you can stop here and just report back the original theory ID from your inputs and a note that no changes were needed.
+2. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md`, all falsification reports in `<CONTEXT_DIR>/reviews/*/review.md`, and (if present) each `<CONTEXT_DIR>/literature/*/summary.md` to understand the hypothesis, its identified flaws, and any prior literature grounding.
+3. **Refinement Idea Generation**: Analyze the falsification reports. Generate ideas for how to address the raised flaws in the current hypothesis. Generate at least 2-3 alternative solutions for addressing the flaws, such as: more rigid prerequisites or assumptions, localized fixes and modifications to the existing hypothesis, or even a full replacement of the hypothesis by an alternative explanation. Think about how each alternative could be tested and what evidence would support or refute it.
+  - Exception: If the reviews didn't raise any flaws, you can stop here and just report back the original theory ID from your inputs and a note that no changes were needed.
+  - The falsification report can ON OCCASION contain a false conclusion, and claim that the hypothesis is flawed when it really isn't. NEVER assume that as your first conclusion though. If you have reason to believe that there's a mistake in the falsification report, try to devise an experiment or mathematical derivation that would confirm or refute the falsification report's claims. If in doubt, assume that the falsification report is correct, and try to refine the hypothesis accordingly.
 4. **Validation**: Test your ideas using the available tools.
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your notes and refined theory.
    - **Proof**: If applicable, use mathematical derivations.

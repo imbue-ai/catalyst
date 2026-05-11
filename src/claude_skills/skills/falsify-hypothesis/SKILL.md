@@ -10,7 +10,8 @@ Instead of seeking confirmation, adopt a "killer" mindset to identify cases wher
 
 ## Mandate
 - Focus on exactly the **ONE** hypothesis given below.
-- Do whatever is needed to test falsification ideas and try to produce empirical or logical evidence of the falsification. 
+- Do whatever is needed to test falsification ideas and try to produce empirical or logical evidence of the falsification.
+- If (and only if) the hypothesis is trivial or obviously true, or is already well-supported by existing literature, you do not need to spend much time on it. In that case, your report can simply state why you concluded that the hypothesis is correct, citing existing literature as needed.
 - Honor any limited validity domain and/or assumptions that are explicitly stated in the theory. Try to falsify the hypothesis *within* the domain of those assumptions. A falsification is only valid if it invalidates the hypothesis *within* its stated domain.
 - All experiment execution must go through the `run-experiment` skill. Never run a Python experiment script directly. See the "Running experiments" section below.
 
@@ -68,8 +69,8 @@ Your `review.md` file MUST be formatted exactly as follows:
 ## Target Hypothesis
 > [Exact hypothesis]
 
-## Context
-[Brief mention of source files]
+## Conclusion
+[Summarize findings. Is the hypothesis falsified? What are its limits?]
 
 ## Attempted Falsification Ideas
 
@@ -78,14 +79,11 @@ Your `review.md` file MUST be formatted exactly as follows:
 - **Description**: [How this idea aims to falsify]
 - **Method**: [Experiment / Proof]
 - **Implementation**: [Experiment ID (`X_...`) and the experiment description, or the formula/derivation used to test this idea]
-- **Result**: [Successful / Failed to Falsify]
+- **Result**: [Successfully falsified / Failed to Falsify]
 - **Evidence**: [Summary of the data, plots, or proof steps - include references to specific output files relative to `<OUTPUT_DIR>` if applicable]
 
 ---
 
 ### 2. [Idea Name]
 ...
-
-## Synthesis and Conclusion
-[Summarize findings. Is the hypothesis falsified? What are its limits?]
 ```
