@@ -47,21 +47,8 @@ Consider these approaches across the whole theory:
 5. **Connections**: Does the theory relate to known results in dynamical systems, statistical mechanics, random matrix theory, or other fields that could be made explicit?
 6. **Quantitative Refinement**: Can asymptotic bounds or scaling laws be tightened?
 
-## Execution Steps
-1. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md` and any other files in `<CONTEXT_DIR>/theory/` to understand the full theory.
-2. **Research**: Analyze the theory holistically. Generate expansion ideas using the strategies above.
-3. **Implementation**: Support your suggestions with evidence.
-   - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` under the corresponding expansion suggestion.
-   - **Analysis**: If applicable, derive mathematical arguments motivating the expansion.
-4. **Reporting**: Write your expansion review to `<OUTPUT_DIR>/review.md` (this exact filename is required). See the output format below.
-5. **Store results**: Persist your output and return the review ID:
-   ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type suggest-expansions --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
-   ```
-   Note down the returned review ID (e.g. `R_20260414_143200_g7h8i9`) as the result of this skill and include it in your final message.
-
 ## Expansion Review Format
-Your `review.md` file MUST be formatted exactly as follows:
+Your `review.md` file MUST be formatted as follows:
 
 ```
 # Expansion Review
@@ -87,3 +74,16 @@ Your `review.md` file MUST be formatted exactly as follows:
 ## Prioritized Roadmap
 [Rank expansion opportunities by expected impact and feasibility. List the top 3 most important next steps.]
 ```
+
+## Execution Steps
+1. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md` and any other files in `<CONTEXT_DIR>/theory/` to understand the full theory.
+2. **Research**: Analyze the theory holistically. Generate expansion ideas using the strategies above.
+3. **Implementation**: Support your suggestions with evidence.
+   - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` under the corresponding expansion suggestion.
+   - **Analysis**: If applicable, derive mathematical arguments motivating the expansion.
+4. **Reporting**: Write your expansion review to `<OUTPUT_DIR>/review.md` (this exact filename is required). See the output format below.
+5. **Store results**: Persist your output and return the review ID:
+   ```bash
+   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type suggest-expansions --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
+   ```
+   Note down the returned review ID (e.g. `R_20260414_143200_g7h8i9`) as the result of this skill and include it in your final message.

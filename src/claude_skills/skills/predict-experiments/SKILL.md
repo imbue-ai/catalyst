@@ -33,22 +33,6 @@ Any temporary files (including intermediate results, etc.) must be stored only u
 ## Performing calculations
 The execution steps below may involve numeric calculations. Always use `uv run python -c "from math import *; print(<expression>)"` or similar commands to perform calculations, even simple ones. Do not perform calculations manually or in your head.
 
-## Execution Steps
-1. **Context Checkout**: Run the bash command above to obtain the theory and experiment files using `context_manager.py`.
-2. **Carefully Read the Theory**: Carefully read the `theory.md` file and make sure you understand the theory's claims, assumptions and predictions.
-2. **Generate Predictions**: For each experiment, read its `description.md` and `script.py` files. Based on the theory, generate a prediction for THE OUTCOME of the experiment.
-  - First, check whether the theory even makes a specific prediction for the outcome of the experiment. If not, you must note the prediction down as "NO_PREDICTION". Examples of no prediction being possible:
-    - The theory requires a certain prerequisite or has certain limits, which the experiment setup does not fulfil
-    - The theory does not describe the variables and/or outcomes measured by the experiment
-    - The theory is ambiguous or non-committal about the expected outcome of the experiment
-  - The prediction must be as specific as possible. Whenever the experiment measures quantitative variables, include the specific values that the theory predicts for those.
-3. **Reporting**: Write the prediction for each experiment to `<OUTPUT_DIR>/predictions.md` (this exact filename is required). See the output format below.
-4. **Store results**: Persist your output and return the prediction ID:
-   ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type predict-experiments --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
-   ```
-   Note down the returned prediction ID (e.g. `P_20260414_143200_g7h8i9`) as the result of this skill.
-
 ## Prediction Report Format
 Your `predictions.md` file MUST be formatted exactly as follows:
 
@@ -65,3 +49,19 @@ Theory used: [The ID of the theory used]
 ## [Experiment ID 2]
 ...
 ```
+
+## Execution Steps
+1. **Context Checkout**: Run the bash command above to obtain the theory and experiment files using `context_manager.py`.
+2. **Carefully Read the Theory**: Carefully read the `theory.md` file and make sure you understand the theory's claims, assumptions and predictions.
+2. **Generate Predictions**: For each experiment, read its `description.md` and `script.py` files. Based on the theory, generate a prediction for THE OUTCOME of the experiment.
+  - First, check whether the theory even makes a specific prediction for the outcome of the experiment. If not, you must note the prediction down as "NO_PREDICTION". Examples of no prediction being possible:
+    - The theory requires a certain prerequisite or has certain limits, which the experiment setup does not fulfil
+    - The theory does not describe the variables and/or outcomes measured by the experiment
+    - The theory is ambiguous or non-committal about the expected outcome of the experiment
+  - The prediction must be as specific as possible. Whenever the experiment measures quantitative variables, include the specific values that the theory predicts for those.
+3. **Reporting**: Write the prediction for each experiment to `<OUTPUT_DIR>/predictions.md` (this exact filename is required). See the output format below.
+4. **Store results**: Persist your output and return the prediction ID:
+   ```bash
+   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type predict-experiments --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
+   ```
+   Note down the returned prediction ID (e.g. `P_20260414_143200_g7h8i9`) as the result of this skill.

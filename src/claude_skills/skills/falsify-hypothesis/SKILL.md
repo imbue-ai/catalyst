@@ -47,21 +47,8 @@ Consider these approaches to generate falsification ideas:
 4. **Counter-Examples**: Analytical construction, or search-based (optimization to find a "poisoned" input).
 5. **Noise and Perturbations**: Sensitivity analysis, stochasticity.
 
-## Execution Steps
-1. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md` and any other files in `<CONTEXT_DIR>/theory/` to understand the theory and its hypotheses.
-2. **Research**: Analyze the target hypothesis. Generate ideas using the falsification strategies above.
-3. **Implementation**: Test your ideas using the available tools.
-   - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` under the corresponding falsification idea in your `review.md`.
-   - **Proof**: If applicable, use mathematical derivations.
-4. **Reporting**: Write your falsification report to `<OUTPUT_DIR>/review.md` (this exact filename is required). See the output format below.
-5. **Store results**: Persist your output and return the review ID:
-   ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type falsify-hypothesis --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
-   ```
-   Note down the returned review ID (e.g. `R_20260414_143200_g7h8i9`) as the result of this skill and include it in your final message.
-
 ## Falsification Report Format
-Your `review.md` file MUST be formatted exactly as follows:
+Your `review.md` file MUST be formatted as follows:
 
 ```
 # Falsification Report: [Hypothesis Name/Summary]
@@ -87,3 +74,17 @@ Your `review.md` file MUST be formatted exactly as follows:
 ### 2. [Idea Name]
 ...
 ```
+
+## Execution Steps
+1. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md` and any other files in `<CONTEXT_DIR>/theory/` to understand the theory and its hypotheses.
+2. **Research**: Analyze the target hypothesis. Generate ideas using the falsification strategies above.
+3. **Implementation**: Test your ideas using the available tools.
+   - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` under the corresponding falsification idea in your `review.md`.
+   - **Proof**: If applicable, use mathematical derivations.
+4. **Reporting**: Write your falsification report to `<OUTPUT_DIR>/review.md` (this exact filename is required). See the output format below.
+5. **Store results**: Persist your output and return the review ID:
+   ```bash
+   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type falsify-hypothesis --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
+   ```
+   Note down the returned review ID (e.g. `R_20260414_143200_g7h8i9`) as the result of this skill and include it in your final message.
+

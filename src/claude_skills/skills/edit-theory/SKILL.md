@@ -43,23 +43,6 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_literature 
 
 Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and incorporate its findings into your edits. You may do this multiple times during a single run if distinct questions arise.
 
-## Execution Steps
-1. **Theory Review**: Read `<CONTEXT_DIR>/theory/theory.md` to understand the current theory.
-2. **Planning**: Review the edit/research request from the input and plan how you want to approach it.
-3. **Hypothesis Generation**: If the ask is to investigate or research a new aspect, generate different hypotheses that could help with it. Try to generate at least 2-3 *alternative* hypotheses, and think about how you can test and differentiate between them.
-4. **Validation**: Use the available tools to test your hypotheses and/or any suggestions made in the input. Always test ALL of your alternative hypotheses. Even after one hypothesis is found to be promising, you must still attempt to validate the alternative ones before you dismiss them. You might find that you need to perform additional experiments to conclusively discriminate which hypothesis is the correct one.
-   - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your notes and theory.
-   - **Proof**: If applicable, use mathematical derivations.
-   - **Literature grounding**: If requested, run the `search-liteature` skill to find supporting literature. You can cite such prior literature to support your statement. Always read the full paper before citing it.
-8. **Iteration**: Keep iterating until you're COMPLETELY CONFIDENT in your edits.
-   - Based on the results of the validation step, you might have to refine your hypotheses, generate new ones if necessary, and repeat the validation process.
-3. **Writing**: Apply all necessary edits to `<OUTPUT_DIR>/theory.md`. Use `run-experiment` to generate plots and illustrations if needed.
-4. **Store results**: Persist your output and return the new theory ID:
-   ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type edit-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
-   ```
-   Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the result of this skill.
-
 ## Theory Output Format
 Your `theory.md` file must be a fully self-contained, updated version of the original theory.
 
@@ -77,3 +60,20 @@ Please maintain the following guidelines for the edited theory:
 - Use inline LaTeX for mathematical notation and formulas (`$...$` for inline math, and `$$...$$` for display math). Do NOT put formulas into code blocks.
 
 As a general guideline, write the theory in a way that resembles a well-written main part of a scientific paper or textbook chapter.
+
+## Execution Steps
+1. **Theory Review**: Read `<CONTEXT_DIR>/theory/theory.md` to understand the current theory.
+2. **Planning**: Review the edit/research request from the input and plan how you want to approach it.
+3. **Hypothesis Generation**: If the ask is to investigate or research a new aspect, generate different hypotheses that could help with it. Try to generate at least 2-3 *alternative* hypotheses, and think about how you can test and differentiate between them.
+4. **Validation**: Use the available tools to test your hypotheses and/or any suggestions made in the input. Always test ALL of your alternative hypotheses. Even after one hypothesis is found to be promising, you must still attempt to validate the alternative ones before you dismiss them. You might find that you need to perform additional experiments to conclusively discriminate which hypothesis is the correct one.
+   - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your notes and theory.
+   - **Proof**: If applicable, use mathematical derivations.
+   - **Literature grounding**: If requested, run the `search-liteature` skill to find supporting literature. You can cite such prior literature to support your statement. Always read the full paper before citing it.
+8. **Iteration**: Keep iterating until you're COMPLETELY CONFIDENT in your edits.
+   - Based on the results of the validation step, you might have to refine your hypotheses, generate new ones if necessary, and repeat the validation process.
+3. **Writing**: Apply all necessary edits to `<OUTPUT_DIR>/theory.md`. Use `run-experiment` to generate plots and illustrations if needed.
+4. **Store results**: Persist your output and return the new theory ID:
+   ```bash
+   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type edit-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
+   ```
+   Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the result of this skill.

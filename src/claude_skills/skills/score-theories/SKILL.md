@@ -41,7 +41,7 @@ Follow the following steps carefully. Do not skip anything. Do not take shortcut
 5. **Calculate Experiment Importance Scores**: For each of the selected experiments, calculate an experiment importance score using the *linear score* method.
 6. **Generate Theory Predictions**: For each of the theory IDs:
   - Spawn a subagent instructed to invoke the `predict-experiments` skill, passing to it the specific theory ID and the list of selected experiment IDs. This subagent will return a prediction ID (e.g. `P_20260414_143052_a1b2c3`). All subagents can run in parallel.
-7. **Collection**: Wait for each subagent to finish and collect their result messages containing the prediction IDs.
+7. **Collection**: Wait for each subagent to finish and collect their final result messages containing the prediction IDs.
 8. **Rank Predictions**: For each of the selected experiment IDs individually:
   - Spawn a subagent instructed to invoke the `rank-predictions` skill, passing to it the list of prediction IDs from the previous step, and a single experiment ID. This subagent will return a ranked list of theory IDs for that one experiment. It might report some theory IDs as NO_PREDICTION if those theories do not make predictions for that experiment. All subagents can run in parallel.
 9. **Score Soundness**: For each of the theory IDs:
@@ -49,7 +49,7 @@ Follow the following steps carefully. Do not skip anything. Do not take shortcut
 10. **Score Length**: For each of the theory IDs:
   - Spawn a subagent instructed to invoke the `score-length` skill, passing to it the specific theory ID. The subagent will return a length score between 0 and 1 for that theory. All subagents can run in parallel.
 11. **Rank Predictive Power**: Spawn a single subagent instructed to invoke the `rank-predictive-power` skill, passing to it the list of theory IDs. 
-12. **Collection**: Wait for all subagents from steps 8, 9, and 10 to finish and collect their result messages.
+12. **Collection**: Wait for all subagents from steps 8, 9, and 10 to finish and collect their final result messages.
 13. **Score Prediction Rankings**: For each theory, calculate two scores:
   - **Prediction Accuracy Score**: Count the number of experiments for which the theory made a prediction - this will constitute our `n`. Then, turn the rank that the theory received in each experiment into a score, using the *normalized reciprocal score* method. Then, sum these score values, each weighted by the importance score of the corresponding experiment. Finally, normalize the prediction score by dividing it by the sum of importance scores of the experiments for which the theory made a prediction.
   - **Prediction Coverage Score**: Sum the importance scores of the experiments for which the theory made a prediction (regardless of its rank), and divide it by the summed total importance score of all selected experiments.

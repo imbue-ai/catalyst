@@ -31,7 +31,6 @@ mkdir "<OUTPUT_DIR>/papers"
 If you need to store any additional intermediate files (e.g. one-off Python scripts), do so under `<OUTPUT_DIR>/`. Do not write outside of this folder.
 
 ## Search Strategy
-
 Use multiple search queries to maximize coverage:
 
 1. **Direct query**: Search for the exact topic.
@@ -41,35 +40,7 @@ Use multiple search queries to maximize coverage:
 
 For each search, use `WebSearch` to find papers. Target arXiv specifically (include "arxiv" or "site:arxiv.org" in queries). Also consider Google Scholar queries.
 
-## Execution Steps
-
-1. **Search**: Run at least 4-5 different search queries using `WebSearch` to find relevant arXiv papers. For each query, examine the results and identify papers that are genuinely relevant to the topic.
-
-2. **Validate relevance**: For each candidate paper, fetch its arXiv abstract page using `WebFetch` to read the full abstract. Discard papers that are only superficially related. Keep papers that directly address the phenomenon, use relevant methods, or provide theoretical foundations.
-
-3. **Download PDFs**: For each relevant paper, download the PDF:
-   ```bash
-   curl -sL "https://arxiv.org/pdf/XXXX.XXXXX" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
-   ```
-   Use the arXiv ID as the filename. Verify each download succeeded (file should be >10KB).
-
-4. **Read and extract**: Read each downloaded PDF using the `Read` tool. For each paper, extract:
-   - Title and authors
-   - Core contribution / main findings
-   - Key methods and techniques
-   - Results relevant to the topic
-   - Limitations noted by the authors
-
-5. **Synthesize**: Write the file `<OUTPUT_DIR>/summary.md`, according to the summary file format specified below.
-
-6. **Store results**: Persist your output and return the literature review ID:
-   ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type literature-review --from_folder <OUTPUT_DIR>
-   ```
-   Note down the returned literature ID (e.g. `L_20260414_143052_a1b2c3`) as the result of this skill.
-
 ## Summary File Format
-
 Your `summary.md` file must follow this structure:
 
 ```
@@ -107,3 +78,25 @@ Your `summary.md` file must follow this structure:
 ### Methodological Notes
 [Common experimental setups, benchmarks, or proof techniques used across papers]
 ```
+
+## Execution Steps
+1. **Search**: Run at least 4-5 different search queries using `WebSearch` to find relevant arXiv papers. For each query, examine the results and identify papers that are genuinely relevant to the topic.
+2. **Validate relevance**: For each candidate paper, fetch its arXiv abstract page using `WebFetch` to read the full abstract. Discard papers that are only superficially related. Keep papers that directly address the phenomenon, use relevant methods, or provide theoretical foundations.
+3. **Download PDFs**: For each relevant paper, download the PDF:
+   ```bash
+   curl -sL "https://arxiv.org/pdf/XXXX.XXXXX" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
+   ```
+   Use the arXiv ID as the filename. Verify each download succeeded (file should be >10KB).
+4. **Read and extract**: Read each downloaded PDF using the `Read` tool. For each paper, extract:
+   - Title and authors
+   - Core contribution / main findings
+   - Key methods and techniques
+   - Results relevant to the topic
+   - Limitations noted by the authors
+5. **Synthesize**: Write the file `<OUTPUT_DIR>/summary.md`, according to the summary file format specified below.
+6. **Store results**: Persist your output and return the literature review ID:
+   ```bash
+   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type literature-review --from_folder <OUTPUT_DIR>
+   ```
+   Note down the returned literature ID (e.g. `L_20260414_143052_a1b2c3`) as the result of this skill.
+
