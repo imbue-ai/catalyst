@@ -173,10 +173,11 @@ class TestServerEndpoints(unittest.TestCase):
     def test_get_artifact_primary(self, mock_file, mock_exists, mock_get_task):
         mock_get_task.return_value = self.dummy_task
         mock_exists.return_value = True
-        
+
         response = client.get("/api/tasks/test_task_123/artifacts/T_123/primary")
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.json()["content"], "content")
+        from server import inject_disclaimer
+        self.assertEqual(response.json()["content"], inject_disclaimer("content"))
 
     @patch("server.get_task")
     @patch("server.os.path.exists")
@@ -207,14 +208,18 @@ More text.'''
             with patch("server.os.path.isfile", return_value=True):
                 with patch("server.os.path.abspath", side_effect=lambda x: x): # prevent traversal check failure
                     with patch("zipfile.ZipFile.write") as mock_zip_write:
-                        response = client.get("/api/tasks/test_task_123/artifacts/T_123/export")
-        
+                        with patch("zipfile.ZipFile.writestr") as mock_zip_writestr:
+                            response = client.get("/api/tasks/test_task_123/artifacts/T_123/export")
+
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers["content-type"], "application/zip")
-        
+
+        # Verify that zipfile.writestr was called with theory.md
+        writestr_args = [call_args[0][0] for call_args in mock_zip_writestr.call_args_list]
+        self.assertIn("T_123/theory.md", writestr_args)
+
         # Verify that zipfile.write was called with image.png
         write_args = [call_args[0][1] for call_args in mock_zip_write.call_args_list]
-        self.assertIn("T_123/theory.md", write_args)
         self.assertIn("T_123/image.png", write_args)
 
 if __name__ == '__main__':
