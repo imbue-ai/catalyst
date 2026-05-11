@@ -12,6 +12,8 @@ Arguments: $ARGUMENTS
 The arguments contain multiple prediction IDs (like `P_20260414_...`) and an experiment ID (like `X_20260414_...`). Parse the prediction IDs and experiment ID from the arguments.
 
 ## Folder setup
+All commands must be run in the current working directory. Do not `cd` anywhere else.
+
 Set up a context folder for your input:
 CONTEXT_DIR: `mktemp -d -p ./tmp rank-predictions-context-XXXX`
 

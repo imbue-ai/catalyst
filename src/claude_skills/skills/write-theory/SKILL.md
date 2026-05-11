@@ -25,6 +25,8 @@ Arguments: $ARGUMENTS
 The arguments contain an exploration ID (like `E_20260414_...`), an optional literature review ID (like `L_20260414_...`), and a description of the phenomenon. Parse all IDs from the arguments.
 
 ## Folder setup
+All commands must be run in the current working directory. Do not `cd` anywhere else.
+
 Set up two folders — one for input context, one for your own output:
 CONTEXT_DIR: `mktemp -d -p ./tmp write-theory-context-XXXX`
 OUTPUT_DIR: `mktemp -d -p ./tmp write-theory-output-XXXX`

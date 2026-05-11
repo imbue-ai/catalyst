@@ -14,6 +14,8 @@ Arguments: $ARGUMENTS
 The arguments contain a theory ID (like `T_20260414_...`), and optionally an instruction on what kind of key story to focus on (e.g. "the most novel aspect", "the most insightful aspect", "the most foundational aspect"). Parse the theory ID and optional instruction from the arguments.
 
 ## Folder setup
+All commands must be run in the current working directory. Do not `cd` anywhere else.
+
 Set up two folders — one for input context, one for your own output:
 CONTEXT_DIR: `mktemp -d -p ./tmp streamline-theory-context-XXXX`
 OUTPUT_DIR: `mktemp -d -p ./tmp streamline-theory-output-XXXX`

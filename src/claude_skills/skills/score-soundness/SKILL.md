@@ -12,6 +12,8 @@ Arguments: $ARGUMENTS
 The arguments contain a single theory ID (like `T_20260414_...`). Parse the theory ID from the arguments.
 
 ## Folder setup
+All commands must be run in the current working directory. Do not `cd` anywhere else.
+
 Set up a context folder for your input:
 CONTEXT_DIR: `mktemp -d -p ./tmp score-soundness-context-XXXX`
 
