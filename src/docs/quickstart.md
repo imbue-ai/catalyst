@@ -28,6 +28,11 @@ To provide the best possible starting point for an automated scientist, a templa
 
 This structured environment ensures that the agent has all the domain-specific knowledge and tools needed to perform rigorous scientific work from the outset.
 
-## Quickstart Walkthrough
+## Walkthrough: Autonomous Theory Discovery
+
+(Placeholder: A detailed walkthrough of running a workflow will be added here.)
+
+
+## Walkthrough: Manual Workflow
 
 (Placeholder: A detailed walkthrough of running a workflow will be added here.)
