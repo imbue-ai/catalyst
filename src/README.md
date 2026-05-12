@@ -2,6 +2,14 @@
 
 A tool for autonomous scientific research.
 
+## Documentation
+
+For more detailed information, please see the following guides:
+
+- [Quickstart Guide](docs/quickstart.md): An overview of the system structure and environment templates.
+- [Workflows and Add-ons](docs/workflow.md): A reference for all primary workflows and individual add-on steps.
+- [CLI Agent Usage](docs/cli.md): Instructions for using AI Scientist skills directly within a CLI agent.
+
 ## Architecture
 
 - **Agent Skills:** The main functionality of the AI Scientist is implemented through a set of Agent skills that each perform different steps of the research process.
