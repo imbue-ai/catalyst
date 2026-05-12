@@ -7,6 +7,7 @@ This guide provides a high-level overview of the AI Scientist project and explai
 The AI Scientist is an automated system for generating, evaluating, and refining scientific theories. From a user's perspective, the system revolves around **Workflows**.
 
 - **Workflows**: You initiate a workflow by providing a scientific phenomenon or an initial idea. The orchestrator then manages a sequence of steps, often involving parallel execution of specialized agents (e.g., for literature review, exploration, or theory generation).
+- - **Add-on Steps**: In addition to standard workflows, you can manually extend any task by adding individual **Add-on Steps** (e.g., to specifically streamline or falsify a theory). This provides flexibility to guide the research process beyond the predefined workflow structures.
 - **Theories and Artifacts**: Each step in a workflow generates artifacts, such as literature reviews, exploration reports, and, most importantly, theories.
 - **Context Database**: All artifacts are stored in a persistent context database (`.ai-scientist-db`). This allows agents to reference previous work and enables the system to track the evolution of theories.
 
