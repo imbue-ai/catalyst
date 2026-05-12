@@ -1,9 +1,10 @@
-# AI Scientist
+# AI Scientist (Catalyst)
 
-An orchestration service and dashboard for autonomous scientific research.
+A tool for autonomous scientific research.
 
 ## Architecture
 
+- **Agent Skills:** The main functionality of the AI Scientist is implemented through a set of Agent skills that each perform different steps of the research process.
 - **Backend (Python + FastAPI):** Manages the research lifecycle using multi-threading.
 - **Agent Layer:** Spawns `gemini` or `claude` CLI processes in headless mode, capturing their JSON outputs and session IDs for traceability.
 - **Frontend (React + TypeScript):** A dashboard for starting research tasks, monitoring progress in real-time, and inspecting the data exchange at each step.
