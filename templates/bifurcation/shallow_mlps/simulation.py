@@ -16,58 +16,89 @@ from typing import Any, Callable
 
 import numpy as np
 
-from .targets import compute_target, num_coeff_terms, parse_custom_expr_single, compute_target_batch, parse_custom_expr_batch
+from .targets import num_coeff_terms, compute_target_batch, parse_custom_expr_batch
 
 
 # ---- Activations (matching simulation.js exactly) ---------------------------
 
-def _relu(x): return np.maximum(x, 0)
-def _relu_d(x): return (x > 0).astype(x.dtype) if isinstance(x, np.ndarray) else (1.0 if x > 0 else 0.0)
 
-def _tanh(x): return np.tanh(x)
-def _tanh_d(x): c = np.cosh(x); return 1.0 / (c * c)
+def _relu(x):
+    return np.maximum(x, 0)
+
+
+def _relu_d(x):
+    return (
+        (x > 0).astype(x.dtype)
+        if isinstance(x, np.ndarray)
+        else (1.0 if x > 0 else 0.0)
+    )
+
+
+def _tanh(x):
+    return np.tanh(x)
+
+
+def _tanh_d(x):
+    c = np.cosh(x)
+    return 1.0 / (c * c)
+
 
 def _gelu(x):
     t = np.tanh(0.7978845608 * (x + 0.044715 * x**3))
     return 0.5 * x * (1 + t)
+
+
 def _gelu_d(x):
     t = np.tanh(0.7978845608 * (x + 0.044715 * x**3))
     dt = (1 - t**2) * 0.7978845608 * (1 + 3 * 0.044715 * x**2)
     return 0.5 * (1 + t) + 0.5 * x * dt
 
-def _linear(x): return x
-def _linear_d(x): return np.ones_like(x)
+
+def _linear(x):
+    return x
+
+
+def _linear_d(x):
+    return np.ones_like(x)
+
 
 ACTIVATIONS: dict[str, tuple[Callable, Callable]] = {
-    "relu":   (_relu, _relu_d),
-    "tanh":   (_tanh, _tanh_d),
-    "gelu":   (_gelu, _gelu_d),
+    "relu": (_relu, _relu_d),
+    "tanh": (_tanh, _tanh_d),
+    "gelu": (_gelu, _gelu_d),
     "linear": (_linear, _linear_d),
 }
 
 
 # ---- Data classes -----------------------------------------------------------
 
+
 @dataclass
 class SimParams:
     """Parameters matching the demo's control panel."""
-    n: int = 100             # width
-    d: int = 10              # input dimension
-    alpha: float = 1.0       # init scale
-    eta: float = 0.01        # learning rate
-    batch_size: int = 200    # batch size B
+
+    n: int = 100  # width
+    d: int = 10  # input dimension
+    alpha: float = 1.0  # init scale
+    eta: float = 0.01  # learning rate
+    batch_size: int = 200  # batch size B
     activation: str = "relu"
     target_type: str = "staircase"
-    num_terms: int = 2       # order T
+    num_terms: int = 2  # order T
     custom_expr: str = ""
     seed: int | None = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            "n": self.n, "d": self.d, "alpha": self.alpha,
-            "eta": self.eta, "batch_size": self.batch_size,
-            "activation": self.activation, "target_type": self.target_type,
-            "num_terms": self.num_terms, "custom_expr": self.custom_expr,
+            "n": self.n,
+            "d": self.d,
+            "alpha": self.alpha,
+            "eta": self.eta,
+            "batch_size": self.batch_size,
+            "activation": self.activation,
+            "target_type": self.target_type,
+            "num_terms": self.num_terms,
+            "custom_expr": self.custom_expr,
             "seed": self.seed,
         }
 
@@ -75,25 +106,26 @@ class SimParams:
 @dataclass
 class NormRecord:
     step: int
-    w_frob: float          # ||W||_F
-    a_norm: float          # ||a||
-    w_dir: list[float]     # per-direction column norms + rest
-    h_rms: float           # RMS pre-activation
+    w_frob: float  # ||W||_F
+    a_norm: float  # ||a||
+    w_dir: list[float]  # per-direction column norms + rest
+    h_rms: float  # RMS pre-activation
 
 
 @dataclass
 class CoeffRecord:
     step: int
-    coeffs: list[float]    # projection onto target basis
-    remainder: float       # ||f_hat - projection||
+    coeffs: list[float]  # projection onto target basis
+    remainder: float  # ||f_hat - projection||
 
 
 @dataclass
 class SimState:
     """Full simulation state, serializable for output."""
+
     params: SimParams
-    W: np.ndarray              # (n, d)
-    a: np.ndarray              # (n,)
+    W: np.ndarray  # (n, d)
+    a: np.ndarray  # (n,)
     iteration: int = 0
     loss_history: list[dict] = field(default_factory=list)
     norm_history: list[NormRecord] = field(default_factory=list)
@@ -101,6 +133,7 @@ class SimState:
 
 
 # ---- Simulation engine (faithful port of simulation.js) ---------------------
+
 
 class Simulation:
     """Shallow MLP training simulation matching the JS demo exactly."""
@@ -130,13 +163,13 @@ class Simulation:
         self.loss_history = []
         self.norm_history = []
         self.coeff_history = []
-        
+
         # Pre-allocate buffers for fast step()
         self._Z = np.empty((p.batch_size, p.n), dtype=np.float64)
         self._H = np.empty((p.batch_size, p.n), dtype=np.float64)
         self._M = np.empty((p.batch_size, p.n), dtype=np.float64)
         self._dW = np.empty((p.n, p.d), dtype=np.float64)
-        
+
         self._record_norms()
 
     def step(self) -> float:
@@ -150,16 +183,17 @@ class Simulation:
         X = self.rng.standard_normal((p.batch_size, p.d))
 
         # Target
-        from .targets import compute_target_batch
-        Y_target, F_terms = compute_target_batch(X, p.target_type, p.num_terms, self._custom_fn)
+        Y_target, F_terms = compute_target_batch(
+            X, p.target_type, p.num_terms, self._custom_fn
+        )
 
         # Forward
         X_scaled = X / sqrt_d
         Z = np.dot(X_scaled, self.W.T)  # (batch, n)
         H = np.maximum(Z, 0) if p.activation == "relu" else sigma(Z)
-        Y_pred = np.dot(H, self.a) / p.n # (batch,)
+        Y_pred = np.dot(H, self.a) / p.n  # (batch,)
 
-        Err = Y_pred - Y_target         # (batch,)
+        Err = Y_pred - Y_target  # (batch,)
         total_loss = float(0.5 * np.mean(Err * Err))
 
         # Coefficient projection
@@ -170,7 +204,7 @@ class Simulation:
         # Gradients
         d_out = Err / p.batch_size
         da = np.dot(d_out, H) / p.n
-        
+
         # Optimized dW calculation
         mask = (Z > 0).astype(np.float64) if p.activation == "relu" else dsigma(Z)
         X_out = d_out[:, np.newaxis] * X
@@ -195,21 +229,24 @@ class Simulation:
 
         self.iteration += 1
         self.loss_history.append({"step": self.iteration, "loss": total_loss})
-        self.coeff_history.append(CoeffRecord(
-            step=self.iteration,
-            coeffs=c.tolist(),
-            remainder=math.sqrt(rem_sq),
-        ))
+        self.coeff_history.append(
+            CoeffRecord(
+                step=self.iteration,
+                coeffs=c.tolist(),
+                remainder=math.sqrt(rem_sq),
+            )
+        )
         self._record_norms()
         return total_loss
 
     def _record_norms(self) -> None:
         p = self.params
         from .targets import num_input_coords
+
         n_coords = num_input_coords(p.target_type, p.num_terms) or p.d
 
-        w_sq = float(np.sum(self.W ** 2))
-        a_sq = float(np.sum(self.a ** 2))
+        w_sq = float(np.sum(self.W**2))
+        a_sq = float(np.sum(self.a**2))
 
         # Per-direction column norms
         w_dir = []
@@ -222,16 +259,23 @@ class Simulation:
 
         h_rms = math.sqrt(w_sq / (p.n * p.d))
 
-        self.norm_history.append(NormRecord(
-            step=self.iteration,
-            w_frob=math.sqrt(w_sq),
-            a_norm=math.sqrt(a_sq),
-            w_dir=w_dir,
-            h_rms=h_rms,
-        ))
+        self.norm_history.append(
+            NormRecord(
+                step=self.iteration,
+                w_frob=math.sqrt(w_sq),
+                a_norm=math.sqrt(a_sq),
+                w_dir=w_dir,
+                h_rms=h_rms,
+            )
+        )
 
-    def run(self, steps: int, log_interval: int = 100, verbose: bool = True,
-            snapshot_interval: int | None = None) -> None:
+    def run(
+        self,
+        steps: int,
+        log_interval: int = 100,
+        verbose: bool = True,
+        snapshot_interval: int | None = None,
+    ) -> None:
         """Run multiple SGD steps.
 
         If snapshot_interval is set, saves (W, a) copies at that interval
@@ -249,20 +293,17 @@ class Simulation:
         for i in range(steps):
             loss = self.step()
             if (i + 1) % snapshot_interval == 0:
-                self.snapshots.append(
-                    (self.iteration, self.W.copy(), self.a.copy())
-                )
+                self.snapshots.append((self.iteration, self.W.copy(), self.a.copy()))
             if verbose and (i + 1) % log_interval == 0:
                 elapsed = time.time() - t0
                 sps = (i + 1) / max(elapsed, 1e-6)
-                print(f"  step {self.iteration:>7d}  loss={loss:.6f}  "
-                      f"({sps:.0f} steps/s)")
+                print(
+                    f"  step {self.iteration:>7d}  loss={loss:.6f}  ({sps:.0f} steps/s)"
+                )
 
         # Ensure final state is captured
         if self.snapshots[-1][0] != self.iteration:
-            self.snapshots.append(
-                (self.iteration, self.W.copy(), self.a.copy())
-            )
+            self.snapshots.append((self.iteration, self.W.copy(), self.a.copy()))
 
     def get_state(self) -> SimState:
         return SimState(
@@ -286,16 +327,16 @@ class Simulation:
         grid[:, 0] = np.linspace(-3, 3, n_points)
 
         # Target values
-        # Since _custom_fn is now batched, we use compute_target_batch
-        from .targets import compute_target_batch
-        y_target, _ = compute_target_batch(grid, p.target_type, p.num_terms, self._custom_fn)
+        y_target, _ = compute_target_batch(
+            grid, p.target_type, p.num_terms, self._custom_fn
+        )
         if not isinstance(y_target, np.ndarray):
             y_target = np.array([y_target] * n_points)
 
         # Forward pass
         z = grid @ self.W.T / sqrt_d  # (n_points, n)
-        h = sigma(z)                   # (n_points, n)
-        y_pred = (h @ self.a) / p.n    # (n_points,)
+        h = sigma(z)  # (n_points, n)
+        y_pred = (h @ self.a) / p.n  # (n_points,)
 
         # Per-neuron contributions
         contributions = h * (self.a / p.n)  # (n_points, n)
@@ -319,8 +360,13 @@ class Simulation:
                 for c in self.coeff_history
             ],
             "norm_history": [
-                {"step": n.step, "w_frob": n.w_frob, "a_norm": n.a_norm,
-                 "w_dir": n.w_dir, "h_rms": n.h_rms}
+                {
+                    "step": n.step,
+                    "w_frob": n.w_frob,
+                    "a_norm": n.a_norm,
+                    "w_dir": n.w_dir,
+                    "h_rms": n.h_rms,
+                }
                 for n in self.norm_history
             ],
             "grid": grid_data,
