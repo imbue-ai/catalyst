@@ -16,13 +16,13 @@ from typing import Any, Callable
 
 import numpy as np
 
-from .targets import compute_target, num_coeff_terms, parse_custom_expr_single
+from .targets import compute_target, num_coeff_terms, parse_custom_expr_single, compute_target_batch, parse_custom_expr_batch
 
 
 # ---- Activations (matching simulation.js exactly) ---------------------------
 
-def _relu(x): return np.where(x > 0, x, 0.0)
-def _relu_d(x): return np.where(x > 0, 1.0, 0.0)
+def _relu(x): return np.maximum(x, 0)
+def _relu_d(x): return (x > 0).astype(x.dtype) if isinstance(x, np.ndarray) else (1.0 if x > 0 else 0.0)
 
 def _tanh(x): return np.tanh(x)
 def _tanh_d(x): c = np.cosh(x); return 1.0 / (c * c)
@@ -118,7 +118,7 @@ class Simulation:
         # Parse custom expression once if needed
         self._custom_fn = None
         if params.target_type == "custom" and params.custom_expr:
-            self._custom_fn = parse_custom_expr_single(params.custom_expr)
+            self._custom_fn = parse_custom_expr_batch(params.custom_expr, params.d)
 
         self._initialize()
 
@@ -130,6 +130,13 @@ class Simulation:
         self.loss_history = []
         self.norm_history = []
         self.coeff_history = []
+        
+        # Pre-allocate buffers for fast step()
+        self._Z = np.empty((p.batch_size, p.n), dtype=np.float64)
+        self._H = np.empty((p.batch_size, p.n), dtype=np.float64)
+        self._M = np.empty((p.batch_size, p.n), dtype=np.float64)
+        self._dW = np.empty((p.n, p.d), dtype=np.float64)
+        
         self._record_norms()
 
     def step(self) -> float:
@@ -139,45 +146,35 @@ class Simulation:
         sqrt_d = math.sqrt(p.d)
         n_coeff = num_coeff_terms(p.target_type, p.num_terms)
 
-        # Accumulators
-        dW = np.zeros_like(self.W)
-        da = np.zeros_like(self.a)
-        total_loss = 0.0
+        # Sample X ~ N(0, I_d)
+        X = self.rng.standard_normal((p.batch_size, p.d))
 
-        # For coefficient projection
-        v = np.zeros(n_coeff)        # v = Q^T f_hat
-        G = np.zeros((n_coeff, n_coeff))  # G = Q^T Q
-        f_hat_sq_sum = 0.0
+        # Target
+        from .targets import compute_target_batch
+        Y_target, F_terms = compute_target_batch(X, p.target_type, p.num_terms, self._custom_fn)
 
-        for b in range(p.batch_size):
-            # Sample x ~ N(0, I_d)
-            x = self.rng.standard_normal(p.d)
+        # Forward
+        X_scaled = X / sqrt_d
+        Z = np.dot(X_scaled, self.W.T)  # (batch, n)
+        H = np.maximum(Z, 0) if p.activation == "relu" else sigma(Z)
+        Y_pred = np.dot(H, self.a) / p.n # (batch,)
 
-            # Target
-            y_target, f_terms = compute_target(x, p.target_type, p.num_terms, self._custom_fn)
+        Err = Y_pred - Y_target         # (batch,)
+        total_loss = float(0.5 * np.mean(Err * Err))
 
-            # Forward: z_i = W[i,:] . x / sqrt(d), h_i = sigma(z_i)
-            z = self.W @ x / sqrt_d       # (n,)
-            h = sigma(z)                    # (n,)
-            y_pred = float(np.dot(self.a, h) / p.n)
+        # Coefficient projection
+        v = np.dot(F_terms.T, Y_pred)
+        G = np.dot(F_terms.T, F_terms)
+        f_hat_sq_sum = np.sum(Y_pred * Y_pred)
 
-            err = y_pred - y_target
-            total_loss += 0.5 * err * err
-
-            # Coefficient accumulation
-            for j in range(n_coeff):
-                v[j] += y_pred * f_terms[j]
-                for k in range(n_coeff):
-                    G[j, k] += f_terms[j] * f_terms[k]
-            f_hat_sq_sum += y_pred * y_pred
-
-            # Gradients
-            d_out = err / p.batch_size
-            da += d_out * h / p.n
-            coeff_vec = d_out * (self.a / p.n) * dsigma(z) / sqrt_d  # (n,)
-            dW += np.outer(coeff_vec, x)
-
-        total_loss /= p.batch_size
+        # Gradients
+        d_out = Err / p.batch_size
+        da = np.dot(d_out, H) / p.n
+        
+        # Optimized dW calculation
+        mask = (Z > 0).astype(np.float64) if p.activation == "relu" else dsigma(Z)
+        X_out = d_out[:, np.newaxis] * X
+        dW = (self.a / (p.n * sqrt_d))[:, np.newaxis] * np.dot(mask.T, X_out)
 
         # Solve G * c_ls = v for least-squares coefficients
         try:
@@ -289,10 +286,11 @@ class Simulation:
         grid[:, 0] = np.linspace(-3, 3, n_points)
 
         # Target values
-        y_target = np.array([
-            compute_target(grid[i], p.target_type, p.num_terms, self._custom_fn)[0]
-            for i in range(n_points)
-        ])
+        # Since _custom_fn is now batched, we use compute_target_batch
+        from .targets import compute_target_batch
+        y_target, _ = compute_target_batch(grid, p.target_type, p.num_terms, self._custom_fn)
+        if not isinstance(y_target, np.ndarray):
+            y_target = np.array([y_target] * n_points)
 
         # Forward pass
         z = grid @ self.W.T / sqrt_d  # (n_points, n)

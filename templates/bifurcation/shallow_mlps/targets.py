@@ -375,3 +375,76 @@ def parse_target(spec_string: str, input_dim: int = 1) -> Callable:
             return np.asarray(result, dtype=np.float64)
 
         return target_fn_2d
+
+
+def _compute_staircase_batch(X: np.ndarray, T: int) -> tuple[np.ndarray, np.ndarray]:
+    batch_size = X.shape[0]
+    F_terms = np.zeros((batch_size, T))
+    prod = np.ones(batch_size)
+    for k in range(min(T, X.shape[1])):
+        prod *= X[:, k]
+        F_terms[:, k] = prod
+    Y = np.sum(F_terms, axis=1)
+    return Y, F_terms
+
+def _hermite_polynomial_batch(X_col: np.ndarray, n: int) -> np.ndarray:
+    if n == 0:
+        return np.ones_like(X_col)
+    if n == 1:
+        return X_col
+    h_prev2 = np.ones_like(X_col)
+    h_prev1 = X_col
+    for k in range(2, n + 1):
+        h_curr = X_col * h_prev1 - (k - 1) * h_prev2
+        h_prev2 = h_prev1
+        h_prev1 = h_curr
+    return h_prev1
+
+def _compute_hermite_batch(X: np.ndarray, T: int) -> tuple[np.ndarray, np.ndarray]:
+    he_val = _hermite_polynomial_batch(X[:, 0], T)
+    Y = he_val / math.sqrt(math.factorial(T))
+    F_terms = Y[:, np.newaxis]
+    return Y, F_terms
+
+def _compute_monomial_batch(X: np.ndarray, T: int) -> tuple[np.ndarray, np.ndarray]:
+    batch_size = X.shape[0]
+    prod = np.ones(batch_size)
+    for k in range(min(T, X.shape[1])):
+        prod *= X[:, k]
+    Y = prod
+    F_terms = Y[:, np.newaxis]
+    return Y, F_terms
+
+def parse_custom_expr_batch(expr: str, input_dim: int) -> Callable:
+    def fn(X: np.ndarray) -> np.ndarray:
+        class _Indexable:
+            def __getitem__(self, idx):
+                if 1 <= idx <= input_dim:
+                    return X[:, idx - 1]
+                raise IndexError(f"Input dim {idx} out of range [1, {input_dim}]")
+        namespace = {**_SAFE_NUMPY, "x": _Indexable()}
+        return np.asarray(eval(expr, {"__builtins__": {}}, namespace), dtype=np.float64)
+    return fn
+
+def compute_target_batch(
+    X: np.ndarray,
+    target_type: str,
+    num_terms: int,
+    custom_fn: Callable | None = None,
+) -> tuple[np.ndarray, np.ndarray]:
+    if target_type == "staircase":
+        return _compute_staircase_batch(X, num_terms)
+    elif target_type == "hermite":
+        return _compute_hermite_batch(X, num_terms)
+    elif target_type == "monomial":
+        return _compute_monomial_batch(X, num_terms)
+    elif target_type == "custom":
+        if custom_fn is None:
+            raise ValueError("custom target_type requires custom_fn")
+        Y = custom_fn(X)
+        if Y.ndim == 0:
+            Y = np.full(X.shape[0], Y)
+        return Y, Y[:, np.newaxis]
+    else:
+        raise ValueError(f"Unknown target type: {target_type!r}")
+
