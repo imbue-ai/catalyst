@@ -16,30 +16,11 @@ An orchestration service and dashboard for autonomous scientific research.
 
 ## Getting Started
 
-### 1. Install Backend Dependencies
-
 From the root `src` directory:
-
 ```bash
-uv sync
+./run.sh
 ```
 
-### 2. Start the Backend Server
-
-```bash
-uv run python server.py
-```
-The backend runs on `http://localhost:8139`.
-
-### 3. Start the Frontend
-
-In a new terminal, navigate to the `frontend` folder:
-
-```bash
-cd frontend
-npm install
-npm run dev
-```
 The dashboard will be available at `http://localhost:8939`.
 
 ## Configuration
@@ -81,5 +62,5 @@ If you've configured Gemini CLI to use API key authentication, it will refuse to
 
 To resolve this issue, export the GEMINI_API_KEY environment variable before launching the server:
 ```bash
-GEMINI_API_KEY=<your Google AI Studio API key> uv run python server.py
+GEMINI_API_KEY=<your Google AI Studio API key> ./run.sh
 ```
