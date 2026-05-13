@@ -1,7 +1,7 @@
 from unittest.mock import patch, MagicMock
 from .helpers import OrchestratorTestCase
-from ..orchestrator import _run_step, _orchestrate_task
-from ..models import Task, StepStatus, TaskStatus
+from ..orchestrator import _run_step_core, _orchestrate_task
+from ..models import Task, StepStatus, TaskStatus, Step
 
 class TestOrchestrator(OrchestratorTestCase):
     def setUp(self):
@@ -27,7 +27,10 @@ class TestOrchestrator(OrchestratorTestCase):
         mock_get_runner.return_value = mock_runner
         mock_get_task.return_value = self.task
         
-        result = _run_step(self.task, "stage1", "prompt1")
+        # _run_step_core expects the step to already exist in the task
+        self.task.steps.append(Step(stage="stage1", status=StepStatus.RUNNING))
+        
+        result = _run_step_core(self.task, "stage1", "prompt1")
         
         self.assertEqual(result, {"theory_id": "T1"})
         self.assertEqual(self.task.steps[0].status, StepStatus.COMPLETED)
@@ -45,8 +48,11 @@ class TestOrchestrator(OrchestratorTestCase):
         mock_runner.run.return_value = (None, "sid123", "Agent error")
         mock_get_runner.return_value = mock_runner
         
+        # _run_step_core expects the step to already exist
+        self.task.steps.append(Step(stage="stage1", status=StepStatus.RUNNING))
+        
         with self.assertRaises(Exception) as cm:
-            _run_step(self.task, "stage1", "prompt1")
+            _run_step_core(self.task, "stage1", "prompt1")
         
         self.assertIn("Agent error", str(cm.exception))
         self.assertEqual(self.task.steps[0].status, StepStatus.FAILED)

@@ -62,7 +62,7 @@ def run_local_step_if_needed(
 
 
 def run_step_if_needed(
-    task: Task, run_step_fn: Callable, stage: str, prompt: str
+    task: Task, run_step_fn: Callable, stage: str, prompt: str, cost: int = 1
 ) -> Optional[Dict[str, Any]]:
     out = get_step_output(task, stage)
     if not out:
@@ -74,8 +74,8 @@ def run_step_if_needed(
                 )
                 return {"_canceled": True}
 
-        logger.debug(f"[ORCHESTRATOR] [{task.id[:8]}] Running {stage}...")
-        out = run_step_fn(task, stage, prompt)
+        logger.debug(f"[ORCHESTRATOR] [{task.id[:8]}] Running {stage} (cost {cost})...")
+        out = run_step_fn(task, stage, prompt, cost=cost)
     return out
 
 

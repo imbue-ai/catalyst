@@ -12,6 +12,7 @@ class TaskStatus(str, Enum):
 
 class StepStatus(str, Enum):
     PENDING = "pending"
+    WAITING = "waiting"
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"

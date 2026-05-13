@@ -6,6 +6,7 @@ export function StatusBadge({ status }: StatusBadgeProps) {
   const styles: any = {
     pending: 'bg-gray-200 text-gray-700',
     running: 'bg-blue-600 text-white',
+    waiting: 'bg-blue-600 text-white',
     completed: 'bg-green-600 text-white',
     failed: 'bg-red-600 text-white',
     paused: 'bg-yellow-500 text-white',

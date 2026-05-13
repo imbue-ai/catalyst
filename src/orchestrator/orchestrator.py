@@ -13,8 +13,43 @@ from .utils import run_context_manager
 logger = logging.getLogger(__name__)
 
 MAX_CONCURRENCY_PER_TASK = int(
-    os.environ.get("AI_SCIENTIST_MAX_CONCURRENCY_PER_TASK", 2)
+    os.environ.get("AI_SCIENTIST_MAX_CONCURRENCY_PER_TASK", 3)
 )
+
+
+class WeightedSemaphore:
+    def __init__(self, capacity: int):
+        self.capacity = capacity
+        self.available = capacity
+        self.cond = threading.Condition()
+
+    def acquire(self, weight: int = 1):
+        # Prevent starvation: cap the required weight at the total capacity
+        weight = min(weight, self.capacity)
+        with self.cond:
+            while self.available < weight:
+                self.cond.wait()
+            self.available -= weight
+
+    def release(self, weight: int = 1):
+        weight = min(weight, self.capacity)
+        with self.cond:
+            self.available += weight
+            self.cond.notify_all()
+
+    class _Context:
+        def __init__(self, sem, weight):
+            self.sem = sem
+            self.weight = weight
+
+        def __enter__(self):
+            self.sem.acquire(self.weight)
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            self.sem.release(self.weight)
+
+    def __call__(self, weight: int = 1):
+        return self._Context(self, weight)
 
 
 def start_task(task: Task):
@@ -62,10 +97,11 @@ def _orchestrate_task(task_id: str):
 
     try:
         # Global per-task concurrency limit
-        semaphore = threading.Semaphore(MAX_CONCURRENCY_PER_TASK)
+        semaphore = WeightedSemaphore(MAX_CONCURRENCY_PER_TASK)
 
-        def run_step_wrapper(t, stage, prompt):
-            with semaphore:
+        def run_step_wrapper(t, stage, prompt, cost=1):
+            lock = get_task_lock(t.id)
+            with lock:
                 current_task = get_task(t.id)
                 if current_task and current_task.status not in [
                     TaskStatus.RUNNING,
@@ -73,7 +109,45 @@ def _orchestrate_task(task_id: str):
                 ]:
                     return {"_canceled": True}
 
-                res = _run_step(t, stage, prompt)
+                # Set to WAITING before acquiring semaphore
+                existing_step = next(
+                    (s for s in current_task.steps if s.stage == stage), None
+                )
+                if existing_step:
+                    if existing_step.status == StepStatus.CANCELED:
+                        return {"_canceled": True}
+                    step = existing_step
+                    step.status = StepStatus.WAITING
+                    step.error = None
+                else:
+                    step = Step(
+                        stage=stage,
+                        status=StepStatus.WAITING,
+                        inputs={"prompt": prompt},
+                    )
+                    current_task.steps.append(step)
+
+                current_task.current_stage = stage
+                current_task.workflow_structure = get_full_structure(workflow, current_task)
+                update_task(current_task)
+
+            with semaphore(cost):
+                # Double-check status after acquiring
+                current_task = get_task(t.id)
+                if current_task and current_task.status not in [
+                    TaskStatus.RUNNING,
+                    TaskStatus.PENDING,
+                ]:
+                    return {"_canceled": True}
+
+                with lock:
+                    # Transition to RUNNING
+                    step = next((s for s in current_task.steps if s.stage == stage), None)
+                    if step and step.status != StepStatus.CANCELED:
+                        step.status = StepStatus.RUNNING
+                    update_task(current_task)
+
+                res = _run_step_core(t, stage, prompt)
                 # Update structure after each step to reflect progress
                 t.workflow_structure = get_full_structure(workflow, t)
                 update_task(t)
@@ -109,35 +183,18 @@ def _orchestrate_task(task_id: str):
         update_task(task)
 
 
-def _run_step(task: Task, stage: str, prompt: str) -> Any:
-    # Check if we should restart a failed/paused step
-    existing_step = None
-
-    workflow = get_workflow(task.workflow_name)
-
+def _run_step_core(task: Task, stage: str, prompt: str) -> Any:
+    # This core function assumes the step is already created and in RUNNING state
     lock = get_task_lock(task.id)
+    step = None
     with lock:
         for s in task.steps:
             if s.stage == stage:
-                existing_step = s
+                step = s
                 break
-
-        if existing_step:
-            if existing_step.status == StepStatus.CANCELED:
-                return {"_canceled": True}
-            step = existing_step
-            step.status = StepStatus.RUNNING
-            step.error = None
-        else:
-            step = Step(
-                stage=stage, status=StepStatus.RUNNING, inputs={"prompt": prompt}
-            )
-            task.steps.append(step)
-
-        task.current_stage = stage
-        if workflow:
-            task.workflow_structure = get_full_structure(workflow, task)
-        update_task(task)
+    
+    if not step:
+        raise Exception(f"Step {stage} not found in task {task.id}")
 
     def on_sid(sid):
         with lock:

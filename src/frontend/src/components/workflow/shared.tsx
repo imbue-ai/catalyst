@@ -6,14 +6,15 @@ export function StepIndicator({ status, isRunning }: { status: string | undefine
   return (
     <div className={`absolute left-0 top-0 w-5 h-5 rounded-full border-2 bg-white z-10 transition-all ${
       status === 'completed' ? 'border-green-600 bg-green-600' : 
-      isRunning ? 'border-blue-600' : 
+      (isRunning || status === 'waiting') ? 'border-blue-600' : 
       status === 'paused' ? 'border-yellow-500' : 
       status === 'canceled' ? 'border-gray-500 bg-gray-500' : 
       status === 'failed' ? 'border-red-600' : 'border-gray-200'
     }`}>
        {status === 'completed' && <CheckCircle size={12} className="text-white m-auto mt-[2px]" />}
        {status === 'canceled' && <div className="w-2 h-0.5 bg-white m-auto mt-2" />}
-       {isRunning && <div className="w-1 h-1 bg-blue-600 rounded-full m-auto mt-1.5 animate-ping" />}
+       {isRunning && status !== 'waiting' && <div className="w-1 h-1 bg-blue-600 rounded-full m-auto mt-1.5 animate-ping" />}
+       {status === 'waiting' && <div className="w-1.5 h-1.5 bg-blue-600 rounded-full m-auto mt-1.5 opacity-50" />}
        {status === 'paused' && <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full m-auto mt-1.5" />}
     </div>
   )
@@ -47,7 +48,7 @@ export const InnerStepCard = React.memo(({ label, step, isRunning, isSelected, t
       }`}
     >
       <div className="flex justify-between items-center">
-        <span className={`text-[10px] font-black ${isRunning ? 'text-blue-600' : ''}`}>{label}</span>
+        <span className={`text-[10px] font-black ${isRunning || step?.status === 'waiting' ? 'text-blue-600' : ''}`}>{label}</span>
         <div className="flex items-center gap-2">
           {step?.status === 'failed' && (
             <button
@@ -59,13 +60,13 @@ export const InnerStepCard = React.memo(({ label, step, isRunning, isSelected, t
               <RefreshCw size={10} strokeWidth={3} />
             </button>
           )}
-          {isRunning && <Loader2 size={10} className="animate-spin text-blue-600" />}
+          {isRunning && step?.status !== 'waiting' && <Loader2 size={10} className="animate-spin text-blue-600" />}
           <span className={`text-[8px] font-bold uppercase ${
             step?.status === 'completed' ? 'text-green-600' :
             step?.status === 'paused' ? 'text-yellow-600' :
             step?.status === 'failed' ? 'text-red-600' :
             step?.status === 'canceled' ? 'text-gray-500' :
-            isRunning ? 'text-blue-600' : 'text-gray-400'
+            (isRunning || step?.status === 'waiting') ? 'text-blue-600' : 'text-gray-400'
           }`}>{step?.status || (isRunning ? 'running' : 'upcoming')}</span>
         </div>
       </div>

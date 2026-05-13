@@ -50,6 +50,7 @@ def run_refinement_loop(
             run_step_fn,
             f"{stage_prefix}review-theory-{i}",
             get_review_theory_prompt(theory_id),
+            cost=3,
         )
 
         if not review_data:
@@ -221,6 +222,7 @@ def run_evolve_loop(
                     run_step_fn,
                     f"{stage_prefix}review-theory-{i}-{idx}",
                     get_review_theory_prompt(tid),
+                    cost=3,
                 )
             except Exception as e:
                 review_errors.append(e)

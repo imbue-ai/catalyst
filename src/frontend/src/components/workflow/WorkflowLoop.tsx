@@ -84,7 +84,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
 
     const innerSteps = stages.map(stage => task.steps.find(s => s.stage === stage)).filter(Boolean)
     
-    const hasRunning = stages.some(stage => task.current_stage === stage && (!task.steps.find(s => s.stage === stage) || task.steps.find(s => s.stage === stage)?.status === 'running')) || innerSteps.some(s => s?.status === 'running')
+    const hasRunning = stages.some(stage => task.current_stage === stage && (!task.steps.find(s => s.stage === stage) || ['running', 'waiting'].includes(task.steps.find(s => s.stage === stage)?.status || ''))) || innerSteps.some(s => s?.status === 'running' || s?.status === 'waiting')
     const hasFailed = innerSteps.some(s => s?.status === 'failed')
     const hasPaused = innerSteps.some(s => s?.status === 'paused')
     const allCompleted = stages.length > 0 && stages.every(stage => task.steps.find(s => s.stage === stage)?.status === 'completed')
@@ -145,7 +145,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
              activeStructure.map((item: any, idx: number) => {
                  if (item.type === 'step') {
                      const step = task.steps.find(s => s.stage === item.stage)
-                     const isRunning = step?.status === 'running' || (task.current_stage === item.stage && !step)
+                     const isRunning = step?.status === 'running' || step?.status === 'waiting' || (task.current_stage === item.stage && !step)
                      return (
                         <InnerStepCard
                           key={`loop-step-${item.stage}-${idx}-${activeIteration}`}
@@ -178,7 +178,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
               baseStages.map((baseStage, idx) => {
                 const stageName = `${baseStage}-${activeIteration}`
                 const step = getStepForIteration(activeIteration, baseStage)
-                const isRunning = step?.status === 'running' || (task.current_stage === stageName && !step)
+                const isRunning = step?.status === 'running' || step?.status === 'waiting' || (task.current_stage === stageName && !step)
                 
                 return (
                   <InnerStepCard
