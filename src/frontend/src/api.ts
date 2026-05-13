@@ -3,7 +3,7 @@ const API_BASE = `${API_BASE_URL}/api`;
 
 export interface Step {
   stage: string;
-  status: "pending" | "running" | "completed" | "failed" | "paused" | "canceled";
+  status: "pending" | "waiting" | "running" | "completed" | "failed" | "paused" | "canceled";
   inputs: any;
   outputs?: any;
   session_id?: string;

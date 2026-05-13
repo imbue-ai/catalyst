@@ -203,6 +203,7 @@ class DevelopTheoryWorkflow(Workflow):
                         run_step,
                         review_stage,
                         get_review_theory_prompt(tid),
+                        cost=3,
                     )
                     review_results[tid] = res
                 except Exception as e:

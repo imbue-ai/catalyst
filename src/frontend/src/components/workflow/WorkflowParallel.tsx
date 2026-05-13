@@ -18,7 +18,7 @@ export function WorkflowParallel({ name, stages, task, onSelect, selectedStage, 
   // Determine overall status
   const innerSteps = stages.map(stage => task.steps.find(s => s.stage === stage))
   
-  const hasRunning = stages.some(stage => task.current_stage === stage && (!task.steps.find(s => s.stage === stage) || task.steps.find(s => s.stage === stage)?.status === 'running')) || innerSteps.some(s => s?.status === 'running')
+  const hasRunning = stages.some(stage => task.current_stage === stage && (!task.steps.find(s => s.stage === stage) || ['running', 'waiting'].includes(task.steps.find(s => s.stage === stage)?.status || ''))) || innerSteps.some(s => s?.status === 'running' || s?.status === 'waiting')
   const hasFailed = innerSteps.some(s => s?.status === 'failed')
   const hasPaused = innerSteps.some(s => s?.status === 'paused')
   const allCompleted = innerSteps.length > 0 && innerSteps.every(s => s?.status === 'completed')
@@ -58,7 +58,7 @@ export function WorkflowParallel({ name, stages, task, onSelect, selectedStage, 
         <div className="grid grid-cols-2 gap-4">
           {stages.map((stage, idx) => {
             const step = task.steps.find(s => s.stage === stage)
-            const isRunning = step?.status === 'running' || (task.current_stage === stage && !step)
+            const isRunning = step?.status === 'running' || step?.status === 'waiting' || (task.current_stage === stage && !step)
             
             return (
               <InnerStepCard

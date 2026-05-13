@@ -2,7 +2,12 @@ from ..models import Addon
 from .base import AddonHandler
 from orchestrator.prompts import get_review_theory_prompt
 
+
 class ReviewTheoryAddon(AddonHandler):
+    @property
+    def cost(self) -> int:
+        return 3
+
     @property
     def name(self) -> str:
         return "review-theory"

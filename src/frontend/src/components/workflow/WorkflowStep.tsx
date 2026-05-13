@@ -15,7 +15,7 @@ interface WorkflowStepProps {
 
 export const WorkflowStep = React.memo(({ stage, task, onSelect, isSelected, onRetry, isPlaceholder, showConnector = true }: WorkflowStepProps) => {
   const step = task.steps.find(s => s.stage === stage)
-  const isRunning = step?.status === 'running' || (task.current_stage === stage && !step)
+  const isRunning = step?.status === 'running' || step?.status === 'waiting' || (task.current_stage === stage && !step)
   
   return (
     <div 

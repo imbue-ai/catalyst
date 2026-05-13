@@ -109,6 +109,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 run_step,
                 "review-theory",
                 get_review_theory_prompt(theory_id),
+                cost=3,
             )
 
             # Step 3: Score Theories

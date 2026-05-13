@@ -13,6 +13,10 @@ class AddonHandler(ABC):
     def name(self) -> str:
         pass
 
+    @property
+    def cost(self) -> int:
+        return 1
+
     def get_structure(self, addon: Addon, index: int, task: Task) -> Dict[str, Any]:
         return {"type": "step", "stage": f"addon-{addon.type}-{index}"}
 
@@ -33,7 +37,7 @@ class AddonHandler(ABC):
         if not completed_or_canceled:
             logger.debug(f"[ORCHESTRATOR] [{task.id[:8]}] Running addon {stage}...")
             prompt = self.get_prompt(addon)
-            run_step(task, stage, prompt)
+            run_step(task, stage, prompt, cost=self.cost)
 
     def get_prompt(self, addon: Addon) -> str:
         raise NotImplementedError()
