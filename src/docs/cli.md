@@ -2,6 +2,8 @@
 
 This document explains how to use AI Scientist skills within a CLI agent (e.g., Claude Code).
 
+This is a more manual alternative to using the AI Scientist graphical user interface.
+
 ## Environment Setup
 
 To use the skills, you must first initialize a dedicated working environment. Use the `create_environment.py` script:
@@ -14,6 +16,8 @@ uv run python create_environment.py <target_path> [--template <template_path>]
 - `--template`: (Optional) Path to a template directory containing necessary scripts and tools.
 
 This script sets up the `.claude/skills` and `.gemini/skills` directories, initializes a `pyproject.toml`, and creates a `GEMINI.md` file with project-specific instructions for the agent.
+
+Then, launch your prefered CLI agent in the environment's target directory.
 
 ## Data Ingestion
 
