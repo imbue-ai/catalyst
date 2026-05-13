@@ -19,9 +19,11 @@ For more detailed information, please see the following guides:
 
 ## Prerequisites
 
-- [uv](https://github.com/astral-sh/uv) (for Python dependency management)
-- [Node.js & npm](https://nodejs.org/) (for the frontend)
-- [Gemini CLI](https://github.com/google/gemini-cli) or [Claude Code](https://claude.ai/code) installed and authenticated.
+- MacOS, Linux, or WSL2 (Windows)
+- [uv](https://docs.astral.sh/uv/getting-started/installation/) (for Python dependency management)
+- [Node.js & npm](https://nodejs.org/en/download) (for the frontend)
+- [Gemini CLI](https://geminicli.com/docs/get-started/installation/) or [Claude Code](https://code.claude.com/docs/en/quickstart#step-1-install-claude-code) installed and authenticated.
+- [Claude Code Sandboxing Prerequisites](https://code.claude.com/docs/en/sandboxing#prerequisites) correctly set up when using Claude Code on Linux or WSL
 
 ## Getting Started
 
