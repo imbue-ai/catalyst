@@ -662,7 +662,7 @@ def _validate_create_context_args(
             raise ValueError(
                 "At least one --from_prediction is required for rank-predictions"
             )
-    elif for_agent_type == "score-theories":
+    elif for_agent_type in ("score-theories", "write-different-theory"):
         if not from_theories:
             raise ValueError(
                 f"At least one --from_theory is required for {for_agent_type}"
@@ -681,13 +681,7 @@ def _validate_create_context_args(
                 f"At least one --from_theory is required for {for_agent_type}"
             )
     else:
-        raise ValueError(
-            f"Unknown target agent type {for_agent_type!r}. "
-            f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, "
-            f"review-theory, suggest-expansions, expand-theory, edit-theory, "
-            f"predict-experiments, rank-predictions, score-theories, score-soundness, "
-            f"score-length, rank-predictive-power"
-        )
+        raise ValueError(f"Unknown target agent type {for_agent_type!r}.")
 
 
 def create_context(
@@ -753,7 +747,11 @@ def create_context(
                 if theory_md.exists():
                     shutil.copy2(theory_md, target_folder / "theory.md")
                     _make_writable(target_folder / "theory.md")
-            elif for_agent_type in ("score-theories", "rank-predictive-power"):
+            elif for_agent_type in (
+                "score-theories",
+                "rank-predictive-power",
+                "write-different-theory",
+            ):
                 # Multiple theories in theories/ folder
                 theories_root = target_folder / "theories"
                 theories_root.mkdir(exist_ok=True)
@@ -1244,6 +1242,7 @@ def main(argv: list[str] | None = None) -> None:
             "polish-theory",
             "streamline-theory",
             "search-literature",
+            "write-different-theory",
         ],
         help="Type of agent to prepare context for",
     )
