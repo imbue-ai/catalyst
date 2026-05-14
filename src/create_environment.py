@@ -4,7 +4,10 @@ from pathlib import Path
 
 BASE_GEMINI_MD = """IMPORTANT INSTRUCTIONS:
 * Be very thorough! You will frequently need to run 10+ experiments to perform a single topic exploration or falsification. I expect that you'll be working many hours on each step of this task. Don't stop after the first successful experiment - keep going until you've explored ALL reasonable ideas.
-* Theory writeups are expected to be several pages in length, and include figures, plots, and detailed mathematical proofs.
+* Theory.md files are expected to be several pages in length. They are expected to include figures, plots, and detailed mathematical proofs.
+* Use rigorous, objective language in all generated theories, reviews and reports. When you speculate, call that out explicitly. NEVER present speculation as fact.
+* Completely avoid self-promoting language. Never call your own theories "profound", "elegant", etc. Use neutral, factual language at all times.
+* Make sure to consider and rule out ALL plausible alternative explanations before drawing conclusions.
 * Whenever a skill mentions `${CLAUDE_SKILL_DIR}`, that is a placeholder for that skill's directory, i.e. `.gemini/skills/<SKILL_NAME>`
 * ALWAYS use the `scientist` subagent type instead of generalist for spawning subagents. If the scientist agent type is not available, stop and tell the user that they need to install it.
 
