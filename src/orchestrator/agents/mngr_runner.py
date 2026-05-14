@@ -142,14 +142,14 @@ class MngrAgentRunner(AgentRunner):
             unregister_agent(task_id, agent_name)
 
     def _agent_type_missing_message(self) -> Optional[str]:
-        """Return a user-facing error string if `self._agent_type` is not
-        a registered mngr agent type, else None.
+        """Return an error string if `self._agent_type` is not a
+        registered mngr agent type, else None.
 
         Without this guard, `mngr create --type <unregistered> -- ...args`
         falls through to using the post-`--` args as the agent's literal
         command, which then crashes deep inside tmux send-keys with the
         cryptic "command send-keys: invalid flag --". Catching it here
-        gives the user something actionable.
+        surfaces the actual reason.
         """
         result = subprocess.run(
             ["mngr", "config", "get", f"agent_types.{self._agent_type}.command"],
@@ -159,17 +159,7 @@ class MngrAgentRunner(AgentRunner):
         )
         if result.returncode == 0 and result.stdout.strip():
             return None
-        if self._agent_type == "gemini":
-            return (
-                "Gemini support requires the `imbue-mngr-gemini` plugin, which "
-                "is not yet published to PyPI. Until it ships, please pick the "
-                "Claude framework when starting a task."
-            )
-        return (
-            f"mngr does not know about agent_type={self._agent_type!r}. "
-            "Install the corresponding `imbue-mngr-<type>` plugin, or use "
-            "the `claude` framework."
-        )
+        return f"invalid agent type: {self._agent_type}"
 
     def run(
         self,

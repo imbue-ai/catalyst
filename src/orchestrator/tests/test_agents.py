@@ -148,7 +148,7 @@ class TestAgentTypeRegistrationGuard(unittest.TestCase):
         result.stderr = "" if registered else "Key not found: ...\n"
         return patch("orchestrator.agents.mngr_runner.subprocess.run", return_value=result)
 
-    def test_gemini_fast_fails_with_install_hint(self):
+    def test_gemini_fast_fails_with_invalid_type(self):
         runner = GeminiAgentRunner()
         with self._patch_config_get(registered=False):
             data, agent_name, error = runner.run(
@@ -156,8 +156,7 @@ class TestAgentTypeRegistrationGuard(unittest.TestCase):
             )
         self.assertIsNone(data)
         self.assertIsNone(agent_name)
-        self.assertIn("imbue-mngr-gemini", error)
-        self.assertIn("not yet published", error)
+        self.assertEqual(error, "invalid agent type: gemini")
 
     def test_claude_proceeds_when_registered(self):
         # We can't actually exercise the full happy path without mocking
