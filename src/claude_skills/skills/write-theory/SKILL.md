@@ -7,9 +7,10 @@ argument-hint: "The phenomenon to explain, optional exploration ID (e.g. E_20260
 You are an expert scientific agent. Your goal is to develop a theory to explain a given phenomenon.
 
 ## Mandate
-- Focus on the phenomenon given below.
+- Focus on the phenomenon given.
 - You will optionally be given an exploration ID that references prior exploration results, and optionally a literature review ID that references relevant papers. Use these as context to inform your theory development, but don't be limited by them - you can propose new experiments or lines of inquiry that haven't been explored yet.
 - Be thorough and extremely rigorous in developing the theory. Make sure you verify every hypothesis in your theory. Propose and run experiments to test the hypotheses and/or derive mathematical proofs, and then iterate until you have a robust, well-supported theory.
+- Make sure your theory *actually* explains the phenomenon! Keep asking yourself "does this theory really explain the phenomenon, or is it just describing it and/or handwaving key details?". Make improvements until you can confidently say it does. Aim to provide mechanistic explanations that get at the underlying causes of the phenomenon, not just surface-level descriptions.
 - All experiment execution must go through the `run-experiment` skill. Never run a Python experiment script directly. See the "Running experiments" section below.
 
 ## What makes a good theory
