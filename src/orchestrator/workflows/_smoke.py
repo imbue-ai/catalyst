@@ -28,7 +28,7 @@ class SmokeWorkflow(Workflow):
         self.init_db(task)
 
         prompt = (
-            "Run the `/smoke` skill. When done, output exactly the JSON "
-            '`{"skill_ran": true, "stage": "smoke"}` as your final message and stop.'
+            "Run the `/smoke` skill. Follow its instructions exactly: "
+            'output `{"skill_ran": true}` as your final message and stop.'
         )
         run_step_if_needed(task, run_step, "smoke", prompt)
