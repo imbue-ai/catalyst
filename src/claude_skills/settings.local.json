@@ -5,7 +5,7 @@
     "allowUnsandboxedCommands": false,
     "network": {
       "allowedDomains": [
-        "arxiv.org"
+        "*"
       ]
     }
   }

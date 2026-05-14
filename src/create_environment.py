@@ -15,6 +15,8 @@ If you find that the `uv` command is not installed:
 1. First, check if it might already be installed in `./tmp/bin/uv`.
 2. If not, install it using `export UV_UNMANAGED_INSTALL=./tmp/bin && curl -LsSf https://astral.sh/uv/install.sh | sh`. The uv binary will then be available in `.tmp/bin/uv`.
 
+You might encounter a broken Python `.venv`, e.g. with symlinks pointing to non-existent files. If that happens, run `uv venv --clear` to recreate it.
+
 If you encounter any issues with following the instructions in a skill, or run into issues with your execution environment (e.g. missing permission, error while running a pre-provided script, etc.), please take a second to append a short, one-line issue description to `./tmp/agent_friction_log.txt`.
 """
 
