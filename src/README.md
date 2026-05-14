@@ -65,7 +65,7 @@ The system can be configured using the following environment variables:
 Deleting a task from the dashboard removes its env_folder and cancels any running step, but the underlying `mngr` sessions are kept on disk so their transcript and work_dir stay available for debugging. They accumulate over time. To remove every agent associated with a finished task:
 
 ```bash
-mngr list --include 'labels["ai-scientist-task"] == "<task_short_id>"' --fields name | \
+mngr list --include 'labels["ai-scientist-task"] == "<full_task_id>"' --fields name | \
   mngr destroy -
 ```
 
