@@ -1,6 +1,7 @@
 import threading
 import logging
 from typing import Any, Callable, List, Dict
+import os
 from ..models import Task
 from .base import (
     Workflow,
@@ -58,10 +59,13 @@ class DevelopTheoryLinearWorkflow(Workflow):
     def run(self, task: Task, run_step: Callable) -> None:
         self.init_db(task)
 
+        phenomenon = task.workflow_inputs.get("phenomenon")
+        assert phenomenon
+        with open(os.path.join(task.env_folder, "phenomenon.txt"), "w") as f:
+            f.write(phenomenon)
+
         # Step 0: Summarize Title
-        run_summarize_title(
-            task, run_step, f"phenomenon: {task.workflow_inputs.get('phenomenon')}"
-        )
+        run_summarize_title(task, run_step, f"phenomenon: {phenomenon}")
 
         # Step 1 & 2: Literature Review and Exploration in Parallel
         lit_out = get_step_output(task, "literature-review")
@@ -90,7 +94,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
                     target=run_and_store,
                     args=(
                         "literature-review",
-                        f"Please run the literature-review skill for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
+                        f"Please run the literature-review skill for the following phenomenon:\n```\n{phenomenon}\n```\n"
                         "When you are done, return ONLY a JSON object with the key 'literature_review_id'.",
                         "lit",
                     ),
@@ -103,7 +107,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
                     target=run_and_store,
                     args=(
                         "explore",
-                        f"Please run the explore skill for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
+                        f"Please run the explore skill for the following phenomenon:\n```\n{phenomenon}\n```\n"
                         "When you are done, return ONLY a JSON object with the key 'exploration_id'.",
                         "exp",
                     ),
@@ -138,7 +142,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
             run_step,
             "write-theory",
             get_write_theory_prompt(
-                task.workflow_inputs.get("phenomenon"),
+                phenomenon,
                 exploration_id,
                 lit_review_id,
             ),

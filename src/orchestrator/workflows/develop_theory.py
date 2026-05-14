@@ -1,7 +1,9 @@
 import threading
 import logging
 from typing import Any, Callable, List, Dict
+import os
 from ..models import Task
+
 
 from orchestrator.prompts import (
     get_write_n_theories_prompt,
@@ -55,7 +57,7 @@ class DevelopTheoryWorkflow(Workflow):
             iteration_structures = {}
             for i in range(1, evolve_iterations + 1):
                 iter_struct = []
-                
+
                 # Sample Parents step
                 iter_struct.append({"type": "step", "stage": f"sample-parents-{i}"})
 
@@ -102,10 +104,13 @@ class DevelopTheoryWorkflow(Workflow):
     def run(self, task: Task, run_step: Callable) -> None:
         self.init_db(task)
 
+        phenomenon = task.workflow_inputs.get("phenomenon")
+        assert phenomenon
+        with open(os.path.join(task.env_folder, "phenomenon.txt"), "w") as f:
+            f.write(phenomenon)
+
         # Step 0: Summarize Title
-        run_summarize_title(
-            task, run_step, f"phenomenon: {task.workflow_inputs.get('phenomenon')}"
-        )
+        run_summarize_title(task, run_step, f"phenomenon: {phenomenon}")
 
         # Step 1 & 2: Literature Review and Exploration in Parallel
         lit_out = get_step_output(task, "literature-review")
@@ -133,7 +138,7 @@ class DevelopTheoryWorkflow(Workflow):
                     target=run_and_store,
                     args=(
                         "literature-review",
-                        f"Please run the literature-review skill for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
+                        f"Please run the literature-review skill for the following phenomenon:\n```\n{phenomenon}\n```\n"
                         "When you are done, return ONLY a JSON object with the key 'literature_review_id'.",
                         "lit",
                     ),
@@ -146,7 +151,7 @@ class DevelopTheoryWorkflow(Workflow):
                     target=run_and_store,
                     args=(
                         "explore",
-                        f"Please run the explore skill for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
+                        f"Please run the explore skill for the following phenomenon:\n```\n{phenomenon}\n```\n"
                         "When you are done, return ONLY a JSON object with the key 'exploration_id'.",
                         "exp",
                     ),
@@ -177,7 +182,7 @@ class DevelopTheoryWorkflow(Workflow):
             "write-n-theories",
             get_write_n_theories_prompt(
                 num_theories,
-                task.workflow_inputs.get("phenomenon"),
+                phenomenon,
                 exploration_id,
                 lit_review_id,
             ),
@@ -240,7 +245,9 @@ class DevelopTheoryWorkflow(Workflow):
                     task.workflow_inputs.get("num_parents", DEFAULT_NUM_PARENTS)
                 )
                 max_streamline_prob = float(
-                    task.workflow_inputs.get("max_streamline_prob", DEFAULT_MAX_STREAMLINE_PROB)
+                    task.workflow_inputs.get(
+                        "max_streamline_prob", DEFAULT_MAX_STREAMLINE_PROB
+                    )
                 )
                 num_extra_scores = int(
                     task.workflow_inputs.get(
