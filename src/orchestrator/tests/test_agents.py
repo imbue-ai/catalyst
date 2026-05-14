@@ -1,4 +1,5 @@
-"""Unit tests for the pure-logic parts of the agent runners.
+"""Unit tests for the pure-logic parts of the agent runners and the
+runner's fast-fail when an mngr agent type isn't registered.
 
 End-to-end / real-mngr coverage lives in `src/scripts/smoke_test_mngr_runner.py`
 (Stage B in the migration verification plan) and
@@ -10,7 +11,10 @@ instead.
 """
 
 import unittest
+from unittest.mock import MagicMock, patch
 
+from ..agents.claude import ClaudeAgentRunner
+from ..agents.gemini import GeminiAgentRunner
 from ..agents.claude import (
     _build_agent_args as _claude_build_agent_args,
     _extract_assistant_text as _claude_extract_assistant_text,
@@ -126,3 +130,40 @@ class TestGeminiAgentHelpers(unittest.TestCase):
             ),
             "g hello",
         )
+
+
+class TestAgentTypeRegistrationGuard(unittest.TestCase):
+    """The runner pre-checks `mngr config get agent_types.<type>.command`
+    before invoking `mngr create`. Without this guard, calling
+    `mngr create --type <unregistered> -- ...args` constructs a tmux
+    `send-keys -- ...` that fails with `command send-keys: invalid flag --`
+    deep in the start path. Verify the runner returns a useful error
+    when the type isn't registered, and proceeds normally when it is.
+    """
+
+    def _patch_config_get(self, registered: bool):
+        result = MagicMock()
+        result.returncode = 0 if registered else 1
+        result.stdout = "claude\n" if registered else ""
+        result.stderr = "" if registered else "Key not found: ...\n"
+        return patch("orchestrator.agents.mngr_runner.subprocess.run", return_value=result)
+
+    def test_gemini_fast_fails_with_install_hint(self):
+        runner = GeminiAgentRunner()
+        with self._patch_config_get(registered=False):
+            data, agent_name, error = runner.run(
+                task_id="t1", prompt="p", env_folder="/tmp", stage="any",
+            )
+        self.assertIsNone(data)
+        self.assertIsNone(agent_name)
+        self.assertIn("imbue-mngr-gemini", error)
+        self.assertIn("not yet published", error)
+
+    def test_claude_proceeds_when_registered(self):
+        # We can't actually exercise the full happy path without mocking
+        # every subprocess in the runner, which we explicitly stopped
+        # doing. Instead, just verify the guard itself doesn't trip when
+        # the type IS registered -- i.e. the helper returns None.
+        runner = ClaudeAgentRunner()
+        with self._patch_config_get(registered=True):
+            self.assertIsNone(runner._agent_type_missing_message())

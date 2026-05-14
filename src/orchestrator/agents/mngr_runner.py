@@ -141,6 +141,36 @@ class MngrAgentRunner(AgentRunner):
                 )
             unregister_agent(task_id, agent_name)
 
+    def _agent_type_missing_message(self) -> Optional[str]:
+        """Return a user-facing error string if `self._agent_type` is not
+        a registered mngr agent type, else None.
+
+        Without this guard, `mngr create --type <unregistered> -- ...args`
+        falls through to using the post-`--` args as the agent's literal
+        command, which then crashes deep inside tmux send-keys with the
+        cryptic "command send-keys: invalid flag --". Catching it here
+        gives the user something actionable.
+        """
+        result = subprocess.run(
+            ["mngr", "config", "get", f"agent_types.{self._agent_type}.command"],
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            return None
+        if self._agent_type == "gemini":
+            return (
+                "Gemini support requires the `imbue-mngr-gemini` plugin, which "
+                "is not yet published to PyPI. Until it ships, please pick the "
+                "Claude framework when starting a task."
+            )
+        return (
+            f"mngr does not know about agent_type={self._agent_type!r}. "
+            "Install the corresponding `imbue-mngr-<type>` plugin, or use "
+            "the `claude` framework."
+        )
+
     def run(
         self,
         task_id: str,
@@ -152,6 +182,10 @@ class MngrAgentRunner(AgentRunner):
         on_agent_name: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
+        type_missing = self._agent_type_missing_message()
+        if type_missing is not None:
+            return None, None, type_missing
+
         abs_env_folder = os.path.abspath(env_folder)
         # One fallback for both the agent name and the label, so a user
         # filtering `mngr list` by ai-scientist-stage gets the same value
