@@ -5,7 +5,11 @@
     "allowUnsandboxedCommands": false,
     "network": {
       "allowedDomains": [
-        "*"
+        "arxiv.org",
+        "*.python.org",
+        "pypi.org",
+        "pythonhosted.org",
+        "*.pythonhosted.org"
       ]
     }
   }
