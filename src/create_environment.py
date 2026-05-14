@@ -4,7 +4,7 @@ from pathlib import Path
 
 BASE_GEMINI_MD = """IMPORTANT INSTRUCTIONS:
 * Be very thorough! You will frequently need to run 10+ experiments to perform a single topic exploration or falsification. I expect that you'll be working many hours on each step of this task. Don't stop after the first successful experiment - keep going until you've explored ALL reasonable ideas.
-* Theory.md files are expected to be several pages in length. They are expected to include figures, plots, and detailed mathematical proofs.
+* `theory.md` files are the main output of the research process that will be consumed by human researchers. They should thus be self-contained, and are expected to be several pages in length and highly polished. Theories should include figures, plots, and detailed mathematical proofs.
 * Use rigorous, objective language in all generated theories, reviews and reports. When you speculate, call that out explicitly. NEVER present speculation as fact.
 * Completely avoid self-promoting language. Never call your own theories "profound", "elegant", etc. Use neutral, factual language at all times.
 * Make sure to consider and rule out ALL plausible alternative explanations before drawing conclusions.
