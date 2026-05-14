@@ -49,16 +49,16 @@ The system can be configured using the following environment variables:
    - **Framework:** Choose between Gemini CLI or Claude Code.
    - **Model:** Choose a model identifier from the dropdown or enter one manually.
 3. **Monitor:** The dashboard polls the backend every 2 seconds to update the timeline.
-4. **Inspect:** Click any completed or running step in the timeline to view the raw inputs, JSON outputs, and the **Session ID**.
-5. **Recover:** Use `mngr connect <session_id>` to attach a terminal to the agent's tmux session and inspect or intervene. Works while the step is running and after it has stopped.
+4. **Inspect:** Click any completed or running step in the timeline to view the raw inputs, JSON outputs, and the **Agent Name**.
+5. **Recover:** Use `mngr connect <agent_name>` to attach a terminal to the agent's tmux session and inspect or intervene. Works while the step is running and after it has stopped.
 
 ## Inspecting past sessions
 
 `mngr` keeps each step's session around after it stops, so you can come back to it later:
 
 - `mngr list --include 'labels["app"] == "ai-scientist"'` lists every agent ai-scientist has ever run.
-- `mngr transcript <session_id>` prints the recorded turn.
-- `mngr connect <session_id>` re-attaches to the tmux session (and restarts it if it had stopped).
+- `mngr transcript <agent_name>` prints the recorded turn.
+- `mngr connect <agent_name>` re-attaches to the tmux session (and restarts it if it had stopped).
 
 ## Cleanup
 
