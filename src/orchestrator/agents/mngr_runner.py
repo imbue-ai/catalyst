@@ -126,7 +126,11 @@ class MngrAgentRunner(AgentRunner):
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
         abs_env_folder = os.path.abspath(env_folder)
-        agent_name = _generate_agent_name(task_id, stage or "step")
+        # One fallback for both the agent name and the label, so a user
+        # filtering `mngr list` by ai-scientist-stage gets the same value
+        # they see in the agent name.
+        resolved_stage = stage or "step"
+        agent_name = _generate_agent_name(task_id, resolved_stage)
 
         env_vars = {
             "UV_CACHE_DIR": os.path.join(abs_env_folder, "tmp/uv_cache"),
@@ -139,7 +143,7 @@ class MngrAgentRunner(AgentRunner):
         labels = {
             "app": "ai-scientist",
             "ai-scientist-task": task_id,
-            "ai-scientist-stage": stage or "unknown",
+            "ai-scientist-stage": resolved_stage,
             "ai-scientist-framework": self._framework,
         }
 
