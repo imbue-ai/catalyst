@@ -176,6 +176,15 @@ class MngrAgentRunner(AgentRunner):
             "UV_CACHE_DIR": os.path.join(abs_env_folder, "tmp/uv_cache"),
             "AI_SCIENTIST_DB_PATH": os.path.join(abs_env_folder, DEFAULT_DB_DIR),
             "MPLCONFIGDIR": os.path.join(abs_env_folder, "tmp/matplotlib_cache"),
+            # Force synchronous subagent execution. Without this, Claude
+            # Code (v2.1.4+) may run subagents asynchronously, letting the
+            # parent emit `end_turn` and finish its turn while subagents
+            # are still running in the background. ai-scientist's contract
+            # is "each step's parent agent emits final JSON consumed by
+            # the next step", which requires synchronous subagents so the
+            # parent has the subagent results before composing its final
+            # message. See https://claudelog.com/faqs/what-is-disable-background-tasks-in-claude-code/
+            "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": "1",
         }
         if tx_id:
             env_vars["CONTEXT_TRANSACTION_ID"] = tx_id
