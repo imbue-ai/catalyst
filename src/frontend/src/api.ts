@@ -6,7 +6,7 @@ export interface Step {
   status: "pending" | "waiting" | "running" | "completed" | "failed" | "paused" | "canceled";
   inputs: any;
   outputs?: any;
-  session_id?: string;
+  agent_name?: string;
   last_status?: string;
   error?: string;
 }

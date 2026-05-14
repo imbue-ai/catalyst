@@ -24,13 +24,10 @@ class Step(BaseModel):
     status: StepStatus = StepStatus.PENDING
     inputs: Dict[str, Any] = {}
     outputs: Optional[Dict[str, Any]] = None
-    # Identifier for the agent that ran this step. Stores the mngr agent
-    # name (e.g. "aisci-abcd1234-write-theory-7f3a"); a user can
-    # `mngr connect <session_id>` to attach to the live tmux session or
-    # `mngr transcript <session_id>` to inspect the recorded turn after
-    # the step has stopped. Field name is preserved for frontend
-    # compatibility.
-    session_id: Optional[str] = None
+    # Mngr agent name (e.g. "aisci-abcd1234-write-theory-7f3a") used by
+    # the dashboard to surface `mngr connect <agent_name>` and
+    # `mngr transcript <agent_name>` for live inspection / post-mortem.
+    agent_name: Optional[str] = None
     last_status: Optional[str] = None
     error: Optional[str] = None
 

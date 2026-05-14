@@ -78,7 +78,7 @@ export const InnerStepCard = React.memo(({ label, step, isRunning, isSelected, t
          prev.isSelected === next.isSelected &&
          prev.taskStatus === next.taskStatus &&
          prev.step?.status === next.step?.status &&
-         prev.step?.session_id === next.step?.session_id;
+         prev.step?.agent_name === next.step?.agent_name;
 });
 
 interface CancelStepsButtonProps {

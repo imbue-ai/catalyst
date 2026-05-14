@@ -7,3 +7,8 @@
 # dismisses Claude Code's effort-callout / onboarding dialogs so the
 # agent starts cleanly without user interaction.
 auto_dismiss_dialogs = true
+
+# Project-wide CLI args appended after the per-call --model. The runner
+# only contributes --model and (for the smoke flow) -p; everything that
+# applies to every ai-scientist step lives here.
+cli_args = ["--dangerously-skip-permissions", "--verbose"]

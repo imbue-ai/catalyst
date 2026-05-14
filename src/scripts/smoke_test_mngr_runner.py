@@ -51,7 +51,7 @@ def main() -> int:
 
     pause_secs = int(os.environ.get("AISCI_SMOKE_PAUSE_SECONDS", "10"))
 
-    def on_session_id(name: str) -> None:
+    def on_agent_name(name: str) -> None:
         captured_name["name"] = name
         print(f"\n  Agent name: {name}", flush=True)
         if pause_secs > 0:
@@ -72,7 +72,7 @@ def main() -> int:
             model=MODEL,
             tx_id="tx_smoke",
             stage="smoke",
-            on_session_id=on_session_id,
+            on_agent_name=on_agent_name,
             on_status=on_status,
         )
 

@@ -58,9 +58,9 @@ export const WorkflowStep = React.memo(({ stage, task, onSelect, isSelected, onR
             </span>
           </div>
         </div>
-        {step?.session_id && (
+        {step?.agent_name && (
           <div className="text-[9px] text-gray-400 font-bold flex items-center gap-1">
-            <Terminal size={10} /> SESSION_{step.session_id.substring(0, 8)}
+            <Terminal size={10} /> {step.agent_name}
           </div>
         )}
       </div>
@@ -77,5 +77,5 @@ export const WorkflowStep = React.memo(({ stage, task, onSelect, isSelected, onR
          prev.task.current_stage === next.task.current_stage &&
          prev.task.status === next.task.status &&
          prevStep?.status === nextStep?.status &&
-         prevStep?.session_id === nextStep?.session_id;
+         prevStep?.agent_name === nextStep?.agent_name;
 });

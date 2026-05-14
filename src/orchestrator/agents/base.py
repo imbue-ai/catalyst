@@ -11,7 +11,7 @@ class AgentRunner(ABC):
         model: Optional[str] = None,
         tx_id: Optional[str] = None,
         stage: Optional[str] = None,
-        on_session_id: Optional[Callable[[str], None]] = None,
+        on_agent_name: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
         """
