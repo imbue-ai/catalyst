@@ -292,7 +292,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                               <div className="flex justify-between items-start mb-2">
                                 <div className="text-gray-400"># Attach to this agent's tmux session (restarts it if stopped)</div>
                                 <button
-                                  onClick={() => handleCopy(`mngr connect ${step.agent_name}`)}
+                                  onClick={() => handleCopy(`MNGR_HOST_DIR=~/.mngr-ai-scientist mngr connect ${step.agent_name}`)}
                                   className="text-gray-300 hover:text-white transition-colors p-1"
                                   title="Copy to clipboard"
                                 >
@@ -302,7 +302,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                               <div className="flex items-center gap-2">
                                 <span className="text-gray-400">$</span>
                                 <code className="select-all">
-                                  mngr connect {step.agent_name}
+                                  MNGR_HOST_DIR=~/.mngr-ai-scientist mngr connect {step.agent_name}
                                 </code>
                               </div>                            </div>
                           </div>

@@ -21,9 +21,11 @@ from .. import utils  # noqa: F401
 logger = logging.getLogger(__name__)
 
 
-# How long `mngr wait` may block before we give up on this turn (seconds).
-# Long enough for any single skill turn to finish, short enough to bound a hang.
-_WAIT_TIMEOUT_SECONDS = 60 * 60
+# How long the runner may block waiting for a turn to finish (seconds).
+# Multi-skill cascades (e.g. `/swarm` spawning Task subagents) can run
+# for hours; this cap is generous on purpose. The agent's tmux session
+# is the source of cost, not this timeout.
+_WAIT_TIMEOUT_SECONDS = 4 * 60 * 60
 
 # Source path (under the agent's events/ dir) that carries the normalized
 # transcript for any agent type that maps onto Anthropic-style assistant /
@@ -31,13 +33,24 @@ _WAIT_TIMEOUT_SECONDS = 60 * 60
 # the same per the cross-cutting plugin contract.
 _COMMON_TRANSCRIPT_SOURCE = "claude/common_transcript"
 
-# Budget for the post-`mngr wait` poll loop that drains the agent's final
-# assistant_message events. `mngr wait` returns on the first WAITING
-# transition, but a tool-using turn can hit a transient WAITING right
-# before the actual end-of-turn text gets written, so we briefly poll
-# until either the text is in the transcript or this budget runs out.
-_POST_WAIT_POLL_SECONDS = 5.0
-_POST_WAIT_POLL_INTERVAL = 0.5
+# Source + event-type written by the Stop hook in
+# `src/claude_skills/settings.local.json`. Fires exactly once per agent
+# turn, *after* the final assistant_message has been flushed to the
+# transcript -- which is the signal we actually want, rather than mngr's
+# WAITING state (which trips on every intermediate idle, including
+# mid-swarm while Task subagents are running).
+_TURN_COMPLETE_SOURCE = "mngr/turn_complete"
+_TURN_END_EVENT_TYPE = "turn_end"
+
+# How long to wait, after `turn_end` fires, for the assistant_message
+# event to show up in `claude/common_transcript`. mngr_claude's
+# `common_transcript.sh` polls Claude's raw session JSONL on a ~5s
+# interval (see libs/mngr_claude/.../common_transcript.sh), so the
+# Stop-hook-emitted `turn_end` event can outrun the converted
+# assistant_message event by up to one poll cycle. We bound the
+# read-side wait at twice that interval for safety.
+_POST_TURN_END_POLL_SECONDS = 10.0
+_POST_TURN_END_POLL_INTERVAL = 0.5
 
 
 def parse_json_result(raw_result: Any) -> Optional[Dict[str, Any]]:
@@ -238,53 +251,19 @@ class MngrAgentRunner(AgentRunner):
                             f"[AGENT] [{task_id[:8]}] on_agent_name error: {cb_err}"
                         )
 
-                event_proc, event_thread = self._spawn_event_follower(
-                    agent_name, on_status
-                )
-
-                try:
-                    wait_proc = subprocess.run(
-                        [
-                            "mngr",
-                            "wait",
-                            agent_name,
-                            "--state",
-                            "WAITING",
-                            "--state",
-                            "DONE",
-                            "--state",
-                            "STOPPED",
-                            "--timeout",
-                            f"{_WAIT_TIMEOUT_SECONDS}s",
-                        ],
-                        check=False,
-                        capture_output=True,
-                        text=True,
-                    )
-                finally:
-                    self._shutdown_event_follower(event_proc, event_thread)
-
-                wait_rc = wait_proc.returncode
-
-                if wait_rc == 2:
+                saw_turn_end = self._wait_for_turn_end(agent_name, on_status)
+                if not saw_turn_end:
                     return (
                         None,
                         agent_name,
-                        f"Agent did not reach WAITING/DONE within {_WAIT_TIMEOUT_SECONDS}s; stopped.",
-                    )
-                if wait_rc != 0:
-                    tail = (wait_proc.stderr or wait_proc.stdout or "")[-500:]
-                    return (
-                        None,
-                        agent_name,
-                        f"mngr wait failed (exit {wait_rc}): {tail}",
+                        f"Agent did not signal turn_end within "
+                        f"{_WAIT_TIMEOUT_SECONDS}s. If this is an env_folder "
+                        "created before the Stop-hook landed, delete the task "
+                        "and recreate it so the new "
+                        ".claude/settings.local.json (with the turn_end hook) "
+                        "is in place.",
                     )
 
-                # The live `--follow` may have missed late events between
-                # mngr-wait returning and the follower being torn down. Do a
-                # one-shot read of the full transcript as the source of truth
-                # for the assistant text we'll parse JSON out of, and replay
-                # status updates so a fast turn doesn't lose them entirely.
                 assistant_text = self._read_assistant_text(agent_name, on_status)
 
                 data = parse_json_result(assistant_text)
@@ -306,23 +285,33 @@ class MngrAgentRunner(AgentRunner):
             except OSError:
                 pass
 
-    def _spawn_event_follower(
+    def _wait_for_turn_end(
         self,
         agent_name: str,
         on_status: Optional[Callable[[str], None]],
-    ) -> Tuple[subprocess.Popen, threading.Thread]:
-        """Stream live events so `on_status` can surface progress to the
-        dashboard while `mngr wait` is blocking. The authoritative
-        assistant text used for JSON parsing is read post-wait via
-        `_read_assistant_text`, so we deliberately don't accumulate it
-        here — the follower's only job is the live status stream.
+    ) -> bool:
+        """Stream `mngr event --follow` and return when a `turn_end` event
+        from the `mngr/turn_complete` source appears (or the deadline
+        expires).
+
+        The Stop hook in `src/claude_skills/settings.local.json` writes
+        the `turn_end` event after the parent agent has truly finished
+        emitting its final assistant_message -- including after a
+        multi-skill cascade like `/swarm` where the parent goes through
+        multiple intermediate idle states while waiting for Task
+        subagents. Using this as the wait signal (instead of `mngr wait
+        --state WAITING`) avoids the false-positive returns we used to
+        hit mid-`/swarm`.
+
+        While we wait, every event is also fed to `status_extractor` to
+        keep the dashboard's per-step status field current.
+
+        Returns True if `turn_end` was seen, False on timeout.
         """
         cmd = [
             "mngr",
             "event",
             agent_name,
-            "--source",
-            _COMMON_TRANSCRIPT_SOURCE,
             "--follow",
             "--format",
             "jsonl",
@@ -335,6 +324,8 @@ class MngrAgentRunner(AgentRunner):
             text=True,
             bufsize=1,
         )
+        deadline = time.monotonic() + _WAIT_TIMEOUT_SECONDS
+        saw_turn_end = threading.Event()
 
         def consume() -> None:
             assert proc.stdout is not None
@@ -352,51 +343,58 @@ class MngrAgentRunner(AgentRunner):
                             on_status(status)
                         except Exception as cb_err:
                             logger.error(f"[AGENT] on_status error: {cb_err}")
+                if (
+                    event.get("source") == _TURN_COMPLETE_SOURCE
+                    and event.get("type") == _TURN_END_EVENT_TYPE
+                ):
+                    saw_turn_end.set()
+                    return
 
         thread = threading.Thread(target=consume, daemon=True)
         thread.start()
-        return proc, thread
-
-    def _shutdown_event_follower(
-        self, proc: subprocess.Popen, thread: threading.Thread
-    ) -> None:
         try:
-            proc.terminate()
-        except ProcessLookupError:
-            pass
-        try:
-            proc.wait(timeout=5)
-        except subprocess.TimeoutExpired:
+            remaining = max(0.0, deadline - time.monotonic())
+            saw_turn_end.wait(timeout=remaining)
+        finally:
             try:
-                proc.kill()
-                proc.wait(timeout=2)
-            except Exception:
+                proc.terminate()
+            except ProcessLookupError:
                 pass
-        thread.join(timeout=5)
+            try:
+                proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                try:
+                    proc.kill()
+                    proc.wait(timeout=2)
+                except Exception:
+                    pass
+            thread.join(timeout=5)
+        return saw_turn_end.is_set()
 
     def _read_assistant_text(
         self,
         agent_name: str,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> str:
-        """One-shot read of `mngr event` (no --follow), with a brief poll loop
-        to absorb the race between `mngr wait` returning at the first
-        WAITING transition and the agent's final assistant_message event
-        being flushed to the transcript file.
+        """Read every assistant_message in the agent's transcript,
+        concatenated. Called after `_wait_for_turn_end` confirms the
+        turn is done.
 
-        Returns the concatenation of every assistant text block seen by
-        this runner's `assistant_text_extractor`. If `on_status` is given,
-        status callbacks are replayed once per event so a turn that
-        finished faster than the live follower could drain still surfaces
-        status updates to the orchestrator.
+        Polls with a short bounded budget because mngr_claude's
+        `common_transcript.sh` converts Claude's raw session JSONL into
+        `events/claude/common_transcript/events.jsonl` on a ~5s timer,
+        while the Stop hook (and thus our `turn_end` signal) fires
+        instantly. Without a wait here, a fast turn lands turn_end
+        before the conversion sees the assistant_message and we'd
+        return empty text.
+
+        If `on_status` is given, fire a status callback for every event
+        as a backstop -- a fast turn can finish before the live
+        follower in `_wait_for_turn_end` ever sees the assistant_message
+        event. Driving on_status here guarantees the dashboard's
+        last_status field reflects the final output even in that race.
         """
-        deadline = time.monotonic() + _POST_WAIT_POLL_SECONDS
-        # Track which event_ids we've already fired on_status for so the
-        # poll loop doesn't repeat callbacks for events we observed in an
-        # earlier iteration. The live follower may also have called
-        # on_status while mngr wait was blocking — duplication with that
-        # is benign (last_status is just overwritten with the latest
-        # value), so we don't try to coordinate with it.
+        deadline = time.monotonic() + _POST_TURN_END_POLL_SECONDS
         seen_event_ids: set[str] = set()
         while True:
             result = subprocess.run(
@@ -414,7 +412,6 @@ class MngrAgentRunner(AgentRunner):
                 text=True,
             )
             parts: List[str] = []
-            saw_end_of_turn = False
             if result.returncode == 0:
                 for line in result.stdout.splitlines():
                     line = line.strip()
@@ -427,11 +424,6 @@ class MngrAgentRunner(AgentRunner):
                     text = self._assistant_text_extractor(event)
                     if text:
                         parts.append(text)
-                    if event.get("stop_reason") == "end_turn" and text:
-                        # A non-empty assistant_message with stop_reason
-                        # end_turn is the unambiguous "this is the final
-                        # text" signal — stop polling once we see it.
-                        saw_end_of_turn = True
                     if on_status:
                         event_id = event.get("event_id")
                         if event_id and event_id not in seen_event_ids:
@@ -442,14 +434,11 @@ class MngrAgentRunner(AgentRunner):
                                     on_status(status)
                                 except Exception as cb_err:
                                     logger.error(
-                                        f"[AGENT] on_status (post-wait) error: {cb_err}"
+                                        f"[AGENT] on_status (post-turn) error: {cb_err}"
                                     )
-            last_text = "".join(parts)
-            if saw_end_of_turn or last_text:
-                return last_text
-            if time.monotonic() >= deadline:
-                return last_text
-            time.sleep(_POST_WAIT_POLL_INTERVAL)
+            if parts or time.monotonic() >= deadline:
+                return "".join(parts)
+            time.sleep(_POST_TURN_END_POLL_INTERVAL)
 
     def _stop_agent(self, agent_name: str, task_id: str) -> None:
         result = subprocess.run(

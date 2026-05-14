@@ -50,26 +50,28 @@ The system can be configured using the following environment variables:
    - **Model:** Choose a model identifier from the dropdown or enter one manually.
 3. **Monitor:** The dashboard polls the backend every 2 seconds to update the timeline.
 4. **Inspect:** Click any completed or running step in the timeline to view the raw inputs, JSON outputs, and the **Agent Name**.
-5. **Recover:** Use `mngr connect <agent_name>` to attach a terminal to the agent's tmux session and inspect or intervene. Works while the step is running and after it has stopped.
+5. **Recover:** Use `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr connect <agent_name>` to attach a terminal to the agent's tmux session and inspect or intervene. Works while the step is running and after it has stopped.
+
+ai-scientist runs its `mngr` agents under a dedicated host_dir at `~/.mngr-ai-scientist/` (separate from your main `~/.mngr/`), so every `mngr` command below needs the `MNGR_HOST_DIR=~/.mngr-ai-scientist` prefix. You can also `export MNGR_HOST_DIR=~/.mngr-ai-scientist` once per shell.
 
 ## Inspecting past sessions
 
 `mngr` keeps each step's session around after it stops, so you can come back to it later:
 
-- `mngr list --include 'labels["app"] == "ai-scientist"'` lists every agent ai-scientist has ever run.
-- `mngr transcript <agent_name>` prints the recorded turn.
-- `mngr connect <agent_name>` re-attaches to the tmux session (and restarts it if it had stopped).
+- `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr list --include 'labels["app"] == "ai-scientist"'` lists every agent ai-scientist has ever run.
+- `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr transcript <agent_name>` prints the recorded turn.
+- `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr connect <agent_name>` re-attaches to the tmux session (and restarts it if it had stopped).
 
 ## Cleanup
 
 Deleting a task from the dashboard removes its env_folder and cancels any running step, but the underlying `mngr` sessions are kept on disk so their transcript and work_dir stay available for debugging. They accumulate over time. To remove every agent associated with a finished task:
 
 ```bash
-mngr list --include 'labels["ai-scientist-task"] == "<full_task_id>"' --fields name | \
-  mngr destroy -
+export MNGR_HOST_DIR=~/.mngr-ai-scientist
+mngr list --include 'labels["ai-scientist-task"] == "<full_task_id>"' --fields name | mngr destroy -
 ```
 
-This only removes the agent's `~/.mngr/agents/` entry; your `~/.ai-scientist/research/task_<id>` artifacts (if still present) are untouched.
+This only removes the agent's `~/.mngr-ai-scientist/agents/` entry; your `~/.ai-scientist/research/task_<id>` artifacts (if still present) are untouched.
 
 ## Data Persistence
 
