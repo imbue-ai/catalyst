@@ -173,6 +173,7 @@ class TestContextManager(unittest.TestCase):
             ("polish-theory", {"--from_theory": t_id}),
             ("streamline-theory", {"--from_theory": t_id}),
             ("edit-theory", {"--from_theory": t_id}),
+            ("write-different-theory", {"--from_theory": t_id}),
         ]
 
         for agent, flags in target_agents:
