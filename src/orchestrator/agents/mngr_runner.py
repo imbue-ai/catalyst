@@ -377,7 +377,6 @@ class MngrAgentRunner(AgentRunner):
         status updates to the orchestrator.
         """
         deadline = time.monotonic() + _POST_WAIT_POLL_SECONDS
-        last_text = ""
         # Track which event_ids we've already fired on_status for so the
         # poll loop doesn't repeat callbacks for events we observed in an
         # earlier iteration. The live follower may also have called
