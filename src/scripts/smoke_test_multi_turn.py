@@ -28,7 +28,7 @@ import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from orchestrator.agents.claude import ClaudeAgentRunner  # noqa: E402
+from orchestrator.agents.mngr_claude import MngrClaudeAgentRunner  # noqa: E402
 
 MODEL = "claude-haiku-4-5-20251001"
 PROMPT = (
@@ -40,7 +40,7 @@ PROMPT = (
 
 
 def main() -> int:
-    runner = ClaudeAgentRunner()
+    runner = MngrClaudeAgentRunner()
     with tempfile.TemporaryDirectory(prefix="aisci-multiturn-") as env_folder:
         src_settings = os.path.join(
             os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
@@ -59,7 +59,7 @@ def main() -> int:
             statuses.append(s)
             print(f"  [status] {s[:100]}", flush=True)
 
-        def on_agent_name(name: str) -> None:
+        def on_session_id(name: str) -> None:
             captured_name["name"] = name
             print(
                 f"  Agent name: {name}\n"
@@ -68,20 +68,20 @@ def main() -> int:
                 flush=True,
             )
 
-        data, agent_name, error = runner.run(
+        data, session_id, error = runner.run(
             task_id="task_multiturn_smoke",
             prompt=PROMPT,
             env_folder=env_folder,
             model=MODEL,
             tx_id="tx_multiturn",
             stage="multi-turn",
-            on_agent_name=on_agent_name,
+            on_session_id=on_session_id,
             on_status=on_status,
         )
 
-    print(f"\nResult: data={data!r} agent_name={agent_name!r} error={error!r}")
+    print(f"\nResult: data={data!r} session_id={session_id!r} error={error!r}")
 
-    name = captured_name["name"] or agent_name
+    name = captured_name["name"] or session_id
     if not name:
         print("FAIL: no agent name was captured")
         return 1

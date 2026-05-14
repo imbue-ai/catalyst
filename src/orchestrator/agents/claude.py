@@ -1,44 +1,117 @@
-from typing import Any, Dict, List, Optional
+import os
+import shlex
+import logging
+from typing import Dict, Any, Optional, Tuple, Callable
 
-from .mngr_runner import MngrAgentRunner
+from context_manager import DEFAULT_DB_DIR
+from .cli_base import BaseCliAgentRunner
 
-# `--dangerously-skip-permissions` and `--verbose` live in
-# `.mngr/settings.toml` (`agent_types.claude.cli_args`) so they apply to
-# every claude invocation. The friction-log instruction that used to be
-# `_ADDITIONAL_SYSTEM_PROMPT` is now in `BASE_CLAUDE_MD` (see
-# `create_environment.py`), which gets auto-loaded by Claude from the
-# work_dir's `CLAUDE.md`.
-
-
-def _build_agent_args(model: Optional[str]) -> List[str]:
-    if model:
-        return ["--model", model]
-    return []
+logger = logging.getLogger(__name__)
 
 
-def _extract_assistant_text(event: Dict[str, Any]) -> Optional[str]:
-    if event.get("type") != "assistant_message":
-        return None
-    text = event.get("text")
-    if isinstance(text, str) and text:
-        return text
-    return None
+class ClaudeAgentRunner(BaseCliAgentRunner):
+    _ADDITIONAL_SYSTEM_PROMPT = "If you encounter any issues with following the instructions in a skill, or run into issues with your execution environment (e.g. missing permission, error while running a pre-provided script, etc.), please take a second to append a short, one-line issue description to `./tmp/agent_friction_log.txt`."
 
+    def run(
+        self,
+        task_id: str,
+        prompt: str,
+        env_folder: str,
+        model: Optional[str] = None,
+        tx_id: Optional[str] = None,
+        stage: Optional[str] = None,  # ignored by the legacy runner
+        on_session_id: Optional[Callable[[str], None]] = None,
+        on_status: Optional[Callable[[str], None]] = None,
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
+        env = os.environ.copy()
+        del env["VIRTUAL_ENV"]
+        if tx_id:
+            env["CONTEXT_TRANSACTION_ID"] = tx_id
+        abs_env_folder = os.path.abspath(env_folder)
+        env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
+        env["AI_SCIENTIST_DB_PATH"] = os.path.join(abs_env_folder, DEFAULT_DB_DIR)
+        env["MPLCONFIGDIR"] = os.path.join(abs_env_folder, "tmp/matplotlib_cache")
 
-def _extract_status(event: Dict[str, Any]) -> Optional[str]:
-    if event.get("type") == "assistant_message":
-        text = event.get("text")
-        if isinstance(text, str) and text.strip():
-            return " ".join(text.split())
-    return None
+        cmd = [
+            "claude",
+            "--dangerously-skip-permissions",
+            "--output-format",
+            "stream-json",
+            "--verbose",
+            "--append-system-prompt",
+            self._ADDITIONAL_SYSTEM_PROMPT,
+        ]
+        if model:
+            cmd.extend(["--model", model])
+        cmd.extend(["-p", prompt])
 
+        logger.debug(f"[AGENT] Starting Claude for task {task_id[:8]}")
+        logger.debug(f"[AGENT] Executing in folder {abs_env_folder}: {shlex.join(cmd)}")
 
-class ClaudeAgentRunner(MngrAgentRunner):
-    def __init__(self) -> None:
-        super().__init__(
-            agent_type="claude",
-            framework="claude",
-            agent_args_builder=_build_agent_args,
-            status_extractor=_extract_status,
-            assistant_text_extractor=_extract_assistant_text,
-        )
+        last_result_obj = {}
+
+        def handle_event(data):
+            if data.get("type") == "result":
+                last_result_obj["data"] = data
+
+            if on_status:
+                status_text = None
+                if data.get("type") == "assistant":
+                    content_list = data.get("message", {}).get("content", [])
+                    if isinstance(content_list, list) and content_list:
+                        for item in reversed(content_list):
+                            if item.get("type") == "text":
+                                status_text = item.get("text")
+                                break
+                            elif item.get("type") == "thinking":
+                                status_text = f"Thinking: {item.get('thinking')}"
+                                break
+
+                if status_text:
+                    status_text = " ".join(status_text.split())
+                    on_status(status_text)
+
+        try:
+            stdout, session_id, returncode, full_output = self._execute_cmd(
+                task_id,
+                cmd,
+                abs_env_folder,
+                env,
+                on_session_id,
+                handle_event,
+                on_status,
+            )
+
+            logger.debug(
+                f"[AGENT] [{task_id[:8]}] Claude finished with exit code {returncode}"
+            )
+
+            if returncode != 0:
+                # 143 = SIGTERM, 137 = SIGKILL, -15 = SIGTERM, -9 = SIGKILL
+                if returncode in [143, 137, -15, -9]:
+                    return None, session_id, "Agent was interrupted/paused."
+
+                stdout_tail = "".join(full_output)[-500:]
+                return (
+                    None,
+                    session_id,
+                    f"Claude failed with exit code {returncode}. Last output: {stdout_tail}",
+                )
+
+            agent_raw_result = (
+                last_result_obj.get("data", {}).get("result")
+                if last_result_obj.get("data")
+                else ""
+            )
+            data = self._parse_json_result(agent_raw_result)
+            if data:
+                return data, session_id, None
+
+            return (
+                None,
+                session_id,
+                f"Could not parse JSON output from Claude result string. Preview: {str(agent_raw_result)[:800]}...",
+            )
+
+        except Exception as e:
+            return None, None, f"Claude execution error: {str(e)}"

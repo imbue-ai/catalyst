@@ -162,7 +162,7 @@ class MngrAgentRunner(AgentRunner):
         model: Optional[str] = None,
         tx_id: Optional[str] = None,
         stage: Optional[str] = None,
-        on_agent_name: Optional[Callable[[str], None]] = None,
+        on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
         abs_env_folder = os.path.abspath(env_folder)
@@ -252,12 +252,12 @@ class MngrAgentRunner(AgentRunner):
                 )
 
             with self._registered_agent(task_id, agent_name):
-                if on_agent_name:
+                if on_session_id:
                     try:
-                        on_agent_name(agent_name)
+                        on_session_id(agent_name)
                     except Exception as cb_err:
                         logger.error(
-                            f"[AGENT] [{task_id[:8]}] on_agent_name error: {cb_err}"
+                            f"[AGENT] [{task_id[:8]}] on_session_id error: {cb_err}"
                         )
 
                 saw_turn_end = self._wait_for_turn_end(agent_name, on_status)

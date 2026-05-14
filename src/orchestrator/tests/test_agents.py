@@ -11,12 +11,12 @@ instead.
 
 import unittest
 
-from ..agents.claude import (
+from ..agents.mngr_claude import (
     _build_agent_args as _claude_build_agent_args,
     _extract_assistant_text as _claude_extract_assistant_text,
     _extract_status as _claude_extract_status,
 )
-from ..agents.gemini import (
+from ..agents.mngr_gemini import (
     _build_agent_args as _gemini_build_agent_args,
     _extract_assistant_text as _gemini_extract_assistant_text,
     _extract_status as _gemini_extract_status,

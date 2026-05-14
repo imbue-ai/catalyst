@@ -32,7 +32,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 # Allow this script to import sibling packages when run from src/.
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from orchestrator.agents.claude import ClaudeAgentRunner  # noqa: E402
+from orchestrator.agents.mngr_claude import MngrClaudeAgentRunner  # noqa: E402
 
 MODEL = "claude-haiku-4-5-20251001"
 PROMPT = (
@@ -52,7 +52,7 @@ def main() -> int:
 
     pause_secs = int(os.environ.get("AISCI_SMOKE_PAUSE_SECONDS", "10"))
 
-    def on_agent_name(name: str) -> None:
+    def on_session_id(name: str) -> None:
         captured_name["name"] = name
         print(f"\n  Agent name: {name}", flush=True)
         if pause_secs > 0:
@@ -63,7 +63,7 @@ def main() -> int:
             )
             time.sleep(pause_secs)
 
-    runner = ClaudeAgentRunner()
+    runner = MngrClaudeAgentRunner()
     with tempfile.TemporaryDirectory(prefix="aisci-smoke-") as env_folder:
         # Mirror what `create_environment.py` does for real tasks: copy
         # the `.claude/settings.local.json` from `claude_skills/` so the
@@ -79,20 +79,20 @@ def main() -> int:
         shutil.copy2(src_settings, os.path.join(dst_claude, "settings.local.json"))
 
         print(f"Running smoke task in {env_folder}")
-        data, agent_name, error = runner.run(
+        data, session_id, error = runner.run(
             task_id="task_smoketest",
             prompt=PROMPT,
             env_folder=env_folder,
             model=MODEL,
             tx_id="tx_smoke",
             stage="smoke",
-            on_agent_name=on_agent_name,
+            on_session_id=on_session_id,
             on_status=on_status,
         )
 
-    print(f"\nResult: data={data!r} agent_name={agent_name!r} error={error!r}")
+    print(f"\nResult: data={data!r} session_id={session_id!r} error={error!r}")
 
-    name = captured_name["name"] or agent_name
+    name = captured_name["name"] or session_id
     if not name:
         print("FAIL: no agent name was captured")
         return 1

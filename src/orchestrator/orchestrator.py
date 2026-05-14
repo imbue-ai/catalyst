@@ -196,9 +196,9 @@ def _run_step_core(task: Task, stage: str, prompt: str) -> Any:
     if not step:
         raise Exception(f"Step {stage} not found in task {task.id}")
 
-    def on_agent_name(name):
+    def on_sid(sid):
         with lock:
-            step.agent_name = name
+            step.session_id = sid
             update_task(task)
 
     def on_status(status):
@@ -217,14 +217,14 @@ def _run_step_core(task: Task, stage: str, prompt: str) -> Any:
 
     tx_id = f"tx_{uuid.uuid4().hex}"
 
-    output, agent_name, error = runner.run(
+    output, session_id, error = runner.run(
         task_id=task.id,
         prompt=prompt,
         env_folder=task.env_folder,
         model=task.model,
         tx_id=tx_id,
         stage=stage,
-        on_agent_name=on_agent_name,
+        on_session_id=on_sid,
         on_status=on_status,
     )
 
@@ -235,11 +235,11 @@ def _run_step_core(task: Task, stage: str, prompt: str) -> Any:
         if updated_task and updated_task.status == TaskStatus.PAUSED:
             step.status = StepStatus.PAUSED
             step.error = "Paused"
-            step.agent_name = agent_name
+            step.session_id = session_id
             update_task(task)
             raise Exception("Paused")
 
-        step.agent_name = agent_name
+        step.session_id = session_id
         if error:
             step.status = StepStatus.FAILED
             step.error = error

@@ -14,7 +14,7 @@ For more detailed information, please see the following guides:
 
 - **Agent Skills:** The main functionality of the AI Scientist is implemented through a set of Agent skills that each perform different steps of the research process.
 - **Backend (Python + FastAPI):** Manages the research lifecycle using multi-threading.
-- **Agent Layer:** Runs `gemini` or `claude` for each step inside a `mngr`-managed interactive session, capturing JSON outputs and exposing each session for live attach.
+- **Agent Layer:** Per step, spawns `gemini` or `claude` either as a direct CLI subprocess (the original implementation) or inside a `mngr`-managed interactive tmux session (the `mngr-claude` / `mngr-gemini` framework variants). Both paths capture JSON outputs for the dashboard; the mngr variants additionally expose each step's session for live attach.
 - **Frontend (React + TypeScript):** A dashboard for starting research tasks, monitoring progress in real-time, and inspecting the data exchange at each step.
 
 ## Prerequisites
@@ -46,25 +46,23 @@ The system can be configured using the following environment variables:
 1. **Start a Task:** Click "NEW TASK" in the dashboard.
 2. **Configure:**
    - **Phenomenon:** The scientific topic to investigate.
-   - **Framework:** Choose between Gemini CLI or Claude Code.
+   - **Framework:** Pick one of four options. `Claude Code` and `Gemini CLI` run the agent CLI directly as a subprocess (the original implementation, suited for `claude --resume <session_id>` recovery). `Claude Code (mngr)` and `Gemini CLI (mngr)` run the same CLIs inside a `mngr`-managed tmux session that you can attach to live via `mngr connect`. The mngr variants require `tmux` and the `imbue-mngr` + `imbue-mngr-claude` Python deps (auto-installed by `uv sync`); the Gemini-mngr variant additionally needs `imbue-mngr-gemini` (not yet on PyPI).
    - **Model:** Choose a model identifier from the dropdown or enter one manually.
 3. **Monitor:** The dashboard polls the backend every 2 seconds to update the timeline.
 4. **Inspect:** Click any completed or running step in the timeline to view the raw inputs, JSON outputs, and the **Agent Name**.
-5. **Recover:** Use `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr connect <agent_name>` to attach a terminal to the agent's tmux session and inspect or intervene. Works while the step is running and after it has stopped.
+5. **Recover:** The dashboard's "Inspect Agent" panel shows the right command for the framework. For legacy `claude` / `gemini` tasks it's `cd <env_folder> && claude --resume <session_id>` (or `gemini --resume ...`). For `mngr-claude` / `mngr-gemini` tasks it's `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr connect <session_id>` — attaches a terminal to the agent's tmux session whether it's running or stopped.
 
-ai-scientist runs its `mngr` agents under a dedicated host_dir at `~/.mngr-ai-scientist/` (separate from your main `~/.mngr/`), so every `mngr` command below needs the `MNGR_HOST_DIR=~/.mngr-ai-scientist` prefix. You can also `export MNGR_HOST_DIR=~/.mngr-ai-scientist` once per shell.
+## Inspecting past mngr sessions
 
-## Inspecting past sessions
+For tasks created with the `mngr-claude` / `mngr-gemini` frameworks, `mngr` keeps each step's session around after it stops. ai-scientist runs them under a dedicated host_dir at `~/.mngr-ai-scientist/` (separate from your main `~/.mngr/`), so every `mngr` command below needs the `MNGR_HOST_DIR=~/.mngr-ai-scientist` prefix. You can also `export MNGR_HOST_DIR=~/.mngr-ai-scientist` once per shell.
 
-`mngr` keeps each step's session around after it stops, so you can come back to it later:
-
-- `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr list --include 'labels["app"] == "ai-scientist"'` lists every agent ai-scientist has ever run.
-- `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr transcript <agent_name>` prints the recorded turn.
-- `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr connect <agent_name>` re-attaches to the tmux session (and restarts it if it had stopped).
+- `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr list --include 'labels["app"] == "ai-scientist"'` lists every mngr-backed agent ai-scientist has ever run.
+- `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr transcript <session_id>` prints the recorded turn.
+- `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr connect <session_id>` re-attaches to the tmux session (and restarts it if it had stopped).
 
 ## Cleanup
 
-Deleting a task from the dashboard removes its env_folder and cancels any running step, but the underlying `mngr` sessions are kept on disk so their transcript and work_dir stay available for debugging. They accumulate over time. To remove every agent associated with a finished task:
+Deleting a task from the dashboard removes its env_folder and cancels any running step. For legacy `claude` / `gemini` tasks that's the end of the story (no extra agent state on disk). For `mngr-claude` / `mngr-gemini` tasks, the underlying `mngr` sessions are kept on disk so their transcript and work_dir stay available for debugging. They accumulate over time. To remove every mngr agent associated with a finished task:
 
 ```bash
 export MNGR_HOST_DIR=~/.mngr-ai-scientist

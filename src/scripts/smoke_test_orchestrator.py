@@ -7,7 +7,7 @@ for it to complete. Verifies that:
    /api/tasks polling endpoint, same as the React frontend does).
 2. The mngr agent for the step has the expected `app=ai-scientist` and
    `ai-scientist-task=<id>` labels.
-3. On success, `Step.agent_name` is set and the agent is STOPPED.
+3. On success, `Step.session_id` is set and the agent is STOPPED.
 4. The /smoke skill ran end-to-end (the recorded JSON output contains
    `skill_ran: true`), proving home-settings + skill resolution work
    inside the mngr-managed tmux session.
@@ -76,7 +76,7 @@ def main() -> int:
         {
             "workflow_name": "_smoke",
             "workflow_inputs": {},
-            "framework": "claude",
+            "framework": "mngr-claude",
             "model": MODEL,
         },
     )
@@ -106,12 +106,12 @@ def main() -> int:
     if smoke_step is None:
         print("FAIL: no `smoke` step in final task")
         return 1
-    print(f"  step.agent_name: {smoke_step.get('agent_name')}")
+    print(f"  step.session_id: {smoke_step.get('session_id')}")
     print(f"  step.outputs: {smoke_step.get('outputs')}")
-    agent_name = smoke_step.get("agent_name")
+    session_id = smoke_step.get("session_id")
 
     list_result = subprocess.run(
-        ["mngr", "list", "--include", f'name == "{agent_name}"', "--format", "jsonl"],
+        ["mngr", "list", "--include", f'name == "{session_id}"', "--format", "jsonl"],
         check=False,
         capture_output=True,
         text=True,
@@ -121,7 +121,7 @@ def main() -> int:
     for line in list_result.stdout.splitlines():
         try:
             d = json.loads(line)
-            if d.get("name") == agent_name:
+            if d.get("name") == session_id:
                 agent_state = d.get("state")
                 agent_labels = d.get("labels") or {}
                 break
@@ -133,7 +133,7 @@ def main() -> int:
 
     checks = [
         ("task completed", final_task["status"] == "completed"),
-        ("agent_name set", bool(agent_name)),
+        ("session_id set", bool(session_id)),
         ("agent has app=ai-scientist label", agent_labels.get("app") == "ai-scientist"),
         (
             "agent has ai-scientist-task label",
