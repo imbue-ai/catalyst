@@ -141,49 +141,6 @@ class MngrAgentRunner(AgentRunner):
                 )
             unregister_agent(task_id, agent_name)
 
-    def _agent_type_missing_message(self) -> Optional[str]:
-        """Return `"invalid agent type: <type>"` only if `mngr config get`
-        confirmed the type isn't registered, else None.
-
-        Other `mngr config get` failure modes (binary missing, profile
-        config error, etc.) fall through to None so the actual error
-        from the subsequent `mngr create` call is what the user sees,
-        rather than us mis-attributing every failure to a bad type.
-
-        Without this guard, `mngr create --type <unregistered> -- ...args`
-        falls through to using the post-`--` args as the agent's literal
-        command, which then crashes deep inside tmux send-keys with
-        `command send-keys: invalid flag --`.
-
-        This is a workaround for two stacked mngr bugs:
-          1. `resolve_agent_type` doesn't reject unregistered type names
-             when they aren't user-defined in TOML either; it silently
-             falls back to BaseAgent + an empty AgentTypeConfig.
-          2. `tmux send-keys -l <cmd>` chokes when `<cmd>` starts with
-             `-`, because tmux's own argv parser treats it as a flag.
-             Fix is `send-keys -l -- <cmd>`.
-
-        Once both land in mngr, this guard and its tests can be
-        removed. Note: this guard does not cover the second bug for
-        legitimately-registered types whose command starts with `-` --
-        ai-scientist doesn't have any (the registered names are
-        `claude` and eventually `gemini`), but other consumers would.
-        """
-        result = subprocess.run(
-            ["mngr", "config", "get", f"agent_types.{self._agent_type}.command"],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-        # mngr config get exits non-zero with "Key not found:" on stderr
-        # only when the key really is absent; that's the one case where
-        # we know the type isn't registered. (See mngr's config get
-        # error path -- "Key not found" is the literal prefix.)
-        stderr = result.stderr or ""
-        if result.returncode != 0 and "Key not found" in stderr:
-            return f"invalid agent type: {self._agent_type}"
-        return None
-
     def run(
         self,
         task_id: str,
@@ -195,10 +152,6 @@ class MngrAgentRunner(AgentRunner):
         on_agent_name: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
-        type_missing = self._agent_type_missing_message()
-        if type_missing is not None:
-            return None, None, type_missing
-
         abs_env_folder = os.path.abspath(env_folder)
         # One fallback for both the agent name and the label, so a user
         # filtering `mngr list` by ai-scientist-stage gets the same value

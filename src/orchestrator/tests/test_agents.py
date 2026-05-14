@@ -1,5 +1,4 @@
-"""Unit tests for the pure-logic parts of the agent runners and the
-runner's fast-fail when an mngr agent type isn't registered.
+"""Unit tests for the pure-logic parts of the agent runners.
 
 End-to-end / real-mngr coverage lives in `src/scripts/smoke_test_mngr_runner.py`
 (Stage B in the migration verification plan) and
@@ -11,10 +10,7 @@ instead.
 """
 
 import unittest
-from unittest.mock import MagicMock, patch
 
-from ..agents.claude import ClaudeAgentRunner
-from ..agents.gemini import GeminiAgentRunner
 from ..agents.claude import (
     _build_agent_args as _claude_build_agent_args,
     _extract_assistant_text as _claude_extract_assistant_text,
@@ -132,48 +128,3 @@ class TestGeminiAgentHelpers(unittest.TestCase):
         )
 
 
-class TestAgentTypeRegistrationGuard(unittest.TestCase):
-    """The runner pre-checks `mngr config get agent_types.<type>.command`
-    before invoking `mngr create`. Without this guard, calling
-    `mngr create --type <unregistered> -- ...args` constructs a tmux
-    `send-keys -- ...` that fails with `command send-keys: invalid flag --`
-    deep in the start path. Verify the runner returns a useful error
-    when the type isn't registered, and proceeds normally when it is.
-    """
-
-    def _patch_config_get(self, returncode: int, stdout: str, stderr: str):
-        result = MagicMock()
-        result.returncode = returncode
-        result.stdout = stdout
-        result.stderr = stderr
-        return patch("orchestrator.agents.mngr_runner.subprocess.run", return_value=result)
-
-    def test_invalid_agent_type_is_flagged(self):
-        runner = GeminiAgentRunner()
-        with self._patch_config_get(
-            returncode=1,
-            stdout="",
-            stderr="ERROR: Key not found: agent_types.gemini.command\n",
-        ):
-            self.assertEqual(
-                runner._agent_type_missing_message(),
-                "invalid agent type: gemini",
-            )
-
-    def test_unrelated_config_failure_is_not_flagged(self):
-        # mngr config get can fail for reasons unrelated to the agent
-        # type being missing (binary crash, broken profile, etc.). Don't
-        # mis-attribute those to "invalid agent type" -- fall through so
-        # the subsequent mngr create surfaces the real error.
-        runner = GeminiAgentRunner()
-        with self._patch_config_get(
-            returncode=2,
-            stdout="",
-            stderr="ERROR: Unknown fields in plugins.kanpan: [...]\n",
-        ):
-            self.assertIsNone(runner._agent_type_missing_message())
-
-    def test_registered_type_returns_none(self):
-        runner = ClaudeAgentRunner()
-        with self._patch_config_get(returncode=0, stdout="claude\n", stderr=""):
-            self.assertIsNone(runner._agent_type_missing_message())
