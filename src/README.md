@@ -68,8 +68,10 @@ Deleting a task from the dashboard removes its env_folder and cancels any runnin
 
 ```bash
 export MNGR_HOST_DIR=~/.mngr-ai-scientist
-mngr list --include 'labels["ai-scientist-task"] == "<full_task_id>"' --fields name | mngr destroy -
+mngr list --include 'labels["ai-scientist-task"] == "<full_task_id>"' --format '{name}' | mngr destroy --force -
 ```
+
+The `--format '{name}'` strips the column header that `--fields name` adds (which would break the pipe), and `--force` skips the interactive confirmation prompt so the pipeline runs unattended.
 
 This only removes the agent's `~/.mngr-ai-scientist/agents/` entry; your `~/.ai-scientist/research/task_<id>` artifacts (if still present) are untouched.
 
