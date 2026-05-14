@@ -29,7 +29,7 @@ class Step(BaseModel):
     error: Optional[str] = None
 
 class Addon(BaseModel):
-    type: str # "streamline-theory", "review-theory", "refine-theory", "refinement-loop", "evolve-loop"
+    type: str # "streamline-theory", "review-theory", "refine-theory", "refinement-loop", "evolve-loop", "write-different-theory"
     theory_id: Optional[str] = None
     theory_ids: Optional[List[str]] = None
     direction: Optional[str] = None
@@ -38,6 +38,7 @@ class Addon(BaseModel):
     evolve_iterations: Optional[int] = None
     num_parents: Optional[int] = None
     max_streamline_prob: Optional[float] = None
+    write_different_prob: Optional[float] = None
     num_extra_scores: Optional[int] = None
     review_id: Optional[str] = None
     hypothesis_title: Optional[str] = None

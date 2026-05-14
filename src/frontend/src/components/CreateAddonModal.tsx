@@ -1,6 +1,14 @@
 import React, { useState } from 'react'
 import { XCircle, ChevronRight, ChevronDown, FileText, Users, Settings2, MessageSquare } from 'lucide-react'
 import * as api from '../api'
+import {
+  DEFAULT_MAX_REFINEMENTS,
+  DEFAULT_EVOLVE_ITERATIONS,
+  DEFAULT_NUM_PARENTS,
+  DEFAULT_MAX_STREAMLINE_PROB,
+  DEFAULT_WRITE_DIFFERENT_PROB,
+  DEFAULT_NUM_EXTRA_SCORES
+} from '../constants'
 
 interface CreateAddonModalProps {
   task: api.Task;
@@ -23,7 +31,8 @@ const ADDON_DESCRIPTIONS: Record<string, string> = {
   'streamline-theory': "Streamline a theory down to its core essence.",
   'streamline-theory-variations': "Derive several different variations of a theory, each one focused on a different key aspect.",
   'suggest-expansions': "Suggest ways in which a theory can be expanded and/or generalized.",
-  'score-theories': "Score the quality of the given theories relative to each other and update all population scores."
+  'score-theories': "Score the quality of the given theories relative to each other and update all population scores.",
+  'write-different-theory': "Write a theory that explores a different approach from the provided theories."
 };
 
 type InputCategory = 'population' | 'theory' | 'statement';
@@ -32,8 +41,11 @@ const getAvailableSkills = (cat: InputCategory, reviewed: boolean): { id: string
   if (cat === 'population') {
     return reviewed ? [
       { id: 'evolve-loop', label: 'Evolve Theory Loop' },
-      { id: 'score-theories', label: 'Score Theories' }
-    ] : [];
+      { id: 'score-theories', label: 'Score Theories' },
+      { id: 'write-different-theory', label: 'Write Different Theory' }
+    ] : [
+      { id: 'write-different-theory', label: 'Write Different Theory' }
+    ];
   }
   if (cat === 'theory') {
     return reviewed ? [
@@ -111,12 +123,13 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
   }, [sortedAndFilteredTheories, theoryId])
 
   const [direction, setDirection] = useState('')
-  const [maxRefinements, setMaxRefinements] = useState(3)
+  const [maxRefinements, setMaxRefinements] = useState(DEFAULT_MAX_REFINEMENTS)
   const [applyExpansions, setApplyExpansions] = useState('')
-  const [evolveIterations, setEvolveIterations] = useState(5)
-  const [numParents, setNumParents] = useState(3)
-  const [maxStreamlineProb, setMaxStreamlineProb] = useState(0.5)
-  const [numExtraScores, setNumExtraScores] = useState(5)
+  const [evolveIterations, setEvolveIterations] = useState(DEFAULT_EVOLVE_ITERATIONS)
+  const [numParents, setNumParents] = useState(DEFAULT_NUM_PARENTS)
+  const [maxStreamlineProb, setMaxStreamlineProb] = useState(DEFAULT_MAX_STREAMLINE_PROB)
+  const [writeDifferentProb, setWriteDifferentProb] = useState(DEFAULT_WRITE_DIFFERENT_PROB)
+  const [numExtraScores, setNumExtraScores] = useState(DEFAULT_NUM_EXTRA_SCORES)
 
   const filteredReviews = availableReviews.filter(r => r.parent_theory === theoryId)
   const [reviewId, setReviewId] = useState(filteredReviews[0]?.id || '')
@@ -138,7 +151,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
   const hasRequiredConfig = ['falsify-hypothesis', 'edit-theory'].includes(addonType);
   const hasOptionalConfig = addonType === 'streamline-theory' ||
     ['refinement-loop', 'evolve-loop', 'refine-theory'].includes(addonType) ||
-    (['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop'].includes(addonType) && availableLiteratureIds.length > 0);
+    (['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop', 'write-different-theory'].includes(addonType) && availableLiteratureIds.length > 0);
 
   const handleCategoryChange = (cat: InputCategory) => {
     setInputCategory(cat);
@@ -157,19 +170,20 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     try {
       const updatedTask = await api.createAddon(task.id, {
         type: addonType,
-        theory_id: (inputCategory === 'population' || addonType === 'score-theories') ? undefined : theoryId,
-        theory_ids: addonType === 'score-theories' ? theoryIds : undefined,
+        theory_id: (inputCategory === 'population' || addonType === 'score-theories' || addonType === 'write-different-theory') ? undefined : theoryId,
+        theory_ids: (addonType === 'score-theories' || addonType === 'write-different-theory') ? theoryIds : undefined,
         direction: addonType === 'streamline-theory' && direction ? direction : undefined,
         max_refinements: addonType === 'refinement-loop' ? maxRefinements : undefined,
         apply_expansions: (addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory') ? (applyExpansions || undefined) : undefined,
         evolve_iterations: addonType === 'evolve-loop' ? evolveIterations : undefined,
         num_parents: addonType === 'evolve-loop' ? numParents : undefined,
         max_streamline_prob: addonType === 'evolve-loop' ? maxStreamlineProb : undefined,
+        write_different_prob: addonType === 'evolve-loop' ? writeDifferentProb : undefined,
         num_extra_scores: addonType === 'evolve-loop' ? numExtraScores : undefined,
         review_id: (addonType === 'refine-hypothesis' || addonType === 'expand-theory') ? reviewId : undefined,
         hypothesis_title: addonType === 'falsify-hypothesis' ? hypothesisTitle : undefined,
         instruction: addonType === 'edit-theory' ? instruction : undefined,
-        lit_review_id: (['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop'].includes(addonType)) ? (litReviewId || undefined) : undefined
+        lit_review_id: (['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop', 'write-different-theory'].includes(addonType)) ? (litReviewId || undefined) : undefined
       })
       onCreated(updatedTask)
     } catch (e: any) {
@@ -277,15 +291,15 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
             </div>
 
             {/* STEP 3: Targets */}
-            {(!isPopulation || addonType === 'score-theories') && (
+            {(!isPopulation || addonType === 'score-theories' || addonType === 'write-different-theory') && (
               <div>
                 <h3 className="text-sm font-black mb-4">Step 3: Select Targets</h3>
                 <div className="flex flex-col gap-6">
                   <div>
                     <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">
-                      {addonType === 'score-theories' ? 'Target Theories' : 'Target Theory'}
+                      {(addonType === 'score-theories' || addonType === 'write-different-theory') ? 'Target Theories' : 'Target Theory'}
                     </label>
-                    {addonType === 'score-theories' ? (
+                    {(addonType === 'score-theories' || addonType === 'write-different-theory') ? (
                       <select
                         multiple
                         required
@@ -456,6 +470,14 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                                 />
                               </div>
                               <div>
+                                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Write Different Prob</label>
+                                <input
+                                  type="number" min="0" max="1" step="any" required
+                                  value={writeDifferentProb} onChange={e => setWriteDifferentProb(parseFloat(e.target.value))}
+                                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
+                                />
+                              </div>
+                              <div>
                                 <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Scores</label>
                                 <input
                                   type="number" min="0" max="10" required
@@ -479,7 +501,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                             </div>
                           )}
 
-                          {['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop'].includes(addonType) && availableLiteratureIds.length > 0 && (
+                          {['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop', 'write-different-theory'].includes(addonType) && availableLiteratureIds.length > 0 && (
                             <div>
                               <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Literature Review ID (Optional)</label>
                               <select

@@ -21,6 +21,7 @@ export interface Addon {
   evolve_iterations?: number;
   num_parents?: number;
   max_streamline_prob?: number;
+  write_different_prob?: number;
   num_extra_scores?: number;
   review_id?: string;
   hypothesis_title?: string;
