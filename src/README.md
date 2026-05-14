@@ -52,7 +52,7 @@ The system can be configured using the following environment variables:
 3. **Monitor:** The dashboard polls the backend every 2 seconds to update the timeline.
 4. **Inspect:** Click any completed or running step in the timeline to view the raw inputs, JSON outputs, and the **Session ID**. The session ID is the name of the underlying `mngr` agent.
 5. **Recover:** Use the session ID with `mngr` to inspect or intervene:
-   - `mngr list --filter 'labels["app"] == "ai-scientist"'` shows every agent ai-scientist has ever created.
+   - `mngr list --include 'labels["app"] == "ai-scientist"'` shows every agent ai-scientist has ever created.
    - `mngr transcript <session_id>` prints the recorded turn.
    - `mngr connect <session_id>` attaches the terminal to the agent's live tmux session — works while the step is running and after it has stopped.
    - `mngr start <session_id>` brings a stopped agent back online so you can `mngr connect` and continue interacting with it.
@@ -62,7 +62,8 @@ The system can be configured using the following environment variables:
 Stopped agents are preserved on disk so their work directory and transcript stay around for debugging. They accumulate over time. To remove every agent associated with a finished task:
 
 ```bash
-mngr destroy --filter 'labels["ai-scientist-task"] == "<task_short_id>"'
+mngr list --include 'labels["ai-scientist-task"] == "<task_short_id>"' --fields name | \
+  mngr destroy -
 ```
 
 This only removes the agent's `~/.mngr/agents/` entry; your `~/.ai-scientist/research/task_<id>` artifacts are untouched.

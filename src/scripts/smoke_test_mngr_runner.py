@@ -49,12 +49,18 @@ def main() -> int:
 
     captured_name: dict[str, str | None] = {"name": None}
 
+    pause_secs = int(os.environ.get("AISCI_SMOKE_PAUSE_SECONDS", "10"))
+
     def on_session_id(name: str) -> None:
         captured_name["name"] = name
-        print(f"\n  Agent name: {name}")
-        print(f"  → In another terminal, try: mngr connect {name}")
-        print("  Sleeping 10 s so you can attach...\n")
-        time.sleep(10)
+        print(f"\n  Agent name: {name}", flush=True)
+        if pause_secs > 0:
+            print(
+                f"  → In another terminal, try: mngr connect {name}\n"
+                f"  Sleeping {pause_secs}s so you can attach...\n",
+                flush=True,
+            )
+            time.sleep(pause_secs)
 
     runner = ClaudeAgentRunner()
     with tempfile.TemporaryDirectory(prefix="aisci-smoke-") as env_folder:
@@ -78,7 +84,7 @@ def main() -> int:
         return 1
 
     list_result = subprocess.run(
-        ["mngr", "list", "--filter", 'labels["app"] == "ai-scientist"', "--format", "jsonl"],
+        ["mngr", "list", "--include", 'labels["app"] == "ai-scientist"', "--format", "jsonl"],
         check=False,
         capture_output=True,
         text=True,

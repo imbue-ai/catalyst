@@ -1,0 +1,9 @@
+# Project-level mngr settings, picked up by `mngr create` for every
+# ai-scientist step. Auto-discovered via the git root.
+
+[agent_types.claude]
+# Required for headless `mngr create --type claude --no-connect` against
+# fresh env_folders. Auto-trusts the work_dir during provisioning and
+# dismisses Claude Code's effort-callout / onboarding dialogs so the
+# agent starts cleanly without user interaction.
+auto_dismiss_dialogs = true

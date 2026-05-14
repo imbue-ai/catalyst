@@ -54,6 +54,8 @@ class _RunnerTestBase(unittest.TestCase):
         # Create the mocks; tests call _start_patches() to enter them.
         self._event_proc = _make_event_proc(event_lines)
 
+        event_jsonl = "".join(event_lines)
+
         def fake_run(cmd, **kwargs):
             result = MagicMock()
             result.stdout = ""
@@ -67,6 +69,11 @@ class _RunnerTestBase(unittest.TestCase):
             elif cmd[:2] == ["mngr", "stop"]:
                 self._stop_calls.append(cmd)
                 result.returncode = 0
+            elif cmd[:2] == ["mngr", "event"]:
+                # The post-wait one-shot read (no --follow).
+                self._event_oneshot_calls.append(cmd)
+                result.returncode = 0
+                result.stdout = event_jsonl
             else:
                 result.returncode = 0
             return result
@@ -80,6 +87,7 @@ class _RunnerTestBase(unittest.TestCase):
         self._wait_calls = []
         self._stop_calls = []
         self._popen_calls = []
+        self._event_oneshot_calls = []
 
         run_patcher = patch("subprocess.run", side_effect=fake_run)
         popen_patcher = patch("subprocess.Popen", side_effect=fake_popen)
@@ -175,9 +183,15 @@ class TestClaudeAgentRunner(_RunnerTestBase):
         trailing = cmd[sep_idx + 1 :]
         self.assertIn("--dangerously-skip-permissions", trailing)
         self.assertIn("--verbose", trailing)
-        self.assertIn("--append-system-prompt", trailing)
+        self.assertIn("--append-system-prompt-file", trailing)
         self.assertIn("--model", trailing)
         self.assertEqual(trailing[trailing.index("--model") + 1], "claude-haiku-4-5-20251001")
+
+        # The system-prompt file was written into the env_folder.
+        sp_path = "/tmp/scientist-env/.aisci_system_prompt.txt"
+        self.assertEqual(trailing[trailing.index("--append-system-prompt-file") + 1], ".aisci_system_prompt.txt")
+        import os as _os
+        self.assertTrue(_os.path.exists(sp_path), f"system prompt file missing at {sp_path}")
 
         # Event follower spawned
         self.assertEqual(len(self._popen_calls), 1)
