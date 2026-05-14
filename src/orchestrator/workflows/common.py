@@ -9,7 +9,7 @@ from orchestrator.prompts import (
     get_summarize_title_prompt,
     get_review_theory_prompt,
     get_refine_theory_prompt,
-    get_streamline_theory_variations_prompt,
+    get_streamline_theory_prompt,
     get_score_theories_prompt,
 )
 
@@ -165,7 +165,7 @@ def run_evolve_loop(
                         task,
                         run_step_fn,
                         stage_name,
-                        get_streamline_theory_variations_prompt(tid),
+                        get_streamline_theory_prompt(tid),
                     )
                     mutation_results[stage_name] = res
                 else:
