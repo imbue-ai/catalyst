@@ -17,6 +17,7 @@ from .common import (
     DEFAULT_NUM_EXTRA_SCORES,
     DEFAULT_NUM_PARENTS,
     DEFAULT_MAX_STREAMLINE_PROB,
+    DEFAULT_WRITE_DIFFERENT_PROB,
     run_evolve_loop,
     run_summarize_title,
 )
@@ -67,6 +68,7 @@ class DevelopTheoryWorkflow(Workflow):
                     for s in task.steps
                     if s.stage.startswith(f"mutate-streamline-{i}-")
                     or s.stage.startswith(f"mutate-refine-{i}-")
+                    or s.stage.startswith(f"mutate-write-different-{i}-")
                 ]
                 iter_struct.append(
                     {"type": "parallel", "name": "Mutate", "stages": mutate_stages}
@@ -249,6 +251,11 @@ class DevelopTheoryWorkflow(Workflow):
                         "max_streamline_prob", DEFAULT_MAX_STREAMLINE_PROB
                     )
                 )
+                write_different_prob = float(
+                    task.workflow_inputs.get(
+                        "write_different_prob", DEFAULT_WRITE_DIFFERENT_PROB
+                    )
+                )
                 num_extra_scores = int(
                     task.workflow_inputs.get(
                         "num_extra_scores", DEFAULT_NUM_EXTRA_SCORES
@@ -262,6 +269,7 @@ class DevelopTheoryWorkflow(Workflow):
                     iterations=evolve_iterations,
                     num_parents=num_parents,
                     max_streamline_prob=max_streamline_prob,
+                    write_different_prob=write_different_prob,
                     num_extra_scores=num_extra_scores,
                     apply_expansions=apply_expansions,
                     lit_review_id=lit_review_id,

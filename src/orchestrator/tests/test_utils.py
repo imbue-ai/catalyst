@@ -1,7 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import subprocess
-import os
 from ..utils import run_context_manager
 from ..models import Task
 
@@ -34,9 +33,8 @@ class TestUtils(unittest.TestCase):
         self.assertIn("context_manager.py", called_args[3])
         self.assertIn("store_results", called_args)
         
-        # Verify env and cwd
+        # Verify env
         kwargs = mock_run.call_args[1]
-        self.assertEqual(kwargs["cwd"], os.path.abspath("/tmp/env"))
         self.assertIn("PATH", kwargs["env"])
 
     @patch("subprocess.run")

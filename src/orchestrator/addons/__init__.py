@@ -13,6 +13,7 @@ from .expand_theory import ExpandTheoryAddon
 from .streamline_theory_variations import StreamlineTheoryVariationsAddon
 from .edit_theory import EditTheoryAddon
 from .score_theories import ScoreTheoriesAddon
+from .write_different_theory import WriteDifferentTheoryAddon
 
 _ADDONS: Dict[str, AddonHandler] = {
     "streamline-theory": StreamlineTheoryAddon(),
@@ -28,6 +29,7 @@ _ADDONS: Dict[str, AddonHandler] = {
     "streamline-theory-variations": StreamlineTheoryVariationsAddon(),
     "edit-theory": EditTheoryAddon(),
     "score-theories": ScoreTheoriesAddon(),
+    "write-different-theory": WriteDifferentTheoryAddon(),
 }
 
 def get_addon_handler(name: str) -> AddonHandler:

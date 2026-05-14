@@ -73,7 +73,7 @@ Add-ons are individual steps that can be added to a task or run as part of a loo
 | `review-theory` | Critically evaluates a theory. | `theory_id` |
 | `refine-theory` | Updates a theory based on a review. | `theory_id`, `lit_review_id` (optional) |
 | `refinement-loop` | Runs review and refinement iteratively. | `theory_id`, `max_refinements`, `apply_expansions` |
-| `evolve-loop` | Runs a population-based evolution loop. | `evolve_iterations`, `num_parents`, `max_streamline_prob`, `num_extra_scores`, `apply_expansions` |
+| `evolve-loop` | Runs a population-based evolution loop. | `evolve_iterations`, `num_parents`, `max_streamline_prob`, `write_different_prob`, `num_extra_scores`, `apply_expansions` |
 | `polish-theory` | Improves the writing and formatting of a theory. | `theory_id` |
 | `refine-hypothesis` | Refines a specific hypothesis within a theory. | `theory_id`, `lit_review_id` (optional) |
 | `falsify-hypothesis` | Attempts to find evidence against a hypothesis. | `theory_id`, `hypothesis_title` |
@@ -82,3 +82,4 @@ Add-ons are individual steps that can be added to a task or run as part of a loo
 | `streamline-theory-variations` | Generates multiple streamlined variations. | `theory_id` |
 | `edit-theory` | Directly edits a theory. | `theory_id` |
 | `score-theories` | Assigns scores and ranks to theories. | `theory_ids` |
+| `write-different-theory` | Writes a theory exploring a different approach than the provided previous theories. | `theory_ids`, `lit_review_id` (optional) |

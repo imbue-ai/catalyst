@@ -1,6 +1,16 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { XCircle, Folder, Cpu, ChevronRight, ChevronDown, Settings2, FileText, Lightbulb, Sparkles, GitMerge, GitCommit, UploadCloud, HelpCircle } from 'lucide-react'
 import * as api from '../api'
+import {
+  DEFAULT_MAX_REFINEMENTS,
+  DEFAULT_EVOLVE_ITERATIONS,
+  DEFAULT_NUM_PARENTS,
+  DEFAULT_MAX_STREAMLINE_PROB,
+  DEFAULT_WRITE_DIFFERENT_PROB,
+  DEFAULT_NUM_EXTRA_SCORES,
+  DEFAULT_NUM_ROOT_THEORIES,
+  DEFAULT_FRAMEWORK
+} from '../constants'
 
 interface CreateTaskModalProps {
   onClose: () => void;
@@ -61,15 +71,16 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
   const [inputs, setInputs] = useState({
     phenomenon: '',
     idea: '',
-    numRootTheories: 3,
-    maxRefinements: 3,
-    evolveIterations: 5,
-    numParents: 3,
-    maxStreamlineProb: 0.5,
-    numExtraScores: 5,
+    numRootTheories: DEFAULT_NUM_ROOT_THEORIES,
+    maxRefinements: DEFAULT_MAX_REFINEMENTS,
+    evolveIterations: DEFAULT_EVOLVE_ITERATIONS,
+    numParents: DEFAULT_NUM_PARENTS,
+    maxStreamlineProb: DEFAULT_MAX_STREAMLINE_PROB,
+    writeDifferentProb: DEFAULT_WRITE_DIFFERENT_PROB,
+    numExtraScores: DEFAULT_NUM_EXTRA_SCORES,
     applyExpansions: '',
     templateFolder: '',
-    framework: 'claude',
+    framework: DEFAULT_FRAMEWORK,
     model: ''
   })
 
@@ -94,6 +105,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         evolve_iterations: inputs.evolveIterations,
         num_parents: inputs.numParents,
         max_streamline_prob: inputs.maxStreamlineProb,
+        write_different_prob: inputs.writeDifferentProb,
         num_extra_scores: inputs.numExtraScores,
         apply_expansions: inputs.applyExpansions || undefined
       }
@@ -107,6 +119,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         evolve_iterations: inputs.evolveIterations,
         num_parents: inputs.numParents,
         max_streamline_prob: inputs.maxStreamlineProb,
+        write_different_prob: inputs.writeDifferentProb,
         num_extra_scores: inputs.numExtraScores
       }
     } else if (activeTab === 'refine-theory-idea-linear') {
@@ -441,6 +454,15 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                                 type="number" min="0" max="1" step="any" required
                                 value={inputs.maxStreamlineProb}
                                 onChange={e => updateInput('maxStreamlineProb', parseFloat(e.target.value))}
+                                className="w-full border-2 border-black p-2 outline-none text-sm font-bold"
+                              />
+                            </div>
+                            <div className="col-span-1">
+                              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Write Different Prob</label>
+                              <input
+                                type="number" min="0" max="1" step="any" required
+                                value={inputs.writeDifferentProb}
+                                onChange={e => updateInput('writeDifferentProb', parseFloat(e.target.value))}
                                 className="w-full border-2 border-black p-2 outline-none text-sm font-bold"
                               />
                             </div>

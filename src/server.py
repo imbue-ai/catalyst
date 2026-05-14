@@ -187,6 +187,7 @@ class CreateAddonRequest(BaseModel):
     evolve_iterations: Optional[int] = None
     num_parents: Optional[int] = None
     max_streamline_prob: Optional[float] = None
+    write_different_prob: Optional[float] = None
     num_extra_scores: Optional[int] = None
     review_id: Optional[str] = None
     hypothesis_title: Optional[str] = None
@@ -212,6 +213,7 @@ def create_addon(task_id: str, req: CreateAddonRequest):
         evolve_iterations=req.evolve_iterations,
         num_parents=req.num_parents,
         max_streamline_prob=req.max_streamline_prob,
+        write_different_prob=req.write_different_prob,
         num_extra_scores=req.num_extra_scores,
         review_id=req.review_id,
         hypothesis_title=req.hypothesis_title,

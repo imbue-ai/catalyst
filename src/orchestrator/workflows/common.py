@@ -11,6 +11,7 @@ from orchestrator.prompts import (
     get_refine_theory_prompt,
     get_streamline_theory_prompt,
     get_score_theories_prompt,
+    get_write_different_theory_prompt,
 )
 
 logger = logging.getLogger(__name__)
@@ -18,6 +19,7 @@ logger = logging.getLogger(__name__)
 DEFAULT_EVOLVE_ITERATIONS = 5
 DEFAULT_NUM_PARENTS = 3
 DEFAULT_MAX_STREAMLINE_PROB = 0.5
+DEFAULT_WRITE_DIFFERENT_PROB = 0.25
 DEFAULT_NUM_EXTRA_SCORES = 5
 
 # Make the theory development process more efficient and adds diversity by occasionally forcing the application of expansion reviews,
@@ -98,6 +100,7 @@ def run_evolve_loop(
     iterations: int,
     num_parents: int,
     max_streamline_prob: float,
+    write_different_prob: float,
     num_extra_scores: int,
     apply_expansions: Optional[str] = None,
     lit_review_id: Optional[str] = None,
@@ -158,14 +161,26 @@ def run_evolve_loop(
                 deterministic_rng = random.Random(f"{tid}:{idx}:{stage_prefix}:{i}")
                 length_score = parent.get("subscores", {}).get("length", 0.0)
                 streamline_prob = max_streamline_prob * (1.0 - length_score)
-                is_streamline = deterministic_rng.random() < streamline_prob
-                if is_streamline:
+                rng_val = deterministic_rng.random()
+                if rng_val < streamline_prob:
                     stage_name = f"{stage_prefix}mutate-streamline-{i}-{idx}"
                     res = run_step_if_needed(
                         task,
                         run_step_fn,
                         stage_name,
                         get_streamline_theory_prompt(tid),
+                    )
+                    mutation_results[stage_name] = res
+                elif rng_val < streamline_prob + write_different_prob:
+                    stage_name = f"{stage_prefix}mutate-write-different-{i}-{idx}"
+                    parent_ids = [p.get("id", "") for p in parents]
+                    res = run_step_if_needed(
+                        task,
+                        run_step_fn,
+                        stage_name,
+                        get_write_different_theory_prompt(
+                            parent_ids, lit_review_id=lit_review_id
+                        ),
                     )
                     mutation_results[stage_name] = res
                 else:
