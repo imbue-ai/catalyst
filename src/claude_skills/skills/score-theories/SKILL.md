@@ -37,7 +37,7 @@ We will use the following methods for converting from a rank `r` (1...n) to a sc
 Follow the following steps carefully. Do not skip anything. Do not take shortcuts.
 
 1. **Folder setup**: Run the bash command above to obtain the theories and experiment files using `context_manager.py`.
-2. **Understand the Phenomenon**: Read the first sections of one of the theory files to understand the phenomenon that these theories are trying to explain. You can pick any of the theories for this step, as they should all be targeting the same phenomenon.
+2. **Understand the Phenomenon**: Before you can rank the experiments, you need to understand what phenomenon we are studying. First, check if there exists a file `phenomenon.txt` in the current work directory. If so, read the phenomenon description from there. Otherwise, if the `phenomenon.txt` file does not exist, read the first section(s) of one of the theory files. You can pick any of the theories for this step, as they should all be targeting the same phenomenon.
 3. **Rank the Experiments**: Read the `description.md` files for each experiment in `<CONTEXT_DIR>/experiments/` and rank them based on their importance for evaluating how well a theory explains the phenomenon. Experiments that validate key qualitative aspects of the phenomenon (1st) should rank before those that test peripheral aspects (2nd), smaller details (3rd), or extensions that aren't strictly necessary for understanding the phenomenon (4th).
 4. **Select Top Experiments**: Select the 10 highest-ranking experiment IDs. Only these will be used in the following steps.
 5. **Calculate Experiment Importance Scores**: For each of the selected experiments, calculate an experiment importance score using the *linear score* method.
