@@ -17,6 +17,17 @@ if ! command -v npm &> /dev/null; then
     exit 1
 fi
 
+if ! command -v tmux &> /dev/null; then
+    echo "Error: 'tmux' is not installed."
+    echo "ai-scientist runs each agent inside an mngr-managed tmux session, so tmux is required."
+    echo "Install with:"
+    echo "  - macOS:  brew install tmux"
+    echo "  - Debian/Ubuntu:  sudo apt-get install tmux"
+    echo "Alternatively, run mngr's bootstrap installer (sets up tmux + other deps):"
+    echo "  curl -fsSL https://raw.githubusercontent.com/imbue-ai/mngr/main/install.sh | sh"
+    exit 1
+fi
+
 HAS_GEMINI=false
 HAS_CLAUDE=false
 
@@ -36,6 +47,7 @@ fi
 echo "Dependencies met!"
 echo " - uv: $(uv --version)"
 echo " - npm: $(npm --version)"
+echo " - tmux: $(tmux -V)"
 if [ "$HAS_GEMINI" = true ]; then
     echo " - gemini: $(gemini --version)"
 fi
