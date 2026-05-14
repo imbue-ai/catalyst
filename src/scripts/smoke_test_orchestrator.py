@@ -25,6 +25,11 @@ import sys
 import time
 import urllib.request
 
+# Pick up the same isolated MNGR_HOST_DIR default the backend uses, so
+# our `mngr list` lookup finds the agent the runner just created.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from orchestrator import utils  # noqa: E402, F401
+
 BACKEND_URL = os.environ.get("AISCI_BACKEND_URL", "http://localhost:8939")
 MODEL = "claude-haiku-4-5-20251001"
 TIMEOUT_SECONDS = 300

@@ -8,6 +8,14 @@ def get_ai_scientist_path() -> str:
     return os.environ.get("AI_SCIENTIST_PATH", os.path.expanduser("~/.ai-scientist"))
 
 
+# Default ai-scientist's `mngr` host_dir to an isolated location so
+# ai-scientist's agents don't mix into the user's main `~/.mngr` and
+# the runner's `mngr` calls aren't blocked by stale fields in the
+# user's profile settings (e.g. `plugins.kanpan.column_order`). Set
+# via `setdefault` so an explicit `MNGR_HOST_DIR=...` export wins.
+os.environ.setdefault("MNGR_HOST_DIR", os.path.expanduser("~/.mngr-ai-scientist"))
+
+
 def run_context_manager(task: Task, args: List[str]) -> str:
     abs_env_folder = os.path.abspath(task.env_folder)
     env = os.environ.copy()

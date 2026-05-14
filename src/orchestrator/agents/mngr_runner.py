@@ -14,6 +14,9 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Tuple
 from context_manager import DEFAULT_DB_DIR
 from .base import AgentRunner
 from ..state import register_agent, unregister_agent
+# Ensures the process-wide MNGR_HOST_DIR default is set before any
+# subprocess `mngr` call inherits os.environ.
+from .. import utils  # noqa: F401
 
 logger = logging.getLogger(__name__)
 
