@@ -616,8 +616,6 @@ def _validate_create_context_args(
     from_predictions: list[str] | None,
 ) -> None:
     if for_agent_type == "write-theory":
-        if not from_exploration:
-            raise ValueError("--from_exploration is required for write-theory")
         if from_literatures and len(from_literatures) > 1:
             raise ValueError(
                 "write-theory accepts at most one --from_literature "

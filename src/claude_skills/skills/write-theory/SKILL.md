@@ -1,14 +1,14 @@
 ---
 name: write-theory
 description: "Write a theory to explain a given phenomenon."
-argument-hint: "exploration ID (e.g. E_20260414_...), optional literature ID (e.g. L_20260414_...), and the phenomenon to explain"
+argument-hint: "The phenomenon to explain, optional exploration ID (e.g. E_20260414_...), optional literature ID (e.g. L_20260414_...)."
 ---
 
 You are an expert scientific agent. Your goal is to develop a theory to explain a given phenomenon.
 
 ## Mandate
 - Focus on the phenomenon given below.
-- You will be given an exploration ID that references prior exploration results, and optionally a literature review ID that references relevant papers. Use these as context to inform your theory development, but don't be limited by them - you can propose new experiments or lines of inquiry that haven't been explored yet.
+- You will optionally be given an exploration ID that references prior exploration results, and optionally a literature review ID that references relevant papers. Use these as context to inform your theory development, but don't be limited by them - you can propose new experiments or lines of inquiry that haven't been explored yet.
 - Be thorough and extremely rigorous in developing the theory. Make sure you verify every hypothesis in your theory. Propose and run experiments to test the hypotheses and/or derive mathematical proofs, and then iterate until you have a robust, well-supported theory.
 - All experiment execution must go through the `run-experiment` skill. Never run a Python experiment script directly. See the "Running experiments" section below.
 
@@ -22,7 +22,7 @@ You are an expert scientific agent. Your goal is to develop a theory to explain 
 ## Input
 Arguments: $ARGUMENTS
 
-The arguments contain an exploration ID (like `E_20260414_...`), an optional literature review ID (like `L_20260414_...`), and a description of the phenomenon. Parse all IDs from the arguments.
+The arguments contain a description of the phenomenon to explain, an optional exploration ID (like `E_20260414_...`), and an optional literature review ID (like `L_20260414_...`). Parse all IDs from the arguments.
 
 ## Folder setup
 All commands must be run in the current working directory. Do not `cd` anywhere else.
@@ -33,10 +33,10 @@ OUTPUT_DIR: `mktemp -d -p ./tmp write-theory-output-XXXX`
 
 Run this command to populate the context:
 ```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type write-theory --target_folder <CONTEXT_DIR> --from_exploration <EXPLORATION_ID> [--from_literature <LITERATURE_ID>]
+uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type write-theory --target_folder <CONTEXT_DIR> [--from_exploration <EXPLORATION_ID>] [--from_literature <LITERATURE_ID>]
 ```
 
-- `<CONTEXT_DIR>/exploration/` — prior exploration results (read-only input). Read `<CONTEXT_DIR>/exploration/report.md` and any artifacts in the folder (images, plots, etc.).
+- `<CONTEXT_DIR>/exploration/` — (if exploration ID provided) prior exploration results. Read `<CONTEXT_DIR>/exploration/report.md` and any artifacts in the folder (images, plots, etc.).
 - `<CONTEXT_DIR>/literature/` — (if literature ID provided) literature review with paper summaries and downloaded PDFs. Always read `<CONTEXT_DIR>/literature/summary.md`, and read individual PDFs in `<CONTEXT_DIR>/literature/papers/` when relevant.
 - `<OUTPUT_DIR>/` — write your theory, experiments, and any supporting notes here.
 
@@ -77,7 +77,7 @@ As a general guideline, write your theory in a way that resembles a well-written
 
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the exploration and literature review results using `context_manager.py`.
-2. **Exploration Review**: Read `<CONTEXT_DIR>/exploration/report.md` to understand prior findings. Read other files in `<CONTEXT_DIR>/exploration/` as needed for informing your theory.
+2. **Exploration Review**: If an exploration report is available, read `<CONTEXT_DIR>/exploration/report.md` to understand prior findings. Read other files in `<CONTEXT_DIR>/exploration/` as needed for informing your theory.
 3. **Literature Review**: If a literature review is available, read `<CONTEXT_DIR>/literature/summary.md` to ground your theory in existing research. Read the full papers in `<CONTEXT_DIR>/literature/papers/` as needed while developing your theory.
 4. **Reproduce a base case**: Before you continue, make sure you can successfully reproduce a base case of the phenomenon. Use `run-experiment`, and find the hyper-parameters that most clearly illustrate the phenomenon. You might get a good figure out of this step for inclusion in your theory.
 5. **Focus Area Selection**: Based on your review of the context, identify 1-2 specific aspects of the phenomenon that are not well-understood yet in the literature and that you find particularly interesting. These will be the focus areas for your theory development.
