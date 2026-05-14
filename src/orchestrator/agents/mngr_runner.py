@@ -1,3 +1,4 @@
+import contextlib
 import json
 import logging
 import os
@@ -8,7 +9,7 @@ import subprocess
 import tempfile
 import threading
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, Generator, List, Optional, Tuple
 
 from context_manager import DEFAULT_DB_DIR
 from .base import AgentRunner
@@ -114,6 +115,29 @@ class MngrAgentRunner(AgentRunner):
         self._status_extractor = status_extractor
         self._assistant_text_extractor = assistant_text_extractor
 
+    @contextlib.contextmanager
+    def _registered_agent(self, task_id: str, agent_name: str) -> Generator[None, None, None]:
+        """Scope a registered agent to a `with` block: register on entry,
+        always stop + unregister on exit. Used to centralize the
+        "best-effort halt this agent no matter how we exit" pattern so
+        every terminal path -- success, wait timeout, wait failure, or
+        unexpected exception -- gets the same cleanup. `_stop_agent`
+        already swallows and logs subprocess errors; we add an extra
+        guard here so a stop failure can't mask the original exception
+        when one is in flight.
+        """
+        register_agent(task_id, agent_name)
+        try:
+            yield
+        finally:
+            try:
+                self._stop_agent(agent_name, task_id)
+            except Exception as stop_err:
+                logger.warning(
+                    f"[AGENT] [{task_id[:8]}] failed to stop {agent_name} on exit: {stop_err}"
+                )
+            unregister_agent(task_id, agent_name)
+
     def run(
         self,
         task_id: str,
@@ -202,88 +226,75 @@ class MngrAgentRunner(AgentRunner):
                     f"stderr+stdout tail:\n{tail}",
                 )
 
-            register_agent(task_id, agent_name)
-            if on_agent_name:
-                try:
-                    on_agent_name(agent_name)
-                except Exception as cb_err:
-                    logger.error(f"[AGENT] [{task_id[:8]}] on_agent_name error: {cb_err}")
+            with self._registered_agent(task_id, agent_name):
+                if on_agent_name:
+                    try:
+                        on_agent_name(agent_name)
+                    except Exception as cb_err:
+                        logger.error(
+                            f"[AGENT] [{task_id[:8]}] on_agent_name error: {cb_err}"
+                        )
 
-            event_proc, event_thread = self._spawn_event_follower(
-                agent_name, on_status
-            )
-
-            try:
-                wait_proc = subprocess.run(
-                    [
-                        "mngr",
-                        "wait",
-                        agent_name,
-                        "--state",
-                        "WAITING",
-                        "--state",
-                        "DONE",
-                        "--state",
-                        "STOPPED",
-                        "--timeout",
-                        f"{_WAIT_TIMEOUT_SECONDS}s",
-                    ],
-                    check=False,
-                    capture_output=True,
-                    text=True,
+                event_proc, event_thread = self._spawn_event_follower(
+                    agent_name, on_status
                 )
-            finally:
-                self._shutdown_event_follower(event_proc, event_thread)
 
-            wait_rc = wait_proc.returncode
+                try:
+                    wait_proc = subprocess.run(
+                        [
+                            "mngr",
+                            "wait",
+                            agent_name,
+                            "--state",
+                            "WAITING",
+                            "--state",
+                            "DONE",
+                            "--state",
+                            "STOPPED",
+                            "--timeout",
+                            f"{_WAIT_TIMEOUT_SECONDS}s",
+                        ],
+                        check=False,
+                        capture_output=True,
+                        text=True,
+                    )
+                finally:
+                    self._shutdown_event_follower(event_proc, event_thread)
 
-            if wait_rc == 2:
-                self._stop_agent(agent_name, task_id)
-                unregister_agent(task_id, agent_name)
+                wait_rc = wait_proc.returncode
+
+                if wait_rc == 2:
+                    return (
+                        None,
+                        agent_name,
+                        f"Agent did not reach WAITING/DONE within {_WAIT_TIMEOUT_SECONDS}s; stopped.",
+                    )
+                if wait_rc != 0:
+                    tail = (wait_proc.stderr or wait_proc.stdout or "")[-500:]
+                    return (
+                        None,
+                        agent_name,
+                        f"mngr wait failed (exit {wait_rc}): {tail}",
+                    )
+
+                # The live `--follow` may have missed late events between
+                # mngr-wait returning and the follower being torn down. Do a
+                # one-shot read of the full transcript as the source of truth
+                # for the assistant text we'll parse JSON out of, and replay
+                # status updates so a fast turn doesn't lose them entirely.
+                assistant_text = self._read_assistant_text(agent_name, on_status)
+
+                data = parse_json_result(assistant_text)
+                if data:
+                    return data, agent_name, None
+
                 return (
                     None,
                     agent_name,
-                    f"Agent did not reach WAITING/DONE within {_WAIT_TIMEOUT_SECONDS}s; stopped.",
+                    f"Could not parse JSON output from {self._framework} result. Preview: {assistant_text[:800]}...",
                 )
-            if wait_rc != 0:
-                self._stop_agent(agent_name, task_id)
-                unregister_agent(task_id, agent_name)
-                tail = (wait_proc.stderr or wait_proc.stdout or "")[-500:]
-                return None, agent_name, f"mngr wait failed (exit {wait_rc}): {tail}"
-
-            # The live `--follow` may have missed late events between
-            # mngr-wait returning and the follower being torn down. Do a
-            # one-shot read of the full transcript as the source of truth
-            # for the assistant text we'll parse JSON out of, and replay
-            # status updates so a fast turn doesn't lose them entirely.
-            assistant_text = self._read_assistant_text(agent_name, on_status)
-
-            self._stop_agent(agent_name, task_id)
-            unregister_agent(task_id, agent_name)
-
-            data = parse_json_result(assistant_text)
-            if data:
-                return data, agent_name, None
-
-            return (
-                None,
-                agent_name,
-                f"Could not parse JSON output from {self._framework} result. Preview: {assistant_text[:800]}...",
-            )
 
         except Exception as e:
-            # Mirror the wait-timeout / wait-failure paths: best-effort stop
-            # so the agent doesn't dangle in RUNNING after the runner gives
-            # up on it. _stop_agent already swallows and logs its own
-            # subprocess errors; we add a belt-and-suspenders guard so any
-            # unexpected raise from it doesn't mask the original exception.
-            try:
-                self._stop_agent(agent_name, task_id)
-            except Exception as stop_err:
-                logger.warning(
-                    f"[AGENT] [{task_id[:8]}] failed to stop {agent_name} after error: {stop_err}"
-                )
-            unregister_agent(task_id, agent_name)
             return None, agent_name, f"{self._framework} execution error: {e}"
 
         finally:
