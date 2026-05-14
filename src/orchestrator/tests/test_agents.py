@@ -141,28 +141,39 @@ class TestAgentTypeRegistrationGuard(unittest.TestCase):
     when the type isn't registered, and proceeds normally when it is.
     """
 
-    def _patch_config_get(self, registered: bool):
+    def _patch_config_get(self, returncode: int, stdout: str, stderr: str):
         result = MagicMock()
-        result.returncode = 0 if registered else 1
-        result.stdout = "claude\n" if registered else ""
-        result.stderr = "" if registered else "Key not found: ...\n"
+        result.returncode = returncode
+        result.stdout = stdout
+        result.stderr = stderr
         return patch("orchestrator.agents.mngr_runner.subprocess.run", return_value=result)
 
-    def test_gemini_fast_fails_with_invalid_type(self):
+    def test_invalid_agent_type_is_flagged(self):
         runner = GeminiAgentRunner()
-        with self._patch_config_get(registered=False):
-            data, agent_name, error = runner.run(
-                task_id="t1", prompt="p", env_folder="/tmp", stage="any",
+        with self._patch_config_get(
+            returncode=1,
+            stdout="",
+            stderr="ERROR: Key not found: agent_types.gemini.command\n",
+        ):
+            self.assertEqual(
+                runner._agent_type_missing_message(),
+                "invalid agent type: gemini",
             )
-        self.assertIsNone(data)
-        self.assertIsNone(agent_name)
-        self.assertEqual(error, "invalid agent type: gemini")
 
-    def test_claude_proceeds_when_registered(self):
-        # We can't actually exercise the full happy path without mocking
-        # every subprocess in the runner, which we explicitly stopped
-        # doing. Instead, just verify the guard itself doesn't trip when
-        # the type IS registered -- i.e. the helper returns None.
+    def test_unrelated_config_failure_is_not_flagged(self):
+        # mngr config get can fail for reasons unrelated to the agent
+        # type being missing (binary crash, broken profile, etc.). Don't
+        # mis-attribute those to "invalid agent type" -- fall through so
+        # the subsequent mngr create surfaces the real error.
+        runner = GeminiAgentRunner()
+        with self._patch_config_get(
+            returncode=2,
+            stdout="",
+            stderr="ERROR: Unknown fields in plugins.kanpan: [...]\n",
+        ):
+            self.assertIsNone(runner._agent_type_missing_message())
+
+    def test_registered_type_returns_none(self):
         runner = ClaudeAgentRunner()
-        with self._patch_config_get(registered=True):
+        with self._patch_config_get(returncode=0, stdout="claude\n", stderr=""):
             self.assertIsNone(runner._agent_type_missing_message())

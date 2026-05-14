@@ -142,14 +142,18 @@ class MngrAgentRunner(AgentRunner):
             unregister_agent(task_id, agent_name)
 
     def _agent_type_missing_message(self) -> Optional[str]:
-        """Return an error string if `self._agent_type` is not a
-        registered mngr agent type, else None.
+        """Return `"invalid agent type: <type>"` only if `mngr config get`
+        confirmed the type isn't registered, else None.
+
+        Other `mngr config get` failure modes (binary missing, profile
+        config error, etc.) fall through to None so the actual error
+        from the subsequent `mngr create` call is what the user sees,
+        rather than us mis-attributing every failure to a bad type.
 
         Without this guard, `mngr create --type <unregistered> -- ...args`
         falls through to using the post-`--` args as the agent's literal
-        command, which then crashes deep inside tmux send-keys with the
-        cryptic "command send-keys: invalid flag --". Catching it here
-        surfaces the actual reason.
+        command, which then crashes deep inside tmux send-keys with
+        `command send-keys: invalid flag --`.
         """
         result = subprocess.run(
             ["mngr", "config", "get", f"agent_types.{self._agent_type}.command"],
@@ -157,9 +161,14 @@ class MngrAgentRunner(AgentRunner):
             capture_output=True,
             text=True,
         )
-        if result.returncode == 0 and result.stdout.strip():
-            return None
-        return f"invalid agent type: {self._agent_type}"
+        # mngr config get exits non-zero with "Key not found:" on stderr
+        # only when the key really is absent; that's the one case where
+        # we know the type isn't registered. (See mngr's config get
+        # error path -- "Key not found" is the literal prefix.)
+        stderr = result.stderr or ""
+        if result.returncode != 0 and "Key not found" in stderr:
+            return f"invalid agent type: {self._agent_type}"
+        return None
 
     def run(
         self,
