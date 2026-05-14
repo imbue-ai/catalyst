@@ -272,6 +272,17 @@ class MngrAgentRunner(AgentRunner):
             )
 
         except Exception as e:
+            # Mirror the wait-timeout / wait-failure paths: best-effort stop
+            # so the agent doesn't dangle in RUNNING after the runner gives
+            # up on it. _stop_agent already swallows and logs its own
+            # subprocess errors; we add a belt-and-suspenders guard so any
+            # unexpected raise from it doesn't mask the original exception.
+            try:
+                self._stop_agent(agent_name, task_id)
+            except Exception as stop_err:
+                logger.warning(
+                    f"[AGENT] [{task_id[:8]}] failed to stop {agent_name} after error: {stop_err}"
+                )
             unregister_agent(task_id, agent_name)
             return None, agent_name, f"{self._framework} execution error: {e}"
 
