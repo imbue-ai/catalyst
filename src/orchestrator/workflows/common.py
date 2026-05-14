@@ -16,7 +16,7 @@ from orchestrator.prompts import (
 logger = logging.getLogger(__name__)
 
 DEFAULT_EVOLVE_ITERATIONS = 5
-DEFAULT_NUM_PARENTS = 2
+DEFAULT_NUM_PARENTS = 3
 DEFAULT_MAX_STREAMLINE_PROB = 0.5
 DEFAULT_NUM_EXTRA_SCORES = 5
 
