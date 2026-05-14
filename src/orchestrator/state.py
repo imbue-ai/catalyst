@@ -1,11 +1,9 @@
 import json
 import os
-import threading
 import subprocess
-import signal
-import time
+import threading
 import logging
-from typing import List, Optional, Dict
+from typing import Dict, List, Optional, Set
 from .models import Task, TasksState, TaskStatus, StepStatus
 from .utils import get_ai_scientist_path
 
@@ -20,9 +18,13 @@ def _get_state_file() -> str:
 
 _lock = threading.Lock()
 _task_locks: Dict[str, threading.Lock] = {}
-_running_processes: Dict[str, List[subprocess.Popen]] = {}
+# Mngr agent names that are currently RUNNING for each ai-scientist task.
+# `cancel_task_process` shells out to `mngr stop` for each. Stopped agents
+# stay in `mngr list` so users can `mngr connect` / `mngr transcript` them
+# post-mortem; explicit cleanup is via `mngr destroy` (not from the cancel
+# path).
+_running_agents: Dict[str, Set[str]] = {}
 
-# In-memory cache to preserve transient fields like last_status
 _state_cache: Optional[TasksState] = None
 
 
@@ -33,65 +35,50 @@ def get_task_lock(task_id: str) -> threading.Lock:
         return _task_locks[task_id]
 
 
-def register_process(task_id: str, process: subprocess.Popen):
+def register_agent(task_id: str, agent_name: str) -> None:
     with _lock:
-        if task_id not in _running_processes:
-            _running_processes[task_id] = []
-        _running_processes[task_id].append(process)
+        _running_agents.setdefault(task_id, set()).add(agent_name)
 
 
-def unregister_process(task_id: str, process: subprocess.Popen):
+def unregister_agent(task_id: str, agent_name: str) -> None:
     with _lock:
-        if task_id in _running_processes:
-            try:
-                _running_processes[task_id].remove(process)
-            except ValueError:
-                pass
-            if not _running_processes[task_id]:
-                del _running_processes[task_id]
+        agents = _running_agents.get(task_id)
+        if agents:
+            agents.discard(agent_name)
+            if not agents:
+                del _running_agents[task_id]
 
 
-def cancel_task_process(task_id: str, timeout: int = 30):
-    processes_to_cancel = []
+def cancel_task_process(task_id: str, timeout: int = 30) -> None:
     with _lock:
-        if task_id in _running_processes:
-            processes_to_cancel = _running_processes[task_id][:]
+        agents_to_stop = list(_running_agents.get(task_id, ()))
 
-    if not processes_to_cancel:
+    if not agents_to_stop:
         return
 
     logger.info(
-        f"[PROCESS] Stopping {len(processes_to_cancel)} processes for task {task_id[:8]}"
+        f"[PROCESS] Stopping {len(agents_to_stop)} mngr agents for task {task_id[:8]}"
     )
 
-    for proc in processes_to_cancel:
+    for agent_name in agents_to_stop:
         try:
-            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-        except Exception as e:
-            logger.error(f"[PROCESS] Failed to SIGTERM group for pid {proc.pid}: {e}")
-
-    deadline = time.time() + timeout
-    for proc in processes_to_cancel:
-        remaining = max(0, deadline - time.time())
-        try:
-            proc.wait(timeout=remaining)
+            subprocess.run(
+                ["mngr", "stop", agent_name],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
         except subprocess.TimeoutExpired:
             logger.warning(
-                f"[PROCESS] PID {proc.pid} didn't exit after {timeout}s, sending SIGKILL to group"
+                f"[PROCESS] mngr stop {agent_name} timed out after {timeout}s"
             )
-            try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-                proc.wait(timeout=5)
-            except Exception as e:
-                logger.error(
-                    f"[PROCESS] Failed to SIGKILL group for pid {proc.pid}: {e}"
-                )
-        except Exception:
-            pass
+        except Exception as e:
+            logger.error(f"[PROCESS] mngr stop {agent_name} failed: {e}")
 
     with _lock:
-        if task_id in _running_processes:
-            del _running_processes[task_id]
+        if task_id in _running_agents:
+            del _running_agents[task_id]
 
 
 _last_written_json: Optional[str] = None
@@ -230,10 +217,10 @@ def delete_task(task_id: str):
 
 
 def shutdown_all():
-    """Forcefully terminate all running agent processes across all tasks and mark them as PAUSED."""
-    task_ids = []
+    """Stop all running mngr agents and mark tasks as PAUSED."""
+    task_ids: List[str] = []
     with _lock:
-        task_ids = list(_running_processes.keys())
+        task_ids = list(_running_agents.keys())
 
         # Also mark all tasks as PAUSED so they don't look like they failed
         state = _load_state()
@@ -251,7 +238,7 @@ def shutdown_all():
 
     if task_ids:
         logger.info(
-            f"[SHUTDOWN] Terminating agent processes for {len(task_ids)} tasks..."
+            f"[SHUTDOWN] Stopping mngr agents for {len(task_ids)} tasks..."
         )
         for tid in task_ids:
             cancel_task_process(tid)

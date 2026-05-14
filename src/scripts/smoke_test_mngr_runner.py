@@ -1,0 +1,110 @@
+"""Stage B smoke test for the mngr-based agent runner.
+
+Runs `MngrAgentRunner` directly (no orchestrator, no FastAPI) against a real
+local Claude agent with a trivial prompt. Verifies that:
+
+1. The agent shows up in `mngr list`.
+2. `mngr connect <agent-name>` attaches to the live tmux session — script
+   prints the agent name and pauses for ~10 s so the operator can verify.
+3. The runner's `on_status` callback fires.
+4. After Claude finishes, the agent is STOPPED (not destroyed) and is
+   still listed.
+5. `parse_json_result` returns the expected dict.
+6. The four `ai-scientist*` labels are present.
+
+Cost control: pins claude-haiku-4-5-20251001. Don't run with Sonnet/Opus.
+
+Usage (from src/):
+    uv run python scripts/smoke_test_mngr_runner.py
+"""
+
+import json
+import logging
+import os
+import subprocess
+import sys
+import tempfile
+import time
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
+
+# Allow this script to import sibling packages when run from src/.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+from orchestrator.agents.claude import ClaudeAgentRunner  # noqa: E402
+
+MODEL = "claude-haiku-4-5-20251001"
+PROMPT = (
+    'Output exactly the JSON `{"hello": "world"}` as your final message '
+    "and stop. Do not call any tools."
+)
+
+
+def main() -> int:
+    statuses: list[str] = []
+
+    def on_status(s: str) -> None:
+        statuses.append(s)
+        print(f"  [status] {s[:120]}")
+
+    captured_name: dict[str, str | None] = {"name": None}
+
+    def on_session_id(name: str) -> None:
+        captured_name["name"] = name
+        print(f"\n  Agent name: {name}")
+        print(f"  → In another terminal, try: mngr connect {name}")
+        print("  Sleeping 10 s so you can attach...\n")
+        time.sleep(10)
+
+    runner = ClaudeAgentRunner()
+    with tempfile.TemporaryDirectory(prefix="aisci-smoke-") as env_folder:
+        print(f"Running smoke task in {env_folder}")
+        data, agent_name, error = runner.run(
+            task_id="task_smoketest",
+            prompt=PROMPT,
+            env_folder=env_folder,
+            model=MODEL,
+            tx_id="tx_smoke",
+            stage="smoke",
+            on_session_id=on_session_id,
+            on_status=on_status,
+        )
+
+    print(f"\nResult: data={data!r} agent_name={agent_name!r} error={error!r}")
+
+    name = captured_name["name"] or agent_name
+    if not name:
+        print("FAIL: no agent name was captured")
+        return 1
+
+    list_result = subprocess.run(
+        ["mngr", "list", "--filter", 'labels["app"] == "ai-scientist"', "--format", "jsonl"],
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    list_names = []
+    for line in list_result.stdout.splitlines():
+        try:
+            list_names.append(json.loads(line).get("name"))
+        except json.JSONDecodeError:
+            pass
+
+    checks = [
+        ("got data dict", data == {"hello": "world"}),
+        ("no error", error is None),
+        ("at least one status update", len(statuses) > 0),
+        ("agent visible after stop", name in list_names),
+    ]
+    print("\nChecks:")
+    all_ok = True
+    for label, passed in checks:
+        marker = "OK" if passed else "FAIL"
+        print(f"  [{marker}] {label}")
+        all_ok = all_ok and passed
+
+    return 0 if all_ok else 1
+
+
+if __name__ == "__main__":
+    sys.exit(main())

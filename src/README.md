@@ -14,7 +14,7 @@ For more detailed information, please see the following guides:
 
 - **Agent Skills:** The main functionality of the AI Scientist is implemented through a set of Agent skills that each perform different steps of the research process.
 - **Backend (Python + FastAPI):** Manages the research lifecycle using multi-threading.
-- **Agent Layer:** Spawns `gemini` or `claude` CLI processes in headless mode, capturing their JSON outputs and session IDs for traceability.
+- **Agent Layer:** Delegates each step to an interactive `mngr` agent (`mngr create --type claude` or `--type gemini`). The runner shells out to the `mngr` CLI for create, event-stream, wait, and stop; mngr handles the underlying tmux session and home-settings sync.
 - **Frontend (React + TypeScript):** A dashboard for starting research tasks, monitoring progress in real-time, and inspecting the data exchange at each step.
 
 ## Prerequisites
@@ -24,6 +24,7 @@ For more detailed information, please see the following guides:
 - [Node.js & npm](https://nodejs.org/en/download) (for the frontend)
 - [Gemini CLI](https://geminicli.com/docs/get-started/installation/) or [Claude Code](https://code.claude.com/docs/en/quickstart#step-1-install-claude-code) installed and authenticated.
 - [Claude Code Sandboxing Prerequisites](https://code.claude.com/docs/en/sandboxing#prerequisites) correctly set up when using Claude Code on Linux or WSL
+- [`mngr`](https://pypi.org/project/imbue-mngr/) on PATH. Installed automatically when you set up the Python environment via `uv sync`, since `imbue-mngr`, `imbue-mngr-claude`, and `imbue-mngr-wait` are project dependencies.
 
 ## Getting Started
 
@@ -49,10 +50,22 @@ The system can be configured using the following environment variables:
    - **Framework:** Choose between Gemini CLI or Claude Code.
    - **Model:** Choose a model identifier from the dropdown or enter one manually.
 3. **Monitor:** The dashboard polls the backend every 2 seconds to update the timeline.
-4. **Inspect:** Click any completed or running step in the timeline to view the raw inputs, JSON outputs, and the **Session ID**.
-5. **Recover:** If you want to see the detailed agent logs or manually intervene, use the session ID provided in the inspection panel:
-   - For Gemini: `gemini --resume <session_id>`
-   - For Claude: `claude --resume <session_id>`
+4. **Inspect:** Click any completed or running step in the timeline to view the raw inputs, JSON outputs, and the **Session ID**. The session ID is the name of the underlying `mngr` agent.
+5. **Recover:** Use the session ID with `mngr` to inspect or intervene:
+   - `mngr list --filter 'labels["app"] == "ai-scientist"'` shows every agent ai-scientist has ever created.
+   - `mngr transcript <session_id>` prints the recorded turn.
+   - `mngr connect <session_id>` attaches the terminal to the agent's live tmux session — works while the step is running and after it has stopped.
+   - `mngr start <session_id>` brings a stopped agent back online so you can `mngr connect` and continue interacting with it.
+
+## Cleanup
+
+Stopped agents are preserved on disk so their work directory and transcript stay around for debugging. They accumulate over time. To remove every agent associated with a finished task:
+
+```bash
+mngr destroy --filter 'labels["ai-scientist-task"] == "<task_short_id>"'
+```
+
+This only removes the agent's `~/.mngr/agents/` entry; your `~/.ai-scientist/research/task_<id>` artifacts are untouched.
 
 ## Data Persistence
 

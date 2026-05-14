@@ -1,8 +1,18 @@
 import json
 from unittest.mock import patch, MagicMock
 from .helpers import OrchestratorTestCase
-from ..state import add_task, get_task, update_task, get_tasks, delete_task
+from ..state import (
+    add_task,
+    cancel_task_process,
+    delete_task,
+    get_task,
+    get_tasks,
+    register_agent,
+    unregister_agent,
+    update_task,
+)
 from ..models import Task, TaskStatus
+
 
 class TestState(OrchestratorTestCase):
     def test_create_and_get_task(self):
@@ -14,12 +24,12 @@ class TestState(OrchestratorTestCase):
             workflow_inputs={}
         )
         add_task(task)
-        
+
         # Check retrieval
         retrieved = get_task("t1")
         self.assertIsNotNone(retrieved)
         self.assertEqual(retrieved.workflow_name, "w1")
-        
+
         # Check all tasks
         all_tasks = get_tasks()
         self.assertEqual(len(all_tasks), 1)
@@ -34,10 +44,10 @@ class TestState(OrchestratorTestCase):
             workflow_inputs={}
         )
         add_task(task)
-        
+
         task.status = TaskStatus.RUNNING
         update_task(task)
-        
+
         retrieved = get_task("t1")
         self.assertEqual(retrieved.status, TaskStatus.RUNNING)
 
@@ -50,7 +60,7 @@ class TestState(OrchestratorTestCase):
             workflow_inputs={}
         )
         add_task(task)
-        
+
         # Verify it's in the file
         with open(self.state_path, "r") as f:
             data = json.load(f)
@@ -67,21 +77,42 @@ class TestState(OrchestratorTestCase):
         )
         add_task(task)
         self.assertEqual(len(get_tasks()), 1)
-        
+
         delete_task("t1")
         self.assertEqual(len(get_tasks()), 0)
 
-    @patch("os.killpg")
-    @patch("os.getpgid")
-    def test_cancel_task_process(self, mock_getpgid, mock_killpg):
-        mock_process = MagicMock()
-        mock_process.pid = 123
-        mock_getpgid.return_value = 456
-        
-        from ..state import register_process, cancel_task_process
-        register_process("t1", mock_process)
-        
+    @patch("subprocess.run")
+    def test_cancel_task_process_stops_each_agent(self, mock_run):
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_run.return_value = mock_result
+
+        register_agent("t1", "aisci-t1-stage-aaa")
+        register_agent("t1", "aisci-t1-stage-bbb")
+
         cancel_task_process("t1")
-        
-        mock_killpg.assert_called_with(456, 15) # signal.SIGTERM is 15
-        mock_process.wait.assert_called()
+
+        called_cmds = [call.args[0] for call in mock_run.call_args_list]
+        self.assertEqual(len(called_cmds), 2)
+        for cmd in called_cmds:
+            self.assertEqual(cmd[:2], ["mngr", "stop"])
+        stopped_names = sorted(cmd[2] for cmd in called_cmds)
+        self.assertEqual(stopped_names, ["aisci-t1-stage-aaa", "aisci-t1-stage-bbb"])
+
+    def test_cancel_task_process_no_agents(self):
+        # No registered agents → no-op, doesn't even try to subprocess.
+        with patch("subprocess.run") as mock_run:
+            cancel_task_process("never-registered")
+            mock_run.assert_not_called()
+
+    def test_unregister_agent(self):
+        register_agent("t1", "agent-a")
+        register_agent("t1", "agent-b")
+        unregister_agent("t1", "agent-a")
+
+        # Calling cancel after unregister should only stop the remaining one.
+        with patch("subprocess.run") as mock_run:
+            mock_run.return_value = MagicMock(returncode=0)
+            cancel_task_process("t1")
+            self.assertEqual(len(mock_run.call_args_list), 1)
+            self.assertEqual(mock_run.call_args_list[0].args[0][2], "agent-b")
