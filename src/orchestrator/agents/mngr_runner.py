@@ -154,6 +154,20 @@ class MngrAgentRunner(AgentRunner):
         falls through to using the post-`--` args as the agent's literal
         command, which then crashes deep inside tmux send-keys with
         `command send-keys: invalid flag --`.
+
+        This is a workaround for two stacked mngr bugs:
+          1. `resolve_agent_type` doesn't reject unregistered type names
+             when they aren't user-defined in TOML either; it silently
+             falls back to BaseAgent + an empty AgentTypeConfig.
+          2. `tmux send-keys -l <cmd>` chokes when `<cmd>` starts with
+             `-`, because tmux's own argv parser treats it as a flag.
+             Fix is `send-keys -l -- <cmd>`.
+
+        Once both land in mngr, this guard and its tests can be
+        removed. Note: this guard does not cover the second bug for
+        legitimately-registered types whose command starts with `-` --
+        ai-scientist doesn't have any (the registered names are
+        `claude` and eventually `gemini`), but other consumers would.
         """
         result = subprocess.run(
             ["mngr", "config", "get", f"agent_types.{self._agent_type}.command"],
