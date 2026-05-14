@@ -205,9 +205,8 @@ class MngrAgentRunner(AgentRunner):
                 except Exception as cb_err:
                     logger.error(f"[AGENT] [{task_id[:8]}] on_session_id error: {cb_err}")
 
-            assistant_buffer: List[str] = []
             event_proc, event_thread = self._spawn_event_follower(
-                agent_name, assistant_buffer, on_status
+                agent_name, on_status
             )
 
             try:
@@ -281,9 +280,14 @@ class MngrAgentRunner(AgentRunner):
     def _spawn_event_follower(
         self,
         agent_name: str,
-        assistant_buffer: List[str],
         on_status: Optional[Callable[[str], None]],
     ) -> Tuple[subprocess.Popen, threading.Thread]:
+        """Stream live events so `on_status` can surface progress to the
+        dashboard while `mngr wait` is blocking. The authoritative
+        assistant text used for JSON parsing is read post-wait via
+        `_read_assistant_text`, so we deliberately don't accumulate it
+        here — the follower's only job is the live status stream.
+        """
         cmd = [
             "mngr",
             "event",
@@ -312,9 +316,6 @@ class MngrAgentRunner(AgentRunner):
                     event = json.loads(line)
                 except json.JSONDecodeError:
                     continue
-                text = self._assistant_text_extractor(event)
-                if text:
-                    assistant_buffer.append(text)
                 if on_status:
                     status = self._status_extractor(event)
                     if status:
