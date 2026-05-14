@@ -113,7 +113,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
   const [direction, setDirection] = useState('')
   const [maxRefinements, setMaxRefinements] = useState(3)
   const [applyExpansions, setApplyExpansions] = useState('')
-  const [evolveIterations, setEvolveIterations] = useState(3)
+  const [evolveIterations, setEvolveIterations] = useState(5)
   const [numParents, setNumParents] = useState(2)
   const [maxStreamlineProb, setMaxStreamlineProb] = useState(0.5)
   const [numExtraScores, setNumExtraScores] = useState(5)

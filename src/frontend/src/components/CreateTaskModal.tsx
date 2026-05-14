@@ -63,7 +63,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     idea: '',
     numRootTheories: 3,
     maxRefinements: 3,
-    evolveIterations: 3,
+    evolveIterations: 5,
     numParents: 2,
     maxStreamlineProb: 0.5,
     numExtraScores: 5,

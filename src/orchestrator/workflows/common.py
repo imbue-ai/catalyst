@@ -15,10 +15,14 @@ from orchestrator.prompts import (
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_EVOLVE_ITERATIONS = 3
+DEFAULT_EVOLVE_ITERATIONS = 5
 DEFAULT_NUM_PARENTS = 2
 DEFAULT_MAX_STREAMLINE_PROB = 0.5
 DEFAULT_NUM_EXTRA_SCORES = 5
+
+# These two parameters help generate more diversity throughout the evolutionary process.
+MIN_STREAMLINE_PROB_FRACTION = 0.25
+FORCE_EXPANSION_PROB = 0.3
 
 
 def run_summarize_title(task: Task, run_step_fn: Callable, content_desc: str) -> None:
@@ -153,7 +157,10 @@ def run_evolve_loop(
                 tid = parent.get("id", "")
                 deterministic_rng = random.Random(f"{tid}:{idx}:{stage_prefix}:{i}")
                 length_score = parent.get("subscores", {}).get("length", 0.0)
-                streamline_prob = max_streamline_prob * (1.0 - length_score)
+                streamline_prob = max_streamline_prob * (
+                    MIN_STREAMLINE_PROB_FRACTION
+                    + (1.0 - MIN_STREAMLINE_PROB_FRACTION) * (1.0 - length_score)
+                )
                 is_streamline = deterministic_rng.random() < streamline_prob
                 if is_streamline:
                     stage_name = f"{stage_prefix}mutate-streamline-{i}-{idx}"
@@ -165,6 +172,15 @@ def run_evolve_loop(
                     )
                     mutation_results[stage_name] = res
                 else:
+                    if apply_expansions is None:
+                        # Force expansion with some probability
+                        apply_expansions_for_mutation = (
+                            "always"
+                            if (deterministic_rng.random() < FORCE_EXPANSION_PROB)
+                            else apply_expansions
+                        )
+                    else:
+                        apply_expansions_for_mutation = apply_expansions
                     stage_name = f"{stage_prefix}mutate-refine-{i}-{idx}"
                     res = run_step_if_needed(
                         task,
@@ -172,7 +188,7 @@ def run_evolve_loop(
                         stage_name,
                         get_refine_theory_prompt(
                             tid,
-                            apply_expansions=apply_expansions,
+                            apply_expansions=apply_expansions_for_mutation,
                             lit_review_id=lit_review_id,
                         ),
                     )
