@@ -6,8 +6,10 @@
     "network": {
       "allowedDomains": [
         "arxiv.org",
+        "python.org",
         "*.python.org",
         "pypi.org",
+        "*.pypi.org",
         "pythonhosted.org",
         "*.pythonhosted.org"
       ]
