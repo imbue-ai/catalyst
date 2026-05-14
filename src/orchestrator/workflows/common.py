@@ -20,8 +20,8 @@ DEFAULT_NUM_PARENTS = 2
 DEFAULT_MAX_STREAMLINE_PROB = 0.5
 DEFAULT_NUM_EXTRA_SCORES = 5
 
-# These two parameters help generate more diversity throughout the evolutionary process.
-MIN_STREAMLINE_PROB_FRACTION = 0.25
+# Make the theory development process more efficient and adds diversity by occasionally forcing the application of expansion reviews,
+# even when there are still falsifications to be applied.
 FORCE_EXPANSION_PROB = 0.3
 
 
@@ -157,10 +157,7 @@ def run_evolve_loop(
                 tid = parent.get("id", "")
                 deterministic_rng = random.Random(f"{tid}:{idx}:{stage_prefix}:{i}")
                 length_score = parent.get("subscores", {}).get("length", 0.0)
-                streamline_prob = max_streamline_prob * (
-                    MIN_STREAMLINE_PROB_FRACTION
-                    + (1.0 - MIN_STREAMLINE_PROB_FRACTION) * (1.0 - length_score)
-                )
+                streamline_prob = max_streamline_prob * (1.0 - length_score)
                 is_streamline = deterministic_rng.random() < streamline_prob
                 if is_streamline:
                     stage_name = f"{stage_prefix}mutate-streamline-{i}-{idx}"

@@ -16,7 +16,7 @@ user-invocable: false
 ```bash
 uv run python ${CLAUDE_SKILL_DIR}/scripts/run_experiment.py --experiment_folder <EXPERIMENT_FOLDER_PATH> --agent_type <AGENT_TYPE> [--parent_theory <T_ID>]
 ```
-  Always execute the `run_experiment.py` wrapper in the foreground, NEVER as a background process or in parallel. If your bash tool has a `run_in_background` parameter, set it to `false` explicitly. Furthermore, the wrapper already has a built-in timeout mechanism, so you should not set any timeout either.
+  Always execute the `run_experiment.py` wrapper in the foreground, NEVER as a background process or in parallel. If your bash tool has a `run_in_background` parameter, set it to `false` explicitly.
 6. The wrapper will execute the script in EXPERIMENT_FOLDER_PATH, passing through its stdout and stderr. It will capture all experiment outputs and persist them to a database for record keeping. It will finish its output by printing a unique experiment ID (e.g. `X_20260416_150000_a1b2c3`) that can be used to retrieve the results later.
 
 Some experiments may take a long time to complete (up to a few hours). Please allow enough time for the experiment to finish before assuming that it has failed.
