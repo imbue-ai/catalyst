@@ -62,7 +62,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
         phenomenon = task.workflow_inputs.get("phenomenon")
         assert phenomenon
         with open(os.path.join(task.env_folder, "phenomenon.txt"), "w") as f:
-            f.write(phenomenon)
+            f.write(phenomenon.strip() + "\n")
 
         # Step 0: Summarize Title
         run_summarize_title(task, run_step, f"phenomenon: {phenomenon}")
