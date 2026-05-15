@@ -1241,6 +1241,7 @@ def main(argv: list[str] | None = None) -> None:
             "rank-predictions",
             "score-theories",
             "score-soundness",
+            "score-length",
             "rank-explanatory-power",
             "polish-theory",
             "streamline-theory",
