@@ -737,13 +737,7 @@ def create_context(
 
         # 3. Theories (The dispatch for different layout requirements)
         if from_theories:
-            if for_agent_type == "review-theory":
-                # Special case: theory.md file only
-                theory_md = db_root / "theory" / from_theories[0] / "theory.md"
-                if theory_md.exists():
-                    shutil.copy2(theory_md, target_folder / "theory.md")
-                    _make_writable(target_folder / "theory.md")
-            elif for_agent_type in (
+            if for_agent_type in (
                 "score-theories",
                 "rank-explanatory-power",
                 "write-different-theory",

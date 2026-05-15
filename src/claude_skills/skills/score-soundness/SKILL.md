@@ -22,7 +22,7 @@ Run this command to populate the context:
 uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type score-soundness --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
 ```
 
-- `<CONTEXT_DIR>/theory.md` — the theory that you're scoring
+- `<CONTEXT_DIR>/theory/theory.md` — the theory that you're scoring
 - `<CONTEXT_DIR>/reviews/<review_id>/review.md` — falsification reviews for this theory. Each one will focus on a different hypothesis from the theory.
 
 ## Execution Steps

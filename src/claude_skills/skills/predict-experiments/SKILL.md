@@ -25,7 +25,7 @@ Run this command to populate the context:
 uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type predict-experiments --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID> --from_experiment <EXPERIMENT_ID_1> [--from_experiment <EXPERIMENT_ID_2> ...]
 ```
 
-- `<CONTEXT_DIR>/theory.md` — the theory to use for your predictions
+- `<CONTEXT_DIR>/theory/theory.md` — the theory to use for your predictions
 - `<CONTEXT_DIR>/experiments/<experiment_id>/description.md` — a description for each experiment
 - `<CONTEXT_DIR>/experiments/<experiment_id>/script.py` — a script containing the code for each experiment
 - `<OUTPUT_DIR>/` — write your predictions here
