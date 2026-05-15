@@ -211,7 +211,7 @@ def initialize_state():
                 task.status = TaskStatus.PAUSED
                 modified = True
             for step in task.steps:
-                if step.status == StepStatus.RUNNING:
+                if step.status in (StepStatus.RUNNING, StepStatus.WAITING):
                     step.status = StepStatus.PAUSED
                     modified = True
         if modified:
@@ -243,7 +243,7 @@ def shutdown_all():
                 task.status = TaskStatus.PAUSED
                 modified = True
             for step in task.steps:
-                if step.status == StepStatus.RUNNING:
+                if step.status in (StepStatus.RUNNING, StepStatus.WAITING):
                     step.status = StepStatus.PAUSED
                     modified = True
         if modified:
