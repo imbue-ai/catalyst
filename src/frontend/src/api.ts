@@ -152,6 +152,12 @@ export async function getTemplates(): Promise<string[]> {
   return res.json();
 }
 
+export async function listArtifactFiles(taskId: string, artifactId: string): Promise<string[]> {
+  const res = await fetch(`${API_BASE}/tasks/${taskId}/artifacts/${artifactId}/files`);
+  if (!res.ok) throw new Error("Failed to list files");
+  return res.json();
+}
+
 export async function exportArtifact(taskId: string, artifactId: string): Promise<void> {
   const res = await fetch(`${API_BASE}/tasks/${taskId}/artifacts/${artifactId}/export`);
   if (!res.ok) throw new Error("Failed to export artifact");
