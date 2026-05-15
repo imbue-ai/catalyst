@@ -215,18 +215,69 @@ def _run_step_core(task: Task, stage: str, prompt: str) -> Any:
             update_task(task)
         raise Exception(error)
 
-    tx_id = f"tx_{uuid.uuid4().hex}"
+    # Reuse the step's prior tx_id if we have one. context_manager
+    # stages writes under a tx_id and only un-stages them when the
+    # orchestrator commits the SAME tx_id; if it changed across
+    # re-runs (resume-in-place, or a fresh retry of a failed step)
+    # everything the prior run wrote would be orphaned in `staged_for_transaction`.
+    with lock:
+        if not step.tx_id:
+            step.tx_id = f"tx_{uuid.uuid4().hex}"
+            update_task(task)
+        tx_id = step.tx_id
 
-    output, session_id, error = runner.run(
-        task_id=task.id,
-        prompt=prompt,
-        env_folder=task.env_folder,
-        model=task.model,
-        tx_id=tx_id,
-        stage=stage,
-        on_session_id=on_sid,
-        on_status=on_status,
+    # Resume-in-place when we have an mngr session from a prior run
+    # of THIS step: `mngr start <agent>` + `mngr message <agent> ...`
+    # keeps the conversation context the prior run built up. Falls
+    # back to a fresh `run()` if the agent can't be resumed (e.g.
+    # was destroyed out-of-band).
+    use_resume = (
+        step.session_id is not None
+        and task.framework.startswith("mngr-")
+        and hasattr(runner, "resume_in_place")
     )
+    if use_resume:
+        logger.info(
+            f"[ORCHESTRATOR] [{task.id[:8]}] Resuming {stage} in place via existing agent {step.session_id}"
+        )
+        output, session_id, error = runner.resume_in_place(
+            task_id=task.id,
+            agent_name=step.session_id,
+            env_folder=task.env_folder,
+            model=task.model,
+            tx_id=tx_id,
+            stage=stage,
+            on_session_id=on_sid,
+            on_status=on_status,
+        )
+        if error and "resume_unrecoverable" in error:
+            logger.info(
+                f"[ORCHESTRATOR] [{task.id[:8]}] Resume of {stage} unrecoverable ({error[:100]}...); falling back to fresh run"
+            )
+            with lock:
+                step.session_id = None
+                update_task(task)
+            output, session_id, error = runner.run(
+                task_id=task.id,
+                prompt=prompt,
+                env_folder=task.env_folder,
+                model=task.model,
+                tx_id=tx_id,
+                stage=stage,
+                on_session_id=on_sid,
+                on_status=on_status,
+            )
+    else:
+        output, session_id, error = runner.run(
+            task_id=task.id,
+            prompt=prompt,
+            env_folder=task.env_folder,
+            model=task.model,
+            tx_id=tx_id,
+            stage=stage,
+            on_session_id=on_sid,
+            on_status=on_status,
+        )
 
     # Check for pause again
     updated_task = get_task(task.id)
@@ -261,5 +312,6 @@ def _run_step_core(task: Task, stage: str, prompt: str) -> Any:
     with lock:
         step.status = StepStatus.COMPLETED
         step.outputs = output
+        step.tx_id = None  # committed; clear so a future retry doesn't reuse it
         update_task(task)
         return output
