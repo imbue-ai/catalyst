@@ -671,7 +671,7 @@ def _validate_create_context_args(
     elif for_agent_type == "score-length":
         if not from_theories or len(from_theories) != 1:
             raise ValueError("Exactly one --from_theory is required for score-length")
-    elif for_agent_type == "rank-predictive-power":
+    elif for_agent_type == "rank-explanatory-power":
         if not from_theories:
             raise ValueError(
                 f"At least one --from_theory is required for {for_agent_type}"
@@ -745,7 +745,7 @@ def create_context(
                     _make_writable(target_folder / "theory.md")
             elif for_agent_type in (
                 "score-theories",
-                "rank-predictive-power",
+                "rank-explanatory-power",
                 "write-different-theory",
             ):
                 # Multiple theories in theories/ folder
@@ -839,7 +839,7 @@ def create_context(
                         db_root / "review" / data["id"], reviews_root / data["id"]
                     )
 
-        elif for_agent_type == "rank-predictive-power":
+        elif for_agent_type == "rank-explanatory-power":
             # Add all 'suggest-expansions' reviews for the theories
             reviews_root = target_folder / "reviews"
             reviews_root.mkdir(exist_ok=True)
@@ -1011,7 +1011,9 @@ def list_entries(
                             if hasattr(eval_result, "subscores")
                             else {}
                         )
-                        leaf_map[theory_id] = len(population.get_children(organism)) == 0
+                        leaf_map[theory_id] = (
+                            len(population.get_children(organism)) == 0
+                        )
 
             for d in results:
                 tid = d.get("id")
@@ -1239,7 +1241,7 @@ def main(argv: list[str] | None = None) -> None:
             "rank-predictions",
             "score-theories",
             "score-soundness",
-            "rank-predictive-power",
+            "rank-explanatory-power",
             "polish-theory",
             "streamline-theory",
             "search-literature",
