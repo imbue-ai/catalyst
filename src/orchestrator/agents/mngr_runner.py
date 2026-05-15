@@ -262,15 +262,23 @@ class MngrAgentRunner(AgentRunner):
 
                 saw_turn_end = self._wait_for_turn_end(agent_name, on_status)
                 if not saw_turn_end:
+                    # Either the deadline expired without turn_end (Stop
+                    # hook never fired -- typically means the env_folder
+                    # was created before the hook landed in
+                    # `.claude/settings.local.json`), or the agent was
+                    # stopped externally (e.g. user clicked Pause).
+                    # Distinguishing here would require us to read task
+                    # state, so we leave the message generic and let the
+                    # orchestrator's task-status check overwrite it
+                    # with "Paused" when appropriate.
                     return (
                         None,
                         agent_name,
-                        f"Agent did not signal turn_end within "
-                        f"{_WAIT_TIMEOUT_SECONDS}s. If this is an env_folder "
-                        "created before the Stop-hook landed, delete the task "
-                        "and recreate it so the new "
-                        ".claude/settings.local.json (with the turn_end hook) "
-                        "is in place.",
+                        f"Agent stopped without signaling turn_end "
+                        f"(deadline was {_WAIT_TIMEOUT_SECONDS}s). If this "
+                        "wasn't a manual pause, the env_folder may pre-date "
+                        "the Stop hook in .claude/settings.local.json -- "
+                        "delete the task and recreate it.",
                     )
 
                 assistant_text = self._read_assistant_text(agent_name, on_status)
@@ -299,46 +307,66 @@ class MngrAgentRunner(AgentRunner):
         agent_name: str,
         on_status: Optional[Callable[[str], None]],
     ) -> bool:
-        """Stream `mngr event --follow` and return when a `turn_end` event
-        from the `mngr/turn_complete` source appears (or the deadline
-        expires).
+        """Wait for either the Stop-hook-emitted `turn_end` event (normal
+        completion) or the agent transitioning to STOPPED (external
+        cancel, e.g. the user clicking Pause in the dashboard).
 
-        The Stop hook in `src/claude_skills/settings.local.json` writes
-        the `turn_end` event after the parent agent has truly finished
-        emitting its final assistant_message -- including after a
-        multi-skill cascade like `/swarm` where the parent goes through
-        multiple intermediate idle states while waiting for Task
-        subagents. Using this as the wait signal (instead of `mngr wait
-        --state WAITING`) avoids the false-positive returns we used to
-        hit mid-`/swarm`.
+        Two subprocesses run in parallel:
 
-        While we wait, every event is also fed to `status_extractor` to
-        keep the dashboard's per-step status field current.
+        * `mngr event --follow` streams transcript events; on a `turn_end`
+          event from the `mngr/turn_complete` source we set the
+          `saw_turn_end` flag. While we wait, every event also feeds
+          `status_extractor` to keep the dashboard's per-step status
+          field current.
+        * `mngr wait --state STOPPED` blocks until the agent is stopped
+          (either by our own `_stop_agent` exiting the run() context, or
+          by `cancel_task_process` from server.py's pause endpoint).
+          Without this, pausing the task would leave the runner blocked
+          here for the full `_WAIT_TIMEOUT_SECONDS` while the dashboard
+          showed the step as RUNNING.
 
-        Returns True if `turn_end` was seen, False on timeout.
+        Returns True iff `turn_end` was seen. False covers both timeout
+        and external stop -- the orchestrator distinguishes by checking
+        the task's status (PAUSED vs FAILED) after run() returns.
         """
-        cmd = [
-            "mngr",
-            "event",
-            agent_name,
-            "--follow",
-            "--format",
-            "jsonl",
-        ]
-        proc = subprocess.Popen(
-            cmd,
+        deadline = time.monotonic() + _WAIT_TIMEOUT_SECONDS
+        saw_turn_end = threading.Event()
+        done = threading.Event()
+
+        event_proc = subprocess.Popen(
+            [
+                "mngr",
+                "event",
+                agent_name,
+                "--follow",
+                "--format",
+                "jsonl",
+            ],
             stdin=subprocess.DEVNULL,
             stdout=subprocess.PIPE,
             stderr=subprocess.DEVNULL,
             text=True,
             bufsize=1,
         )
-        deadline = time.monotonic() + _WAIT_TIMEOUT_SECONDS
-        saw_turn_end = threading.Event()
 
-        def consume() -> None:
-            assert proc.stdout is not None
-            for line in proc.stdout:
+        wait_proc = subprocess.Popen(
+            [
+                "mngr",
+                "wait",
+                agent_name,
+                "--state",
+                "STOPPED",
+                "--timeout",
+                f"{_WAIT_TIMEOUT_SECONDS}s",
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        def consume_events() -> None:
+            assert event_proc.stdout is not None
+            for line in event_proc.stdout:
                 if not line.strip():
                     continue
                 try:
@@ -357,27 +385,40 @@ class MngrAgentRunner(AgentRunner):
                     and event.get("type") == _TURN_END_EVENT_TYPE
                 ):
                     saw_turn_end.set()
+                    done.set()
                     return
 
-        thread = threading.Thread(target=consume, daemon=True)
-        thread.start()
+        def watch_stopped() -> None:
+            # rc=0 means the agent reached STOPPED state, rc=2 means
+            # wait timed out (we'll have hit our own deadline by then).
+            # Either way, the runner should exit.
+            wait_proc.wait()
+            done.set()
+
+        event_thread = threading.Thread(target=consume_events, daemon=True)
+        event_thread.start()
+        wait_thread = threading.Thread(target=watch_stopped, daemon=True)
+        wait_thread.start()
+
         try:
             remaining = max(0.0, deadline - time.monotonic())
-            saw_turn_end.wait(timeout=remaining)
+            done.wait(timeout=remaining)
         finally:
-            try:
-                proc.terminate()
-            except ProcessLookupError:
-                pass
-            try:
-                proc.wait(timeout=5)
-            except subprocess.TimeoutExpired:
+            for proc in (event_proc, wait_proc):
                 try:
-                    proc.kill()
-                    proc.wait(timeout=2)
-                except Exception:
+                    proc.terminate()
+                except ProcessLookupError:
                     pass
-            thread.join(timeout=5)
+                try:
+                    proc.wait(timeout=5)
+                except subprocess.TimeoutExpired:
+                    try:
+                        proc.kill()
+                        proc.wait(timeout=2)
+                    except Exception:
+                        pass
+            event_thread.join(timeout=5)
+            wait_thread.join(timeout=5)
         return saw_turn_end.is_set()
 
     def _read_assistant_text(
