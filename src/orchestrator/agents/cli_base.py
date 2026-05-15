@@ -20,7 +20,6 @@ class BaseCliAgentRunner(AgentRunner):
         env: dict,
         on_session_id: Optional[Callable[[str], None]] = None,
         on_data_event: Optional[Callable[[Dict[str, Any]], None]] = None,
-        on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[str, Optional[str], int, list[str]]:
         """Common execution loop for stream-json output."""
         try:
@@ -44,28 +43,25 @@ class BaseCliAgentRunner(AgentRunner):
             for line in iter(process.stdout.readline, ""):
                 if line:
                     full_output.append(line)
-                    try:
-                        json_match = re.search(r"(\{.*\})", line)
-                        if json_match:
-                            data = json.loads(json_match.group(1))
+                    json_match = re.search(r"(\{.*\})", line)
+                    if json_match:
+                        data = json.loads(json_match.group(1))
 
-                            if not session_id and "session_id" in data:
-                                session_id = data["session_id"]
-                                logger.debug(
-                                    f"[AGENT] [{task_id[:8]}] Detected session ID: {session_id}"
-                                )
-                                if on_session_id:
-                                    try:
-                                        on_session_id(session_id)
-                                    except Exception as cb_err:
-                                        logger.error(
-                                            f"[AGENT] [{task_id[:8]}] Callback error: {cb_err}"
-                                        )
+                        if not session_id and "session_id" in data:
+                            session_id = data["session_id"]
+                            logger.debug(
+                                f"[AGENT] [{task_id[:8]}] Detected session ID: {session_id}"
+                            )
+                            if on_session_id:
+                                try:
+                                    on_session_id(session_id)
+                                except Exception as cb_err:
+                                    logger.error(
+                                        f"[AGENT] [{task_id[:8]}] Callback error: {cb_err}"
+                                    )
 
-                            if on_data_event:
-                                on_data_event(data)
-                    except Exception:
-                        pass
+                        if on_data_event:
+                            on_data_event(data)
 
             process.wait()
             stdout = "".join(full_output)
@@ -111,7 +107,7 @@ class BaseCliAgentRunner(AgentRunner):
                                 return data
                         except json.JSONDecodeError:
                             break  # This brace pair is invalid JSON, try the next '}'
-            
+
             # Try the next '}' to the left
             last_brace = text.rfind("}", 0, last_brace)
 

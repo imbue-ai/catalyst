@@ -88,7 +88,6 @@ class GeminiAgentRunner(BaseCliAgentRunner):
                 env,
                 on_session_id,
                 handle_event,
-                on_status,
             )
 
             logger.debug(
