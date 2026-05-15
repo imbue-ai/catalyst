@@ -17,14 +17,17 @@ if ! command -v npm &> /dev/null; then
     exit 1
 fi
 
-if ! command -v tmux &> /dev/null; then
-    echo "Error: 'tmux' is not installed."
-    echo "ai-scientist runs each agent inside an mngr-managed tmux session, so tmux is required."
-    echo "Install with:"
-    echo "  - macOS:  brew install tmux"
-    echo "  - Debian/Ubuntu:  sudo apt-get install tmux"
-    echo "Alternatively, run mngr's bootstrap installer (sets up tmux + other deps):"
-    echo "  curl -fsSL https://raw.githubusercontent.com/imbue-ai/mngr/main/install.sh | sh"
+# Check mngr's system deps (tmux, ssh, git, jq) before touching uv/npm.
+# This only matters for tasks created with framework `mngr-claude` /
+# `mngr-gemini`; legacy `claude` / `gemini` framework tasks don't strictly
+# need mngr's deps. But both options are in the dropdown at runtime, so
+# we check up-front rather than waiting for the first mngr task to crash.
+if ! uv run mngr dependencies; then
+    echo ""
+    echo "Some mngr-required system dependencies are missing."
+    echo "Re-run with one of:"
+    echo "  uv run mngr dependencies -i   # interactive install"
+    echo "  uv run mngr dependencies -c   # auto-install core deps"
     exit 1
 fi
 
@@ -47,7 +50,6 @@ fi
 echo "Dependencies met!"
 echo " - uv: $(uv --version)"
 echo " - npm: $(npm --version)"
-echo " - tmux: $(tmux -V)"
 if [ "$HAS_GEMINI" = true ]; then
     echo " - gemini: $(gemini --version)"
 fi
