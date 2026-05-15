@@ -2,14 +2,21 @@ import shutil
 import argparse
 from pathlib import Path
 
-BASE_GEMINI_MD = """IMPORTANT INSTRUCTIONS:
+BASE_GEMINI_MD = """GENERAL INSTRUCTIONS:
 * Be very thorough! You will frequently need to run 10+ experiments to perform a single topic exploration or falsification. I expect that you'll be working many hours on each step of this task. Don't stop after the first successful experiment - keep going until you've explored ALL reasonable ideas.
-* `theory.md` files are the main output of the research process that will be consumed by human researchers. They should thus be self-contained, and are expected to be several pages in length and highly polished. Theories should include figures, plots, and detailed mathematical proofs.
-* Use rigorous, objective language in all generated theories, reviews and reports. When you speculate, call that out explicitly. NEVER present speculation as fact.
-* Completely avoid self-promoting language. Never call your own theories "profound", "elegant", etc. Use neutral, factual language at all times.
 * Make sure to consider and rule out ALL plausible alternative explanations before drawing conclusions.
 * Whenever a skill mentions `${CLAUDE_SKILL_DIR}`, that is a placeholder for that skill's directory, i.e. `.gemini/skills/<SKILL_NAME>`
 * ALWAYS use the `scientist` subagent type instead of generalist for spawning subagents. If the scientist agent type is not available, stop and tell the user that they need to install it.
+
+THEORY.MD INSTRUCTIONS:
+* `theory.md` files are the main output of the research process that will be consumed by human researchers.
+* Theories should be self-contained, define and/or introduce all necessary concepts, and should be highly polished. They must include figures, plots, and detailed mathematical proofs.
+* A typical theory is expected to be many pages long, between 3000-10000 words.
+* Assume you're writing a high-quality scientific paper to be published in a leading journal in the field! Use language and rigour appropriate for that audience.
+* You might need to perform multiple edits and iterations before your theory.md file is in a good shape.
+* Use rigorous, objective language in all theories, reviews and reports. Be extremely precise, using specific objective observations, precise mathematical definitions, and mathematical proofs. NEVER present speculation as fact.
+* Completely avoid self-promoting language. Never call your own theories "profound", "elegant", etc. Use neutral, factual language at all times.
+
 
 If you find that the `uv` command is not installed:
 1. First, check if it might already be installed in `./tmp/bin/uv`.

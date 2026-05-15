@@ -87,7 +87,7 @@ Follow these guidelines when writing the `theory.md` file:
 - Cite literature where applicable
 - Use inline LaTeX for mathematical notation and formulas (`$...$` for inline math, and `$$...$$` for display math). Do NOT put formulas into code blocks.
 
-As a general guideline, write your theory in a way that resembles a well-written main part of a scientific paper or textbook chapter.
+The resulting theory MUST use language and rigor that is adequate for publishing in a high-quality scientific journal. Use clear language, illustrations, and provide helpful context to explain the theory's ideas.
 
 ## Execution Steps
 1. **Parse input**: Extract the file path or theory idea, and any potential scoping notes from `$ARGUMENTS`. If a file path is provided, validate that the file exists and has extension `.tex`, `.pdf`, or `.md`. Copy it into `<CONTEXT_DIR>` as described in "Folder setup".
