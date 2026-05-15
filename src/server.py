@@ -362,43 +362,15 @@ def get_task_theories(task_id: str):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    ctx_mgr_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "context_manager.py")
-    )
-
-    env = os.environ.copy()
-    env["AI_SCIENTIST_DB_PATH"] = os.path.join(
-        os.path.abspath(task.env_folder), DEFAULT_DB_DIR
-    )
-
-    cmd = [
-        "uv",
-        "run",
-        "python",
-        ctx_mgr_path,
-        "list",
-        "--type",
-        "theory",
-        "--sort_by",
-        "score",
-        "--json",
-    ]
     try:
-        result = subprocess.run(
-            cmd,
-            env=env,
-            cwd=os.path.abspath(task.env_folder),
-            check=True,
-            capture_output=True,
-            text=True,
+        result = run_context_manager(
+            task, ["list", "--type", "theory", "--sort_by", "score", "--json"]
         )
-        data = json.loads(result.stdout)
+        data = json.loads(result)
         data.reverse()
         return data
-    except subprocess.CalledProcessError as e:
-        logger.error(
-            f"Error running context_manager list for task {task_id}: {e.stderr}"
-        )
+    except Exception as e:
+        logger.error(f"Error running context_manager list for task {task_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve theories")
     except json.JSONDecodeError as e:
         logger.error(f"Error decoding context_manager output for task {task_id}: {e}")
@@ -462,6 +434,30 @@ def get_artifact_primary(task_id: str, artifact_id: str):
 
     with open(file_path, "r", encoding="utf-8") as f:
         return {"content": inject_disclaimer(f.read())}
+
+
+@app.get("/api/tasks/{task_id}/artifacts/{artifact_id}/files")
+def list_artifact_files(task_id: str, artifact_id: str):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    prefix = artifact_id.split("_")[0]
+    category = PREFIX_TO_CATEGORY.get(prefix)
+    if not category:
+        raise HTTPException(status_code=400, detail="Invalid artifact ID prefix")
+
+    dir_path = os.path.join(
+        task.env_folder, DEFAULT_DB_DIR, category, artifact_id
+    )
+    if not os.path.exists(dir_path):
+        raise HTTPException(status_code=404, detail="Artifact directory not found")
+
+    files = []
+    for f in os.listdir(dir_path):
+        if os.path.isfile(os.path.join(dir_path, f)):
+            files.append(f)
+    return sorted(files)
 
 
 @app.get("/api/tasks/{task_id}/artifacts/{artifact_id}/files/{file_path:path}")
