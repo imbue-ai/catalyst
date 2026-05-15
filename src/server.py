@@ -249,14 +249,14 @@ def cancel_step(task_id: str, stage: str):
     # Actually, we can just mark it as canceled if it's paused, failed, or pending.
     step = next((s for s in task.steps if s.stage == stage), None)
     if step:
-        if step.status in (StepStatus.FAILED, StepStatus.PAUSED, StepStatus.PENDING):
+        if step.status in (StepStatus.FAILED, StepStatus.PAUSED, StepStatus.PENDING, StepStatus.WAITING):
             step.status = StepStatus.CANCELED
             update_task(task)
             return {"status": "canceled"}
         else:
             raise HTTPException(
                 status_code=400,
-                detail="Can only cancel steps in failed, paused, or pending state",
+                detail="Can only cancel steps in failed, paused, pending, or waiting state",
             )
     else:
         # Step not in task.steps yet (so it's pending in the structure)
@@ -289,6 +289,7 @@ def bulk_cancel_steps(task_id: str, req: BulkCancelRequest):
                 StepStatus.FAILED,
                 StepStatus.PAUSED,
                 StepStatus.PENDING,
+                StepStatus.WAITING,
             ):
                 step.status = StepStatus.CANCELED
                 modified = True
@@ -309,6 +310,10 @@ def cancel_task(task_id: str):
         raise HTTPException(status_code=404, detail="Task not found")
 
     task.status = TaskStatus.PAUSED
+    from orchestrator.models import StepStatus
+    for step in task.steps:
+        if step.status in (StepStatus.RUNNING, StepStatus.WAITING):
+            step.status = StepStatus.PAUSED
     update_task(task)
     cancel_task_process(task_id)
     return {"status": "paused"}

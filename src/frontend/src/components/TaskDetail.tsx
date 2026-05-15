@@ -250,7 +250,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     <div className="bg-black text-white p-1 rounded-sm"><Workflow size={16} /></div>
                     <span className="font-black text-xs tracking-widest">{formatStageName(selectedStage)}</span>
                   </div>
-                  {['failed', 'paused', 'pending'].includes(task.steps.find(s => s.stage === selectedStage)?.status || 'pending') && (
+                  {['failed', 'paused', 'pending', 'waiting'].includes(task.steps.find(s => s.stage === selectedStage)?.status || 'pending') && (
                     <button
                       disabled={isProcessing}
                       onClick={async () => {
