@@ -11,7 +11,7 @@ You are working on finding literature as part of a broader research effort. Your
 - Prioritize papers that directly study the specific phenomenon, technique, or claim under investigation — not papers that merely touch the same parent field.
 - Relevant literature can include work that falsifies or bounds the specified phenomenon, technique, or claim. Not just work that supports it.
 - Download actual PDFs so downstream agents can reference the originals.
-- Read each PDF and extract the parts that speak to the query; skip unrelated material.
+- Read each PDF and extract the parts that speak to the query; skip unrelated material. Also skip appendix sections and/or supplementary material to avoid exhausting context size limits.
 - Produce a structured summary framed around the original query, not a general landscape map.
 
 ## Literature Search Input
@@ -79,7 +79,7 @@ Your `summary.md` file must follow this structure:
    curl -sL "https://arxiv.org/pdf/XXXX.XXXXX" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
    ```
    Use the arXiv ID as filename. Verify each download succeeded (file >10KB).
-5. **Read and extract**: Read each PDF with the `Read` tool. For each paper, note only the content that speaks to the query — the specific finding, the relevant method, the directly applicable result or bound. Skip the rest.
+5. **Read and extract**: Read each PDF. Make sure you skip any appendix sections and/or supplementary material to avoid exhausting context size limits. For each paper, note only the content that speaks to the query — the specific finding, the relevant method, the directly applicable result or bound. Skip the rest.
 6. **Synthesize**: Write `<OUTPUT_DIR>/summary.md` per the format below. Frame the synthesis around the query, not as a general landscape survey.
 7. **Store results**: Persist your output:
    ```bash
