@@ -22,11 +22,11 @@ Run this command to populate the context:
 uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type review-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
 ```
 
-- `<CONTEXT_DIR>/theory.md` — the theory file to review (read-only input).
+- `<CONTEXT_DIR>/theory/theory.md` — the theory file to review (read-only input).
 
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to retrieve the `theory.md` file using `context_manager.py`.
-2. **Review & Extraction**: Read `<CONTEXT_DIR>/theory.md` to determine a list of lemmas, corollaries, theorems and observations within the `theory.md` file.
+2. **Review & Extraction**: Read `<CONTEXT_DIR>/theory/theory.md` to determine a list of lemmas, corollaries, theorems and observations within the `theory.md` file.
 3. **Spawn Agents**: Launch the following agents in parallel:
    - For each theorem, lemma, corollary, and observation, spawn a `falsify-hypothesis` agent instructed to invoke the `falsify-hypothesis` skill, passing the `<THEORY_ID>` and theorem/lemma/corollary/observation name and number.
    - Spawn **one** `suggest-expansions` agent instructed to invoke the `suggest-expansions` skill, passing only `<THEORY_ID>`. This agent reviews the entire theory at once.
