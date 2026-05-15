@@ -56,6 +56,16 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
             if data.get("type") == "result":
                 last_result_obj["data"] = data
 
+            if data.get("type") == "assistant" and data.get("error"):
+                error_message = data["error"]
+                content_list = data.get("message", {}).get("content", [])
+                if isinstance(content_list, list) and content_list:
+                    for item in reversed(content_list):
+                        if item.get("type") == "text":
+                            error_message += f" - {item.get('text')}"
+
+                raise Exception(error_message)
+
             if on_status:
                 status_text = None
                 if data.get("type") == "assistant":
@@ -81,7 +91,6 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
                 env,
                 on_session_id,
                 handle_event,
-                on_status,
             )
 
             logger.debug(
