@@ -11,7 +11,7 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
   const [theories, setTheories] = useState<TheoryArtifact[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [showZeroScored, setShowZeroScored] = useState(false);
+  const [showAll, setShowAll] = useState(false);
 
   const fetchTheories = async () => {
     setLoading(true);
@@ -30,7 +30,7 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
     fetchTheories();
   }, [taskId]);
 
-  const filteredTheories = theories.filter(t => showZeroScored || (t.score != null && t.score !== 0.0));
+  const filteredTheories = theories.filter(t => showAll || (t.score != null && t.score !== 0.0) || t.is_leaf_node);
 
   const validScores = theories.map(t => t.score).filter(s => s != null && s !== 0.0) as number[];
   const minScore = validScores.length > 0 ? Math.min(...validScores) : 0;
@@ -40,12 +40,12 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
     if (score == null || score === 0.0) {
       return { className: "bg-gray-200 text-gray-600 border border-gray-300", style: {} };
     }
-    
+
     let normalized = 1;
     if (maxScore > minScore) {
       normalized = (score - minScore) / (maxScore - minScore);
     }
-    
+
     // Green (120) for max score, Red (0) for min score.
     const hue = Math.round(normalized * 120);
     return {
@@ -64,18 +64,17 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
         <h2 className="text-xs font-black text-black tracking-widest">Top Theories</h2>
         <div className="flex items-center gap-4">
           <label className="flex items-center gap-2 cursor-pointer group">
-            <div className={`w-3 h-3 border-2 border-black flex items-center justify-center transition-colors ${showZeroScored ? 'bg-black' : 'bg-white'}`}>
-              {showZeroScored && <div className="w-1.5 h-1.5 bg-white" />}
-              <input 
-                type="checkbox" 
-                className="hidden" 
-                checked={showZeroScored} 
-                onChange={e => setShowZeroScored(e.target.checked)} 
+            <div className={`w-3 h-3 border-2 border-black flex items-center justify-center transition-colors ${showAll ? 'bg-black' : 'bg-white'}`}>
+              {showAll && <div className="w-1.5 h-1.5 bg-white" />}
+              <input
+                type="checkbox"
+                className="hidden"
+                checked={showAll}
+                onChange={e => setShowAll(e.target.checked)}
               />
             </div>
-            <span className="text-[10px] font-black tracking-widest text-gray-400 group-hover:text-black transition-colors">Show Unscored</span>
-          </label>
-          <button
+            <span className="text-[10px] font-black tracking-widest text-gray-400 group-hover:text-black transition-colors">Show All</span>
+          </label>          <button
             onClick={fetchTheories}
             className="p-1 text-black hover:bg-gray-100 transition-colors focus:outline-none border border-black"
             title="Refresh Theories"
