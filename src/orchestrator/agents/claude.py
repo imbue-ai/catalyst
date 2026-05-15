@@ -51,6 +51,7 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
         logger.debug(f"[AGENT] Executing in folder {abs_env_folder}: {shlex.join(cmd)}")
 
         last_result_obj = {}
+        last_error_message = None
 
         def handle_event(data):
             if data.get("type") == "result":
@@ -64,7 +65,7 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
                         if item.get("type") == "text":
                             error_message += f" - {item.get('text')}"
 
-                raise Exception(error_message)
+                last_error_message = error_message
 
             if on_status:
                 status_text = None
@@ -106,7 +107,7 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
                 return (
                     None,
                     session_id,
-                    f"Claude failed with exit code {returncode}. Last output: {stdout_tail}",
+                    f"Claude failed with exit code {returncode}. Last error: {last_error_message}. Last output: {stdout_tail}",
                 )
 
             agent_raw_result = (
