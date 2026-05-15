@@ -55,6 +55,7 @@ export interface TheoryArtifact {
   extra: Record<string, string>;
   score?: number | null;
   subscores?: Record<string, number>;
+  is_leaf_node?: boolean;
 }
 
 export interface ReviewArtifact {

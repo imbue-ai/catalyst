@@ -89,7 +89,6 @@ LOCK_FILENAME = ".lock"
 IGNORE_METADATA_PATTERN = shutil.ignore_patterns("metadata.json")
 
 POPULATION_FILENAME = "population.snapshot"
-INITIAL_ROOT_SCORE = 0.5
 SCORE_DECAY_RATE = 0.8
 
 # ---------------------------------------------------------------------------
@@ -279,9 +278,7 @@ class DatabaseSession:
                     f"{parent_theory_id!r} but no population exists yet."
                 )
             organism = TheoryOrganism(theory_id=theory_id)
-            result = TheoryEvaluationResult(
-                score=INITIAL_ROOT_SCORE, trainable_failure_cases=[]
-            )
+            result = TheoryEvaluationResult(score=0.0, trainable_failure_cases=[])
             pop = WeightedSamplingPopulation(
                 organism,
                 result,
@@ -302,9 +299,8 @@ class DatabaseSession:
                 )
             parent_org, _ = found
 
-        score = 0.0 if parent_org else INITIAL_ROOT_SCORE
         organism = TheoryOrganism(theory_id=theory_id, parent=parent_org)
-        result = TheoryEvaluationResult(score=score, trainable_failure_cases=[])
+        result = TheoryEvaluationResult(score=0.0, trainable_failure_cases=[])
         pop.add(organism, result)
         self.mark_population_modified()
 
@@ -1005,18 +1001,23 @@ def list_entries(
             scores = {}
             subscores = {}
             if population:
+                leaf_map = {}
                 for organism, eval_result in population.organisms:
                     if hasattr(organism, "theory_id"):
-                        scores[organism.theory_id] = eval_result.score
-                        subscores[organism.theory_id] = (
+                        theory_id = organism.theory_id
+                        scores[theory_id] = eval_result.score
+                        subscores[theory_id] = (
                             eval_result.subscores
                             if hasattr(eval_result, "subscores")
                             else {}
                         )
+                        leaf_map[theory_id] = len(population.get_children(organism)) == 0
 
             for d in results:
-                d["score"] = scores.get(d.get("id"))
-                d["subscores"] = subscores.get(d.get("id"))
+                tid = d.get("id")
+                d["score"] = scores.get(tid)
+                d["subscores"] = subscores.get(tid)
+                d["is_leaf_node"] = leaf_map.get(tid, False) if population else False
 
             results.sort(
                 key=lambda d: (
