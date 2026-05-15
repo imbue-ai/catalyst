@@ -57,7 +57,7 @@ Follow these guidelines when writing the polished theory:
 - Cite literature where applicable
 - Use inline LaTeX for mathematical notation and formulas (`$...$` for inline math, and `$$...$$` for display math). Do NOT put formulas into code blocks.
 
-As a general guideline, write the theory in a way that resembles a well-written main part of a scientific paper or textbook chapter.
+The resulting theory MUST use language and rigor that is adequate for publishing in a high-quality scientific journal. Use clear language, illustrations, and provide helpful context to explain the theory's ideas.
 
 ## Execution Steps
 1. **Theory Review**: Read `<CONTEXT_DIR>/theory/theory.md` to understand the current theory.
