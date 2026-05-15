@@ -9,49 +9,67 @@ follow-up PR can start from code-grounded specifics.
 
 ## 1. Can `mngr message` drive successive turns on one agent?
 
-Yes. `mngr message <agent> --message-file <path>` (see
-`libs/mngr/imbue/mngr/cli/message.py:94-170`) sends the message into the
-agent's tmux session and returns immediately. It does **not** block until
-the agent finishes the resulting turn, so the reuse path needs the same
-`mngr event --follow` + `mngr wait --state WAITING` dance the per-step
-runner already uses. Same three primitives, minus the per-step
-`mngr create` / `mngr stop`.
+Yes -- and we've already partially proved it. This PR ships
+`MngrAgentRunner.resume_in_place()` (in
+`orchestrator/agents/mngr_runner.py`), which on pause + retry calls
+`mngr start <agent>` + `mngr message <agent> --message-file
+<"Continue where you left off.">` against the existing agent and
+then runs the same wait + harvest the fresh-create path uses (the
+shared `_wait_and_harvest` helper). The Stage B-Resume smoke
+(`scripts/smoke_test_resume_in_place.py`) verifies the resumed turn
+reuses the same `session_id` and produces parseable JSON. So
+`mngr message` driving a successive turn on a kept-alive agent is
+not theoretical anymore -- the full-reuse PR can just extend that
+path to "every step, not just resume."
 
-The agent stays in `RUNNING` between turns; subsequent `mngr message`
-calls land in the live conversation, so prior turns' tool results and
-assistant context carry over for free.
+Two caveats from the actual implementation:
+
+* `mngr message` returns once the message is delivered to the tmux
+  session, not when the resulting turn finishes. Wait + harvest is
+  still needed (event-follow for the `turn_end` Stop-hook event,
+  parallel `mngr wait --state STOPPED` for cancel responsiveness).
+* `_read_assistant_text` currently reads the WHOLE common transcript.
+  In a multi-step reuse world it would need to scope to "events
+  emitted since this step's `mngr message`" (see Section 2 below).
 
 ## 2. What makes each step independent today
 
 The orchestrator was written assuming each step is a fresh agent. These
-are the things that have to change before reuse works:
+are the things that have to change before full reuse works:
 
 - **JSON result parsing is scoped to "everything in the transcript".**
   `MngrAgentRunner._read_assistant_text` (in
   `orchestrator/agents/mngr_runner.py`) reads the whole common transcript
-  and concatenates every assistant text block. Reuse needs to scope this
-  to "events emitted since this step's `mngr message`" — e.g. by snapshotting
-  the last event_id before sending the message and slicing from there.
-- **`Step.agent_name` is per-step.** Stored on `models.py:Step` as the
+  and concatenates every assistant text block. Today (per-step
+  agents) that's fine because the transcript is single-step. Once one
+  agent serves multiple steps, the read needs to scope to "events
+  emitted since this step's `mngr message`" -- snapshot the last
+  event_id before sending the message, then slice from there.
+- **`Step.session_id` is per-step.** Stored on `models.py:Step` as the
   unique mngr agent name. With reuse, every step in a task shares the
   same agent name; either keep it per-step (redundant info) or move it
   to `Task` and add a per-step `start_event_id` for transcript slicing.
-- **Per-step `tx_id`.** `_run_step_core` at
-  `orchestrator/orchestrator.py:218` mints a fresh `tx_{uuid.uuid4().hex}`
-  per step and commits the context_manager transaction on success
-  (`orchestrator/orchestrator.py:250`). The agent reads it via the
-  `CONTEXT_TRANSACTION_ID` env var, which is baked in at `mngr create`
-  time. With one long-lived agent the env var is fixed at the start, so
-  reuse needs the orchestrator to bake the tx_id into the per-step
-  prompt and have skills pick it up from there instead.
-- **Pause/resume.** `state.cancel_task_process` runs `mngr stop` on each
-  registered agent name. Same code still works under reuse, but `mngr
-  stop` now halts the whole task. Resume becomes `mngr start <agent>`,
-  then continue the conversation; the orchestrator has to remember which
-  step was in flight.
+- **Per-step `tx_id` -- now persisted.** This PR added `Step.tx_id`
+  (`models.py`) and made `_run_step_core` reuse it across re-runs, so
+  resume-in-place doesn't orphan context_manager's staged writes
+  (`CONTEXT_TRANSACTION_ID` is baked into the agent's env file at
+  `mngr create` time and never changes for that agent's lifetime). For
+  the FULL reuse model -- one long-lived agent across all steps -- this
+  approach breaks down: the env var can't be re-baked per step. The
+  follow-up needs to either (a) bake the tx_id into the per-step prompt
+  and have skills read it from there, or (b) move the tx_id into a file
+  the skills already read on each turn.
+- **Pause/resume -- partially implemented.** This PR ships
+  `runner.resume_in_place(agent_name, ...)` (`mngr start` + `mngr
+  message <"Continue where you left off.">`) and wires the orchestrator
+  to call it whenever `step.session_id` is set and the framework is
+  `mngr-*`. With unrecoverable failure (agent destroyed out-of-band) it
+  returns a `"resume_unrecoverable:"` error and the orchestrator falls
+  back to fresh `run()`. Full reuse inherits this exact mechanism --
+  just call it on EVERY step after the first, not only on retries.
 - **`WeightedSemaphore`.** `orchestrator/orchestrator.py:20-52` caps
   concurrent *steps* per task. A single reused agent can only do one
-  turn at a time — see Section 3.
+  turn at a time -- see Section 3.
 
 ## 3. Parallel steps within a task
 
@@ -111,22 +129,42 @@ one very long multi-turn run.
 
 ## 6. Concrete migration sketch
 
-Minimum orchestrator changes:
+What this PR already provides (free for the follow-up to build on):
 
-1. `Task.agent_name: Optional[str]` on `models.py`.
+* `MngrAgentRunner.resume_in_place(agent_name, ...)` --
+  `mngr start` + `mngr message` against an existing agent, then wait
+  for `turn_end`. Returns `"resume_unrecoverable:"` if `mngr start`
+  fails so callers can recover. Already used by `_run_step_core`
+  on retries / pause-resume.
+* `Step.tx_id` persistence so a re-run of the same step keeps the
+  same `CONTEXT_TRANSACTION_ID`. (Full reuse needs to extend this --
+  see Section 2 caveat.)
+* Pause is prompt-responsive: `_wait_for_turn_end` runs `mngr event
+  --follow` and `mngr wait --state STOPPED` in parallel, so the
+  reused-agent path inherits the same Pause UX.
+
+Minimum additional orchestrator changes for the full per-task reuse:
+
+1. `Task.session_id: Optional[str]` on `models.py` (the task's
+   long-lived mngr agent name; distinct from `Step.session_id` which
+   is per-step today).
 2. Before running the workflow, `_orchestrate_task` calls
-   `_ensure_task_agent(task)` which does `mngr create` once and stashes
-   the name in `task.agent_name`. Idempotent: if the name is set and
-   the agent is RUNNING / WAITING, reuse; if STOPPED, `mngr start` it.
-3. `_run_step_core` calls `runner.send_step(task.agent_name, prompt,
-   ...)` instead of constructing a fresh runner. The send method runs
-   `mngr message` → event-follow → `mngr wait` → JSON-parse against the
-   existing agent.
-4. `Step.agent_name = task.agent_name` for every step; add
-   `Step.start_event_id` for transcript slicing.
-5. `cancel_task_process` calls `mngr stop <task.agent_name>` and marks
-   the task PAUSED. Resume becomes `mngr start <task.agent_name>` then
-   retry the in-flight step.
+   `_ensure_task_agent(task)`: if `task.session_id` is set and the
+   agent is RUNNING / WAITING, reuse; if STOPPED, `mngr start` it;
+   else `mngr create` once and stash the name. Idempotent.
+3. `_run_step_core` calls a new
+   `runner.send_step(task.session_id, prompt, ...)` -- essentially
+   `resume_in_place` but with the step's actual prompt instead of
+   "Continue where you left off." Reuses the
+   `_wait_and_harvest` helper already factored out for resume.
+4. `Step.session_id = task.session_id` for every step; add
+   `Step.start_event_id` (the event_id at the time `mngr message`
+   fired) so `_read_assistant_text` can slice to events emitted by
+   THIS step's turn, not the whole accumulated transcript.
+5. Decide the tx_id story: either bake into the per-step prompt
+   (skills read it from there) or write to a file the skills already
+   poll. The current "env var" approach can't work for a long-lived
+   agent.
 6. Repurpose `WeightedSemaphore` to per-task concurrency.
 7. Collapse the `threading.Thread` fan-out in
    `develop_theory_linear.py:80-117` to sequential calls.
@@ -139,10 +177,13 @@ Minimum orchestrator changes:
   (summarize-and-restart? structured `/clear` at step boundaries?)
   before merging the reuse PR.
 - **What does an interrupted multi-turn skill look like to the reused
-  agent?** If `mngr stop` halts mid-`/swarm` and the agent is later
-  restarted, does Claude pick up where it left off, or does the
-  conversation end up in an inconsistent state where subagent results
-  never come back?
+  agent?** Partially answered by Stage B-Resume: if `mngr stop` halts
+  the agent between turns (after subagents returned, before parent
+  emitted JSON), `mngr start` + "Continue where you left off." picks
+  up cleanly and the parent re-emits the final JSON. Still unverified:
+  what happens if the stop fires WHILE subagents are mid-execution --
+  do their in-process Task contexts survive the tmux pause, or does
+  claude come back to a torn state?
 - **Does `mngr message` cleanly interleave with `mngr connect`?** If a
   user is `mngr connect`-ed to the shared agent and the orchestrator
   fires a `mngr message`, does the user see the message arrive in
