@@ -7,6 +7,7 @@ BASE_GEMINI_MD = """GENERAL INSTRUCTIONS:
 * Make sure to consider and rule out ALL plausible alternative explanations before drawing conclusions.
 * Whenever a skill mentions `${CLAUDE_SKILL_DIR}`, that is a placeholder for that skill's directory, i.e. `.gemini/skills/<SKILL_NAME>`
 * ALWAYS use the `scientist` subagent type instead of generalist for spawning subagents. If the scientist agent type is not available, stop and tell the user that they need to install it.
+* However, ONLY spawn a (scientist) subagent when the execution steps in a skill explicitly tell you to.
 
 THEORY.MD INSTRUCTIONS:
 * `theory.md` files are the main output of the research process that will be consumed by human researchers.
