@@ -71,8 +71,8 @@ def main():
     if total_importance > 0:
         coverage_score = covered_importance_sum / total_importance
 
-    print(f"{args.theory_id} prediction_accuracy_score", round(accuracy_score, 2))
-    print(f"{args.theory_id} prediction_coverage_score", round(coverage_score, 2))
+    print(f"{args.theory_id} prediction_accuracy_score:", round(accuracy_score, 2))
+    print(f"{args.theory_id} prediction_coverage_score:", round(coverage_score, 2))
 
 
 if __name__ == "__main__":
