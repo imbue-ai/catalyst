@@ -1495,6 +1495,7 @@ def main(argv: list[str] | None = None) -> None:
                 from_experiments=args.from_experiments or None,
                 from_predictions=args.from_predictions or None,
             )
+            print("Created context in folder:", args.target_folder.resolve())
 
         elif args.command == "fetch_literature":
             fetch_literature(
