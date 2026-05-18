@@ -24,7 +24,7 @@ def get_write_n_theories_prompt(
 def get_review_theory_prompt(theory_id: str) -> str:
     return (
         f"Please run the review-theory skill for theory_id: {theory_id}. "
-        "When you are done, return ONLY a JSON object with the key 'review_ids' containing the list of generated review IDs."
+        "When you are done, return ONLY a JSON object with three keys: 1. 'review_ids' containing the full list of generated review IDs (both falsification and expansion), 2. 'statement_reviews' containing a mapping of each reviewed statement (by number and/or title) to the associated falsification review ID, 3. 'expansion_reviews' containing a list of only the expansion review IDs."
     )
 
 
@@ -40,9 +40,7 @@ def get_write_different_theory_prompt(
     theory_ids: List[str], lit_review_id: Optional[str] = None
 ) -> str:
     joined_ids = ", ".join(theory_ids)
-    prompt = (
-        f"Please run the write-different-theory skill for the following theory_ids: {joined_ids}. "
-    )
+    prompt = f"Please run the write-different-theory skill for the following theory_ids: {joined_ids}. "
     if lit_review_id:
         prompt += f"Also pass literature_review_id: {lit_review_id}. "
     prompt += "When you are done, return ONLY a JSON object with the key 'theory_id'."
