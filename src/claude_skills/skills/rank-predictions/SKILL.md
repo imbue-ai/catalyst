@@ -31,7 +31,7 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --
 
 
 ## Performing calculations
-The execution steps below involve numeric calculations. Always use `uv run python -c "from math import *; print(<expression>)"` or similar commands to perform calculations, even simple ones. Do not perform calculations manually or in your head.
+The execution steps below may involve numeric calculations. Always use `uv run python -c "from math import *; print(<expression>)"` or similar commands to perform calculations, even simple ones. Do not perform calculations manually or in your head.
 
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the predictions and experiment results using `context_manager.py`.
