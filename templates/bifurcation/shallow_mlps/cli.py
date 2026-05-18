@@ -575,7 +575,9 @@ def main() -> None:
     p_run.add_argument("--num-terms", type=int, default=2, help="Order T")
     p_run.add_argument("--width", type=int, default=100, help="Number of neurons n")
     p_run.add_argument("--input-dim", type=int, default=10, help="Input dimension d")
-    p_run.add_argument("--alpha", type=float, default=1.0, help="Init scale")
+    p_run.add_argument(
+        "--alpha", type=float, default=1.0, help="Init scale (standard deviation)"
+    )
     p_run.add_argument("--lr", type=float, default=0.01, help="Learning rate eta")
     p_run.add_argument("--batch-size", type=int, default=200)
     p_run.add_argument(
