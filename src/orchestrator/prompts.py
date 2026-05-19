@@ -40,7 +40,7 @@ def get_write_different_theory_prompt(
     theory_ids: List[str], lit_review_id: Optional[str] = None
 ) -> str:
     joined_ids = ", ".join(theory_ids)
-    prompt = f"Please run the write-different-theory skill for the following theory_ids: {joined_ids}. "
+    prompt = f"Please run the write-different-theory skill with the following list of theory_ids: {joined_ids}. "
     if lit_review_id:
         prompt += f"Also pass literature_review_id: {lit_review_id}. "
     prompt += "When you are done, return ONLY a JSON object with the key 'theory_id'."
