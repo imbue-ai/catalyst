@@ -226,7 +226,7 @@ def run_evolve_loop(
             if res and isinstance(res, dict) and not res.get("_canceled"):
                 if "theory_ids" in res and isinstance(res["theory_ids"], list):
                     new_theory_ids.update(res["theory_ids"])
-                elif "theory_id" in res:
+                elif "theory_id" in res and isinstance(res["theory_id"], str):
                     new_theory_ids.add(res["theory_id"])
 
         new_theory_ids_list = list(new_theory_ids)
