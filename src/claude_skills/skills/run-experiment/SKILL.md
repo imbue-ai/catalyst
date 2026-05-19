@@ -22,5 +22,6 @@ uv run python ${CLAUDE_SKILL_DIR}/scripts/run_experiment.py --experiment_folder 
 Some experiments may take a long time to complete (up to a few hours). Please allow enough time for the experiment to finish before assuming that it has failed.
 NEVER execute your `script.py` directly or through any other wrapper. Always use the `run_experiment.py` wrapper as described above.
 
-## Useful experiment patterns
+## Experiment best practices
 - Have the experiment generate plots and visualizations of the data in addition to numerical output. Inspect the visualizations to gain a better intuition when analyzing the experiment's results and to check for any potential issues with the experiment setup. The plots may also provide useful illustrations to include in your report or theory.
+- Avoid confirmation bias: After an experiment, take a moment to critically review its results. It's very easy to draw the wrong conclusions from a plot or set of numbers! Critically ask: What other interpretations could there be for the results I'm seeing? Is there anything that seems off, or that could suggest that the experiment wasn't set up *quite* right yet? Don't expect the first iteration of an experiment to be perfect and have the right parameters. Running experiments is relatively cheap, so we much prefer you take the time to get them right rather than rushing to conclusions. Feel free to re-run the experiment with some adjustments if you have any doubt about the experiment setup, or the results are not 100% conclusive.
