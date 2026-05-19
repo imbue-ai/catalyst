@@ -13,7 +13,6 @@ BASE_GEMINI_MD = """GENERAL INSTRUCTIONS:
 THEORY.MD INSTRUCTIONS:
 * `theory.md` files are the main output of the research process that will be consumed by human researchers.
 * Theories should be self-contained, define and/or introduce all necessary concepts, and should be highly polished. They must include figures, plots, and detailed mathematical proofs.
-* A typical theory is expected to be many pages long, between 3000-10000 words.
 * Assume you're writing a high-quality scientific paper to be published in a leading journal in the field! Use language and rigour appropriate for that audience.
 * You might need to perform multiple edits and iterations before your theory.md file is in a good shape.
 * Use rigorous, objective language in all theories, reviews and reports. Be extremely precise, using specific objective observations, precise mathematical definitions, and mathematical proofs. NEVER present speculation as fact.
@@ -22,7 +21,7 @@ THEORY.MD INSTRUCTIONS:
 
 If you find that the `uv` command is not installed:
 1. First, check if it might already be installed in `./tmp/bin/uv`.
-2. If not, install it using `export UV_UNMANAGED_INSTALL=./tmp/bin && curl -LsSf https://astral.sh/uv/install.sh | sh`. The uv binary will then be available in `.tmp/bin/uv`.
+2. If not, install it using `export UV_UNMANAGED_INSTALL=./tmp/bin && curl -LsSf https://astral.sh/uv/install.sh | sh`. The uv binary will then be available in `./tmp/bin/uv`.
 
 You might encounter a broken Python `.venv`, e.g. with symlinks pointing to non-existent files. If that happens, run `uv venv --clear` to recreate it.
 
