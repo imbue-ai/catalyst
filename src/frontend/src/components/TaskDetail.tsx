@@ -10,6 +10,7 @@ import { formatStageName } from './workflow/shared'
 import { ArtifactViewerModal } from './ArtifactViewerModal'
 import { CreateAddonModal } from './CreateAddonModal'
 import { TheoriesList } from './TheoriesList'
+import { ExperimentsList } from './ExperimentsList'
 
 interface TaskDetailProps {
   task: api.Task;
@@ -21,7 +22,7 @@ interface TaskDetailProps {
 
 export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh, isBackendDown }: TaskDetailProps) {
   const [selectedStage, setSelectedStage] = useState<string | null>(null)
-  const [activeRightTab, setActiveRightTab] = useState<'stepDetails' | 'topTheories'>('stepDetails')
+  const [activeRightTab, setActiveRightTab] = useState<'stepDetails' | 'topTheories' | 'experiments'>('stepDetails')
   const [isProcessing, setIsProcessing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAddonModal, setShowAddonModal] = useState(false)
@@ -222,7 +223,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
           <div className="flex border-b-2 border-black bg-white">
             <button
               onClick={() => setActiveRightTab('stepDetails')}
-              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors ${activeRightTab === 'stepDetails'
+              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'stepDetails'
                 ? 'bg-black text-white'
                 : 'text-black hover:bg-gray-100'
                 }`}
@@ -231,18 +232,29 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             </button>
             <button
               onClick={() => setActiveRightTab('topTheories')}
-              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors ${activeRightTab === 'topTheories'
+              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'topTheories'
                 ? 'bg-black text-white'
                 : 'text-black hover:bg-gray-100'
                 }`}
             >
               Theories
             </button>
+            <button
+              onClick={() => setActiveRightTab('experiments')}
+              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'experiments'
+                ? 'bg-black text-white'
+                : 'text-black hover:bg-gray-100'
+                }`}
+            >
+              Experiments
+            </button>
           </div>
 
           <div className="flex-1 overflow-hidden flex flex-col">
             {activeRightTab === 'topTheories' ? (
               <TheoriesList taskId={task.id} />
+            ) : activeRightTab === 'experiments' ? (
+              <ExperimentsList taskId={task.id} />
             ) : selectedStage !== null ? (
               <div className="flex flex-col h-full">
                 <div className="p-6 border-b border-black bg-white flex justify-between items-center">

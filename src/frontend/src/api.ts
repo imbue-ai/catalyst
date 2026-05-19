@@ -65,6 +65,14 @@ export interface ReviewArtifact {
   created_at?: string;
 }
 
+export interface ExperimentArtifact {
+  id: string;
+  headline?: string;
+  agent_type?: string;
+  created_at?: string;
+  extra?: Record<string, string>;
+}
+
 export const getTasks = async (): Promise<Task[]> => {
   const res = await fetch(`${API_BASE}/tasks`);
   return res.json();
@@ -143,6 +151,12 @@ export async function getTheories(id: string): Promise<TheoryArtifact[]> {
 export async function getReviews(id: string): Promise<ReviewArtifact[]> {
   const res = await fetch(`${API_BASE}/tasks/${id}/reviews`);
   if (!res.ok) throw new Error("Failed to get reviews");
+  return res.json();
+}
+
+export async function getExperiments(id: string): Promise<ExperimentArtifact[]> {
+  const res = await fetch(`${API_BASE}/tasks/${id}/experiments`);
+  if (!res.ok) throw new Error("Failed to get experiments");
   return res.json();
 }
 
