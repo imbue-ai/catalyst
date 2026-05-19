@@ -126,12 +126,16 @@ class DevelopTheoryLinearWorkflow(Workflow):
             # Update IDs from results
             for res in results.values():
                 if res and isinstance(res, dict):
-                    if "literature_review_id" in res:
+                    if "literature_review_id" in res and isinstance(
+                        res["literature_review_id"], str
+                    ):
                         lit_review_id = res["literature_review_id"]
                     elif "_canceled" in res:
                         pass  # Allowed to be missing if canceled
 
-                    if "exploration_id" in res:
+                    if "exploration_id" in res and isinstance(
+                        res["exploration_id"], str
+                    ):
                         exploration_id = res["exploration_id"]
                     elif "_canceled" in res:
                         pass

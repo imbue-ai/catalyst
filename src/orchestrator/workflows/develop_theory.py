@@ -171,9 +171,13 @@ class DevelopTheoryWorkflow(Workflow):
 
             for res in results.values():
                 if res and isinstance(res, dict):
-                    if "literature_review_id" in res:
+                    if "literature_review_id" in res and isinstance(
+                        res["literature_review_id"], str
+                    ):
                         lit_review_id = res["literature_review_id"]
-                    if "exploration_id" in res:
+                    if "exploration_id" in res and isinstance(
+                        res["exploration_id"], str
+                    ):
                         exploration_id = res["exploration_id"]
 
         # Step 3: Write N Theories
