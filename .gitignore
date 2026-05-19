@@ -1,5 +1,6 @@
 .venv/
 .vscode/
+.antigravitycli/
 __pycache__/
 *.pyc
 *.egg-info/

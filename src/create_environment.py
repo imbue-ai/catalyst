@@ -7,7 +7,8 @@ BASE_GEMINI_MD = """GENERAL INSTRUCTIONS:
 * Make sure to consider and rule out ALL plausible alternative explanations before drawing conclusions.
 * Whenever a skill mentions `${CLAUDE_SKILL_DIR}`, that is a placeholder for that skill's directory, i.e. `.gemini/skills/<SKILL_NAME>`
 * ALWAYS use the `scientist` subagent type instead of generalist for spawning subagents. If the scientist agent type is not available, stop and tell the user that they need to install it.
-* However, ONLY spawn a (scientist) subagent when the execution steps in a skill explicitly tell you to.
+  * Exception: IF you are Antigravity, the `scientist` subagent type will not be available. Use the `self` subagent type instead of `scientist`.
+* However, ONLY spawn a subagent when the execution steps in a skill explicitly tell you to.
 
 THEORY.MD INSTRUCTIONS:
 * `theory.md` files are the main output of the research process that will be consumed by human researchers.
@@ -66,6 +67,7 @@ def create_environment(target_path: str, template_path: str = None):
     default_contents = {
         base_dir / "claude_skills": ".claude",
         base_dir / "gemini_skills": ".gemini",
+        base_dir / "gemini_skills" / "skills": ".agents/skills",
         base_dir.parent / "darwinian_evolver": "darwinian_evolver",
         base_dir / "default_environment_pyproject.toml": "pyproject.toml",
     }

@@ -307,7 +307,9 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                                   onClick={() => {
                                     const cmd = task.framework === 'gemini'
                                       ? `cd "${task.env_folder}" && gemini --resume ${step.session_id}`
-                                      : `cd "${task.env_folder}" && claude --resume ${step.session_id}`;
+                                      : task.framework === 'claude'
+                                      ? `cd "${task.env_folder}" && claude --resume ${step.session_id}`
+                                      : `cd "${task.env_folder}" && agy --resume ${step.session_id}`;
                                     handleCopy(cmd);
                                   }}
                                   className="text-gray-300 hover:text-white transition-colors p-1"
@@ -321,7 +323,9 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                                 <code className="select-all">
                                   {task.framework === 'gemini'
                                     ? `cd "${task.env_folder}" && gemini --resume ${step.session_id}`
-                                    : `cd "${task.env_folder}" && claude --resume ${step.session_id}`}
+                                    : task.framework === 'claude'
+                                    ? `cd "${task.env_folder}" && claude --resume ${step.session_id}`
+                                    : `cd "${task.env_folder}" && agy --resume ${step.session_id}`}
                                 </code>
                               </div>                            </div>
                           </div>

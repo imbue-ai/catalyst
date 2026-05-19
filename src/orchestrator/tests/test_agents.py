@@ -92,3 +92,46 @@ class TestAgents(unittest.TestCase):
         args, kwargs = mock_popen.call_args
         env = kwargs["env"]
         self.assertEqual(env["CONTEXT_TRANSACTION_ID"], "tx_99")
+
+    @patch("orchestrator.agents.cli_base.register_process")
+    @patch("orchestrator.agents.cli_base.unregister_process")
+    @patch("subprocess.Popen")
+    def test_agy_runner(self, mock_popen, mock_unreg, mock_reg):
+        from ..agents.agy import AgyAgentRunner
+        
+        mock_process = MagicMock()
+        mock_process.communicate.return_value = (
+            "Random setup output...\n```json\n{\"theory_id\": \"T3\"}\n```\n",
+            None
+        )
+        mock_process.returncode = 0
+        mock_popen.return_value = mock_process
+        
+        runner = AgyAgentRunner()
+        data, session_id, error = runner.run(
+            task_id="t1",
+            prompt="p1",
+            env_folder="/tmp",
+            tx_id="tx_101",
+            model="ignored-model"
+        )
+        
+        self.assertIsNone(error)
+        self.assertIsNone(session_id)
+        self.assertEqual(data, {"theory_id": "T3"})
+        
+        # Verify tx_id propagation
+        args, kwargs = mock_popen.call_args
+        env = kwargs["env"]
+        self.assertEqual(env["CONTEXT_TRANSACTION_ID"], "tx_101")
+        
+        # Verify command flags (specifically print-timeout, dangerously-skip-permissions, and model ignored)
+        cmd = args[0]
+        self.assertIn("agy", cmd)
+        self.assertIn("--dangerously-skip-permissions", cmd)
+        self.assertIn("--sandbox", cmd)
+        self.assertIn("--print-timeout", cmd)
+        self.assertIn("21600", cmd)
+        self.assertNotIn("ignored-model", cmd)
+        self.assertNotIn("--model", cmd)
+
