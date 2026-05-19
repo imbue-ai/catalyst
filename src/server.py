@@ -454,10 +454,18 @@ def list_artifact_files(task_id: str, artifact_id: str):
         raise HTTPException(status_code=404, detail="Artifact directory not found")
 
     files = []
-    for f in os.listdir(dir_path):
-        if os.path.isfile(os.path.join(dir_path, f)):
-            files.append(f)
-    return sorted(files)
+    for root, _, filenames in os.walk(dir_path):
+        for f in filenames:
+            full_path = os.path.join(root, f)
+            rel_path = os.path.relpath(full_path, dir_path)
+            # Use forward slashes for consistent web paths
+            files.append(rel_path.replace(os.sep, '/'))
+
+    def sort_key(path):
+        parts = path.split('/')
+        return [(1 if i < len(parts) - 1 else 0, part) for i, part in enumerate(parts)]
+
+    return sorted(files, key=sort_key)
 
 
 @app.get("/api/tasks/{task_id}/artifacts/{artifact_id}/files/{file_path:path}")
