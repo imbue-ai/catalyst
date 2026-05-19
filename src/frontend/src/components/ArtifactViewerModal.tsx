@@ -361,11 +361,13 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
                                 params.set('file', file);
                                 window.location.hash = `${base}?${params.toString()}`;
                               }}
-                              className={`text-left w-full text-[11px] font-bold p-1.5 flex items-center gap-2 border border-transparent transition-all hover:bg-white hover:border-black truncate ${isSelected ? 'bg-white border-black text-black' : 'text-gray-500'}`}
+                              className={`text-left w-full text-[11px] font-bold p-1.5 flex items-center gap-2 border border-transparent transition-all hover:bg-white hover:border-black ${isSelected ? 'bg-white border-black text-black' : 'text-gray-500'}`}
                               title={file}
                             >
-                              {isImage ? <ImageIcon size={12} /> : isCode ? <FileCode size={12} /> : <FileText size={12} />}
-                              <span className="truncate">{file}</span>
+                              {isImage ? <ImageIcon size={12} className="shrink-0" /> : isCode ? <FileCode size={12} className="shrink-0" /> : <FileText size={12} className="shrink-0" />}
+                              <span className="truncate w-full" style={{ direction: 'rtl', textAlign: 'left' }}>
+                                <bdi>{file}</bdi>
+                              </span>
                             </button>
                           </li>
                         );
