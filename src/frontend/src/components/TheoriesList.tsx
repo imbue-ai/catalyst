@@ -109,15 +109,15 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
       <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
         {loading && theories.length === 0 ? (
           <div className="flex justify-center items-center h-full opacity-30">
-            <div className="animate-pulse text-[10px] font-black tracking-widest uppercase">Loading Theories...</div>
+            <div className="animate-pulse text-[10px] font-black tracking-widest">Loading Theories...</div>
           </div>
         ) : error ? (
           <div className="p-4 bg-red-50 text-red-700 text-[10px] font-bold border border-red-200 tracking-widest">
             {error}
           </div>
         ) : filteredTheories.length === 0 ? (
-          <div className="text-center text-gray-400 py-10 text-[10px] font-black tracking-widest uppercase">
-            {theories.length > 0 ? "No scored theories found" : "No theories found"}
+          <div className="text-center text-gray-400 py-10 text-[10px] font-black tracking-widest">
+            {theories.length > 0 ? "No Scored Theories Found" : "No Theories Found"}
           </div>
         ) : (
           <ul className="space-y-4">
@@ -152,7 +152,7 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
                             <Briefcase size={12} className="text-gray-400 group-hover:text-black transition-colors" />
                             {(theory.agent_type || (theory as any).type || 'unknown').replace(/-/g, ' ')}
                           </div>
-                          <div className="text-[9px] text-gray-400 font-bold flex items-center gap-2 tracking-widest uppercase opacity-70">
+                          <div className="text-[9px] text-gray-400 font-bold flex items-center gap-2 tracking-widest opacity-70">
                             <Clock size={12} className="text-gray-300" />
                             {theory.created_at || (theory as any).timestamp 
                               ? new Date(theory.created_at || (theory as any).timestamp).toLocaleDateString() + ' ' + 
@@ -163,7 +163,7 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
                         {theoryReviews.length > 0 && (
                           <button 
                             onClick={(e) => toggleExpand(theory.id, e)}
-                            className="text-[10px] font-black tracking-widest uppercase text-gray-500 hover:text-black flex items-center gap-1 transition-colors"
+                            className="text-[10px] font-black tracking-widest text-gray-500 hover:text-black flex items-center gap-1 transition-colors"
                           >
                             {isExpanded ? 'Hide Reviews' : `${theoryReviews.length} Review${theoryReviews.length > 1 ? 's' : ''} Available`}
                             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}

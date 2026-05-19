@@ -32,7 +32,7 @@ export function ExperimentsList({ taskId }: ExperimentsListProps) {
   return (
     <div className="flex flex-col h-full bg-white text-gray-800 font-mono">
       <div className="flex justify-between items-center px-6 py-4 border-b border-black flex-shrink-0 bg-white">
-        <h2 className="text-xs font-black text-black tracking-widest uppercase">Experiments</h2>
+        <h2 className="text-xs font-black text-black tracking-widest">Experiments</h2>
         <div className="flex items-center gap-4">
           <button
             onClick={fetchExperiments}
@@ -49,15 +49,15 @@ export function ExperimentsList({ taskId }: ExperimentsListProps) {
       <div className="flex-1 overflow-y-auto p-6 space-y-4 custom-scrollbar">
         {loading && experiments.length === 0 ? (
           <div className="flex justify-center items-center h-full opacity-30">
-            <div className="animate-pulse text-[10px] font-black tracking-widest uppercase">Loading Experiments...</div>
+            <div className="animate-pulse text-[10px] font-black tracking-widest">Loading Experiments...</div>
           </div>
         ) : error ? (
           <div className="p-4 bg-red-50 text-red-700 text-[10px] font-bold border border-red-200 tracking-widest">
             {error}
           </div>
         ) : experiments.length === 0 ? (
-          <div className="text-center text-gray-400 py-10 text-[10px] font-black tracking-widest uppercase">
-            No experiments found
+          <div className="text-center text-gray-400 py-10 text-[10px] font-black tracking-widest">
+            No Experiments Found
           </div>
         ) : (
           <ul className="space-y-4">
@@ -76,7 +76,7 @@ export function ExperimentsList({ taskId }: ExperimentsListProps) {
                     <Briefcase size={12} className="text-gray-400 group-hover:text-black transition-colors" />
                     {(exp.extra?.parent_agent_type || exp.agent_type || 'unknown').replace(/-/g, ' ')}
                   </div>
-                  <div className="text-[9px] text-gray-400 font-bold flex items-center gap-2 tracking-widest uppercase opacity-70">
+                  <div className="text-[9px] text-gray-400 font-bold flex items-center gap-2 tracking-widest opacity-70">
                     <Clock size={12} className="text-gray-300" />
                     {exp.created_at
                       ? new Date(exp.created_at).toLocaleDateString() + ' ' + 
