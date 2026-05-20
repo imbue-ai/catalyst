@@ -46,7 +46,7 @@ The system can be configured using the following environment variables:
 1. **Start a Task:** Click "NEW TASK" in the dashboard.
 2. **Configure:**
    - **Phenomenon:** The scientific topic to investigate.
-   - **Framework:** Pick one of four options. `Claude Code` and `Gemini CLI` run the agent CLI directly as a subprocess (the original implementation, suited for `claude --resume <session_id>` recovery). `Claude Code (mngr)` and `Gemini CLI (mngr)` run the same CLIs inside a `mngr`-managed tmux session that you can attach to live via `mngr connect`. The mngr variants require `tmux` and the `imbue-mngr` + `imbue-mngr-claude` Python deps (auto-installed by `uv sync`); the Gemini-mngr variant additionally needs `imbue-mngr-gemini` (not yet on PyPI).
+   - **Framework:** `Gemini CLI` / `Claude Code` run the agent CLI directly as a subprocess. `Gemini CLI (mngr)` / `Claude Code (mngr)` run the same CLI inside a `mngr`-managed tmux session you can attach to live via `mngr connect`. The Gemini-mngr variant needs `imbue-mngr-gemini` (not yet on PyPI).
    - **Model:** Choose a model identifier from the dropdown or enter one manually.
 3. **Monitor:** The dashboard polls the backend every 2 seconds to update the timeline.
 4. **Inspect:** Click any completed or running step in the timeline to view the raw inputs, JSON outputs, and the **Agent Name**.
@@ -56,13 +56,18 @@ The system can be configured using the following environment variables:
 
 For tasks created with the `mngr-claude` / `mngr-gemini` frameworks, `mngr` keeps each step's session around after it stops. ai-scientist runs them under a dedicated host_dir at `~/.mngr-ai-scientist/` (separate from your main `~/.mngr/`), so every `mngr` command below needs the `MNGR_HOST_DIR=~/.mngr-ai-scientist` prefix. You can also `export MNGR_HOST_DIR=~/.mngr-ai-scientist` once per shell.
 
-- `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr list --include 'labels["app"] == "ai-scientist"'` lists every mngr-backed agent ai-scientist has ever run.
+- `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr list --include 'labels["app"] == "ai-scientist"'` lists ai-scientist's mngr-backed agents that haven't been destroyed yet.
 - `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr transcript <session_id>` prints the recorded turn.
 - `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr connect <session_id>` re-attaches to the tmux session (and restarts it if it had stopped).
 
 ## Cleanup
 
-Deleting a task from the dashboard removes its env_folder and cancels any running step. For legacy `claude` / `gemini` tasks that's the end of the story (no extra agent state on disk). For `mngr-claude` / `mngr-gemini` tasks, the underlying `mngr` sessions are kept on disk so their transcript and work_dir stay available for debugging. They accumulate over time. To remove every mngr agent associated with a finished task:
+Deleting a task from the dashboard removes its env_folder and cancels any running step. **Per-session state outside the env_folder is preserved** in all four framework cases — this is intentional so transcripts remain inspectable after a task is gone, and it matches the underlying CLI's own behavior:
+
+- Legacy `gemini` / `claude` leave their session JSONLs under `~/.gemini/` and `~/.claude/projects/<sanitized-env-folder>/<session_id>.jsonl` respectively. Neither CLI cleans these up on its own.
+- `mngr-gemini` / `mngr-claude` leave the agent's transcript + work_dir under `~/.mngr-ai-scientist/agents/<agent-id>/` (mngr keeps the per-agent state even after `mngr destroy`, mirroring the legacy CLIs).
+
+To remove every mngr agent associated with a finished task:
 
 ```bash
 export MNGR_HOST_DIR=~/.mngr-ai-scientist
@@ -70,8 +75,6 @@ mngr list --include 'labels["ai-scientist-task"] == "<full_task_id>"' --format '
 ```
 
 The `--format '{name}'` strips the column header that `--fields name` adds (which would break the pipe), and `--force` skips the interactive confirmation prompt so the pipeline runs unattended.
-
-This only removes the agent's `~/.mngr-ai-scientist/agents/` entry; your `~/.ai-scientist/research/task_<id>` artifacts (if still present) are untouched.
 
 ## Data Persistence
 

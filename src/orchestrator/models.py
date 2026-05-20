@@ -65,7 +65,7 @@ class Task(BaseModel):
     title: Optional[str] = None
     workflow_inputs: Dict[str, Any] = {}
     env_folder: str
-    framework: str  # "claude", "gemini", "mngr-claude", or "mngr-gemini"
+    framework: str  # "gemini", "claude", "mngr-gemini", or "mngr-claude"
     model: Optional[str] = None
     status: TaskStatus = TaskStatus.PENDING
     current_stage: Optional[str] = None
