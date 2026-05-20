@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Folder, Activity, FlaskConical } from 'lucide-react'
+import { Plus, Folder, Activity } from 'lucide-react'
 import * as api from './api'
 import { StatusBadge } from './components/StatusBadge'
 import { TaskDetail } from './components/TaskDetail'
@@ -49,7 +49,7 @@ function App() {
             if (Notification.permission === "granted") {
               const notification = new Notification("Research Status Update", {
                 body: `Research "${task.title || task.workflow_inputs.summary || task.id}" is now ${task.status}.`,
-                icon: "/favicon.svg"
+                icon: "/favicon.png"
               });
               notification.onclick = () => {
                 window.focus();
@@ -104,16 +104,15 @@ function App() {
       <div className="flex h-screen overflow-hidden">
         <aside className="w-96 border-r border-black flex flex-col bg-white">
           <div
-            className="p-6 border-b border-black flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
+            className="p-6 border-b border-black flex items-center justify-center cursor-pointer"
             onClick={() => { window.location.hash = ''; }}
             title="Return to Home"
           >
-            <div className="bg-black p-2 rounded-sm text-white">
-              <FlaskConical size={20} />
-            </div>
-            <h1 className="text-lg font-black tracking-tight leading-none uppercase">
-              AI Scientist<br /><span className="text-gray-400">Catalyst</span>
-            </h1>
+            <img
+              src="/catalyst-small.png"
+              alt="AI Scientist Catalyst"
+              className="w-full h-auto object-contain"
+            />
           </div>
 
           <div className="p-4 border-b border-black flex items-center justify-between bg-gray-50/50">
