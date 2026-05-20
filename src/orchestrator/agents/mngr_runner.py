@@ -385,21 +385,23 @@ class MngrAgentRunner(AgentRunner):
         if not saw_turn_end:
             # Either the deadline expired without turn_end (Stop hook
             # never fired -- typically means the env_folder was
-            # created before the hook landed in
-            # `.claude/settings.local.json`), or the agent was stopped
-            # externally (e.g. user clicked Pause). Distinguishing
-            # here would require us to read task state, so we leave
-            # the message generic and let the orchestrator's
-            # task-status check overwrite it with "Paused" when
-            # appropriate.
+            # created before the change that added the Stop hook to
+            # `.claude/settings.local.json`, so its copy under
+            # `<env_folder>/.claude/` is the pre-hook version), or
+            # the agent was stopped externally (e.g. user clicked
+            # Pause). Distinguishing here would require us to read
+            # task state, so we leave the message generic and let
+            # the orchestrator's task-status check overwrite it with
+            # "Paused" when appropriate.
             return (
                 None,
                 agent_name,
                 f"Agent stopped without signaling turn_end "
                 f"(deadline was {_WAIT_TIMEOUT_SECONDS}s). If this "
                 "wasn't a manual pause, the env_folder may pre-date "
-                "the Stop hook in .claude/settings.local.json -- "
-                "delete the task and recreate it.",
+                "the change that added the Stop hook to "
+                ".claude/settings.local.json -- delete the task and "
+                "recreate it to pick up the new env_folder template.",
             )
 
         assistant_text = self._read_assistant_text(agent_name, on_status)
