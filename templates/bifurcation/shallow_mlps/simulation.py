@@ -157,18 +157,18 @@ class Simulation:
 
     def _initialize(self) -> None:
         p = self.params
-        self.W = self.rng.standard_normal((p.n, p.d)) * p.alpha
-        self.a = np.zeros(p.n)
+        self.W = self.rng.standard_normal((p.n, p.d), dtype=np.float32) * p.alpha
+        self.a = np.zeros(p.n, dtype=np.float32)
         self.iteration = 0
         self.loss_history = []
         self.norm_history = []
         self.coeff_history = []
 
         # Pre-allocate buffers for fast step()
-        self._Z = np.empty((p.batch_size, p.n), dtype=np.float64)
-        self._H = np.empty((p.batch_size, p.n), dtype=np.float64)
-        self._M = np.empty((p.batch_size, p.n), dtype=np.float64)
-        self._dW = np.empty((p.n, p.d), dtype=np.float64)
+        self._Z = np.empty((p.batch_size, p.n), dtype=np.float32)
+        self._H = np.empty((p.batch_size, p.n), dtype=np.float32)
+        self._M = np.empty((p.batch_size, p.n), dtype=np.float32)
+        self._dW = np.empty((p.n, p.d), dtype=np.float32)
 
         self._record_norms()
 
@@ -180,12 +180,14 @@ class Simulation:
         n_coeff = num_coeff_terms(p.target_type, p.num_terms)
 
         # Sample X ~ N(0, I_d)
-        X = self.rng.standard_normal((p.batch_size, p.d))
+        X = self.rng.standard_normal((p.batch_size, p.d), dtype=np.float32)
 
         # Target
         Y_target, F_terms = compute_target_batch(
             X, p.target_type, p.num_terms, self._custom_fn
         )
+        Y_target = Y_target.astype(np.float32)
+        F_terms = F_terms.astype(np.float32)
 
         # Forward
         X_scaled = X / sqrt_d
@@ -206,7 +208,7 @@ class Simulation:
         da = np.dot(d_out, H) / p.n
 
         # Optimized dW calculation
-        mask = (Z > 0).astype(np.float64) if p.activation == "relu" else dsigma(Z)
+        mask = (Z > 0).astype(np.float32) if p.activation == "relu" else dsigma(Z)
         X_out = d_out[:, np.newaxis] * X
         dW = (self.a / (p.n * sqrt_d))[:, np.newaxis] * np.dot(mask.T, X_out)
 
@@ -214,7 +216,7 @@ class Simulation:
         try:
             c_ls = np.linalg.solve(G, v)
         except np.linalg.LinAlgError:
-            c_ls = np.zeros(n_coeff)
+            c_ls = np.zeros(n_coeff, dtype=np.float32)
 
         # Reported coefficients: E[f_hat * f*_k]
         c = v / p.batch_size
@@ -323,8 +325,8 @@ class Simulation:
         sqrt_d = math.sqrt(p.d)
 
         # 1D slice along x[0], other dims = 0
-        grid = np.zeros((n_points, p.d))
-        grid[:, 0] = np.linspace(-3, 3, n_points)
+        grid = np.zeros((n_points, p.d), dtype=np.float32)
+        grid[:, 0] = np.linspace(-3, 3, n_points, dtype=np.float32)
 
         # Target values
         y_target, _ = compute_target_batch(
