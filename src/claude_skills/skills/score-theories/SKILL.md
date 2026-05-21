@@ -19,7 +19,7 @@ CONTEXT_DIR: `mktemp -d -p ./tmp score-theories-context-XXXX`
 
 Run this command to populate the context:
 ```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type score-theories --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID_1> [--from_theory <THEORY_ID_2> ...]
+uv run python scripts/context_manager.py create_context --for_agent_type score-theories --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID_1> [--from_theory <THEORY_ID_2> ...]
 ```
 
 - `<CONTEXT_DIR>/theories/<theory_id>/theory.md` — the theories to score
@@ -45,25 +45,25 @@ Follow the following steps carefully. Do not skip anything. Do not take shortcut
 11. **Collection**: Wait for all subagents from steps 7, 8, 9, and 10 to finish and collect their final result messages.
 12. **Score Prediction Rankings**: For each theory, invoke a script to calculate two scores, the prediction accuracy score and the prediction coverage score:
   ```bash
-  uv run python "${CLAUDE_SKILL_DIR}/scripts/compute_prediction_scores.py" -n <NUMBER_OF_THEORIES> --theory_id <THEORY_ID> --ranks <PREDICTION_RANK_ON_EXPERIMENTS_LIST>
+  uv run python scripts/compute_prediction_scores.py -n <NUMBER_OF_THEORIES> --theory_id <THEORY_ID> --ranks <PREDICTION_RANK_ON_EXPERIMENTS_LIST>
   ```
   - <NUMBER_OF_THEORIES> is the total number of theories being scored (i.e. the length of the input theory ID list).
   - The `<PREDICTION_RANK_ON_EXPERIMENTS_LIST>` is a comma-separated list of the ranks of this theory's predictions for each of the selected experiments, in order of experiment importance ranking. Include a "NO_PREDICTION" for experiments where the current theory did not make a prediction. For example, if there were 3 selected experiments and this theory ranked 1st for the first experiment, 3rd for the second, and did not make a prediction for the third, then the list would be: `1,3,NO_PREDICTION`.
   - The script will output the prediction accuracy score and the prediction coverage score for this theory.
 13. **Score Explanatory Power**: Convert the rank of each theory returned by the `rank-explanatory-power` skill into an associated score. To obtain the rank-to-score conversion table, run this command:
   ```bash
-  uv run python "${CLAUDE_SKILL_DIR}/scripts/ranks_to_scores.py" --score_type linear -n <NUMBER_OF_THEORIES>
+  uv run python scripts/ranks_to_scores.py --score_type linear -n <NUMBER_OF_THEORIES>
   ```
   - <NUMBER_OF_THEORIES> is the total number of theories being scored (i.e. the length of the input theory ID list).
   - The script will output a conversation table, with the rank in column 1, and the corresponding score in column 2.
 14. **Overall Theory Score**: Combine the scores for each theory into an overall score object, one for each theory, by running:
   ```bash
-  uv run python "${CLAUDE_SKILL_DIR}/scripts/combine_scores.py" --theory_id <THEORY_ID> --prediction_accuracy <PREDICTION_ACCURACY_SCORE> --prediction_coverage <PREDICTION_COVERAGE_SCORE> --soundness <SOUNDNESS_SCORE> --explanatory_power <EXPLANATORY_POWER_SCORE> --length <LENGTH_SCORE>
+  uv run python scripts/combine_scores.py --theory_id <THEORY_ID> --prediction_accuracy <PREDICTION_ACCURACY_SCORE> --prediction_coverage <PREDICTION_COVERAGE_SCORE> --soundness <SOUNDNESS_SCORE> --explanatory_power <EXPLANATORY_POWER_SCORE> --length <LENGTH_SCORE>
   ```
   - The script will output a JSON object `{<THEORY_ID>: { ... }}` containing both the overall score, and all subscores for the given theory. You will use this output in the next step.
 15. **Save Scores**: Save the overall scores and the detailed subscores to a database, using this bash command:
   ```bash
-  uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" rescore_theories '{<THEORY_ID_1>: <THEORY_1_SCORES_OBJECT>, <THEORY_ID_2>: <THEORY_2_SCORES_OBJECT>, ...}'
+  uv run python scripts/context_manager.py rescore_theories '{<THEORY_ID_1>: <THEORY_1_SCORES_OBJECT>, <THEORY_ID_2>: <THEORY_2_SCORES_OBJECT>, ...}'
   ```
   - Where <THEORY_X_SCORES_OBJECT> is the JSON object output from the previous step for theory X, containing both the overall score and the subscores for that theory.
 16. **Final Output**: Report the list of all theory IDs along with their final scores, sorted from highest to lowest score. Also include a breakdown of the different subscores for each theory.

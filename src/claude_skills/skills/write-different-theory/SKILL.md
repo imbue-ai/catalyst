@@ -19,7 +19,7 @@ CONTEXT_DIR: `mktemp -d -p ./tmp write-different-theory-context-XXXX`
 
 Run this command to populate the context:
 ```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type write-different-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID_1> [--from_theory <THEORY_ID_2> ...]
+uv run python scripts/context_manager.py create_context --for_agent_type write-different-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID_1> [--from_theory <THEORY_ID_2> ...]
 ```
 
 - `<CONTEXT_DIR>/theories/<theory_id>/theory.md` — the previous theory attempts that we're trying to be different from.

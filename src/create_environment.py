@@ -5,7 +5,6 @@ from pathlib import Path
 BASE_GEMINI_MD = """GENERAL INSTRUCTIONS:
 * Be very thorough! You will frequently need to run 10+ experiments to perform a single topic exploration or falsification. I expect that you'll be working many hours on each step of this task. Don't stop after the first successful experiment - keep going until you've explored ALL reasonable ideas.
 * Make sure to consider and rule out ALL plausible alternative explanations before drawing conclusions.
-* Whenever a skill mentions `${CLAUDE_SKILL_DIR}`, that is a placeholder for that skill's directory, i.e. `.gemini/skills/<SKILL_NAME>`
 * ALWAYS use the `scientist` subagent type instead of generalist for spawning subagents. If the scientist agent type is not available, stop and tell the user that they need to install it.
   * Exception: IF you are Antigravity, the `scientist` subagent type will not be available. Use the `self` subagent type instead of `scientist`.
 * However, ONLY spawn a subagent when the execution steps in a skill explicitly tell you to.

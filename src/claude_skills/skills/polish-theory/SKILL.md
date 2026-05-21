@@ -28,7 +28,7 @@ OUTPUT_DIR: `mktemp -d -p ./tmp polish-theory-output-XXXX`
 
 Run this command to populate the context, and then initialize the output folder with a copy of the original theory files:
 ```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type polish-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
+uv run python scripts/context_manager.py create_context --for_agent_type polish-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
 cp -r "<CONTEXT_DIR>/theory/"* "<OUTPUT_DIR>/"
 ```
 
@@ -65,6 +65,6 @@ The resulting theory MUST use language and rigor that is adequate for publishing
 3. **Writing**: Write a new version of the theory in `<OUTPUT_DIR>/theory.md`, restructuring and rewording as needed to improve clarity and readability, while preserving all original content and scientific rigor. Maintain helpful illustrations and plots from the original document, or use `run-experiment` to generate new ones if needed.
 4. **Store results**: Persist your output and return the new theory ID:
    ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type polish-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
+   uv run python scripts/context_manager.py store_results --from_agent_type polish-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
    Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the result of this skill.

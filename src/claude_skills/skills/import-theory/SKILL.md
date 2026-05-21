@@ -33,6 +33,6 @@ Copy and/or extract all images and figures from the source into `<OUTPUT_DIR>/` 
 3. **Convert file**: Write the theory as a markdown file to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Make sure you maintain any mathematical formulas. Correctly reference any images relative to `<OUTPUT_DIR>`.
 4. **Store results**: Persist your output and return the theory ID:
    ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type import-theory --from_folder <OUTPUT_DIR>
+   uv run python scripts/context_manager.py store_results --from_agent_type import-theory --from_folder <OUTPUT_DIR>
    ```
    Note down the returned theory ID (e.g. `T_20260421_150000_x1y2z3`) as the result of this skill.

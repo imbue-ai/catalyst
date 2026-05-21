@@ -99,7 +99,7 @@ Your `summary.md` file must follow this structure:
 5. **Synthesize**: Write the file `<OUTPUT_DIR>/summary.md`, according to the summary file format specified below.
 6. **Store results**: Persist your output and return the literature review ID:
    ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type literature-review --from_folder <OUTPUT_DIR>
+   uv run python scripts/context_manager.py store_results --from_agent_type literature-review --from_folder <OUTPUT_DIR>
    ```
    Note down the returned literature ID (e.g. `L_20260414_143052_a1b2c3`) as the result of this skill.
 
