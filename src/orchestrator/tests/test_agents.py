@@ -125,13 +125,12 @@ class TestAgents(unittest.TestCase):
         env = kwargs["env"]
         self.assertEqual(env["CONTEXT_TRANSACTION_ID"], "tx_101")
         
-        # Verify command flags (specifically print-timeout, dangerously-skip-permissions, and model ignored)
+        # Verify command flags (specifically print-timeout and model ignored)
         cmd = args[0]
         self.assertIn("agy", cmd)
-        self.assertIn("--dangerously-skip-permissions", cmd)
         self.assertIn("--sandbox", cmd)
         self.assertIn("--print-timeout", cmd)
-        self.assertIn("21600", cmd)
+        self.assertIn("6h", cmd)
         self.assertNotIn("ignored-model", cmd)
         self.assertNotIn("--model", cmd)
 
