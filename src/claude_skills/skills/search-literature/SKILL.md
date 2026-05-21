@@ -83,7 +83,7 @@ Your `summary.md` file must follow this structure:
 6. **Synthesize**: Write `<OUTPUT_DIR>/summary.md` per the format below. Frame the synthesis around the query, not as a general landscape survey.
 7. **Store results**: Persist your output:
    ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type search-literature --from_folder <OUTPUT_DIR>
+   uv run python scripts/context_manager.py store_results --from_agent_type search-literature --from_folder <OUTPUT_DIR>
    ```
    Note down the returned literature ID (e.g. `L_20260416_143052_a1b2c3`) as the result of this skill and continue with any remaining steps in your current workflow.
 

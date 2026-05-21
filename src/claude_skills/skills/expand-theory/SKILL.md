@@ -28,7 +28,7 @@ OUTPUT_DIR: `mktemp -d -p ./tmp expand-theory-output-XXXX`
 
 Run this command to populate the context, and then initialize the output folder with a copy of the original theory files:
 ```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context \
+uv run python scripts/context_manager.py create_context \
     --for_agent_type expand-theory \
     --target_folder <CONTEXT_DIR> \
     --from_theory <THEORY_ID> \
@@ -52,7 +52,7 @@ Cite each experiment by its `X_...` ID in your expanded `theory.md` so reviewers
 You may start with zero, one, or many literature reviews already in `<CONTEXT_DIR>/literature/`. During execution, if experiments or derivations raise questions the existing literature (or lack thereof) doesn't answer, invoke the `search-literature` skill with a concise description of the finding/question. It will return a new literature ID (`L_...`). Fold it into your context without rebuilding the folder:
 
 ```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_literature \
+uv run python scripts/context_manager.py fetch_literature \
     --target_folder <CONTEXT_DIR> \
     --from_literature <NEW_L_ID>
 ```
@@ -91,6 +91,6 @@ The resulting theory MUST use language and rigor that is adequate for publishing
 7. **Reporting**: Write the expanded theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
 8. **Store results**: Persist your output and return the new theory ID:
    ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type expand-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
+   uv run python scripts/context_manager.py store_results --from_agent_type expand-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
    Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the result of this skill and include it in your final message.

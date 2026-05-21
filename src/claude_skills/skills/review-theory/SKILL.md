@@ -19,7 +19,7 @@ CONTEXT_DIR: `mktemp -d -p ./tmp review-theory-context-XXXX`
 
 Run this command to populate the context:
 ```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type review-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
+uv run python scripts/context_manager.py create_context --for_agent_type review-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
 ```
 
 - `<CONTEXT_DIR>/theory/theory.md` — the theory file to review (read-only input).
