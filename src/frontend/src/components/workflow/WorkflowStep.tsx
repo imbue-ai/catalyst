@@ -31,8 +31,8 @@ export const WorkflowStep = React.memo(({ stage, task, onSelect, isSelected, onR
 
       <div className={`p-4 border-2 transition-all ${
         isSelected 
-          ? 'border-black bg-gray-50 -translate-y-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' 
-          : (isPlaceholder ? 'border-dashed border-gray-200 opacity-40' : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50/50')
+          ? 'border-black bg-gray-50' 
+          : (isPlaceholder ? 'border-dashed border-gray-200 opacity-40' : 'border-gray-200 hover:border-black')
       }`}>
         <div className="flex justify-between items-center mb-1">
           <span className={`font-black text-xs tracking-tight ${isRunning ? 'text-blue-600' : ''}`}>{formatStageName(stage)}</span>
