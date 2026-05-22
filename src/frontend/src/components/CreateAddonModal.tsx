@@ -1,14 +1,8 @@
 import React, { useState } from 'react'
 import { XCircle, ChevronRight, ChevronDown, FileText, Users, Settings2, MessageSquare } from 'lucide-react'
 import * as api from '../api'
-import {
-  DEFAULT_MAX_REFINEMENTS,
-  DEFAULT_EVOLVE_ITERATIONS,
-  DEFAULT_NUM_PARENTS,
-  DEFAULT_MAX_STREAMLINE_PROB,
-  DEFAULT_WRITE_DIFFERENT_PROB,
-  DEFAULT_NUM_EXTRA_SCORES
-} from '../constants'
+import { useWorkflowParams } from '../hooks/useWorkflowParams'
+import { AdditionalParamsSection } from './AdditionalParamsSection'
 
 interface CreateAddonModalProps {
   task: api.Task;
@@ -123,13 +117,22 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
   }, [sortedAndFilteredTheories, theoryId])
 
   const [direction, setDirection] = useState('')
-  const [maxRefinements, setMaxRefinements] = useState(DEFAULT_MAX_REFINEMENTS)
-  const [applyExpansions, setApplyExpansions] = useState('')
-  const [evolveIterations, setEvolveIterations] = useState(DEFAULT_EVOLVE_ITERATIONS)
-  const [numParents, setNumParents] = useState(DEFAULT_NUM_PARENTS)
-  const [maxStreamlineProb, setMaxStreamlineProb] = useState(DEFAULT_MAX_STREAMLINE_PROB)
-  const [writeDifferentProb, setWriteDifferentProb] = useState(DEFAULT_WRITE_DIFFERENT_PROB)
-  const [numExtraScores, setNumExtraScores] = useState(DEFAULT_NUM_EXTRA_SCORES)
+  const {
+    maxRefinements,
+    setMaxRefinements,
+    evolveIterations,
+    setEvolveIterations,
+    numParents,
+    setNumParents,
+    maxStreamlineProb,
+    setMaxStreamlineProb,
+    writeDifferentProb,
+    setWriteDifferentProb,
+    numExtraScores,
+    setNumExtraScores,
+    applyExpansions,
+    setApplyExpansions
+  } = useWorkflowParams()
 
   const filteredReviews = availableReviews.filter(r => r.parent_theory === theoryId)
   const [reviewId, setReviewId] = useState(filteredReviews[0]?.id || '')
@@ -427,67 +430,26 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                       </button>
 
                       {showAdditional && (
-                        <div className="flex flex-col gap-6 p-6 border-2 border-dashed border-gray-200">
-                          {addonType === 'refinement-loop' && (
-                            <div>
-                              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Refinement Iterations</label>
-                              <input
-                                type="number"
-                                min="1"
-                                max="10"
-                                required
-                                value={maxRefinements}
-                                onChange={e => setMaxRefinements(parseInt(e.target.value, 10))}
-                                className="w-full md:w-1/3 border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
-                              />
-                            </div>
-                          )}
-
-                          {addonType === 'evolve-loop' && (
-                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                              <div>
-                                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Iterations</label>
-                                <input
-                                  type="number" min="1" max="10" required
-                                  value={evolveIterations} onChange={e => setEvolveIterations(parseInt(e.target.value, 10))}
-                                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Num Parents</label>
-                                <input
-                                  type="number" min="1" max="10" required
-                                  value={numParents} onChange={e => setNumParents(parseInt(e.target.value, 10))}
-                                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Streamline Prob</label>
-                                <input
-                                  type="number" min="0" max="1" step="any" required
-                                  value={maxStreamlineProb} onChange={e => setMaxStreamlineProb(parseFloat(e.target.value))}
-                                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Write Different Prob</label>
-                                <input
-                                  type="number" min="0" max="1" step="any" required
-                                  value={writeDifferentProb} onChange={e => setWriteDifferentProb(parseFloat(e.target.value))}
-                                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
-                                />
-                              </div>
-                              <div>
-                                <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Scores</label>
-                                <input
-                                  type="number" min="0" max="10" required
-                                  value={numExtraScores} onChange={e => setNumExtraScores(parseInt(e.target.value, 10))}
-                                  className="w-full border-2 border-black p-3 outline-none focus:bg-gray-50 text-sm font-bold"
-                                />
-                              </div>
-                            </div>
-                          )}
-
+                        <AdditionalParamsSection
+                          useRestrictedWidths={true}
+                          showMaxRefinements={addonType === 'refinement-loop'}
+                          showEvolveParams={addonType === 'evolve-loop'}
+                          showApplyExpansions={addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory'}
+                          maxRefinements={maxRefinements}
+                          setMaxRefinements={setMaxRefinements}
+                          evolveIterations={evolveIterations}
+                          setEvolveIterations={setEvolveIterations}
+                          numParents={numParents}
+                          setNumParents={setNumParents}
+                          maxStreamlineProb={maxStreamlineProb}
+                          setMaxStreamlineProb={setMaxStreamlineProb}
+                          writeDifferentProb={writeDifferentProb}
+                          setWriteDifferentProb={setWriteDifferentProb}
+                          numExtraScores={numExtraScores}
+                          setNumExtraScores={setNumExtraScores}
+                          applyExpansions={applyExpansions}
+                          setApplyExpansions={setApplyExpansions}
+                        >
                           {addonType === 'streamline-theory' && (
                             <div>
                               <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Streamlining Direction (Optional)</label>
@@ -516,22 +478,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                               </select>
                             </div>
                           )}
-
-                          {(addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory') && (
-                            <div>
-                              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Apply Expansion Reviews</label>
-                              <select
-                                value={applyExpansions}
-                                onChange={e => setApplyExpansions(e.target.value)}
-                                className="w-full md:w-1/3 border-2 border-black p-3 outline-none font-bold text-sm bg-white cursor-pointer"
-                              >
-                                <option value="">Auto (Default)</option>
-                                <option value="always">Always</option>
-                                <option value="never">Never</option>
-                              </select>
-                            </div>
-                          )}
-                        </div>
+                        </AdditionalParamsSection>
                       )}
                     </div>
                   )}

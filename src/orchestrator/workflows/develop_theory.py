@@ -1,5 +1,5 @@
-import threading
 import logging
+import threading
 from typing import Any, Callable, List, Dict
 import os
 from ..models import Task
@@ -11,7 +11,7 @@ from orchestrator.prompts import (
     get_score_theories_prompt,
 )
 
-from .base import Workflow, get_step_output, run_step_if_needed
+from .base import Workflow, run_step_if_needed
 from .common import (
     DEFAULT_EVOLVE_ITERATIONS,
     DEFAULT_NUM_EXTRA_SCORES,
@@ -20,6 +20,8 @@ from .common import (
     DEFAULT_WRITE_DIFFERENT_PROB,
     run_evolve_loop,
     run_summarize_title,
+    run_literature_review_and_exploration_parallel,
+    build_evolve_loop_structure,
 )
 
 logger = logging.getLogger(__name__)
@@ -55,51 +57,7 @@ class DevelopTheoryWorkflow(Workflow):
 
         evolve_iterations = int(task.workflow_inputs.get("evolve_iterations", 0))
         if evolve_iterations > 0:
-            iteration_structures = {}
-            for i in range(1, evolve_iterations + 1):
-                iter_struct = []
-
-                # Sample Parents step
-                iter_struct.append({"type": "step", "stage": f"sample-parents-{i}"})
-
-                # Mutate parallel block
-                mutate_stages = [
-                    s.stage
-                    for s in task.steps
-                    if s.stage.startswith(f"mutate-streamline-{i}-")
-                    or s.stage.startswith(f"mutate-refine-{i}-")
-                    or s.stage.startswith(f"mutate-write-different-{i}-")
-                ]
-                iter_struct.append(
-                    {"type": "parallel", "name": "Mutate", "stages": mutate_stages}
-                )
-
-                # Review parallel block
-                loop_review_stages = [
-                    s.stage
-                    for s in task.steps
-                    if s.stage.startswith(f"review-theory-{i}-")
-                ]
-                iter_struct.append(
-                    {"type": "parallel", "name": "Review", "stages": loop_review_stages}
-                )
-
-                # Sample Scoring step
-                iter_struct.append({"type": "step", "stage": f"sample-scoring-{i}"})
-
-                # Score step
-                iter_struct.append({"type": "step", "stage": f"score-theories-{i}"})
-
-                iteration_structures[str(i)] = iter_struct
-
-            structure.append(
-                {
-                    "type": "loop",
-                    "name": "Evolve Theories",
-                    "iterations": evolve_iterations,
-                    "iteration_structures": iteration_structures,
-                }
-            )
+            structure.extend(build_evolve_loop_structure(task, evolve_iterations))
 
         return structure
 
@@ -115,70 +73,9 @@ class DevelopTheoryWorkflow(Workflow):
         run_summarize_title(task, run_step, f"phenomenon: {phenomenon}")
 
         # Step 1 & 2: Literature Review and Exploration in Parallel
-        lit_out = get_step_output(task, "literature-review")
-        lit_review_id = lit_out.get("literature_review_id") if lit_out else None
-
-        exp_out = get_step_output(task, "explore")
-        exploration_id = exp_out.get("exploration_id") if exp_out else None
-
-        if not lit_review_id or not exploration_id:
-            logger.debug(
-                f"[ORCHESTRATOR] [{task.id[:8]}] Running Literature Review and Exploration in parallel..."
-            )
-            results = {}
-            errors = []
-
-            def run_and_store(stage, prompt, key):
-                try:
-                    results[key] = run_step(task, stage, prompt)
-                except Exception as e:
-                    errors.append(e)
-
-            threads = []
-            if not lit_review_id:
-                t = threading.Thread(
-                    target=run_and_store,
-                    args=(
-                        "literature-review",
-                        f"Please run the literature-review skill for the following phenomenon:\n```\n{phenomenon}\n```\n"
-                        "When you are done, return ONLY a JSON object with the key 'literature_review_id'.",
-                        "lit",
-                    ),
-                )
-                t.daemon = True
-                threads.append(t)
-
-            if not exploration_id:
-                t = threading.Thread(
-                    target=run_and_store,
-                    args=(
-                        "explore",
-                        f"Please run the explore skill for the following phenomenon:\n```\n{phenomenon}\n```\n"
-                        "When you are done, return ONLY a JSON object with the key 'exploration_id'.",
-                        "exp",
-                    ),
-                )
-                t.daemon = True
-                threads.append(t)
-
-            for t in threads:
-                t.start()
-            for t in threads:
-                t.join()
-
-            if errors:
-                raise errors[0]
-
-            for res in results.values():
-                if res and isinstance(res, dict):
-                    if "literature_review_id" in res and isinstance(
-                        res["literature_review_id"], str
-                    ):
-                        lit_review_id = res["literature_review_id"]
-                    if "exploration_id" in res and isinstance(
-                        res["exploration_id"], str
-                    ):
-                        exploration_id = res["exploration_id"]
+        lit_review_id, exploration_id = run_literature_review_and_exploration_parallel(
+            task, run_step, phenomenon
+        )
 
         # Step 3: Write N Theories
         num_theories = task.workflow_inputs.get("num_root_theories", 3)
