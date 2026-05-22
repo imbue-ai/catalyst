@@ -96,7 +96,8 @@ The resulting theory MUST use language and rigor that is adequate for publishing
    - **Literature grounding**: You can cite prior literature to support your statement. Always read the full paper before citing it.
 7. **Iteration**: Keep iterating until you're COMPLETELY CONFIDENT in your theory and have ruled out ALL alternative explanations.
    - Based on the results of the validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process.
-   - Once you have a robust theory that is well-supported by thorough mathematical derivation or experimental evidence, you can start to broaden the scope of your theory by relaxing your assumptions or generalizing your statements to cover a wider range of conditions.
+   - Only after you have a robust theory that is well-supported by thorough mathematical derivation or experimental evidence, you can try to broaden the scope of it by relaxing your assumptions or generalizing your statements. Only broaden your theory to the extent that is strictly necessary for explaining the target phenomenon.
+   - Double-check that your theory provides a full and coherent explanation of the phenomenon. If you notice gaps or inconsistencies, go back and keep iterating.
 8. **Reporting**: Write the final theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
 9. **Store results**: Persist your output and return the theory ID:
    ```bash
