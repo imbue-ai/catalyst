@@ -1,7 +1,7 @@
 from typing import Any, Callable, List, Dict
 from ..models import Task
 from .base import Workflow, run_step_if_needed
-from .common import run_refinement_loop, run_summarize_title
+from .common import run_refinement_loop, run_summarize_title, get_active_max_iterations
 from orchestrator.prompts import get_support_idea_prompt
 
 class RefineTheoryIdeaLinearWorkflow(Workflow):
@@ -11,18 +11,7 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
 
     def get_structure(self, task: Task) -> List[Dict[str, Any]]:
         max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
-        # Count iterations dynamically based on steps
-        max_iters = max_refinements if max_refinements > 0 else 0
-        for s in task.steps:
-            if s.stage.startswith("review-theory-") or s.stage.startswith(
-                "refine-theory-"
-            ):
-                try:
-                    it = int(s.stage.split("-")[-1])
-                    if it > max_iters:
-                        max_iters = it
-                except ValueError:
-                    pass
+        max_iters = get_active_max_iterations(task, max_refinements)
 
         structure = [
             {"type": "step", "stage": "summarize-title"},

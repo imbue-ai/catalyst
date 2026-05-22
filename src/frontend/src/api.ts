@@ -73,11 +73,6 @@ export interface ExperimentArtifact {
   extra?: Record<string, string>;
 }
 
-export const getTasks = async (): Promise<Task[]> => {
-  const res = await fetch(`${API_BASE}/tasks`);
-  return res.json();
-}
-
 export const listTasks = async (): Promise<Task[]> => {
   const res = await fetch(`${API_BASE}/tasks`);
   return res.json();

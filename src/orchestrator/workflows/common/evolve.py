@@ -1,97 +1,70 @@
-from typing import Any, Callable, Dict, Optional, Set
 import random
 import threading
 import logging
-from ..models import Task
-from ..utils import run_context_manager
-from .base import run_step_if_needed, run_local_step_if_needed
+from typing import Any, Callable, Dict, List, Optional, Set
+from ...models import Task
+from ...utils import run_context_manager
+from ..base import run_step_if_needed, run_local_step_if_needed
 from orchestrator.prompts import (
-    get_summarize_title_prompt,
     get_review_theory_prompt,
     get_refine_theory_prompt,
     get_streamline_theory_prompt,
     get_score_theories_prompt,
     get_write_different_theory_prompt,
 )
+from .constants import FORCE_EXPANSION_PROB
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_EVOLVE_ITERATIONS = 5
-DEFAULT_NUM_PARENTS = 3
-DEFAULT_MAX_STREAMLINE_PROB = 0.5
-DEFAULT_WRITE_DIFFERENT_PROB = 0.25
-DEFAULT_NUM_EXTRA_SCORES = 5
 
-# Make the theory development process more efficient and adds diversity by occasionally forcing the application of expansion reviews,
-# even when there are still falsifications to be applied.
-FORCE_EXPANSION_PROB = 0.25
+def build_evolve_loop_structure(
+    task: Task, evolve_iterations: int, stage_prefix: str = ""
+) -> List[Dict[str, Any]]:
+    iteration_structures = {}
+    for i in range(1, evolve_iterations + 1):
+        iter_struct = []
 
+        # Sample Parents step
+        iter_struct.append({"type": "step", "stage": f"{stage_prefix}sample-parents-{i}"})
 
-def run_summarize_title(task: Task, run_step_fn: Callable, content_desc: str) -> None:
-    if not task.title:
-        title_data = run_step_if_needed(
-            task,
-            run_step_fn,
-            "summarize-title",
-            get_summarize_title_prompt(content_desc),
-        )
-        if title_data and isinstance(title_data, dict):
-            task.title = title_data.get("title")
-
-
-def run_refinement_loop(
-    task: Task,
-    run_step_fn: Callable,
-    theory_id: str,
-    lit_review_id: Optional[str],
-    apply_expansions: Optional[str],
-    max_refinements: int,
-    stage_prefix: str = "",
-) -> str:
-    i = 1
-    while i <= max_refinements:
-        # Review
-        review_data = run_step_if_needed(
-            task,
-            run_step_fn,
-            f"{stage_prefix}review-theory-{i}",
-            get_review_theory_prompt(theory_id),
-            cost=3,
+        # Mutate parallel block
+        mutate_stages = [
+            s.stage
+            for s in task.steps
+            if s.stage.startswith(f"{stage_prefix}mutate-streamline-{i}-")
+            or s.stage.startswith(f"{stage_prefix}mutate-refine-{i}-")
+            or s.stage.startswith(f"{stage_prefix}mutate-write-different-{i}-")
+        ]
+        iter_struct.append(
+            {"type": "parallel", "name": "Mutate", "stages": mutate_stages}
         )
 
-        if not review_data:
-            raise Exception(f"Theory review for iteration {i} failed.")
-
-        if review_data.get("_canceled"):
-            i += 1
-            continue
-
-        review_ids = review_data.get("review_ids", [])
-        if not review_ids:
-            break
-
-        # Refine
-        refine_data = run_step_if_needed(
-            task,
-            run_step_fn,
-            f"{stage_prefix}refine-theory-{i}",
-            get_refine_theory_prompt(theory_id, apply_expansions, lit_review_id),
+        # Review parallel block
+        loop_review_stages = [
+            s.stage
+            for s in task.steps
+            if s.stage.startswith(f"{stage_prefix}review-theory-{i}-")
+        ]
+        iter_struct.append(
+            {"type": "parallel", "name": "Review", "stages": loop_review_stages}
         )
 
-        if not refine_data:
-            raise Exception(f"Theory refinement for iteration {i} failed.")
+        # Sample Scoring step
+        iter_struct.append({"type": "step", "stage": f"{stage_prefix}sample-scoring-{i}"})
 
-        if refine_data.get("_canceled"):
-            i += 1
-            continue
+        # Score step
+        iter_struct.append({"type": "step", "stage": f"{stage_prefix}score-theories-{i}"})
 
-        theory_id = refine_data.get("theory_id") or theory_id
-        if not refine_data.get("major_changes", True):
-            break
+        iteration_structures[str(i)] = iter_struct
 
-        i += 1
-
-    return theory_id
+    return [
+        {
+            "type": "loop",
+            "name": "Evolve Theories",
+            "iterations": evolve_iterations,
+            "iteration_structures": iteration_structures,
+        }
+    ]
 
 
 def run_evolve_loop(
