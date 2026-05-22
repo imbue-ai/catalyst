@@ -58,7 +58,7 @@ Please maintain the following guidelines for the streamlined theory:
 - Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
 - Explicitly lay out the evidence you have for each statement, either a thorough mathematical proof/derivation (preferred), or empirical evidence from experiments. You can also cite prior literature to support your statements. Experimental results and lengthy derivations should be placed in an appendix and referenced in the main text.
 - Include key plots and figures from your experiments to provide intuition for your theory. Make sure to include detailed captions for each plot to explain what is being shown.
-- Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. NEVER use absolute paths. Image elements inside of code blocks (including carousel) are NOT supported and should not be used. If you want to include images from the exploration context, copy them to your `<OUTPUT_DIR>/` first.
+- Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. NEVER use absolute paths. Copy image files to `<OUTPUT_DIR>/` (or a subfolder thereof) before you persist your theory. Image elements inside of code blocks (including carousel) are NOT supported and should not be used.
 - Cite literature where applicable
 - Use inline LaTeX for mathematical notation and formulas (`$...$` for inline math, and `$$...$$` for display math). Do NOT put formulas into code blocks.
 
