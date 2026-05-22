@@ -80,13 +80,13 @@ The resulting theory MUST use language and rigor that is adequate for publishing
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the existing theory, expansion reviews (containing suggested expansion areas), and literature review results using `context_manager.py`.
 2. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md`, all review files in `<CONTEXT_DIR>/reviews/*/review.md`, and (if present) each `<CONTEXT_DIR>/literature/*/summary.md` to understand the current theory, the proposed expansions, and any prior literature grounding.
-3. **Expansion Area Selection**: Identify which expansion suggestions you want to research. Prioritize by impact and feasibility.
-4. **Hypothesis Generation**: For each selected expansion aspect, generate different hypotheses that could explain it. Try to generate at least 2-3 *alternative* explanations for every aspect, and think about how you can test and differentiate between these explanations.
-5. **Validation**: For each expansion you choose to research, test your ideas using the available tools. Always test ALL of your alternative hypotheses. Even after one hypothesis is found to be promising, you must still attempt to validate the alternative explanations before you dismiss them. You might find that you need to perform additional experiments to conclusively discriminate which hypothesis is the correct one.
+3. **Expansion Area Selection**: Select ONE expansion suggestion that you want to research. Prioritize by impact and feasibility.
+4. **Hypothesis Generation**: For the selected expansion suggestion, generate different hypotheses for how to incorporate it into the theory. Try to generate at least 2-3 *alternative* hypotheses, and think about how you can test and differentiate between them.
+5. **Validation**: Test your ideas using the available tools. Always test ALL of your alternative hypotheses. Even after one hypothesis is found to be promising, you must still attempt to validate the alternative hypotheses before you dismiss them. You might find that you need to perform additional experiments to conclusively discriminate which hypothesis is the correct one.
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your notes and theory.
    - **Proof**: If applicable, use mathematical derivations.
    - **Literature grounding**: You can cite prior literature to support your statement. Always read the full paper before citing it. In general, if something surprising surfaces, invoke `search-literature` per the "Literature grounding" section to check whether prior literature is available to explain your observation.
-6. **Iteration**: Keep iterating until you're COMPLETELY CONFIDENT in your expansions and have ruled out ALL alternative explanations for them.
+6. **Iteration**: Keep iterating until you're COMPLETELY CONFIDENT in your expansion and have ruled out ALL alternative hypotheses.
    - Based on the results of the validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process.
 7. **Reporting**: Write the expanded theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
 8. **Store results**: Persist your output and return the new theory ID:
