@@ -12,7 +12,7 @@ Instead of seeking confirmation, adopt a "killer" mindset to identify cases wher
 - Focus on exactly the **ONE** hypothesis given below.
 - Do whatever is needed to test falsification ideas and try to produce empirical or logical evidence of the falsification.
 - If (and only if) the hypothesis is trivial or obviously true, or is already well-supported by existing literature, you do not need to spend much time on it. In that case, your report can simply state why you concluded that the hypothesis is correct, citing existing literature as needed.
-- Honor any limited validity domain and/or assumptions that are explicitly stated in the theory. Try to falsify the hypothesis *within* the domain of those assumptions. A falsification is only valid if it invalidates the hypothesis *within* its stated domain.
+- Honor any limited validity domain and/or assumptions that are explicitly stated in the theory. Try to falsify the hypothesis *within* the domain of those assumptions. A falsification is only valid if it invalidates the hypothesis *within* its stated domain. Make sure you check the full theory for stated limitations, not just the hypothesis itself.
 - All experiment execution must go through the `run-experiment` skill. Never run a Python experiment script directly. See the "Running experiments" section below.
 
 ## Input
@@ -53,11 +53,12 @@ Cite each experiment by its `X_...` ID in your `review.md` under the relevant fa
 
 ## Falsification Strategies
 Consider these approaches to generate falsification ideas:
-1. **Boundary and Edge Cases**: Parameter extremes (e.g., $N=1$, limits), singularities.
-2. **Violation of Assumptions**: Test highly correlated variables if independence is assumed, or test non-linear regimes if linearity is assumed.
+1. **Boundary and Edge Cases**: Parameter extremes (e.g., $N=1$, limits), singularities. (to the extent that such parameter extremes are plausible within the stated assumptions of the theory)
+2. **Violation of Implicit Assumptions**: Test highly correlated variables if independence is implicitly assumed, or test non-linear regimes if linearity is implicitly assumed.
 3. **Generalization Limits**: Out-of-distribution scenarios, scale invariance.
 4. **Counter-Examples**: Analytical construction, or search-based (optimization to find a "poisoned" input).
 5. **Noise and Perturbations**: Sensitivity analysis, stochasticity.
+6. **Mathematical Issues**: Logical inconsistencies, contradictions, mathematical errors, or unstated premises.
 
 ## Falsification Report Format
 Your `review.md` file MUST be formatted as follows:
