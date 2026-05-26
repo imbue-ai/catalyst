@@ -30,7 +30,7 @@ class GeminiAgentRunner(BaseCliAgentRunner):
             custom_env["CONTEXT_TRANSACTION_ID"] = tx_id
         abs_env_folder = os.path.abspath(env_folder)
         custom_env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
-        custom_env["AI_SCIENTIST_DB_PATH"] = os.path.join(
+        custom_env["CATALYST_DB_PATH"] = os.path.join(
             abs_env_folder, DEFAULT_DB_DIR
         )
         custom_env["GEMINI_SYSTEM_MD"] = "1"

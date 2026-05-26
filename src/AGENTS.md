@@ -6,5 +6,5 @@ When working on the (Python) backend:
 * Run `uvx ruff check` after any change.
 
 When working on the frontend:
-* We don't use all-cap titles or labels. All titles and labels should follow Chicago style capitalization. (only exceptions: task/step state labels and the "AI SCIENTIST" title)
+* We don't use all-cap titles or labels. All titles and labels should follow Chicago style capitalization. (only exceptions: task/step state labels and the "CATALYST" title)
 * Run `cd frontend && npm run build` to validate frontend changes.

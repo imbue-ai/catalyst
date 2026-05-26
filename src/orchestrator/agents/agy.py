@@ -31,7 +31,7 @@ class AgyAgentRunner(BaseCliAgentRunner):
                 return (
                     None,
                     None,
-                    f"For Antigravity, environment folders cannot be inside a hidden directory like {parent}. Set AI_SCIENTIST_PATH to a path that does not contain hidden directories.",
+                    f"For Antigravity, environment folders cannot be inside a hidden directory like {parent}. Set CATALYST_PATH to a path that does not contain hidden directories.",
                 )
 
         env = os.environ.copy()
@@ -39,7 +39,7 @@ class AgyAgentRunner(BaseCliAgentRunner):
         if tx_id:
             env["CONTEXT_TRANSACTION_ID"] = tx_id
         env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
-        env["AI_SCIENTIST_DB_PATH"] = os.path.join(abs_env_folder, DEFAULT_DB_DIR)
+        env["CATALYST_DB_PATH"] = os.path.join(abs_env_folder, DEFAULT_DB_DIR)
         env["MPLCONFIGDIR"] = os.path.join(abs_env_folder, "tmp/matplotlib_cache")
 
         cmd = [

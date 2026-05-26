@@ -84,7 +84,7 @@ VALID_CATEGORIES: tuple[str, ...] = (
 )
 
 DEFAULT_DB_DIR = ".ai-scientist-db"
-ENV_DB_PATH = "AI_SCIENTIST_DB_PATH"
+ENV_DB_PATH = "CATALYST_DB_PATH"
 LOCK_FILENAME = ".lock"
 IGNORE_METADATA_PATTERN = shutil.ignore_patterns("metadata.json")
 
