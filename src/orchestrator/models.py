@@ -58,6 +58,7 @@ class Task(BaseModel):
     addons: List[Addon] = []
     workflow_name: str = "develop-theory"
     workflow_structure: List[Dict[str, Any]] = []
+    guidance: str = "No additional guidance."
     created_at: Optional[str] = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
 class TasksState(BaseModel):

@@ -43,6 +43,7 @@ export interface Task {
   workflow_name: string;
   workflow_structure: any[];
   created_at?: string;
+  guidance?: string;
 }
 
 export interface TheoryArtifact {
@@ -203,4 +204,17 @@ export async function bulkCancelSteps(taskId: string, stages: string[]): Promise
 
 export async function deleteTask(id: string): Promise<void> {
   await fetch(`${API_BASE}/tasks/${id}`, { method: "DELETE" });
+}
+
+export async function updateGuidance(taskId: string, guidance: string): Promise<Task> {
+  const res = await fetch(`${API_BASE}/tasks/${taskId}/guidance`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ guidance }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.detail || "Failed to update guidance");
+  }
+  return res.json();
 }

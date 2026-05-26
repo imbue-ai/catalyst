@@ -332,6 +332,32 @@ def resume_task(task_id: str):
     return task
 
 
+class UpdateGuidanceRequest(BaseModel):
+    guidance: str
+
+
+@app.post("/api/tasks/{task_id}/guidance", response_model=Task)
+def update_task_guidance(task_id: str, req: UpdateGuidanceRequest):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task.guidance = req.guidance
+    update_task(task)
+
+    guidance_file = os.path.join(task.env_folder, "GUIDANCE.txt")
+    try:
+        with open(guidance_file, "w", encoding="utf-8") as f:
+            f.write(req.guidance)
+    except Exception as e:
+        logger.error(f"Error writing to GUIDANCE.txt for task {task_id}: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to write guidance file: {e}"
+        )
+
+    return task
+
+
 @app.delete("/api/tasks/{task_id}")
 def remove_task(task_id: str):
     task = get_task(task_id)
