@@ -7,7 +7,15 @@ from .models import Task
 
 
 def get_ai_scientist_path() -> str:
-    return os.environ.get("AI_SCIENTIST_PATH", os.path.expanduser("~/.ai-scientist"))
+    path = os.environ.get("AI_SCIENTIST_PATH")
+    if path:
+        return path
+
+    catalyst_path = os.path.expanduser("~/.catalyst")
+    legacy_path = os.path.expanduser("~/.ai-scientist")
+    if not os.path.exists(catalyst_path) and os.path.exists(legacy_path):
+        return legacy_path
+    return catalyst_path
 
 
 def run_context_manager(task: Task, args: List[str]) -> str:
