@@ -1084,9 +1084,9 @@ def rescore_theories(theory_scores: dict[str, dict[str, float]]) -> None:
                 updated_theories.add(organism.theory_id)
 
         if set(theory_scores.keys()) - updated_theories:
-            raise ValueError(
-                f"Theory IDs not found in population: "
-                f"{set(theory_scores.keys()) - updated_theories}"
+            print(
+                f"Theory IDs {set(theory_scores.keys()) - updated_theories} not found in population. Skipping.",
+                file=sys.stderr,
             )
 
         # Step 2: Decay the scores of all remaining organisms
