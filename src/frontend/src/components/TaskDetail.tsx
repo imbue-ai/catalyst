@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-import { Activity, Folder, Cpu, Loader2, Square, Play, Trash2, Workflow, Plus, XCircle, Copy, Check } from 'lucide-react'
+import { Activity, Folder, Cpu, Loader2, Square, Play, Trash2, Workflow, Plus, XCircle, Copy, Check, Compass } from 'lucide-react'
 import * as api from '../api'
 import { StatusBadge } from './StatusBadge'
 import { DataSection } from './DataSection'
@@ -11,6 +11,7 @@ import { ArtifactViewerModal } from './ArtifactViewerModal'
 import { CreateAddonModal } from './CreateAddonModal'
 import { TheoriesList } from './TheoriesList'
 import { ExperimentsList } from './ExperimentsList'
+import { EditGuidanceModal } from './EditGuidanceModal'
 
 interface TaskDetailProps {
   task: api.Task;
@@ -26,6 +27,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
   const [isProcessing, setIsProcessing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAddonModal, setShowAddonModal] = useState(false)
+  const [showGuidanceModal, setShowGuidanceModal] = useState(false)
   const copyTimeoutRef = useRef<number | null>(null)
 
   const handleCopy = (text: string) => {
@@ -126,6 +128,14 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                   </button>
                 </div>
               ) : null}
+
+              <button
+                disabled={isProcessing}
+                onClick={() => setShowGuidanceModal(true)}
+                className="border-2 border-black text-black px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                <Compass size={12} /> Provide Guidance
+              </button>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -392,6 +402,17 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             onRefresh()
           }}
           isBackendDown={!!isBackendDown}
+        />
+      )}
+
+      {showGuidanceModal && (
+        <EditGuidanceModal
+          onClose={() => setShowGuidanceModal(false)}
+          initialGuidance={task.guidance || "No additional guidance."}
+          onSave={async (newGuidance) => {
+            await api.updateGuidance(task.id, newGuidance)
+            onRefresh()
+          }}
         />
       )}
     </div>

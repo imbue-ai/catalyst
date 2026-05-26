@@ -3,11 +3,13 @@ import argparse
 from pathlib import Path
 
 BASE_GEMINI_MD = """GENERAL INSTRUCTIONS:
+* The user might have provided additional guidance in the file `GUIDANCE.txt`.  You MUST read this file before you start any work and treat its contents as user instructions.
 * Be very thorough! You will frequently need to run 10+ experiments to perform a single topic exploration or falsification. I expect that you'll be working many hours on each step of this task. Don't stop after the first successful experiment - keep going until you've explored ALL reasonable ideas.
 * Make sure to consider and rule out ALL plausible alternative explanations before drawing conclusions.
 * ALWAYS use the `scientist` subagent type instead of generalist for spawning subagents. If the scientist agent type is not available, stop and tell the user that they need to install it.
   * Exception: IF you are Antigravity, the `scientist` subagent type will not be available. Use the `self` subagent type instead of `scientist`.
 * However, ONLY spawn a subagent when the execution steps in a skill explicitly tell you to.
+* If you encounter any issues with following the instructions in a skill, or run into issues with your execution environment (e.g. missing permission, error while running a pre-provided script, etc.), please take a second to append a short, one-line issue description to `./tmp/agent_friction_log.txt`.
 
 THEORY.MD INSTRUCTIONS:
 * `theory.md` files are the main output of the research process that will be consumed by human researchers.
@@ -23,8 +25,11 @@ If you find that the `uv` command is not installed:
 2. If not, install it using `export UV_UNMANAGED_INSTALL=./tmp/bin && curl -LsSf https://astral.sh/uv/install.sh | sh`. The uv binary will then be available in `./tmp/bin/uv`.
 
 You might encounter a broken Python `.venv`, e.g. with symlinks pointing to non-existent files. If that happens, run `uv venv --clear` to recreate it.
+"""
 
-If you encounter any issues with following the instructions in a skill, or run into issues with your execution environment (e.g. missing permission, error while running a pre-provided script, etc.), please take a second to append a short, one-line issue description to `./tmp/agent_friction_log.txt`.
+BASE_CLAUDE_MD = """GENERAL INSTRUCTIONS:
+* The user might have provided additional guidance in the file `GUIDANCE.txt`.  You MUST read this file before you start any work and treat its contents as user instructions.
+* If you encounter any issues with following the instructions in a skill, or run into issues with your execution environment (e.g. missing permission, error while running a pre-provided script, etc.), please take a second to append a short, one-line issue description to `./tmp/agent_friction_log.txt`.
 """
 
 
@@ -88,14 +93,23 @@ def create_environment(target_path: str, template_path: str = None):
             for item in template.iterdir():
                 copy_resolved_and_no_hidden(item, target / item.name)
 
-    # 3. Append the base Gemini.md instructions
-    gemini_md_path = target / "GEMINI.md"
-    if gemini_md_path.exists():
-        with open(gemini_md_path, "a") as f:
-            f.write("\n\n" + BASE_GEMINI_MD)
-    else:
-        with open(gemini_md_path, "w") as f:
-            f.write(BASE_GEMINI_MD)
+    # 3. Append the base Gemini.md and Claude.md instructions
+    for md_filename, base_content in [
+        ("GEMINI.md", BASE_GEMINI_MD),
+        ("CLAUDE.md", BASE_CLAUDE_MD),
+    ]:
+        md_path = target / md_filename
+        if md_path.exists():
+            with open(md_path, "a") as f:
+                f.write("\n\n" + base_content)
+        else:
+            with open(md_path, "w") as f:
+                f.write(base_content)
+
+    # 4. Initialize GUIDANCE.txt
+    guidance_path = target / "GUIDANCE.txt"
+    with open(guidance_path, "w") as f:
+        f.write("No additional guidance.\n")
 
     print(f"Environment initialized at {target}")
 
