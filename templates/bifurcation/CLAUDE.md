@@ -8,5 +8,5 @@ In particular, we're interested in pitchfork bifurcation during training time: W
 We know that the following custom function works well for illustrating the phenomenon: 'x[1] + x[2] + abs(x[1]) + abs(x[2])' (the equivalent of $ReLU(x_1) + ReLU(x_2)$)
 As can be seen in the `scatterplot.gif` / `scatterplot.png` resulting from:
 ```bash
-uv run python -m shallow_mlps.cli run --target-type custom --width 2000 --input-dim 2 --alpha 0.00000001 --lr 0.01 --activation relu --steps 10000 --snapshot-interval 500 --custom-expr 'x[1] + x[2] + abs(x[1]) + abs(x[2])' --output-dir <...>
+uv run python -m shallow_mlps.cli run --target-type custom --width 500 --input-dim 2 --alpha 0.00000001 --lr 0.01 --activation relu --steps 10000 --snapshot-interval 500 --custom-expr 'x[1] + x[2] + abs(x[1]) + abs(x[2])' --output-dir <...>
 ```
