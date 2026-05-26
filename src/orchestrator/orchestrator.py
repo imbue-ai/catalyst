@@ -13,7 +13,7 @@ from .utils import run_context_manager
 logger = logging.getLogger(__name__)
 
 MAX_CONCURRENCY_PER_TASK = int(
-    os.environ.get("AI_SCIENTIST_MAX_CONCURRENCY_PER_TASK", 3)
+    os.environ.get("CATALYST_MAX_CONCURRENCY_PER_TASK", 3)
 )
 
 

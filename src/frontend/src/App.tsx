@@ -110,7 +110,7 @@ function App() {
           >
             <img
               src="/catalyst-small.png"
-              alt="AI Scientist Catalyst"
+              alt="Catalyst"
               className="w-full h-auto object-contain"
             />
           </div>

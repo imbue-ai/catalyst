@@ -6,8 +6,8 @@ from context_manager import DEFAULT_DB_DIR
 from .models import Task
 
 
-def get_ai_scientist_path() -> str:
-    path = os.environ.get("AI_SCIENTIST_PATH")
+def get_catalyst_path() -> str:
+    path = os.environ.get("CATALYST_PATH")
     if path:
         return path
 
@@ -21,7 +21,7 @@ def get_ai_scientist_path() -> str:
 def run_context_manager(task: Task, args: List[str]) -> str:
     abs_env_folder = os.path.abspath(task.env_folder)
     env = os.environ.copy()
-    env["AI_SCIENTIST_DB_PATH"] = os.path.join(abs_env_folder, DEFAULT_DB_DIR)
+    env["CATALYST_DB_PATH"] = os.path.join(abs_env_folder, DEFAULT_DB_DIR)
 
     ctx_mgr_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "context_manager.py")

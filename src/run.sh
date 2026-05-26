@@ -2,7 +2,7 @@
 set -e
 
 echo "======================================"
-echo "AI Scientist: Checking dependencies..."
+echo "Catalyst: Checking dependencies..."
 echo "======================================"
 
 if ! command -v uv &> /dev/null; then

@@ -26,7 +26,7 @@ from orchestrator.state import (
     shutdown_all,
 )
 from orchestrator.orchestrator import start_task
-from orchestrator.utils import get_ai_scientist_path, run_context_manager
+from orchestrator.utils import get_catalyst_path, run_context_manager
 from context_manager import PREFIX_TO_CATEGORY, CATEGORY_MD_MAP, DEFAULT_DB_DIR
 
 # Setup logging
@@ -56,7 +56,7 @@ async def lifespan(app: FastAPI):
     shutdown_all()
 
 
-app = FastAPI(title="AI Scientist Orchestrator", lifespan=lifespan)
+app = FastAPI(title="Catalyst Orchestrator", lifespan=lifespan)
 
 # Enable CORS for the React frontend
 app.add_middleware(
@@ -114,7 +114,7 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
     task_id = str(uuid.uuid4())
 
     # Generate unique target path inside configured research directory
-    base_research_dir = os.path.join(get_ai_scientist_path(), "research")
+    base_research_dir = os.path.join(get_catalyst_path(), "research")
     target_path = os.path.abspath(os.path.join(base_research_dir, f"task_{task_id[:8]}"))
 
     # Run create_environment.py

@@ -20,7 +20,7 @@ class TestContextManager(unittest.TestCase):
         self.test_dir = Path(tempfile.mkdtemp())
         self.db_path = self.test_dir / "test_db"
         self.env = os.environ.copy()
-        self.env["AI_SCIENTIST_DB_PATH"] = str(self.db_path)
+        self.env["CATALYST_DB_PATH"] = str(self.db_path)
 
         # Path to the script and python executable
         self.script_path = Path(__file__).parent / "context_manager.py"

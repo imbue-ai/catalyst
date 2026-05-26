@@ -1,6 +1,6 @@
 # Workflows and Add-ons
 
-This document describes the available workflows and add-on steps in the AI Scientist orchestrator.
+This document describes the available workflows and add-on steps in the Catalyst orchestrator.
 
 ## Workflows
 

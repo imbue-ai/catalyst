@@ -1,25 +1,25 @@
 # Quickstart Guide
 
-This guide provides a high-level overview of the AI Scientist project and explains how to get started.
+This guide provides a high-level overview of the Catalyst project and explains how to get started.
 
 ## Overall Structure
 
-The AI Scientist is an automated system for generating, evaluating, and refining scientific theories. From a user's perspective, the system revolves around **Workflows**.
+Catalyst is an automated system for generating, evaluating, and refining scientific theories. From a user's perspective, the system revolves around **Workflows**.
 
 - **Workflows**: You initiate a workflow by providing a scientific phenomenon or an initial idea. The orchestrator then manages a sequence of steps, often involving parallel execution of specialized agents (e.g., for literature review, exploration, or theory generation).
 - - **Add-on Steps**: In addition to standard workflows, you can manually extend any task by adding individual **Add-on Steps** (e.g., to specifically streamline or falsify a theory). This provides flexibility to guide the research process beyond the predefined workflow structures.
 - **Theories and Artifacts**: Each step in a workflow generates artifacts, such as literature reviews, exploration reports, and, most importantly, theories.
-- **Context Database**: All artifacts are stored in a persistent context database (`.ai-scientist-db`). This allows agents to reference previous work and enables the system to track the evolution of theories.
+- **Context Database**: All artifacts are stored in a persistent context database (`.catalyst-db`). This allows agents to reference previous work and enables the system to track the evolution of theories.
 
 ## Environment Templates
 
-The AI Scientist uses specialized environments to run experiments and validate hypotheses. When a new task or step is initialized, the system uses `create_environment.py` to set up a dedicated working directory.
+Catalyst uses specialized environments to run experiments and validate hypotheses. When a new task or step is initialized, the system uses `create_environment.py` to set up a dedicated working directory.
 
 A **Template** is a directory that contains the base files, scripts, and configurations required for a specific type of scientific exploration. When creating an environment, you can specify a `--template` path, and the system will copy the template's contents into the new environment.
 
 ### What to Include in a Template
 
-To provide the best possible starting point for an automated scientist, a template should typically include:
+To provide the best possible starting point for an automated scientific agent, a template should typically include:
 
 - **Custom Instructions (`CLAUDE.md` and `GEMINI.md`)**: Use these files to specify high-level goals, provide context on the phenomenon being researched, and give specific guidance on how to use the available tools and scripts.
 - **Experiment Scripts**: Include pre-existing Python packages or scripts that the agent can use to run simulations, train models, or analyze data (e.g., a `shallow_mlps` folder with a CLI for running MLP experiments).
@@ -31,7 +31,7 @@ This structured environment ensures that the agent has all the domain-specific k
 
 ## Walkthrough: Autonomous Theory Discovery
 
-In this walkthrough, we will utilize the "Develop a Theory" workflow to have the AI Scientist autonomously develop a theory to explain a given phenomenon.
+In this walkthrough, we will utilize the "Develop a Theory" workflow to have Catalyst autonomously develop a theory to explain a given phenomenon.
 
 1. Click the plus icon to start a new research project
    
@@ -41,7 +41,7 @@ In this walkthrough, we will utilize the "Develop a Theory" workflow to have the
    
    ![start research](start_research_phenomenon.png)
 
-3. No matter whether you pick the evolution-based or linear workflow, the AI Scientist will begin with a literature review and perform an initial exploration of the problem space. It will then continue to form an initial theory (for evolution: n alternative theories) that attempts to explain the phenomenon. Each step might involve running multiple experiments and/or performing mathematical derivations. After the initial theory writing, the linear theory development workflow will enter a loop of repeated review & refinement. The evolution-based workflow will also perform successive review & refinement cycles, but will do so using randomized sampling from a population of *scored* theories.
+3. No matter whether you pick the evolution-based or linear workflow, Catalyst will begin with a literature review and perform an initial exploration of the problem space. It will then continue to form an initial theory (for evolution: n alternative theories) that attempts to explain the phenomenon. Each step might involve running multiple experiments and/or performing mathematical derivations. After the initial theory writing, the linear theory development workflow will enter a loop of repeated review & refinement. The evolution-based workflow will also perform successive review & refinement cycles, but will do so using randomized sampling from a population of *scored* theories.
    
    ![workflow](workflow.png)
 
@@ -60,7 +60,7 @@ In this walkthrough, we will utilize the "Develop a Theory" workflow to have the
 
 ## Walkthrough: Manual Workflow
 
-In this walkthrough, we will import an existing theory, and use the AI Scientist to perform different custom steps.
+In this walkthrough, we will import an existing theory, and use Catalyst to perform different custom steps.
 
 1. Click the plus icon to start a new research project
    
@@ -80,11 +80,11 @@ In this walkthrough, we will import an existing theory, and use the AI Scientist
 
    ![review results](review_results.png)
 
-5. Next, once the review step has completed, we will ask the AI Scientist to try and address the issues found by the review step. Add another step. This time, check the "...which has already been reviewed" toggle under "Theory", and then find the "Refine Theory" add-on. Select the target theory, and confirm. The Refine theory step will generate a new theory ID that contains the new, updated theory.
+5. Next, once the review step has completed, we will ask Catalyst to try and address the issues found by the review step. Add another step. This time, check the "...which has already been reviewed" toggle under "Theory", and then find the "Refine Theory" add-on. Select the target theory, and confirm. The Refine theory step will generate a new theory ID that contains the new, updated theory.
    
    ![add refine](add_refine.png)
    
-6. You can also provide manual instructions for editing a theory. To do this, click "Add Step", and find the "Edit Theory" add-on. Under "Configuration", provide a custom instruction that describes the change you'd like the AI Scientist to perform. For example, you can ask "Add additional figures to illustrate the derivations in a visual way". Make sure that you select the correct target theory that corresponds to the final result from the theory refinement step. (The most recently generated theory ID should already be selected by default).
+6. You can also provide manual instructions for editing a theory. To do this, click "Add Step", and find the "Edit Theory" add-on. Under "Configuration", provide a custom instruction that describes the change you'd like Catalyst to perform. For example, you can ask "Add additional figures to illustrate the derivations in a visual way". Make sure that you select the correct target theory that corresponds to the final result from the theory refinement step. (The most recently generated theory ID should already be selected by default).
    
    ![add edit](add_edit.png)
 

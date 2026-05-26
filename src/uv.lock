@@ -8,39 +8,8 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-04-23T16:47:19.337104679Z"
+exclude-newer = "2026-05-12T17:29:38.847328741Z"
 exclude-newer-span = "P2W"
-
-[[package]]
-name = "ai-scientist"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "darwinian-evolver" },
-    { name = "fastapi" },
-    { name = "pydantic" },
-    { name = "python-multipart" },
-    { name = "pyyaml" },
-    { name = "uvicorn" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "verify-everything" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "darwinian-evolver", editable = "../darwinian_evolver" },
-    { name = "fastapi", specifier = ">=0.135.3" },
-    { name = "pydantic", specifier = ">=2.0" },
-    { name = "python-multipart", specifier = ">=0.0.26" },
-    { name = "pyyaml", specifier = ">=6.0" },
-    { name = "uvicorn", specifier = ">=0.44.0" },
-]
-
-[package.metadata.requires-dev]
-dev = [{ name = "verify-everything", specifier = ">=0.2.7" }]
 
 [[package]]
 name = "annotated-doc"
@@ -118,6 +87,37 @@ sdist = { url = "https://files.pythonhosted.org/packages/af/dd/57fe3fdb6e65b25a5
 wheels = [
     { url = "https://files.pythonhosted.org/packages/06/f3/39cf3367b8107baa44f861dc802cbf16263c945b62d8265d36034fc07bea/cachetools-7.0.5-py3-none-any.whl", hash = "sha256:46bc8ebefbe485407621d0a4264b23c080cedd913921bad7ac3ed2f26c183114", size = 13918, upload-time = "2026-03-09T20:51:27.33Z" },
 ]
+
+[[package]]
+name = "catalyst"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "darwinian-evolver" },
+    { name = "fastapi" },
+    { name = "pydantic" },
+    { name = "python-multipart" },
+    { name = "pyyaml" },
+    { name = "uvicorn" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "verify-everything" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "darwinian-evolver", editable = "../darwinian_evolver" },
+    { name = "fastapi", specifier = ">=0.135.3" },
+    { name = "pydantic", specifier = ">=2.0" },
+    { name = "python-multipart", specifier = ">=0.0.26" },
+    { name = "pyyaml", specifier = ">=6.0" },
+    { name = "uvicorn", specifier = ">=0.44.0" },
+]
+
+[package.metadata.requires-dev]
+dev = [{ name = "verify-everything", specifier = ">=0.2.7" }]
 
 [[package]]
 name = "cattrs"

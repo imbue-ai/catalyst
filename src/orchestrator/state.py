@@ -7,13 +7,13 @@ import time
 import logging
 from typing import List, Optional, Dict
 from .models import Task, TasksState, TaskStatus, StepStatus
-from .utils import get_ai_scientist_path
+from .utils import get_catalyst_path
 
 logger = logging.getLogger(__name__)
 
 
 def _get_state_file() -> str:
-    path = os.path.join(get_ai_scientist_path(), "tasks_state.json")
+    path = os.path.join(get_catalyst_path(), "tasks_state.json")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
