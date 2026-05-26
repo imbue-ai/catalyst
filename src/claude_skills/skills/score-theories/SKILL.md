@@ -66,4 +66,5 @@ Follow the following steps carefully. Do not skip anything. Do not take shortcut
   uv run python scripts/context_manager.py rescore_theories '{<THEORY_ID_1>: <THEORY_1_SCORES_OBJECT>, <THEORY_ID_2>: <THEORY_2_SCORES_OBJECT>, ...}'
   ```
   - Where <THEORY_X_SCORES_OBJECT> is the JSON object output from the previous step for theory X, containing both the overall score and the subscores for that theory.
+  - This step is critical! If you don't save the scores to the database, all of your work will be lost!
 16. **Final Output**: Report the list of all theory IDs along with their final scores, sorted from highest to lowest score. Also include a breakdown of the different subscores for each theory.
