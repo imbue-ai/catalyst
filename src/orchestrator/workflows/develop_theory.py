@@ -1,5 +1,4 @@
 import logging
-import threading
 from typing import Any, Callable, List, Dict
 import os
 from ..models import Task
@@ -11,7 +10,7 @@ from orchestrator.prompts import (
     get_score_theories_prompt,
 )
 
-from .base import Workflow, run_step_if_needed
+from .base import Workflow, run_step_if_needed, ParallelStepRunner
 from .common import (
     DEFAULT_EVOLVE_ITERATIONS,
     DEFAULT_NUM_EXTRA_SCORES,
@@ -101,35 +100,21 @@ class DevelopTheoryWorkflow(Workflow):
                 f"[ORCHESTRATOR] [{task.id[:8]}] Running {len(theory_ids)} Review Theories in parallel..."
             )
             review_results = {}
-            review_errors = []
 
             def run_review(tid):
-                try:
-                    review_stage = f"review-theory-{tid}"
-                    res = run_step_if_needed(
-                        task,
-                        run_step,
-                        review_stage,
-                        get_review_theory_prompt(tid),
-                        cost=3,
-                    )
-                    review_results[tid] = res
-                except Exception as e:
-                    review_errors.append(e)
+                review_stage = f"review-theory-{tid}"
+                res = run_step_if_needed(
+                    task,
+                    run_step,
+                    review_stage,
+                    get_review_theory_prompt(tid),
+                    cost=3,
+                )
+                review_results[tid] = res
 
-            threads = []
-            for tid in theory_ids:
-                t = threading.Thread(target=run_review, args=(tid,))
-                t.daemon = True
-                threads.append(t)
-
-            for t in threads:
-                t.start()
-            for t in threads:
-                t.join()
-
-            if review_errors:
-                raise review_errors[0]
+            with ParallelStepRunner() as runner:
+                for tid in theory_ids:
+                    runner.add(run_review, tid)
 
             # Step 5: Score Theories
             run_step_if_needed(

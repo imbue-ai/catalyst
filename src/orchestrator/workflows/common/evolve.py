@@ -1,10 +1,9 @@
 import random
-import threading
 import logging
 from typing import Any, Callable, Dict, List, Optional, Set
 from ...models import Task
 from ...utils import run_context_manager
-from ..base import run_step_if_needed, run_local_step_if_needed
+from ..base import run_step_if_needed, run_local_step_if_needed, ParallelStepRunner
 from orchestrator.prompts import (
     get_review_theory_prompt,
     get_refine_theory_prompt,
@@ -125,75 +124,61 @@ def run_evolve_loop(
             f"[ORCHESTRATOR] [{task.id[:8]}] Mutating {len(parents)} parents in parallel..."
         )
         new_theory_ids: Set[str] = set()
-        mutation_errors = []
         mutation_results = {}
 
         def run_mutation(parent: dict, idx: int):
-            try:
-                tid = parent.get("id", "")
-                deterministic_rng = random.Random(f"{tid}:{idx}:{stage_prefix}:{i}")
-                length_score = parent.get("subscores", {}).get("length", 0.0)
-                streamline_prob = max_streamline_prob * (1.0 - length_score)
-                rng_val = deterministic_rng.random()
-                if rng_val < streamline_prob:
-                    stage_name = f"{stage_prefix}mutate-streamline-{i}-{idx}"
-                    res = run_step_if_needed(
-                        task,
-                        run_step_fn,
-                        stage_name,
-                        get_streamline_theory_prompt(tid),
+            tid = parent.get("id", "")
+            deterministic_rng = random.Random(f"{tid}:{idx}:{stage_prefix}:{i}")
+            length_score = parent.get("subscores", {}).get("length", 0.0)
+            streamline_prob = max_streamline_prob * (1.0 - length_score)
+            rng_val = deterministic_rng.random()
+            if rng_val < streamline_prob:
+                stage_name = f"{stage_prefix}mutate-streamline-{i}-{idx}"
+                res = run_step_if_needed(
+                    task,
+                    run_step_fn,
+                    stage_name,
+                    get_streamline_theory_prompt(tid),
+                )
+                mutation_results[stage_name] = res
+            elif rng_val < streamline_prob + write_different_prob:
+                stage_name = f"{stage_prefix}mutate-write-different-{i}-{idx}"
+                parent_ids = [p.get("id", "") for p in parents]
+                res = run_step_if_needed(
+                    task,
+                    run_step_fn,
+                    stage_name,
+                    get_write_different_theory_prompt(
+                        parent_ids, lit_review_id=lit_review_id
+                    ),
+                )
+                mutation_results[stage_name] = res
+            else:
+                if apply_expansions is None:
+                    # Force expansion with some probability
+                    apply_expansions_for_mutation = (
+                        "always"
+                        if (deterministic_rng.random() < FORCE_EXPANSION_PROB)
+                        else apply_expansions
                     )
-                    mutation_results[stage_name] = res
-                elif rng_val < streamline_prob + write_different_prob:
-                    stage_name = f"{stage_prefix}mutate-write-different-{i}-{idx}"
-                    parent_ids = [p.get("id", "") for p in parents]
-                    res = run_step_if_needed(
-                        task,
-                        run_step_fn,
-                        stage_name,
-                        get_write_different_theory_prompt(
-                            parent_ids, lit_review_id=lit_review_id
-                        ),
-                    )
-                    mutation_results[stage_name] = res
                 else:
-                    if apply_expansions is None:
-                        # Force expansion with some probability
-                        apply_expansions_for_mutation = (
-                            "always"
-                            if (deterministic_rng.random() < FORCE_EXPANSION_PROB)
-                            else apply_expansions
-                        )
-                    else:
-                        apply_expansions_for_mutation = apply_expansions
-                    stage_name = f"{stage_prefix}mutate-refine-{i}-{idx}"
-                    res = run_step_if_needed(
-                        task,
-                        run_step_fn,
-                        stage_name,
-                        get_refine_theory_prompt(
-                            tid,
-                            apply_expansions=apply_expansions_for_mutation,
-                            lit_review_id=lit_review_id,
-                        ),
-                    )
-                    mutation_results[stage_name] = res
-            except Exception as e:
-                mutation_errors.append(e)
+                    apply_expansions_for_mutation = apply_expansions
+                stage_name = f"{stage_prefix}mutate-refine-{i}-{idx}"
+                res = run_step_if_needed(
+                    task,
+                    run_step_fn,
+                    stage_name,
+                    get_refine_theory_prompt(
+                        tid,
+                        apply_expansions=apply_expansions_for_mutation,
+                        lit_review_id=lit_review_id,
+                    ),
+                )
+                mutation_results[stage_name] = res
 
-        threads = []
-        for idx, parent in enumerate(parents):
-            t = threading.Thread(target=run_mutation, args=(parent, idx))
-            t.daemon = True
-            threads.append(t)
-
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
-
-        if mutation_errors:
-            raise mutation_errors[0]
+        with ParallelStepRunner() as runner:
+            for idx, parent in enumerate(parents):
+                runner.add(run_mutation, parent, idx)
 
         for res in mutation_results.values():
             if res and isinstance(res, dict) and not res.get("_canceled"):
@@ -214,33 +199,18 @@ def run_evolve_loop(
         logger.debug(
             f"[ORCHESTRATOR] [{task.id[:8]}] Reviewing {len(new_theory_ids_list)} new theories in parallel..."
         )
-        review_errors = []
-
         def run_review(tid: str, idx: int):
-            try:
-                run_step_if_needed(
-                    task,
-                    run_step_fn,
-                    f"{stage_prefix}review-theory-{i}-{idx}",
-                    get_review_theory_prompt(tid),
-                    cost=3,
-                )
-            except Exception as e:
-                review_errors.append(e)
+            run_step_if_needed(
+                task,
+                run_step_fn,
+                f"{stage_prefix}review-theory-{i}-{idx}",
+                get_review_theory_prompt(tid),
+                cost=3,
+            )
 
-        threads = []
-        for idx, tid in enumerate(new_theory_ids_list):
-            t = threading.Thread(target=run_review, args=(tid, idx))
-            t.daemon = True
-            threads.append(t)
-
-        for t in threads:
-            t.start()
-        for t in threads:
-            t.join()
-
-        if review_errors:
-            raise review_errors[0]
+        with ParallelStepRunner() as runner:
+            for idx, tid in enumerate(new_theory_ids_list):
+                runner.add(run_review, tid, idx)
 
         # 4. Sample Scoring
         def _sample_scoring() -> Dict[str, Any]:
