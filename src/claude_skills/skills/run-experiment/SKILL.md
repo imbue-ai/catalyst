@@ -13,11 +13,11 @@ user-invocable: false
 3. Also write a `description.md` file in the experiment folder. The `description.md` must contain a complete description of what the experiment tests, its hard-coded parameter values (if any), and what outputs it produces.
 4. Determine the context you're running the experiment in: Do you know the theory ID (e.g. `T_20260416_150000_a1b2c3`) that this experiment is motivated by (fine if not)? You should also have been given an AGENT_TYPE.
 5. Execute the script through the following wrapper, passing the experiment folder and the parent theory ID if you have it:
-```bash
-uv run python <SKILL_BASE_DIR>/scripts/run_experiment.py --experiment_folder <EXPERIMENT_FOLDER_PATH> --agent_type <AGENT_TYPE> [--parent_theory <T_ID>]
-```
+  ```bash
+  uv run python <SKILL_BASE_DIR>/scripts/run_experiment.py --experiment_folder <EXPERIMENT_FOLDER_PATH> --agent_type <AGENT_TYPE> [--parent_theory <T_ID>]
+  ```
   Always execute the `run_experiment.py` wrapper in the foreground, NEVER as a background process or in parallel. If your bash tool has a `run_in_background` parameter, set it to `false` explicitly.
-6. The wrapper will execute the script in EXPERIMENT_FOLDER_PATH, passing through its stdout and stderr. It will capture all experiment outputs and persist them to a database for record keeping. It will finish its output by printing a unique experiment ID (e.g. `X_20260416_150000_a1b2c3`) that can be used to retrieve the results later.
+6. The wrapper will execute the script with CWD set to EXPERIMENT_FOLDER_PATH, passing through its stdout and stderr. It will additionally capture all experiment outputs and persist them to a database for record keeping. It will finish its output by printing a unique experiment ID (e.g. `X_20260416_150000_a1b2c3`) that can be used to retrieve the results later.
 
 Some experiments may take a long time to complete (up to a few hours). Please allow enough time for the experiment to finish before assuming that it has failed.
 NEVER execute your `script.py` directly or through any other wrapper. Always use the `run_experiment.py` wrapper as described above.
