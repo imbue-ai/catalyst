@@ -13,14 +13,14 @@ The arguments contain a single theory ID (like `T_20260414_...`). Parse the theo
 They may optionally specify a different STANDARD_LENGTH. The default STANDARD_LENGTH, if not specified, is 4000 words.
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder (only use the local `./tmp` folder).
 
 Set up a context folder for your input:
 CONTEXT_DIR: `mktemp -d -p ./tmp score-length-context-XXXX`
 
 Run this command to populate the context:
 ```bash
-uv run python scripts/context_manager.py create_context --for_agent_type score-length --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_agent_type score-length --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
 ```
 
 - `<CONTEXT_DIR>/theory/theory.md` — the theory that you're scoring

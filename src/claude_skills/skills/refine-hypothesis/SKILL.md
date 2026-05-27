@@ -19,7 +19,7 @@ Arguments: $ARGUMENTS
 The arguments contain a theory ID (like `T_20260414_...`), one or more review IDs (like `R_20260414_...`), and optionally one or more literature review IDs (like `L_20260414_...`). Parse all IDs from the arguments.
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder (only use the local `./tmp` folder).
 
 Set up two folders — one for input context, one for your own output:
 CONTEXT_DIR: `mktemp -d -p ./tmp refine-hypothesis-context-XXXX`
@@ -27,7 +27,7 @@ OUTPUT_DIR: `mktemp -d -p ./tmp refine-hypothesis-output-XXXX`
 
 Run this command to populate the context, and then initialize the output folder with the original theory files:
 ```bash
-uv run python scripts/context_manager.py create_context \
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
     --for_agent_type refine-hypothesis \
     --target_folder <CONTEXT_DIR> \
     --from_theory <THEORY_ID> \
@@ -46,7 +46,7 @@ Any temporary files (including experiment scripts, intermediate results, etc.) m
 ## Reviewing cited experiment IDs
 The falsification report(s) may cite specific experiment IDs (`X_...`) as evidence. You can review these experiments by running:
 ```bash
-uv run python scripts/context_manager.py fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
 ```
 
 This command will place the experiment description (`description.md`), Python script (`script.py`), and results into the `<CONTEXT_DIR>/experiments/<EXPERIMENT_ID>` folder.
@@ -59,7 +59,7 @@ Cite each experiment by its `X_...` ID in your refined `theory.md` so reviewers 
 You may start with zero, one, or many literature reviews already in `<CONTEXT_DIR>/literature/`. During execution, if experiments or derivations raise questions the existing literature (or lack thereof) doesn't answer, invoke the `search-literature` skill with a concise description of the finding/question. It will return a new literature ID (`L_...`). Fold it into your context without rebuilding the folder:
 
 ```bash
-uv run python scripts/context_manager.py fetch_literature \
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_literature \
     --target_folder <CONTEXT_DIR> \
     --from_literature <NEW_L_ID>
 ```
@@ -110,6 +110,6 @@ The resulting theory MUST use language and rigor that is adequate for publishing
 6. **Reporting**: Write the final revised theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
 7. **Store results** Persist your output and return the new theory ID:
    ```bash
-   uv run python scripts/context_manager.py store_results --from_agent_type refine-hypothesis --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
+   uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type refine-hypothesis --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
    Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the result of this skill, together with a brief note on whether you've made significant changes or only minor refinements to the original theory, and include both in your final message.

@@ -12,14 +12,14 @@ Arguments: $ARGUMENTS
 The arguments contain a list of prior theory IDs (like `T_20260414_...`), and an optional literature review ID (like `L_20260414_...`). Parse all IDs from the arguments.
 
 ## Previous theory folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder (only use the local `./tmp` folder).
 
 Set up a folder to hold the pre-existing theories:
 CONTEXT_DIR: `mktemp -d -p ./tmp write-different-theory-context-XXXX`
 
 Run this command to populate the context:
 ```bash
-uv run python scripts/context_manager.py create_context --for_agent_type write-different-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID_1> [--from_theory <THEORY_ID_2> ...]
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_agent_type write-different-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID_1> [--from_theory <THEORY_ID_2> ...]
 ```
 
 - `<CONTEXT_DIR>/theories/<theory_id>/theory.md` — the previous theory attempts that we're trying to be different from.

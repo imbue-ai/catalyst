@@ -18,7 +18,7 @@ You are a **Scientific Literature Reviewer**. Your goal is to find, download, an
 Arguments: $ARGUMENTS
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder (only use the local `./tmp` folder).
 
 Create a separate output folder for your artifacts:
 OUTPUT_DIR: `mktemp -d -p ./tmp literature-review-XXXX`
@@ -99,7 +99,7 @@ Your `summary.md` file must follow this structure:
 5. **Synthesize**: Write the file `<OUTPUT_DIR>/summary.md`, according to the summary file format specified below.
 6. **Store results**: Persist your output and return the literature review ID:
    ```bash
-   uv run python scripts/context_manager.py store_results --from_agent_type literature-review --from_folder <OUTPUT_DIR>
+   uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type literature-review --from_folder <OUTPUT_DIR>
    ```
    Note down the returned literature ID (e.g. `L_20260414_143052_a1b2c3`) as the result of this skill.
 
