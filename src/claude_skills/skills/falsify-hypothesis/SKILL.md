@@ -21,7 +21,7 @@ Arguments: $ARGUMENTS
 The arguments contain a theory ID (like `T_20260414_...`) and the specific observation, theorem, lemma or corollary to target. Parse the theory ID and the target hypothesis from the arguments.
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder (only use the local `./tmp` folder).
 
 Set up two folders — one for input context, one for your own output:
 CONTEXT_DIR: `mktemp -d -p ./tmp falsify-hypothesis-context-XXXX`
@@ -29,7 +29,7 @@ OUTPUT_DIR: `mktemp -d -p ./tmp falsify-hypothesis-output-XXXX`
 
 Run this command to populate the context:
 ```bash
-uv run python scripts/context_manager.py create_context --for_agent_type falsify-hypothesis --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_agent_type falsify-hypothesis --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
 ```
 
 - `<CONTEXT_DIR>/theory/` — the theory to falsify (read-only input). Read `<CONTEXT_DIR>/theory/theory.md` and any artifacts.
@@ -40,7 +40,7 @@ Any temporary files (including experiment scripts, intermediate results, etc.) m
 ## Reviewing cited experiment IDs
 The current version of the hypothesis (and/or an appendix referring to it) may cite specific experiment IDs (`X_...`) as evidence. You can review these experiments by running:
 ```bash
-uv run python scripts/context_manager.py fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
 ```
 
 This command will place the experiment description (`description.md`), Python script (`script.py`), and results into the `<CONTEXT_DIR>/experiments/<EXPERIMENT_ID>` folder.
@@ -97,7 +97,7 @@ Your `review.md` file MUST be formatted as follows:
 4. **Reporting**: Write your falsification report to `<OUTPUT_DIR>/review.md` (this exact filename is required). See the output format below.
 5. **Store results**: Persist your output and return the review ID:
    ```bash
-   uv run python scripts/context_manager.py store_results --from_agent_type falsify-hypothesis --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
+   uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type falsify-hypothesis --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
    Note down the returned review ID (e.g. `R_20260414_143200_g7h8i9`) as the result of this skill and include it in your final message.
 

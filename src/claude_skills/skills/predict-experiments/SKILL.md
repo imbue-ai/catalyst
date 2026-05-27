@@ -14,7 +14,7 @@ Arguments: $ARGUMENTS
 The arguments contain a theory ID (like `T_20260414_...`) and multiple experiment IDs (like `X_20260414_...`). Parse the theory ID and experiment details from the arguments.
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder (only use the local `./tmp` folder).
 
 Set up two folders — one for input context, one for your own output:
 CONTEXT_DIR: `mktemp -d -p ./tmp predict-experiments-context-XXXX`
@@ -22,7 +22,7 @@ OUTPUT_DIR: `mktemp -d -p ./tmp predict-experiments-output-XXXX`
 
 Run this command to populate the context:
 ```bash
-uv run python scripts/context_manager.py create_context --for_agent_type predict-experiments --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID> --from_experiment <EXPERIMENT_ID_1> [--from_experiment <EXPERIMENT_ID_2> ...]
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_agent_type predict-experiments --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID> --from_experiment <EXPERIMENT_ID_1> [--from_experiment <EXPERIMENT_ID_2> ...]
 ```
 
 - `<CONTEXT_DIR>/theory/theory.md` — the theory to use for your predictions
@@ -65,6 +65,6 @@ Theory used: [The ID of the theory used]
 3. **Reporting**: Write the prediction for each experiment to `<OUTPUT_DIR>/predictions.md` (this exact filename is required). See the output format below.
 4. **Store results**: Persist your output and return the prediction ID:
    ```bash
-   uv run python scripts/context_manager.py store_results --from_agent_type predict-experiments --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
+   uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type predict-experiments --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
    Note down the returned prediction ID (e.g. `P_20260414_143200_g7h8i9`) as the result of this skill.

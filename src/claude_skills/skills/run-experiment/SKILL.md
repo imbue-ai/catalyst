@@ -14,7 +14,7 @@ user-invocable: false
 4. Determine the context you're running the experiment in: Do you know the theory ID (e.g. `T_20260416_150000_a1b2c3`) that this experiment is motivated by (fine if not)? You should also have been given an AGENT_TYPE.
 5. Execute the script through the following wrapper, passing the experiment folder and the parent theory ID if you have it:
 ```bash
-uv run python scripts/run_experiment.py --experiment_folder <EXPERIMENT_FOLDER_PATH> --agent_type <AGENT_TYPE> [--parent_theory <T_ID>]
+uv run python <SKILL_BASE_DIR>/scripts/run_experiment.py --experiment_folder <EXPERIMENT_FOLDER_PATH> --agent_type <AGENT_TYPE> [--parent_theory <T_ID>]
 ```
   Always execute the `run_experiment.py` wrapper in the foreground, NEVER as a background process or in parallel. If your bash tool has a `run_in_background` parameter, set it to `false` explicitly.
 6. The wrapper will execute the script in EXPERIMENT_FOLDER_PATH, passing through its stdout and stderr. It will capture all experiment outputs and persist them to a database for record keeping. It will finish its output by printing a unique experiment ID (e.g. `X_20260416_150000_a1b2c3`) that can be used to retrieve the results later.

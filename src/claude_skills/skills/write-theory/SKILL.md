@@ -26,7 +26,7 @@ Arguments: $ARGUMENTS
 The arguments contain a description of the phenomenon to explain, an optional exploration ID (like `E_20260414_...`), and an optional literature review ID (like `L_20260414_...`). Parse all IDs from the arguments.
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder (only use the local `./tmp` folder).
 
 Set up two folders — one for input context, one for your own output:
 CONTEXT_DIR: `mktemp -d -p ./tmp write-theory-context-XXXX`
@@ -34,7 +34,7 @@ OUTPUT_DIR: `mktemp -d -p ./tmp write-theory-output-XXXX`
 
 Run this command to populate the context:
 ```bash
-uv run python scripts/context_manager.py create_context --for_agent_type write-theory --target_folder <CONTEXT_DIR> [--from_exploration <EXPLORATION_ID>] [--from_literature <LITERATURE_ID>]
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_agent_type write-theory --target_folder <CONTEXT_DIR> [--from_exploration <EXPLORATION_ID>] [--from_literature <LITERATURE_ID>]
 ```
 
 - `<CONTEXT_DIR>/exploration/` — (if exploration ID provided) prior exploration results. Read `<CONTEXT_DIR>/exploration/report.md` and any artifacts in the folder (images, plots, etc.).
@@ -46,7 +46,7 @@ Any temporary files (including experiment scripts, intermediate results, etc.) m
 ## Obtaining cited experiment IDs
 The exploration report may cite specific experiment IDs (`X_...`). You can retrieve these experiments and their results by running:
 ```bash
-uv run python scripts/context_manager.py fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
 ```
 
 This command will place the experiment description (`description.md`), Python script (`script.py`), and results into the `<CONTEXT_DIR>/experiments/<EXPERIMENT_ID>` folder.
@@ -59,7 +59,7 @@ Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audi
 You may start with a literature review already in `<CONTEXT_DIR>/literature/`. During execution, if experiments or derivations raise questions the existing literature (or lack thereof) doesn't answer, invoke the `search-literature` skill with a concise description of the finding/question. It will return a new literature ID (`L_...`). Fold it into your context without rebuilding the folder:
 
 ```bash
-uv run python scripts/context_manager.py fetch_literature \
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_literature \
     --target_folder <CONTEXT_DIR> \
     --from_literature <NEW_L_ID>
 ```
@@ -101,6 +101,6 @@ The resulting theory MUST use language and rigor that is adequate for publishing
 8. **Reporting**: Write the final theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
 9. **Store results**: Persist your output and return the theory ID:
    ```bash
-   uv run python scripts/context_manager.py store_results --from_agent_type write-theory --from_folder <OUTPUT_DIR>
+   uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type write-theory --from_folder <OUTPUT_DIR>
    ```
    Note down the returned theory ID (e.g. `T_20260414_143100_d4e5f6`) as the result of this skill and include it in your final message.

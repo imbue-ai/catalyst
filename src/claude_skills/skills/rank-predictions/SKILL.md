@@ -12,14 +12,14 @@ Arguments: $ARGUMENTS
 The arguments contain multiple prediction IDs (like `P_20260414_...`) and an experiment ID (like `X_20260414_...`). Parse the prediction IDs and experiment ID from the arguments.
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder (only use the local `./tmp` folder).
 
 Set up a context folder for your input:
 CONTEXT_DIR: `mktemp -d -p ./tmp rank-predictions-context-XXXX`
 
 Run this command to populate the context:
 ```bash
-uv run python scripts/context_manager.py create_context --for_agent_type rank-predictions --target_folder <CONTEXT_DIR> --from_prediction <PREDICTION_ID_1> [--from_prediction <PREDICTION_ID_2> ...] --from_experiment <EXPERIMENT_ID>
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_agent_type rank-predictions --target_folder <CONTEXT_DIR> --from_prediction <PREDICTION_ID_1> [--from_prediction <PREDICTION_ID_2> ...] --from_experiment <EXPERIMENT_ID>
 ```
 
 - `<CONTEXT_DIR>/predictions/<prediction_id>/predictions.md` — the predictions to rank. The file may contain predictions for multiple experiments. You only need to look at the predictions for the one experiment specified in the input arguments.

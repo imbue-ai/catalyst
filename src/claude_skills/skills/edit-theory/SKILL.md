@@ -12,7 +12,7 @@ Arguments: $ARGUMENTS
 The arguments contain a theory ID (like `T_20260414_...`), optional literature ID(s) (like `L_20260414_...`), and a request for what should be done with the theory.
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder (only use the local `./tmp` folder).
 
 Set up two folders — one for input context, one for your own output:
 CONTEXT_DIR: `mktemp -d -p ./tmp edit-theory-context-XXXX`
@@ -20,7 +20,7 @@ OUTPUT_DIR: `mktemp -d -p ./tmp edit-theory-output-XXXX`
 
 Run this command to populate the context, and then initialize the output folder with a copy of the original theory files:
 ```bash
-uv run python scripts/context_manager.py create_context --for_agent_type edit-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID> [--from_literature <LITERATURE_ID_1> --from_literature <LITERATURE_ID_2> ...]
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_agent_type edit-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID> [--from_literature <LITERATURE_ID_1> --from_literature <LITERATURE_ID_2> ...]
 cp -r "<CONTEXT_DIR>/theory/"* "<OUTPUT_DIR>/"
 ```
 
@@ -38,7 +38,7 @@ Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audi
 You may start with zero, one, or many literature reviews already in `<CONTEXT_DIR>/literature/`. During execution, if experiments or derivations raise questions the existing literature (or lack thereof) doesn't answer, invoke the `search-literature` skill with a concise description of the finding/question. It will return a new literature ID (`L_...`). Fold it into your context without rebuilding the folder:
 
 ```bash
-uv run python scripts/context_manager.py fetch_literature \
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_literature \
     --target_folder <CONTEXT_DIR> \
     --from_literature <NEW_L_ID>
 ```
@@ -76,6 +76,6 @@ The resulting theory MUST use language and rigor that is adequate for publishing
 3. **Writing**: Apply all necessary edits to `<OUTPUT_DIR>/theory.md`. Use `run-experiment` to generate plots and illustrations if needed.
 4. **Store results**: Persist your output and return the new theory ID:
    ```bash
-   uv run python scripts/context_manager.py store_results --from_agent_type edit-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
+   uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type edit-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
    Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the result of this skill.

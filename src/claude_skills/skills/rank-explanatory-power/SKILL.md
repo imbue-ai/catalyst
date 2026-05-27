@@ -16,14 +16,14 @@ Arguments: $ARGUMENTS
 The arguments contain multiple theory IDs (like `T_20260414_...`). Parse the theory IDs from the arguments.
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder (only use the local `./tmp` folder).
 
 Set up a context folder for your input:
 CONTEXT_DIR: `mktemp -d -p ./tmp rank-explanatory-power-context-XXXX`
 
 Run this command to populate the context:
 ```bash
-uv run python scripts/context_manager.py create_context --for_agent_type rank-explanatory-power --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID_1> [--from_theory <THEORY_ID_2> ...]
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_agent_type rank-explanatory-power --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID_1> [--from_theory <THEORY_ID_2> ...]
 ```
 
 - `<CONTEXT_DIR>/theories/<theory_id>/theory.md` — the different theories that you're comparing
