@@ -663,14 +663,15 @@ def _validate_create_context_args(
             raise ValueError(
                 f"At least one --from_theory is required for {for_agent_type}"
             )
-    elif for_agent_type == "score-soundness":
+    elif for_agent_type in (
+        "score-soundness",
+        "score-guidance-adherence",
+        "score-length",
+    ):
         if not from_theories or len(from_theories) != 1:
             raise ValueError(
-                "Exactly one --from_theory is required for score-soundness"
+                f"Exactly one --from_theory is required for {for_agent_type}"
             )
-    elif for_agent_type == "score-length":
-        if not from_theories or len(from_theories) != 1:
-            raise ValueError("Exactly one --from_theory is required for score-length")
     elif for_agent_type == "rank-explanatory-power":
         if not from_theories:
             raise ValueError(
@@ -1235,6 +1236,7 @@ def main(argv: list[str] | None = None) -> None:
             "rank-predictions",
             "score-theories",
             "score-soundness",
+            "score-guidance-adherence",
             "score-length",
             "rank-explanatory-power",
             "polish-theory",

@@ -169,6 +169,7 @@ class TestContextManager(unittest.TestCase):
             ),
             ("score-theories", {"--from_theory": t_id}),
             ("score-soundness", {"--from_theory": t_id}),
+            ("score-guidance-adherence", {"--from_theory": t_id}),
             ("score-length", {"--from_theory": t_id}),
             ("rank-explanatory-power", {"--from_theory": t_id}),
             ("polish-theory", {"--from_theory": t_id}),
