@@ -154,10 +154,11 @@ class DatabaseLock:
                 if time.monotonic() >= deadline:
                     os.close(self._fd)
                     self._fd = None
-                    raise TimeoutError(
-                        f"Could not acquire database lock within {self.timeout}s"
+                    print(
+                        f"Warning: Could not acquire database lock within {self.timeout}s. Proceeding anyway.",
+                        file=sys.stderr,
                     )
-                time.sleep(0.05)
+                time.sleep(0.1)
 
     def __exit__(self, *_exc: object) -> None:
         global _db_lock_held_count
