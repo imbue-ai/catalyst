@@ -11,7 +11,8 @@
         "pypi.org",
         "*.pypi.org",
         "pythonhosted.org",
-        "*.pythonhosted.org"
+        "*.pythonhosted.org",
+        "download.pytorch.org"
       ]
     }
   }
