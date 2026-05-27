@@ -48,6 +48,12 @@ def main():
     parser.add_argument(
         "--length", type=score_type, required=True, help="Length Score (0-1)"
     )
+    parser.add_argument(
+        "--adherence",
+        type=score_type,
+        required=True,
+        help="Guidance Adherence Score (0-1)",
+    )
 
     args = parser.parse_args()
 
@@ -57,7 +63,8 @@ def main():
         0.4
         + (0.3 * args.explanatory_power + 0.3 * args.prediction_coverage) * args.length
     )
-    overall_score = correctness_part * power_part
+    adherence_part = 0.5 + 0.5 * args.adherence
+    overall_score = correctness_part * power_part * adherence_part
 
     output = {
         args.theory_id: {
@@ -67,6 +74,7 @@ def main():
             "soundness": args.soundness,
             "explanatory_power": args.explanatory_power,
             "length": args.length,
+            "adherence": args.adherence,
         }
     }
 
