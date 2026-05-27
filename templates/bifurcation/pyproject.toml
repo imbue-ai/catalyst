@@ -12,6 +12,7 @@ dependencies = [
     "pydantic>=2.0",
     "darwinian-evolver",
     "scipy>=1.17.1",
+    "simpy>=4.0",
 ]
 
 [project.scripts]
