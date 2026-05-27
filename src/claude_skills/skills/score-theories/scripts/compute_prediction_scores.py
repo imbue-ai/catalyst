@@ -7,13 +7,6 @@ def calculate_linear_score(r, n):
     return (n - r + 1) / n
 
 
-def calculate_reciprocal_score(r, n):
-    # This is the "normalized reciprocal score"
-    if n == 0 or r == 0:
-        return 0
-    return (n - r + 1) / (r * n)
-
-
 def main():
     parser = argparse.ArgumentParser(description="Compute prediction scores.")
     parser.add_argument(
@@ -55,7 +48,7 @@ def main():
         if r_str not in ("none", "no_prediction"):
             try:
                 r = int(r_str)
-                score = calculate_reciprocal_score(r, args.n)
+                score = calculate_linear_score(r, args.n)
                 weighted_accuracy_sum += score * importance
                 covered_importance_sum += importance
             except ValueError:
