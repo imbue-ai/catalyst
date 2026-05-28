@@ -13,7 +13,7 @@ The arguments contain a single theory ID (like `T_20260414_...`). Parse the theo
 They may optionally specify a different STANDARD_LENGTH. The default STANDARD_LENGTH, if not specified, is 4000 words.
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder (only use the local `./tmp` folder).
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder or TMPDIR (only use the local `./tmp` folder).
 
 Set up a context folder for your input:
 CONTEXT_DIR: `mktemp -d -p ./tmp score-length-context-XXXX`
