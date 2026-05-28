@@ -41,6 +41,7 @@ class AgyAgentRunner(BaseCliAgentRunner):
         env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
         env["CATALYST_DB_PATH"] = os.path.join(abs_env_folder, DEFAULT_DB_DIR)
         env["MPLCONFIGDIR"] = os.path.join(abs_env_folder, "tmp/matplotlib_cache")
+        env["AGY_CLI_DISABLE_AUTO_UPDATE"] = "true"
 
         cmd = [
             "agy",
