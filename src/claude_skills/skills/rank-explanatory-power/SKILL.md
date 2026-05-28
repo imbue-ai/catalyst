@@ -35,4 +35,10 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_a
 3. **Understand Which Aspects Could be Relevant**: Read all `theory.md` files and all `review.md` files to understand which aspects of the phenomenon each theory is trying to explain, and which additional aspects the expansion reviews suggest should be explained. This gives you an idea of what types of things about the phenomenon an ideal theory could cover.
 4. **Review Theories**: Take a second look at each `theory.md` one by one. Determine how complete its explanation of the target phenomenon is. Make sure you check for complete, detailed explanations. Hand-wavy explanations, or those that are only at a high level should be discounted. Explanations that can make concrete quantitative predictions are especially good! Also consider how general each theory is. Is its explanation limited to only a narrow domain or value range? More general explanations that can be transferred beyond a specific instance are preferable.
 5. **Rank Theories**: Rank the different theories based on their overall explanatory power and generality, assigning rank 1 to the best theory, and so on.
-6. **Final Output**: Report the list of theory IDs together with their respective ranks, from best (rank 1) to worst.
+6. **Score Explanatory Power**: Convert the rank of each theory into an associated explanatory power score. To obtain the rank-to-score conversion table, run this command:
+  ```bash
+  uv run python <SKILL_BASE_DIR>/scripts/ranks_to_scores.py --score_type linear -n <NUMBER_OF_THEORIES>
+  ```
+  - <NUMBER_OF_THEORIES> is the total number of theories being ranked (i.e. the length of the input theory ID list).
+  - The script will output a conversion table, with the rank in column 1, and the corresponding score in column 2.
+7. **Final Output**: Report the list of theory IDs together with their respective ranks, from best (rank 1) to worst, and their associated explanatory power scores.
