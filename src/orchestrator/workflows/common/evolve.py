@@ -187,7 +187,7 @@ def run_evolve_loop(
                 elif "theory_id" in res and isinstance(res["theory_id"], str):
                     new_theory_ids.add(res["theory_id"])
 
-        new_theory_ids_list = list(new_theory_ids)
+        new_theory_ids_list = sorted(list(new_theory_ids))
 
         if not new_theory_ids_list:
             logger.debug(
@@ -244,7 +244,7 @@ def run_evolve_loop(
         )
 
         # 5. Score Union
-        union_ids = list(set(new_theory_ids_list + scoring_sample_ids))
+        union_ids = sorted(list(set(new_theory_ids_list + scoring_sample_ids)))
         logger.debug(
             f"[ORCHESTRATOR] [{task.id[:8]}] Scoring {len(union_ids)} theories..."
         )
