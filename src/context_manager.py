@@ -831,20 +831,6 @@ def create_context(
                         db_root / "review" / data["id"], reviews_root / data["id"]
                     )
 
-        elif for_agent_type == "rank-explanatory-power":
-            # Add all 'suggest-expansions' reviews for the theories
-            reviews_root = target_folder / "reviews"
-            reviews_root.mkdir(exist_ok=True)
-            tids = set(from_theories)
-            for _, data in session.iter_metadata("review"):
-                if (
-                    data.get("parent_theory") in tids
-                    and data.get("agent_type") == "suggest-expansions"
-                ):
-                    copy_artifact(
-                        db_root / "review" / data["id"], reviews_root / data["id"]
-                    )
-
 
 def fetch_experiment(
     target_folder: Path, experiment_id: str, exclude_results: bool = False
