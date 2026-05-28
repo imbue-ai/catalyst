@@ -664,11 +664,7 @@ def _validate_create_context_args(
             raise ValueError(
                 f"At least one --from_theory is required for {for_agent_type}"
             )
-    elif for_agent_type in (
-        "score-soundness",
-        "score-guidance-adherence",
-        "score-length",
-    ):
+    elif for_agent_type == "score-theory-local-subscores":
         if not from_theories or len(from_theories) != 1:
             raise ValueError(
                 f"Exactly one --from_theory is required for {for_agent_type}"
@@ -821,7 +817,7 @@ def create_context(
             for eid in selected_eids:
                 fetch_experiment(target_folder, eid, exclude_results=True)
 
-        elif for_agent_type == "score-soundness":
+        elif for_agent_type == "score-theory-local-subscores":
             # Add all 'falsify-hypothesis' reviews for the given theory
             reviews_root = target_folder / "reviews"
             reviews_root.mkdir(exist_ok=True)
@@ -1236,9 +1232,7 @@ def main(argv: list[str] | None = None) -> None:
             "predict-experiments",
             "rank-predictions",
             "rank-experiments",
-            "score-soundness",
-            "score-guidance-adherence",
-            "score-length",
+            "score-theory-local-subscores",
             "rank-explanatory-power",
             "polish-theory",
             "streamline-theory",
