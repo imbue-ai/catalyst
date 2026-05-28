@@ -15,7 +15,7 @@ OUTPUT_DIR: `mktemp -d -p ./tmp explore-output-XXXX`
 
 All exploration artifacts and temporary files go under this folder. Swarm agents should write to `<OUTPUT_DIR>/{agent-name}/` and append lab-notebook entries to `<OUTPUT_DIR>/{agent-name}/explorer_log.md`.
 
-## Workflow
+## Execution Steps
 
 1. Understand the given phenomenon and what's interesting to explore around it.
 2. Construct a detailed task string for swarm that includes:

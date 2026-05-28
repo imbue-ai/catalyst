@@ -17,7 +17,7 @@ Parse:
 
 If `N` or the exploration ID or the phenomenon is missing, abort with a clear error.
 
-## Workflow
+## Execution Steps
 1. Build a single task string for `swarm` that instructs each swarm agent to invoke the `write-theory` skill with the exact arguments above (exploration ID, optional literature ID, phenomenon) and return only the resulting `T_...` theory ID as its final message. Tell each agent that divergence between theories is expected and desired — they should not coordinate — but they must all explain the *same* phenomenon from the *same* inputs.
 2. Invoke the swarm skill `/swarm "<task>" N=<N>`.
 3. When swarm returns, extract every `T_...` ID from its report. If any swarm agent failed to produce a `T_...` ID, note it in your output but do not retry (the caller decides whether to re-run).
