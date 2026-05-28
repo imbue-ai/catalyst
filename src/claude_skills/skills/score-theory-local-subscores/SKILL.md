@@ -35,4 +35,4 @@ You will invoke a sequence of different skills in order to score the given theor
 2. **Score Length**: Invoke the `score-length` skill to obtain a length score for the theory.
 3. **Score Guidance Adherence**: Invoke the `score-guidance-adherence` skill to obtain a guidance adherence score for the theory.
 4. **Score Soundness**: Invoke the `score-soundness` skill to obtain a soundness score for the theory.
-5. **Final Output**: Report the theory ID together with each score value (length score, guidance adherence score, and soundness score).
+5. **Final Output**: Report the theory ID together with each score value (length score, guidance adherence score, and soundness score). Do not include any additional commentary in your output.
