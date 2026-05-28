@@ -29,7 +29,7 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_a
 The execution steps below involve several numeric calculations. Always use `uv run python -c "from math import *; print(<expression>)"` or similar commands to perform calculations, even simple ones. Do not perform calculations manually or in your head.
 
 ## Execution Steps
-You will invoke a sequence of different skills in order to score the given theory according to different criteria. Do not stop until you have completed ALL of the steps below.
+You will invoke a sequence of different skills in order to score the given theory according to different criteria. Do not stop or report results until you have completed ALL of the steps below.
 
 1. **Context Checkout**: Run the bash command above to obtain the theory and review files using `context_manager.py`.
 2. **Score Length**: Invoke the `score-length` skill to obtain a length score for the theory.
