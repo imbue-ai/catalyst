@@ -57,11 +57,10 @@ def main():
 
     args = parser.parse_args()
 
-    # Formula: Overall Score = (0.7 * Prediction Accuracy Score + 0.3 * Soundness Score) * (0.4 + (0.3 * Explanatory Power Score + 0.3 * Prediction Coverage Score) * Length Score)
-    correctness_part = 0.7 * args.prediction_accuracy + 0.3 * args.soundness
+    correctness_part = 0.1 + 0.6 * args.prediction_accuracy + 0.3 * args.soundness
     power_part = (
-        0.4
-        + (0.3 * args.explanatory_power + 0.3 * args.prediction_coverage) * args.length
+        0.3
+        + (0.4 * args.explanatory_power + 0.3 * args.prediction_coverage) * args.length
     )
     adherence_part = 0.5 + 0.5 * args.adherence
     overall_score = correctness_part * power_part * adherence_part
