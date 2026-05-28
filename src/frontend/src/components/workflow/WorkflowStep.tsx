@@ -53,7 +53,7 @@ export const WorkflowStep = React.memo(({ stage, task, onSelect, isSelected, onR
               step?.status === 'failed' ? 'bg-red-100 text-red-700' : 
               step?.status === 'paused' ? 'bg-yellow-500 text-white' : 
               step?.status === 'canceled' ? 'bg-gray-500 text-white' : 'bg-gray-100 text-gray-400'
-            }`}>
+            } no-invert`}>
               {step?.status || (isRunning ? 'running' : 'upcoming')}
             </span>
           </div>

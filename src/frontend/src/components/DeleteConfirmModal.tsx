@@ -8,7 +8,7 @@ interface DeleteConfirmModalProps {
 export function DeleteConfirmModal({ onClose, onDelete, deleteInput, setDeleteInput }: DeleteConfirmModalProps) {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-[60]">
-      <div className="bg-white border-2 border-red-600 p-8 w-full max-w-md shadow-[12px_12px_0px_0px_rgba(220,38,38,1)]">
+      <div className="bg-white border-2 border-red-600 p-8 w-full max-w-md shadow-[12px_12px_0px_0px_rgba(220,38,38,1)] no-invert">
         <h2 className="text-2xl font-black tracking-tighter text-red-600 mb-4">Confirm Deletion</h2>
         <p className="text-sm font-bold text-gray-500 mb-6 tracking-tight leading-relaxed">
           This will permanently delete the research project and its ENTIRE environment folder.
