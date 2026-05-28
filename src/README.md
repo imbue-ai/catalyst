@@ -75,3 +75,11 @@ To resolve this issue, export the GEMINI_API_KEY environment variable before lau
 ```bash
 GEMINI_API_KEY=<your Google AI Studio API key> ./run.sh
 ```
+
+### Antigravity CLI cannot run any commands on Ubuntu, fails with `CORTEX_STEP_TYPE_RUN_COMMAND: read unix @ -> @: recvmsg: connection reset by peer`
+Try
+```bash
+sudo sysctl -w kernel.apparmor_restrict_unprivileged_unconfined=0
+sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
+```
+and consider adding the same settings to your /etc/sysctl.conf to survive a system restart.
