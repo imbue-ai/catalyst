@@ -41,4 +41,4 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_a
   ```
   - <NUMBER_OF_THEORIES> is the total number of theories being ranked (i.e. the length of the input theory ID list).
   - The script will output a conversion table, with the rank in column 1, and the corresponding score in column 2.
-7. **Final Output**: Report the list of theory IDs together with their respective ranks, from best (rank 1) to worst, and their associated explanatory power scores.
+7. **Final Output**: Report the list of theory IDs together with their respective ranks, from best (rank 1) to worst, and their associated explanatory power scores. Do not include any additional commentary in your output.

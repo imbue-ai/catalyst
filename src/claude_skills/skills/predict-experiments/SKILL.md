@@ -67,4 +67,4 @@ Theory used: [The ID of the theory used]
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type predict-experiments --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
-   Note down the returned prediction ID (e.g. `P_20260414_143200_g7h8i9`) as the result of this skill.
+   Report only the returned prediction ID (e.g. `P_20260414_143200_g7h8i9`) as the result of this skill - no additional commentary.
