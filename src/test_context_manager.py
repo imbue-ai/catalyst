@@ -167,7 +167,7 @@ class TestContextManager(unittest.TestCase):
                 "rank-predictions",
                 {"--from_experiment": x_id, "--from_prediction": p_id},
             ),
-            ("score-theories", {"--from_theory": t_id}),
+            ("rank-experiments", {"--from_theory": t_id}),
             ("score-soundness", {"--from_theory": t_id}),
             ("score-guidance-adherence", {"--from_theory": t_id}),
             ("score-length", {"--from_theory": t_id}),

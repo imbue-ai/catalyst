@@ -659,7 +659,7 @@ def _validate_create_context_args(
             raise ValueError(
                 "At least one --from_prediction is required for rank-predictions"
             )
-    elif for_agent_type in ("score-theories", "write-different-theory"):
+    elif for_agent_type in ("rank-experiments", "write-different-theory"):
         if not from_theories:
             raise ValueError(
                 f"At least one --from_theory is required for {for_agent_type}"
@@ -740,7 +740,7 @@ def create_context(
         # 3. Theories (The dispatch for different layout requirements)
         if from_theories:
             if for_agent_type in (
-                "score-theories",
+                "rank-experiments",
                 "rank-explanatory-power",
                 "write-different-theory",
             ):
@@ -782,7 +782,7 @@ def create_context(
 
         # --- Post-processing: Advanced Data Gathering ---
 
-        if for_agent_type == "score-theories":
+        if for_agent_type == "rank-experiments":
             # Add up to 30 experiments relevant to the theories being scored
             matched_experiments_by_base: dict[str, list[tuple[str, str]]] = {
                 tid: [] for tid in from_theories
@@ -1235,7 +1235,7 @@ def main(argv: list[str] | None = None) -> None:
             "edit-theory",
             "predict-experiments",
             "rank-predictions",
-            "score-theories",
+            "rank-experiments",
             "score-soundness",
             "score-guidance-adherence",
             "score-length",
