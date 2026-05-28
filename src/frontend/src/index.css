@@ -42,3 +42,65 @@ body {
 * {
   box-sizing: border-box;
 }
+
+/* Dark mode styles using an elegant, high-fidelity CSS inversion strategy */
+html.dark {
+  filter: invert(1) hue-rotate(180deg) contrast(0.85) brightness(1.15);
+}
+
+/* Double-invert to preserve status indicators and server connectivity states */
+.dark .no-invert,
+.dark .status-indicator {
+  filter: brightness(0.87) contrast(1.176) hue-rotate(180deg) invert(1) !important;
+}
+
+/* Invert box shadows back to solid black when dark mode is active */
+.dark .shadow-\[12px_12px_0px_0px_rgba\(0\2c 0\2c 0\2c 1\)\] {
+  box-shadow: 12px 12px 0px 0px rgba(255, 255, 255, 1) !important;
+}
+.dark .shadow-\[8px_8px_0px_0px_rgba\(0\2c 0\2c 0\2c 1\)\] {
+  box-shadow: 8px 8px 0px 0px rgba(255, 255, 255, 1) !important;
+}
+.dark .shadow-\[4px_4px_0px_0px_rgba\(0\2c 0\2c 0\2c 1\)\] {
+  box-shadow: 4px 4px 0px 0px rgba(255, 255, 255, 1) !important;
+}
+.dark .shadow-\[4px_4px_0px_0px_rgba\(0\2c 0\2c 0\2c 0\.05\)\] {
+  box-shadow: 4px 4px 0px 0px rgba(255, 255, 255, 0.05) !important;
+}
+.dark .shadow-\[4px_4px_0px_0px_rgba\(0\2c 0\2c 0\2c 0\.1\)\] {
+  box-shadow: 4px 4px 0px 0px rgba(255, 255, 255, 0.1) !important;
+}
+.dark .shadow-\[4px_4px_0px_0px_rgba\(0\2c 0\2c 0\2c 0\.2\)\] {
+  box-shadow: 4px 4px 0px 0px rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Invert modal and overlay backdrops to be dark (by setting them to white under .dark so they invert back to black) */
+.dark .bg-black\/60:not(.no-invert) {
+  background-color: rgba(255, 255, 255, 0.6) !important;
+}
+.dark .bg-black\/20:not(.no-invert) {
+  background-color: rgba(255, 255, 255, 0.2) !important;
+}
+
+/* Style bright status badges with elegant dark backgrounds and light text in dark mode */
+.dark .bg-blue-100.no-invert {
+  background-color: #172554 !important;
+  color: #60a5fa !important;
+}
+.dark .bg-gray-100.no-invert,
+.dark .bg-gray-200.no-invert {
+  background-color: #27272a !important;
+  color: #a1a1aa !important;
+}
+.dark .bg-red-100.no-invert {
+  background-color: #450a0a !important;
+  color: #f87171 !important;
+}
+
+/* Dark mode step indicator dots (StepIndicator) to use dark background (matching the page background) to hide the vertical line and look hollow */
+.dark .rounded-full.border-2.bg-white.no-invert {
+  background-color: #161616 !important;
+}
+
+
+
