@@ -12,7 +12,7 @@ Arguments: $ARGUMENTS
 The arguments contain a path to the pre-existing theory file (with extension `.tex`, `.pdf`, or `.md`).
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder (only use the local `./tmp` folder).
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder or TMPDIR (only use the local `./tmp` folder).
 
 Set up an output folder:
 OUTPUT_DIR: `mktemp -d -p ./tmp import-theory-output-XXXX`
