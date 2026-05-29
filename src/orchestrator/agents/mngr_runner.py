@@ -639,6 +639,16 @@ class MngrAgentRunner(AgentRunner):
         follows with more tool calls. A parallel `mngr wait --state STOPPED`
         catches external pause/cancel.
         """
+        # TODO: replace this whole transcript-idle strategy with the precise
+        # STOP_HOOK path once mngr supports an antigravity turn-end hook. agy
+        # already loads hooks.json, but hook *execution* is gated behind
+        # Google's per-account `json-hooks-enabled` experiment; when that
+        # ships GA, mngr_antigravity can install a Stop hook (as mngr_claude
+        # does) that emits a `mngr/turn_complete` `turn_end` event. At that
+        # point, switch MngrAntigravityAgentRunner to
+        # TurnCompletion.STOP_HOOK and delete this method -- the precise
+        # signal removes both the ~12s confirmation-window latency and the
+        # mid-turn-text-only false-positive risk this heuristic carries.
         deadline = time.monotonic() + _WAIT_TIMEOUT_SECONDS
         saw_turn_end = threading.Event()
         done = threading.Event()
