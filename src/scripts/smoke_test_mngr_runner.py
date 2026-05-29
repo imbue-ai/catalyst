@@ -10,7 +10,7 @@ local Claude agent with a trivial prompt. Verifies that:
 4. After Claude finishes, the agent is STOPPED (not destroyed) and is
    still listed.
 5. `parse_json_result` returns the expected dict.
-6. The four `ai-scientist*` labels are present.
+6. The four `catalyst*` labels are present.
 
 Cost control: pins claude-haiku-4-5-20251001. Don't run with Sonnet/Opus.
 
@@ -57,14 +57,14 @@ def main() -> int:
         print(f"\n  Agent name: {name}", flush=True)
         if pause_secs > 0:
             print(
-                f"  → In another terminal, try: MNGR_HOST_DIR=~/.mngr-ai-scientist mngr connect {name}\n"
+                f"  → In another terminal, try: MNGR_HOST_DIR=~/.mngr-catalyst mngr connect {name}\n"
                 f"  Sleeping {pause_secs}s so you can attach...\n",
                 flush=True,
             )
             time.sleep(pause_secs)
 
     runner = MngrClaudeAgentRunner()
-    with tempfile.TemporaryDirectory(prefix="aisci-smoke-") as env_folder:
+    with tempfile.TemporaryDirectory(prefix="cata-smoke-") as env_folder:
         # Mirror what `create_environment.py` does for real tasks: copy
         # the `.claude/settings.local.json` from `claude_skills/` so the
         # Stop hook that emits `mngr/turn_complete` is wired up. Without
@@ -98,7 +98,7 @@ def main() -> int:
         return 1
 
     list_result = subprocess.run(
-        ["mngr", "list", "--include", 'labels["app"] == "ai-scientist"', "--format", "jsonl"],
+        ["mngr", "list", "--include", 'labels["app"] == "catalyst"', "--format", "jsonl"],
         check=False,
         capture_output=True,
         text=True,

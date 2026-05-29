@@ -26,7 +26,7 @@ from orchestrator.state import (
     shutdown_all,
 )
 from orchestrator.orchestrator import start_task
-from orchestrator.utils import get_ai_scientist_path, run_context_manager
+from orchestrator.utils import get_catalyst_path, run_context_manager
 from context_manager import PREFIX_TO_CATEGORY, CATEGORY_MD_MAP, DEFAULT_DB_DIR
 
 # Setup logging
@@ -56,7 +56,7 @@ async def lifespan(app: FastAPI):
     shutdown_all()
 
 
-app = FastAPI(title="AI Scientist Orchestrator", lifespan=lifespan)
+app = FastAPI(title="Catalyst Orchestrator", lifespan=lifespan)
 
 # Enable CORS for the React frontend
 app.add_middleware(
@@ -114,7 +114,7 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
     task_id = str(uuid.uuid4())
 
     # Generate unique target path inside configured research directory
-    base_research_dir = os.path.join(get_ai_scientist_path(), "research")
+    base_research_dir = os.path.join(get_catalyst_path(), "research")
     target_path = os.path.abspath(os.path.join(base_research_dir, f"task_{task_id[:8]}"))
 
     # Run create_environment.py
@@ -187,6 +187,7 @@ class CreateAddonRequest(BaseModel):
     evolve_iterations: Optional[int] = None
     num_parents: Optional[int] = None
     max_streamline_prob: Optional[float] = None
+    write_different_prob: Optional[float] = None
     num_extra_scores: Optional[int] = None
     review_id: Optional[str] = None
     hypothesis_title: Optional[str] = None
@@ -212,6 +213,7 @@ def create_addon(task_id: str, req: CreateAddonRequest):
         evolve_iterations=req.evolve_iterations,
         num_parents=req.num_parents,
         max_streamline_prob=req.max_streamline_prob,
+        write_different_prob=req.write_different_prob,
         num_extra_scores=req.num_extra_scores,
         review_id=req.review_id,
         hypothesis_title=req.hypothesis_title,
@@ -247,14 +249,14 @@ def cancel_step(task_id: str, stage: str):
     # Actually, we can just mark it as canceled if it's paused, failed, or pending.
     step = next((s for s in task.steps if s.stage == stage), None)
     if step:
-        if step.status in (StepStatus.FAILED, StepStatus.PAUSED, StepStatus.PENDING):
+        if step.status in (StepStatus.FAILED, StepStatus.PAUSED, StepStatus.PENDING, StepStatus.WAITING):
             step.status = StepStatus.CANCELED
             update_task(task)
             return {"status": "canceled"}
         else:
             raise HTTPException(
                 status_code=400,
-                detail="Can only cancel steps in failed, paused, or pending state",
+                detail="Can only cancel steps in failed, paused, pending, or waiting state",
             )
     else:
         # Step not in task.steps yet (so it's pending in the structure)
@@ -287,6 +289,7 @@ def bulk_cancel_steps(task_id: str, req: BulkCancelRequest):
                 StepStatus.FAILED,
                 StepStatus.PAUSED,
                 StepStatus.PENDING,
+                StepStatus.WAITING,
             ):
                 step.status = StepStatus.CANCELED
                 modified = True
@@ -307,6 +310,10 @@ def cancel_task(task_id: str):
         raise HTTPException(status_code=404, detail="Task not found")
 
     task.status = TaskStatus.PAUSED
+    from orchestrator.models import StepStatus
+    for step in task.steps:
+        if step.status in (StepStatus.RUNNING, StepStatus.WAITING):
+            step.status = StepStatus.PAUSED
     update_task(task)
     cancel_task_process(task_id)
     return {"status": "paused"}
@@ -322,6 +329,32 @@ def resume_task(task_id: str):
         return task
 
     start_task(task)
+    return task
+
+
+class UpdateGuidanceRequest(BaseModel):
+    guidance: str
+
+
+@app.post("/api/tasks/{task_id}/guidance", response_model=Task)
+def update_task_guidance(task_id: str, req: UpdateGuidanceRequest):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task.guidance = req.guidance
+    update_task(task)
+
+    guidance_file = os.path.join(task.env_folder, "GUIDANCE.txt")
+    try:
+        with open(guidance_file, "w", encoding="utf-8") as f:
+            f.write(req.guidance)
+    except Exception as e:
+        logger.error(f"Error writing to GUIDANCE.txt for task {task_id}: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to write guidance file: {e}"
+        )
+
     return task
 
 
@@ -355,43 +388,15 @@ def get_task_theories(task_id: str):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    ctx_mgr_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "context_manager.py")
-    )
-
-    env = os.environ.copy()
-    env["AI_SCIENTIST_DB_PATH"] = os.path.join(
-        os.path.abspath(task.env_folder), DEFAULT_DB_DIR
-    )
-
-    cmd = [
-        "uv",
-        "run",
-        "python",
-        ctx_mgr_path,
-        "list",
-        "--type",
-        "theory",
-        "--sort_by",
-        "score",
-        "--json",
-    ]
     try:
-        result = subprocess.run(
-            cmd,
-            env=env,
-            cwd=os.path.abspath(task.env_folder),
-            check=True,
-            capture_output=True,
-            text=True,
+        result = run_context_manager(
+            task, ["list", "--type", "theory", "--sort_by", "score", "--json"]
         )
-        data = json.loads(result.stdout)
+        data = json.loads(result)
         data.reverse()
         return data
-    except subprocess.CalledProcessError as e:
-        logger.error(
-            f"Error running context_manager list for task {task_id}: {e.stderr}"
-        )
+    except Exception as e:
+        logger.error(f"Error running context_manager list for task {task_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to retrieve theories")
     except json.JSONDecodeError as e:
         logger.error(f"Error decoding context_manager output for task {task_id}: {e}")
@@ -417,6 +422,27 @@ def get_task_reviews(task_id: str):
     except json.JSONDecodeError as e:
         logger.error(f"Error decoding context_manager output for task {task_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to parse reviews")
+
+
+@app.get("/api/tasks/{task_id}/experiments")
+def get_task_experiments(task_id: str):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    try:
+        result = run_context_manager(task, ["list", "--type", "experiment", "--json"])
+        data = json.loads(result)
+        data.reverse()
+        return data
+    except subprocess.CalledProcessError as e:
+        logger.error(
+            f"Error running context_manager list for task {task_id}: {e.stderr}"
+        )
+        raise HTTPException(status_code=500, detail="Failed to retrieve experiments")
+    except json.JSONDecodeError as e:
+        logger.error(f"Error decoding context_manager output for task {task_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to parse experiments")
 
 
 def inject_disclaimer(content: str) -> str:
@@ -455,6 +481,38 @@ def get_artifact_primary(task_id: str, artifact_id: str):
 
     with open(file_path, "r", encoding="utf-8") as f:
         return {"content": inject_disclaimer(f.read())}
+
+
+@app.get("/api/tasks/{task_id}/artifacts/{artifact_id}/files")
+def list_artifact_files(task_id: str, artifact_id: str):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    prefix = artifact_id.split("_")[0]
+    category = PREFIX_TO_CATEGORY.get(prefix)
+    if not category:
+        raise HTTPException(status_code=400, detail="Invalid artifact ID prefix")
+
+    dir_path = os.path.join(
+        task.env_folder, DEFAULT_DB_DIR, category, artifact_id
+    )
+    if not os.path.exists(dir_path):
+        raise HTTPException(status_code=404, detail="Artifact directory not found")
+
+    files = []
+    for root, _, filenames in os.walk(dir_path):
+        for f in filenames:
+            full_path = os.path.join(root, f)
+            rel_path = os.path.relpath(full_path, dir_path)
+            # Use forward slashes for consistent web paths
+            files.append(rel_path.replace(os.sep, '/'))
+
+    def sort_key(path):
+        parts = path.split('/')
+        return [(1 if i < len(parts) - 1 else 0, part) for i, part in enumerate(parts)]
+
+    return sorted(files, key=sort_key)
 
 
 @app.get("/api/tasks/{task_id}/artifacts/{artifact_id}/files/{file_path:path}")

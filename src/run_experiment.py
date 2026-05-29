@@ -38,10 +38,10 @@ def main():
     stderr_log = experiment_folder / "stderr.log"
 
     # Environment variables for limits
-    nice_level = int(os.environ.get("AI_SCIENTIST_EXPERIMENT_NICE_LEVEL", 10))
-    timeout_secs = int(os.environ.get("AI_SCIENTIST_EXPERIMENT_TIMEOUT_SECS", 60 * 60))
+    nice_level = int(os.environ.get("CATALYST_EXPERIMENT_NICE_LEVEL", 10))
+    timeout_secs = int(os.environ.get("CATALYST_EXPERIMENT_TIMEOUT_SECS", 30 * 60))
     memory_limit_as = int(
-        os.environ.get("AI_SCIENTIST_EXPERIMENT_RLIMIT_AS", 16 * 1024 * 1024 * 1024)
+        os.environ.get("CATALYST_EXPERIMENT_RLIMIT_AS", 12 * 1024 * 1024 * 1024)
     )
 
     def preexec_setup():

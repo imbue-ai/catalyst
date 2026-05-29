@@ -10,8 +10,6 @@ logger = logging.getLogger(__name__)
 
 
 class ClaudeAgentRunner(BaseCliAgentRunner):
-    _ADDITIONAL_SYSTEM_PROMPT = "If you encounter any issues with following the instructions in a skill, or run into issues with your execution environment (e.g. missing permission, error while running a pre-provided script, etc.), please take a second to append a short, one-line issue description to `./tmp/agent_friction_log.txt`."
-
     def run(
         self,
         task_id: str,
@@ -29,8 +27,11 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
             env["CONTEXT_TRANSACTION_ID"] = tx_id
         abs_env_folder = os.path.abspath(env_folder)
         env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
-        env["AI_SCIENTIST_DB_PATH"] = os.path.join(abs_env_folder, DEFAULT_DB_DIR)
+        env["CATALYST_DB_PATH"] = os.path.join(abs_env_folder, DEFAULT_DB_DIR)
         env["MPLCONFIGDIR"] = os.path.join(abs_env_folder, "tmp/matplotlib_cache")
+        env["CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR"] = "1"
+        env["BASH_DEFAULT_TIMEOUT_MS"] = "4000000"  # > 1 hour
+        env["BASH_MAX_TIMEOUT_MS"] = "4000000"  # > 1 hour
 
         cmd = [
             "claude",
@@ -38,8 +39,6 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
             "--output-format",
             "stream-json",
             "--verbose",
-            "--append-system-prompt",
-            self._ADDITIONAL_SYSTEM_PROMPT,
         ]
         if model:
             cmd.extend(["--model", model])
@@ -49,10 +48,21 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
         logger.debug(f"[AGENT] Executing in folder {abs_env_folder}: {shlex.join(cmd)}")
 
         last_result_obj = {}
+        last_error_messages = []
 
         def handle_event(data):
             if data.get("type") == "result":
                 last_result_obj["data"] = data
+
+            if data.get("type") == "assistant" and data.get("error"):
+                error_message = data["error"]
+                content_list = data.get("message", {}).get("content", [])
+                if isinstance(content_list, list) and content_list:
+                    for item in reversed(content_list):
+                        if item.get("type") == "text":
+                            error_message += f" - {item.get('text')}"
+
+                last_error_messages.append(error_message)
 
             if on_status:
                 status_text = None
@@ -79,7 +89,6 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
                 env,
                 on_session_id,
                 handle_event,
-                on_status,
             )
 
             logger.debug(
@@ -92,10 +101,13 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
                     return None, session_id, "Agent was interrupted/paused."
 
                 stdout_tail = "".join(full_output)[-500:]
+                last_error_message = (
+                    last_error_messages[-1] if last_error_messages else ""
+                )
                 return (
                     None,
                     session_id,
-                    f"Claude failed with exit code {returncode}. Last output: {stdout_tail}",
+                    f"{last_error_message}.\nClaude failed with exit code {returncode}. Last output: {stdout_tail}",
                 )
 
             agent_raw_result = (

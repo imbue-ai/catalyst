@@ -1,7 +1,7 @@
 [project]
 name = "ai-scientist-environment"
 version = "0.1.0"
-description = "AI Scientist environment"
+description = "Catalyst environment"
 requires-python = ">=3.11"
 dependencies = [
     "darwinian-evolver",
@@ -11,6 +11,7 @@ dependencies = [
     "pyyaml>=6.0",
     "pydantic>=2.0",
     "scipy>=1.17.1",
+    "sympy>=1.14.0",
 ]
 
 [tool.uv]
@@ -18,3 +19,10 @@ exclude-newer = "2 week"
 
 [tool.uv.sources]
 darwinian-evolver = { path = "darwinian_evolver", editable = true }
+torch = { index = "pytorch-cpu" } 
+torchvision = { index = "pytorch-cpu" } 
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true

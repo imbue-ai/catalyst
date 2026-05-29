@@ -21,6 +21,7 @@ export interface Addon {
   evolve_iterations?: number;
   num_parents?: number;
   max_streamline_prob?: number;
+  write_different_prob?: number;
   num_extra_scores?: number;
   review_id?: string;
   hypothesis_title?: string;
@@ -42,6 +43,7 @@ export interface Task {
   workflow_name: string;
   workflow_structure: any[];
   created_at?: string;
+  guidance?: string;
 }
 
 export interface TheoryArtifact {
@@ -54,6 +56,7 @@ export interface TheoryArtifact {
   extra: Record<string, string>;
   score?: number | null;
   subscores?: Record<string, number>;
+  is_leaf_node?: boolean;
 }
 
 export interface ReviewArtifact {
@@ -63,9 +66,12 @@ export interface ReviewArtifact {
   created_at?: string;
 }
 
-export const getTasks = async (): Promise<Task[]> => {
-  const res = await fetch(`${API_BASE}/tasks`);
-  return res.json();
+export interface ExperimentArtifact {
+  id: string;
+  headline?: string;
+  agent_type?: string;
+  created_at?: string;
+  extra?: Record<string, string>;
 }
 
 export const listTasks = async (): Promise<Task[]> => {
@@ -144,9 +150,21 @@ export async function getReviews(id: string): Promise<ReviewArtifact[]> {
   return res.json();
 }
 
+export async function getExperiments(id: string): Promise<ExperimentArtifact[]> {
+  const res = await fetch(`${API_BASE}/tasks/${id}/experiments`);
+  if (!res.ok) throw new Error("Failed to get experiments");
+  return res.json();
+}
+
 export async function getTemplates(): Promise<string[]> {
   const res = await fetch(`${API_BASE}/templates`);
   if (!res.ok) throw new Error("Failed to get templates");
+  return res.json();
+}
+
+export async function listArtifactFiles(taskId: string, artifactId: string): Promise<string[]> {
+  const res = await fetch(`${API_BASE}/tasks/${taskId}/artifacts/${artifactId}/files`);
+  if (!res.ok) throw new Error("Failed to list files");
   return res.json();
 }
 
@@ -186,4 +204,17 @@ export async function bulkCancelSteps(taskId: string, stages: string[]): Promise
 
 export async function deleteTask(id: string): Promise<void> {
   await fetch(`${API_BASE}/tasks/${id}`, { method: "DELETE" });
+}
+
+export async function updateGuidance(taskId: string, guidance: string): Promise<Task> {
+  const res = await fetch(`${API_BASE}/tasks/${taskId}/guidance`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ guidance }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.detail || "Failed to update guidance");
+  }
+  return res.json();
 }

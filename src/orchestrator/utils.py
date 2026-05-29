@@ -1,26 +1,35 @@
 import os
 import subprocess
 from typing import List
+
+from context_manager import DEFAULT_DB_DIR
 from .models import Task
 
 
-def get_ai_scientist_path() -> str:
-    return os.environ.get("AI_SCIENTIST_PATH", os.path.expanduser("~/.ai-scientist"))
+def get_catalyst_path() -> str:
+    path = os.environ.get("CATALYST_PATH")
+    if path:
+        return path
+
+    catalyst_path = os.path.expanduser("~/.catalyst")
+    legacy_path = os.path.expanduser("~/.ai-scientist")
+    if not os.path.exists(catalyst_path) and os.path.exists(legacy_path):
+        return legacy_path
+    return catalyst_path
 
 
-# Default ai-scientist's `mngr` host_dir to an isolated location so
-# ai-scientist's agents don't mix into the user's main `~/.mngr` and
-# the runner's `mngr` calls aren't blocked by stale fields in the
-# user's profile settings (e.g. `plugins.kanpan.column_order`). Set
-# via `setdefault` so an explicit `MNGR_HOST_DIR=...` export wins.
-os.environ.setdefault("MNGR_HOST_DIR", os.path.expanduser("~/.mngr-ai-scientist"))
+# Default Catalyst's `mngr` host_dir to an isolated location so Catalyst's
+# agents don't mix into the user's main `~/.mngr` and the runner's `mngr`
+# calls aren't blocked by stale fields in the user's profile settings
+# (e.g. `plugins.kanpan.column_order`). Set via `setdefault` so an explicit
+# `MNGR_HOST_DIR=...` export wins.
+os.environ.setdefault("MNGR_HOST_DIR", os.path.expanduser("~/.mngr-catalyst"))
 
 
 def run_context_manager(task: Task, args: List[str]) -> str:
     abs_env_folder = os.path.abspath(task.env_folder)
     env = os.environ.copy()
-    env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
-    del env["VIRTUAL_ENV"]
+    env["CATALYST_DB_PATH"] = os.path.join(abs_env_folder, DEFAULT_DB_DIR)
 
     ctx_mgr_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "context_manager.py")
@@ -30,7 +39,6 @@ def run_context_manager(task: Task, args: List[str]) -> str:
         result = subprocess.run(
             cmd,
             env=env,
-            cwd=abs_env_folder,
             check=True,
             capture_output=True,
             text=True,

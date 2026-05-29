@@ -7,24 +7,25 @@ import time
 import logging
 from typing import Dict, List, Optional, Set
 from .models import Task, TasksState, TaskStatus, StepStatus
-from .utils import get_ai_scientist_path
+from .utils import get_catalyst_path
 
 logger = logging.getLogger(__name__)
 
 
 def _get_state_file() -> str:
-    path = os.path.join(get_ai_scientist_path(), "tasks_state.json")
+    path = os.path.join(get_catalyst_path(), "tasks_state.json")
     os.makedirs(os.path.dirname(path), exist_ok=True)
     return path
 
 
 _lock = threading.Lock()
 _task_locks: Dict[str, threading.Lock] = {}
-# Live legacy claude subprocesses, keyed by task id. Used by the legacy
-# `claude` framework runner (cli_base.py). `cancel_task_process` SIGTERMs
-# the process group, then SIGKILLs after timeout.
+# Live direct-CLI subprocesses, keyed by task id. Used by the direct
+# `claude` / `gemini` / `agy` framework runners (cli_base.py).
+# `cancel_task_process` SIGTERMs the process group, then SIGKILLs after
+# timeout.
 _running_processes: Dict[str, List[subprocess.Popen]] = {}
-# Mngr agent names currently RUNNING for each ai-scientist task. Used by
+# Mngr agent names currently RUNNING for each Catalyst task. Used by
 # the `mngr-claude` / `mngr-antigravity` framework runners (mngr_runner.py).
 # `cancel_task_process` shells out to `mngr stop` for each. Stopped agents
 # stay in `mngr list` so users can `mngr connect` / `mngr transcript`
@@ -42,7 +43,7 @@ def get_task_lock(task_id: str) -> threading.Lock:
 
 
 def register_process(task_id: str, process: subprocess.Popen):
-    """Legacy: track a `claude -p` subprocess."""
+    """Direct runners: track a `claude` / `gemini` / `agy` subprocess."""
     with _lock:
         if task_id not in _running_processes:
             _running_processes[task_id] = []
@@ -78,8 +79,8 @@ def unregister_agent(task_id: str, agent_name: str) -> None:
 def cancel_task_process(task_id: str, timeout: int = 30) -> None:
     """Cancel both legacy subprocesses and mngr agents for `task_id`.
 
-    Tasks created with the legacy `claude` framework register into
-    `_running_processes`; tasks created with `mngr-claude` /
+    Tasks created with the direct `claude` / `gemini` / `agy` frameworks
+    register into `_running_processes`; tasks created with `mngr-claude` /
     `mngr-antigravity` register into `_running_agents`. A single task only
     uses one path, but cancel handles both so it doesn't have to care
     which framework created the task.
@@ -264,7 +265,7 @@ def initialize_state():
                 task.status = TaskStatus.PAUSED
                 modified = True
             for step in task.steps:
-                if step.status == StepStatus.RUNNING:
+                if step.status in (StepStatus.RUNNING, StepStatus.WAITING):
                     step.status = StepStatus.PAUSED
                     modified = True
         if modified:
@@ -296,7 +297,7 @@ def shutdown_all():
                 task.status = TaskStatus.PAUSED
                 modified = True
             for step in task.steps:
-                if step.status == StepStatus.RUNNING:
+                if step.status in (StepStatus.RUNNING, StepStatus.WAITING):
                     step.status = StepStatus.PAUSED
                     modified = True
         if modified:

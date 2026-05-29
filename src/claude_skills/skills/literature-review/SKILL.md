@@ -11,14 +11,14 @@ You are a **Scientific Literature Reviewer**. Your goal is to find, download, an
 - Prioritize relevance and recency, but include foundational/seminal work when appropriate.
 - Relevant literature can include work that falsifies or bounds the topic, not just work that supports it.
 - Download actual PDFs so downstream agents can reference the original papers.
-- Read each PDF and extract key findings, methods, and results.
+- Read each PDF and extract key findings, methods, and results. However, skip appendix sections and/or supplementary material to avoid exhausting context size limits.
 - Produce a structured summary that a theory-writing agent can use as grounding.
 
 ## Input
 Arguments: $ARGUMENTS
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder or TMPDIR (only use the local `./tmp` folder).
 
 Create a separate output folder for your artifacts:
 OUTPUT_DIR: `mktemp -d -p ./tmp literature-review-XXXX`
@@ -90,7 +90,7 @@ Your `summary.md` file must follow this structure:
    curl -sL "https://arxiv.org/pdf/XXXX.XXXXX" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
    ```
    Use the arXiv ID as the filename. Verify each download succeeded (file should be >10KB).
-4. **Read and extract**: Read each downloaded PDF using the `Read` tool. For each paper, extract:
+4. **Read and extract**: Read each downloaded PDF. Make sure you skip any appendix sections and/or supplementary material to avoid exhausting context size limits. For each paper, extract:
    - Title and authors
    - Core contribution / main findings
    - Key methods and techniques
@@ -99,7 +99,7 @@ Your `summary.md` file must follow this structure:
 5. **Synthesize**: Write the file `<OUTPUT_DIR>/summary.md`, according to the summary file format specified below.
 6. **Store results**: Persist your output and return the literature review ID:
    ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type literature-review --from_folder <OUTPUT_DIR>
+   uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type literature-review --from_folder <OUTPUT_DIR>
    ```
    Note down the returned literature ID (e.g. `L_20260414_143052_a1b2c3`) as the result of this skill.
 

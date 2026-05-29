@@ -1,5 +1,5 @@
 # Project-level mngr settings, picked up by `mngr create` for every
-# ai-scientist step. Auto-discovered via the git root.
+# Catalyst step. Auto-discovered via the git root.
 
 [agent_types.claude]
 # Required for headless `mngr create --type claude --no-connect` against
@@ -10,7 +10,7 @@ auto_dismiss_dialogs = true
 
 # Project-wide CLI args appended after the per-call --model. The runner
 # only contributes --model and (for the smoke flow) -p; everything that
-# applies to every ai-scientist step lives here.
+# applies to every Catalyst step lives here.
 cli_args = ["--dangerously-skip-permissions", "--verbose"]
 
 [agent_types.antigravity]
@@ -23,6 +23,6 @@ auto_dismiss_dialogs = true
 
 # Auto-approve every tool call (adds `--dangerously-skip-permissions` to
 # the agy launch command). This is the antigravity analog of the legacy
-# Gemini CLI's `--approval-mode yolo`: ai-scientist steps run unattended,
+# Gemini CLI's `--approval-mode yolo`: Catalyst steps run unattended,
 # so the agent can't stop to ask for permission.
 auto_allow_permissions = true

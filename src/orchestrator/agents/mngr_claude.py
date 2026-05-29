@@ -41,4 +41,13 @@ class MngrClaudeAgentRunner(MngrAgentRunner):
             agent_args_builder=_build_agent_args,
             status_extractor=_extract_status,
             assistant_text_extractor=_extract_assistant_text,
+            # Force synchronous subagent execution. Without this, Claude Code
+            # (v2.1.4+) may run subagents asynchronously, letting the parent
+            # emit `end_turn` and finish its turn while subagents are still
+            # running in the background. Catalyst's contract is "each step's
+            # parent agent emits final JSON consumed by the next step", which
+            # requires synchronous subagents so the parent has the subagent
+            # results before composing its final message. See
+            # https://claudelog.com/faqs/what-is-disable-background-tasks-in-claude-code/
+            extra_env={"CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": "1"},
         )

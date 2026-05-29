@@ -14,7 +14,7 @@ Arguments: $ARGUMENTS
 The arguments contain a theory ID (like `T_20260414_...`), and optionally an instruction on what kind of key story to focus on (e.g. "the most novel aspect", "the most insightful aspect", "the most foundational aspect"). Parse the theory ID and optional instruction from the arguments.
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder or TMPDIR (only use the local `./tmp` folder).
 
 Set up two folders — one for input context, one for your own output:
 CONTEXT_DIR: `mktemp -d -p ./tmp streamline-theory-context-XXXX`
@@ -22,7 +22,7 @@ OUTPUT_DIR: `mktemp -d -p ./tmp streamline-theory-output-XXXX`
 
 Run this command to populate the context, and then initialize the output folder with a copy of the original theory files:
 ```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type streamline-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_agent_type streamline-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
 cp -r "<CONTEXT_DIR>/theory/"* "<OUTPUT_DIR>/"
 ```
 
@@ -42,7 +42,7 @@ Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audi
 4. **Writing**: Write a new version of the theory in `<OUTPUT_DIR>/theory.md`, following your plan. Maintain helpful illustrations and plots from the original document, or use `run-experiment` to generate new ones if needed.
 5. **Store results**: Persist your output and return the new theory ID:
    ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type streamline-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
+   uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type streamline-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
    Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the result of this skill.
 
@@ -58,8 +58,8 @@ Please maintain the following guidelines for the streamlined theory:
 - Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
 - Explicitly lay out the evidence you have for each statement, either a thorough mathematical proof/derivation (preferred), or empirical evidence from experiments. You can also cite prior literature to support your statements. Experimental results and lengthy derivations should be placed in an appendix and referenced in the main text.
 - Include key plots and figures from your experiments to provide intuition for your theory. Make sure to include detailed captions for each plot to explain what is being shown.
-- Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. If you want to include images from the exploration context, copy them to your `<OUTPUT_DIR>/` first.
+- Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. NEVER use absolute paths. Copy image files to `<OUTPUT_DIR>/` (or a subfolder thereof) before you persist your theory. Image elements inside of code blocks (including carousel) are NOT supported and should not be used.
 - Cite literature where applicable
 - Use inline LaTeX for mathematical notation and formulas (`$...$` for inline math, and `$$...$$` for display math). Do NOT put formulas into code blocks.
 
-As a general guideline, write the theory in a way that resembles a well-written main part of a scientific paper or textbook chapter.
+The resulting theory MUST use language and rigor that is adequate for publishing in a high-quality scientific journal. Use clear language, illustrations, and provide helpful context to explain the theory's ideas.

@@ -102,3 +102,44 @@ class Workflow(ABC):
         if not os.path.exists(db_path):
             logger.debug(f"[ORCHESTRATOR] [{task.id[:8]}] Initializing DB folder...")
             run_context_manager(task, ["init"])
+
+
+class ParallelStepRunner:
+    """A context manager to handle parallel execution of workflow steps.
+
+    Usage:
+        with ParallelStepRunner() as runner:
+            runner.add(some_function, arg1, arg2)
+            runner.add(another_function, kwarg1=val)
+    """
+
+    def __init__(self) -> None:
+        import threading
+        self.threads: List[threading.Thread] = []
+        self.errors: List[Exception] = []
+        self._lock = threading.Lock()
+
+    def __enter__(self) -> "ParallelStepRunner":
+        return self
+
+    def add(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
+        import threading
+        def target() -> None:
+            try:
+                fn(*args, **kwargs)
+            except Exception as e:
+                with self._lock:
+                    self.errors.append(e)
+
+        t = threading.Thread(target=target)
+        t.daemon = True
+        self.threads.append(t)
+        t.start()
+
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Optional[bool]:
+        for t in self.threads:
+            t.join()
+        if exc_type is None and self.errors:
+            raise self.errors[0]
+        return False
+

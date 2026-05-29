@@ -20,7 +20,7 @@ Arguments: $ARGUMENTS
 The arguments contain a theory ID (like `T_20260414_...`), one or more review IDs (like `R_20260414_...`), and optionally one or more literature review IDs (like `L_20260414_...`). Parse all IDs from the arguments.
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder or TMPDIR (only use the local `./tmp` folder).
 
 Set up two folders — one for input context, one for your own output:
 CONTEXT_DIR: `mktemp -d -p ./tmp expand-theory-context-XXXX`
@@ -28,7 +28,7 @@ OUTPUT_DIR: `mktemp -d -p ./tmp expand-theory-output-XXXX`
 
 Run this command to populate the context, and then initialize the output folder with a copy of the original theory files:
 ```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context \
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
     --for_agent_type expand-theory \
     --target_folder <CONTEXT_DIR> \
     --from_theory <THEORY_ID> \
@@ -52,7 +52,7 @@ Cite each experiment by its `X_...` ID in your expanded `theory.md` so reviewers
 You may start with zero, one, or many literature reviews already in `<CONTEXT_DIR>/literature/`. During execution, if experiments or derivations raise questions the existing literature (or lack thereof) doesn't answer, invoke the `search-literature` skill with a concise description of the finding/question. It will return a new literature ID (`L_...`). Fold it into your context without rebuilding the folder:
 
 ```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_literature \
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_literature \
     --target_folder <CONTEXT_DIR> \
     --from_literature <NEW_L_ID>
 ```
@@ -71,26 +71,26 @@ Please maintain the following guidelines for the expanded theory:
 - Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
 - Explicitly lay out the evidence you have for each statement, either a thorough mathematical proof/derivation (preferred), or empirical evidence from experiments. You can also cite prior literature to support your statements. Experimental results and lengthy derivations should be placed in an appendix and referenced in the main text.
 - Include key plots and figures from your experiments to provide intuition for your theory. Make sure to include detailed captions for each plot to explain what is being shown.
-- Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. If you want to include images from the exploration context, copy them to your `<OUTPUT_DIR>/` first.
+- Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. NEVER use absolute paths. Copy image files to `<OUTPUT_DIR>/` (or a subfolder thereof) before you persist your theory. Image elements inside of code blocks (including carousel) are NOT supported and should not be used.
 - Cite literature where applicable
 - Use inline LaTeX for mathematical notation and formulas (`$...$` for inline math, and `$$...$$` for display math). Do NOT put formulas into code blocks.
 
-As a general guideline, the overall theory should resemble a well-written main part of a scientific paper or textbook chapter.
+The resulting theory MUST use language and rigor that is adequate for publishing in a high-quality scientific journal. Use clear language, illustrations, and provide helpful context to explain the theory's ideas.
 
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the existing theory, expansion reviews (containing suggested expansion areas), and literature review results using `context_manager.py`.
 2. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md`, all review files in `<CONTEXT_DIR>/reviews/*/review.md`, and (if present) each `<CONTEXT_DIR>/literature/*/summary.md` to understand the current theory, the proposed expansions, and any prior literature grounding.
-3. **Expansion Area Selection**: Identify which expansion suggestions you want to research. Prioritize by impact and feasibility.
-4. **Hypothesis Generation**: For each selected expansion aspect, generate different hypotheses that could explain it. Try to generate at least 2-3 *alternative* explanations for every aspect, and think about how you can test and differentiate between these explanations.
-5. **Validation**: For each expansion you choose to research, test your ideas using the available tools. Always test ALL of your alternative hypotheses. Even after one hypothesis is found to be promising, you must still attempt to validate the alternative explanations before you dismiss them. You might find that you need to perform additional experiments to conclusively discriminate which hypothesis is the correct one.
+3. **Expansion Area Selection**: Select ONE expansion suggestion that you want to research. Prioritize by impact and feasibility.
+4. **Hypothesis Generation**: For the selected expansion suggestion, generate different hypotheses for how to incorporate it into the theory. Try to generate at least 2-3 *alternative* hypotheses, and think about how you can test and differentiate between them.
+5. **Validation**: Test your ideas using the available tools. Always test ALL of your alternative hypotheses. Even after one hypothesis is found to be promising, you must still attempt to validate the alternative hypotheses before you dismiss them. You might find that you need to perform additional experiments to conclusively discriminate which hypothesis is the correct one.
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your notes and theory.
    - **Proof**: If applicable, use mathematical derivations.
    - **Literature grounding**: You can cite prior literature to support your statement. Always read the full paper before citing it. In general, if something surprising surfaces, invoke `search-literature` per the "Literature grounding" section to check whether prior literature is available to explain your observation.
-6. **Iteration**: Keep iterating until you're COMPLETELY CONFIDENT in your expansions and have ruled out ALL alternative explanations for them.
+6. **Iteration**: Keep iterating until you're COMPLETELY CONFIDENT in your expansion and have ruled out ALL alternative hypotheses.
    - Based on the results of the validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process.
 7. **Reporting**: Write the expanded theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
 8. **Store results**: Persist your output and return the new theory ID:
    ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type expand-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
+   uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type expand-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
    Note down the returned theory ID (e.g. `T_20260414_150000_x1y2z3`) as the result of this skill and include it in your final message.

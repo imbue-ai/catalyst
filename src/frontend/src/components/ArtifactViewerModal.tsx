@@ -7,7 +7,7 @@ import rehypeKatex from 'rehype-katex';
 import rehypeSlug from 'rehype-slug';
 import GithubSlugger from 'github-slugger';
 import 'katex/dist/katex.min.css';
-import { X, Loader2, Printer, List as ListIcon, ArrowLeft, Download } from 'lucide-react';
+import { X, Loader2, Printer, List as ListIcon, ArrowLeft, Download, FileCode, FileText, Image as ImageIcon } from 'lucide-react';
 import * as api from '../api';
 
 const MemoizedMarkdown = memo(({ content, components, remarkPlugins, rehypePlugins }: any) => (
@@ -38,6 +38,20 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [files, setFiles] = useState<string[]>([]);
+  const [fileContent, setFileContent] = useState<string | null>(null);
+  const [fileLoading, setFileLoading] = useState(false);
+  const [hash, setHash] = useState(window.location.hash);
+
+  useEffect(() => {
+    const handler = () => setHash(window.location.hash);
+    window.addEventListener('hashchange', handler);
+    return () => window.removeEventListener('hashchange', handler);
+  }, []);
+
+  const hashParams = useMemo(() => new URLSearchParams(hash.split('?')[1] || ''), [hash]);
+  const selectedFile = hashParams.get('file');
+
   useEffect(() => {
     const fetchContent = async () => {
       setLoading(true);
@@ -56,8 +70,41 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
       }
     };
 
+    const fetchFiles = async () => {
+      try {
+        const fileList = await api.listArtifactFiles(taskId, artifactId);
+        setFiles(fileList);
+      } catch (err) {
+        console.error('Failed to fetch files:', err);
+      }
+    };
+
     fetchContent();
+    fetchFiles();
   }, [taskId, artifactId]);
+
+  useEffect(() => {
+    if (selectedFile && !['png', 'jpg', 'gif'].some(ext => selectedFile.toLowerCase().endsWith(ext))) {
+      const fetchFileContent = async () => {
+        setFileLoading(true);
+        setFileContent(null);
+        try {
+          const response = await fetch(`${api.API_BASE_URL}/api/tasks/${taskId}/artifacts/${artifactId}/files/${selectedFile}`);
+          if (!response.ok) throw new Error('Failed to fetch file content');
+          const text = await response.text();
+          setFileContent(text);
+        } catch (err) {
+          console.error(err);
+          setFileContent('Failed to load file content.');
+        } finally {
+          setFileLoading(false);
+        }
+      };
+      fetchFileContent();
+    } else {
+      setFileContent(null);
+    }
+  }, [taskId, artifactId, selectedFile]);
 
   const handleExport = async () => {
     setExporting(true);
@@ -137,10 +184,32 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
     return entries;
   }, [content]);
 
+  const filteredFiles = useMemo(() => {
+    const allowedExtensions = ['.png', '.jpg', '.gif', '.py', '.log', '.txt', '.csv', '.json', '.jsonl'];
+    return files.filter(f => {
+      const lower = f.toLowerCase();
+      return f !== 'metadata.json' && allowedExtensions.some(ext => lower.endsWith(ext));
+    });
+  }, [files]);
+
   const scrollToHeading = (id: string) => {
-    const element = document.getElementById(id);
-    if (element) {
-      element.scrollIntoView({ behavior: 'smooth' });
+    if (selectedFile) {
+      const [base, queryStr] = window.location.hash.split('?');
+      const params = new URLSearchParams(queryStr || '');
+      params.delete('file');
+      window.location.hash = params.toString() ? `${base}?${params.toString()}` : base;
+      // Slight delay to allow markdown to render before scrolling
+      setTimeout(() => {
+        const element = document.getElementById(id);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth' });
+        }
+      }, 0);
+    } else {
+      const element = document.getElementById(id);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
@@ -201,7 +270,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
       >
         <div className="flex items-center justify-between px-6 py-4 border-b-2 border-black bg-gray-50 print:hidden">
           <div className="flex items-center gap-3">
-            {hasPreviousArtifact && (
+            {(hasPreviousArtifact || selectedFile) && (
               <button
                 onClick={() => window.history.back()}
                 className="p-1 hover:bg-gray-200 rounded transition-colors"
@@ -238,40 +307,84 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
         </div>
 
         <div className="flex-1 flex overflow-hidden print:block print:overflow-visible">
-          {/* Table of Contents Sidebar */}
-          {toc.length > 0 && !loading && !error && (
+          {/* Sidebar */}
+          {(toc.length > 0 || filteredFiles.length > 0) && !loading && !error && (
             <div className="w-64 border-r-2 border-black bg-gray-50 flex flex-col print:hidden flex-shrink-0">
-              <div className="p-4 border-b-2 border-black flex items-center gap-2">
-                <ListIcon size={16} />
-                <span className="font-black text-xs tracking-widest">Contents</span>
-              </div>
-              <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-                <ul className="space-y-2">
-                  {toc.map((entry, idx) => (
-                    <li
-                      key={`${entry.id}-${idx}`}
-                      style={{ paddingLeft: `${(entry.level - 1) * 0.75}rem` }}
-                    >
-                      <button
-                        onClick={() => scrollToHeading(entry.id)}
-                        className="text-left w-full text-sm font-bold text-gray-600 hover:text-black hover:underline truncate"
-                        title={entry.text}
-                      >
-                        {entry.text}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {/* Table of Contents */}
+              {toc.length > 0 && (
+                <div className={`${filteredFiles.length > 0 ? 'h-2/3 border-b-2 border-black' : 'h-full'} flex flex-col overflow-hidden`}>
+                  <div className="p-4 border-b-2 border-black flex items-center gap-2 flex-shrink-0">
+                    <ListIcon size={16} />
+                    <span className="font-black text-xs tracking-widest">Contents</span>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                    <ul className="space-y-2">
+                      {toc.map((entry, idx) => (
+                        <li
+                          key={`${entry.id}-${idx}`}
+                          style={{ paddingLeft: `${(entry.level - 1) * 0.75}rem` }}
+                        >
+                          <button
+                            onClick={() => scrollToHeading(entry.id)}
+                            className="text-left w-full text-sm font-bold text-gray-600 hover:text-black hover:underline truncate"
+                            title={entry.text}
+                          >
+                            {entry.text}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+
+              {/* Files Section */}
+              {filteredFiles.length > 0 && (
+                <div className={`${toc.length > 0 ? 'h-1/3' : 'h-full'} flex flex-col overflow-hidden`}>
+                  <div className="p-4 border-b-2 border-black flex items-center gap-2 flex-shrink-0">
+                    <FileCode size={16} />
+                    <span className="font-black text-xs tracking-widest">Files</span>
+                  </div>
+                  <div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
+                    <ul className="space-y-1">
+                      {filteredFiles.map((file, idx) => {
+                        const isSelected = selectedFile === file;
+                        const isImage = ['.png', '.jpg', '.gif'].some(ext => file.toLowerCase().endsWith(ext));
+                        const isCode = file.toLowerCase().endsWith('.py');
+                        
+                        return (
+                          <li key={`${file}-${idx}`}>
+                            <button
+                              onClick={() => {
+                                const [base, queryStr] = window.location.hash.split('?');
+                                const params = new URLSearchParams(queryStr || '');
+                                params.set('file', file);
+                                window.location.hash = `${base}?${params.toString()}`;
+                              }}
+                              className={`text-left w-full text-[11px] font-bold p-1.5 flex items-center gap-2 border border-transparent transition-all hover:bg-white hover:border-black ${isSelected ? 'bg-white border-black text-black' : 'text-gray-500'}`}
+                              title={file}
+                            >
+                              {isImage ? <ImageIcon size={12} className="shrink-0" /> : isCode ? <FileCode size={12} className="shrink-0" /> : <FileText size={12} className="shrink-0" />}
+                              <span className="truncate w-full" style={{ direction: 'rtl', textAlign: 'left' }}>
+                                <bdi>{file}</bdi>
+                              </span>
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* Main Content Area */}
           <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar bg-white print:overflow-visible print:p-0 relative">
-            {loading && (
+            {(loading || (selectedFile && fileLoading)) && (
               <div className="flex flex-col items-center justify-center h-full opacity-50 text-black">
                 <Loader2 size={48} className="animate-spin mb-4" strokeWidth={1} />
-                <div className="font-black text-xs tracking-widest">Loading Artifact...</div>
+                <div className="font-black text-xs tracking-widest">{fileLoading ? 'Loading File...' : 'Loading Artifact...'}</div>
               </div>
             )}
             {error && (
@@ -279,7 +392,29 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
                 Error: {error}
               </div>
             )}
-            {!loading && !error && content && (
+            {!loading && !error && selectedFile && !fileLoading && (
+              <div className="max-w-none md:max-w-4xl lg:max-w-5xl mx-auto">
+                {['png', 'jpg', 'gif'].some(ext => selectedFile.toLowerCase().endsWith(ext)) ? (
+                  <div className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white p-4">
+                    <img
+                      src={`${api.API_BASE_URL}/api/tasks/${taskId}/artifacts/${artifactId}/files/${selectedFile}`}
+                      alt={selectedFile}
+                      className="max-w-full h-auto mx-auto"
+                    />
+                  </div>
+                ) : (
+                  <div className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-gray-50 overflow-hidden">
+                    <div className="px-4 py-2 border-b-2 border-black bg-white flex justify-between items-center">
+                      <span className="font-mono text-xs font-bold">{selectedFile}</span>
+                    </div>
+                    <pre className="p-4 font-mono text-[11px] leading-relaxed whitespace-pre-wrap overflow-x-auto text-gray-800">
+                      <code>{fileContent}</code>
+                    </pre>
+                  </div>
+                )}
+              </div>
+            )}
+            {!loading && !error && !selectedFile && content && (
               <div className="prose prose-sm md:prose-base max-w-none md:max-w-4xl lg:max-w-5xl mx-auto prose-img:border-2 prose-img:border-black prose-img:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] prose-pre:border-2 prose-pre:border-black prose-pre:rounded-none prose-pre:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] prose-headings:font-black">
                 <MemoizedMarkdown
                   content={processedContent}

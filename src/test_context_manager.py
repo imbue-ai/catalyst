@@ -20,7 +20,7 @@ class TestContextManager(unittest.TestCase):
         self.test_dir = Path(tempfile.mkdtemp())
         self.db_path = self.test_dir / "test_db"
         self.env = os.environ.copy()
-        self.env["AI_SCIENTIST_DB_PATH"] = str(self.db_path)
+        self.env["CATALYST_DB_PATH"] = str(self.db_path)
 
         # Path to the script and python executable
         self.script_path = Path(__file__).parent / "context_manager.py"
@@ -167,12 +167,13 @@ class TestContextManager(unittest.TestCase):
                 "rank-predictions",
                 {"--from_experiment": x_id, "--from_prediction": p_id},
             ),
-            ("score-theories", {"--from_theory": t_id}),
-            ("score-soundness", {"--from_theory": t_id}),
-            ("rank-predictive-power", {"--from_theory": t_id}),
+            ("rank-experiments", {"--from_theory": t_id}),
+            ("score-theory-local-subscores", {"--from_theory": t_id}),
+            ("rank-explanatory-power", {"--from_theory": t_id}),
             ("polish-theory", {"--from_theory": t_id}),
             ("streamline-theory", {"--from_theory": t_id}),
             ("edit-theory", {"--from_theory": t_id}),
+            ("write-different-theory", {"--from_theory": t_id}),
         ]
 
         for agent, flags in target_agents:

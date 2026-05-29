@@ -13,14 +13,18 @@ user-invocable: false
 3. Also write a `description.md` file in the experiment folder. The `description.md` must contain a complete description of what the experiment tests, its hard-coded parameter values (if any), and what outputs it produces.
 4. Determine the context you're running the experiment in: Do you know the theory ID (e.g. `T_20260416_150000_a1b2c3`) that this experiment is motivated by (fine if not)? You should also have been given an AGENT_TYPE.
 5. Execute the script through the following wrapper, passing the experiment folder and the parent theory ID if you have it:
-```bash
-uv run python ${CLAUDE_SKILL_DIR}/scripts/run_experiment.py --experiment_folder <EXPERIMENT_FOLDER_PATH> --agent_type <AGENT_TYPE> [--parent_theory <T_ID>]
-```
-  Always invoke the `run_experiment.py` wrapper synchronously in the foreground. It already has a built-in timeout mechanism, so you don't need to worry about setting timeouts. Do NOT try to run experiments in the background or in parallel.
-6. The wrapper will execute the script in EXPERIMENT_FOLDER_PATH, passing through its stdout and stderr. It will capture all experiment outputs and persist them to a database for record keeping. It will finish its output by printing a unique experiment ID (e.g. `X_20260416_150000_a1b2c3`) that can be used to retrieve the results later.
+  ```bash
+  uv run python <SKILL_BASE_DIR>/scripts/run_experiment.py --experiment_folder <EXPERIMENT_FOLDER_PATH> --agent_type <AGENT_TYPE> [--parent_theory <T_ID>]
+  ```
+  Always execute the `run_experiment.py` wrapper in the foreground, NEVER as a background process or in parallel. If your bash tool has a `run_in_background` parameter, set it to `false` explicitly.
+6. The wrapper will execute the script with CWD set to EXPERIMENT_FOLDER_PATH, passing through its stdout and stderr. It will additionally capture all experiment outputs and persist them to a database for record keeping. It will finish its output by printing a unique experiment ID (e.g. `X_20260416_150000_a1b2c3`) that can be used to retrieve the results later.
 
 Some experiments may take a long time to complete (up to a few hours). Please allow enough time for the experiment to finish before assuming that it has failed.
 NEVER execute your `script.py` directly or through any other wrapper. Always use the `run_experiment.py` wrapper as described above.
 
-## Useful experiment patterns
+## Experiment best practices
 - Have the experiment generate plots and visualizations of the data in addition to numerical output. Inspect the visualizations to gain a better intuition when analyzing the experiment's results and to check for any potential issues with the experiment setup. The plots may also provide useful illustrations to include in your report or theory.
+- It is VERY IMPORTANT to analyze experiment results rigorously by following these steps:
+  1. After every experiment, take a moment to *critically* review its results. Ask: What *other* interpretations could there be for the results besides the hypothesis that I'm trying to support? Could I run another experiment to rule out other factors and interpretations? Avoid confirmation bias!
+  2. Also ask: Now that I've seen the result, was the experiment set up *perfectly* right to provide maximum clarity? Or would I, in retrospect, prefer to re-run it with different parameters or visualizations to get an even clearer result?
+  3. Running experiments is relatively cheap, so take the time to get them right rather than rushing to conclusions. Feel free to re-run the experiment with some adjustments until the results are 100% clear and conclusive.

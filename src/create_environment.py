@@ -2,17 +2,35 @@ import shutil
 import argparse
 from pathlib import Path
 
-BASE_GEMINI_MD = """IMPORTANT INSTRUCTIONS:
+BASE_GEMINI_MD = """GENERAL INSTRUCTIONS:
+* The user might have provided additional guidance in the file `GUIDANCE.txt`.  You MUST read this file before you start any work and treat its contents as user instructions.
 * Be very thorough! You will frequently need to run 10+ experiments to perform a single topic exploration or falsification. I expect that you'll be working many hours on each step of this task. Don't stop after the first successful experiment - keep going until you've explored ALL reasonable ideas.
-* Theory writeups are expected to be several pages in length, and include figures, plots, and detailed mathematical proofs.
-* Whenever a skill mentions `${CLAUDE_SKILL_DIR}`, that is a placeholder for that skill's directory, i.e. `.gemini/skills/<SKILL_NAME>`
+* Make sure to consider and rule out ALL plausible alternative explanations before drawing conclusions.
 * ALWAYS use the `scientist` subagent type instead of generalist for spawning subagents. If the scientist agent type is not available, stop and tell the user that they need to install it.
+  * Exception: IF you are Antigravity, the `scientist` subagent type will not be available. Use the `self` subagent type instead of `scientist`.
+* However, ONLY spawn a subagent when the execution steps in a skill explicitly tell you to.
+* If you encounter any issues with following the instructions in a skill, or run into issues with your execution environment (e.g. missing permission, error while running a pre-provided script, etc.), please take a second to append a short, one-line issue description to `./tmp/agent_friction_log.txt`.
+
+THEORY.MD INSTRUCTIONS:
+* `theory.md` files are the main output of the research process that will be consumed by human researchers.
+* Theories should be self-contained, define and/or introduce all necessary concepts, and should be highly polished. They must include figures, plots, and detailed mathematical proofs.
+* Assume you're writing a high-quality scientific paper to be published in a leading journal in the field! Use language and rigour appropriate for that audience.
+* You might need to perform multiple edits and iterations before your theory.md file is in a good shape.
+* Use rigorous, objective language in all theories, reviews and reports. Be extremely precise, using specific objective observations, precise mathematical definitions, and mathematical proofs. NEVER present speculation as fact.
+* Completely avoid self-promoting language. Never call your own theories "profound", "elegant", etc. Use neutral, factual language at all times.
+
 
 If you find that the `uv` command is not installed:
 1. First, check if it might already be installed in `./tmp/bin/uv`.
-2. If not, install it using `export UV_UNMANAGED_INSTALL=./tmp/bin && curl -LsSf https://astral.sh/uv/install.sh | sh`. The uv binary will then be available in `.tmp/bin/uv`.
+2. If not, install it using `export UV_UNMANAGED_INSTALL=./tmp/bin && curl -LsSf https://astral.sh/uv/install.sh | sh`. The uv binary will then be available in `./tmp/bin/uv`.
 
-If you encounter any issues with following the instructions in a skill, or run into issues with your execution environment (e.g. missing permission, error while running a pre-provided script, etc.), please take a second to append a short, one-line issue description to `./tmp/agent_friction_log.txt`.
+You might encounter a broken Python `.venv`, e.g. with symlinks pointing to non-existent files. If that happens, run `uv venv --clear` to recreate it.
+"""
+
+BASE_CLAUDE_MD = """GENERAL INSTRUCTIONS:
+* The user might have provided additional guidance in the file `GUIDANCE.txt`.  You MUST read this file before you start any work and treat its contents as user instructions.
+* If you encounter any issues with following the instructions in a skill, or run into issues with your execution environment (e.g. missing permission, error while running a pre-provided script, etc.), please take a second to append a short, one-line issue description to `./tmp/agent_friction_log.txt`.
+* ONLY spawn a subagent when the execution steps in a skill explicitly tell you to.
 """
 
 # Auto-loaded by Claude from the work_dir. Mirrors the friction-log
@@ -59,6 +77,7 @@ def create_environment(target_path: str, template_path: str = None):
     default_contents = {
         base_dir / "claude_skills": ".claude",
         base_dir / "gemini_skills": ".gemini",
+        base_dir / "gemini_skills" / "skills": ".agents/skills",
         base_dir.parent / "darwinian_evolver": "darwinian_evolver",
         base_dir / "default_environment_pyproject.toml": "pyproject.toml",
     }
@@ -81,14 +100,23 @@ def create_environment(target_path: str, template_path: str = None):
             for item in template.iterdir():
                 copy_resolved_and_no_hidden(item, target / item.name)
 
-    # 3. Append the base Gemini.md instructions
-    gemini_md_path = target / "GEMINI.md"
-    if gemini_md_path.exists():
-        with open(gemini_md_path, "a") as f:
-            f.write("\n\n" + BASE_GEMINI_MD)
-    else:
-        with open(gemini_md_path, "w") as f:
-            f.write(BASE_GEMINI_MD)
+    # 3. Append the base Gemini.md and Claude.md instructions
+    for md_filename, base_content in [
+        ("GEMINI.md", BASE_GEMINI_MD),
+        ("CLAUDE.md", BASE_CLAUDE_MD),
+    ]:
+        md_path = target / md_filename
+        if md_path.exists():
+            with open(md_path, "a") as f:
+                f.write("\n\n" + base_content)
+        else:
+            with open(md_path, "w") as f:
+                f.write(base_content)
+
+    # 4. Initialize GUIDANCE.txt
+    guidance_path = target / "GUIDANCE.txt"
+    with open(guidance_path, "w") as f:
+        f.write("No additional guidance.\n")
 
     # 4. Same for Claude. Auto-loaded by Claude from the work_dir.
     claude_md_path = target / "CLAUDE.md"

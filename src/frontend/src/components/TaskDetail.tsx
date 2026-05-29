@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
-import { Activity, Folder, Cpu, Loader2, Square, Play, Trash2, Workflow, Plus, XCircle, Copy, Check } from 'lucide-react'
+import { Activity, Folder, Cpu, Loader2, Square, Play, Trash2, Workflow, Plus, XCircle, Copy, Check, Compass } from 'lucide-react'
 import * as api from '../api'
 import { StatusBadge } from './StatusBadge'
 import { DataSection } from './DataSection'
@@ -10,6 +10,8 @@ import { formatStageName } from './workflow/shared'
 import { ArtifactViewerModal } from './ArtifactViewerModal'
 import { CreateAddonModal } from './CreateAddonModal'
 import { TheoriesList } from './TheoriesList'
+import { ExperimentsList } from './ExperimentsList'
+import { EditGuidanceModal } from './EditGuidanceModal'
 
 interface TaskDetailProps {
   task: api.Task;
@@ -21,10 +23,11 @@ interface TaskDetailProps {
 
 export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh, isBackendDown }: TaskDetailProps) {
   const [selectedStage, setSelectedStage] = useState<string | null>(null)
-  const [activeRightTab, setActiveRightTab] = useState<'stepDetails' | 'topTheories'>('stepDetails')
+  const [activeRightTab, setActiveRightTab] = useState<'stepDetails' | 'topTheories' | 'experiments'>('stepDetails')
   const [isProcessing, setIsProcessing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAddonModal, setShowAddonModal] = useState(false)
+  const [showGuidanceModal, setShowGuidanceModal] = useState(false)
   const copyTimeoutRef = useRef<number | null>(null)
 
   const handleCopy = (text: string) => {
@@ -94,7 +97,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             <h2 className="text-4xl font-black tracking-tighter leading-tight">{task.title || "Initializing..."}</h2>
             <p className="mt-4 text-xs text-gray-500 font-bold leading-relaxed whitespace-pre-wrap line-clamp-6 overflow-hidden">{task.workflow_inputs.summary}</p>
 
-            <div className="mt-6 flex gap-3">
+            <div className="mt-6 flex gap-3 items-center">
               {task.status === 'running' ? (
                 <button
                   disabled={isProcessing}
@@ -104,27 +107,34 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                   {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Square size={12} fill="white" />}
                   Pause Research
                 </button>
-              ) : (task.status === 'paused' || task.status === 'failed' || task.status === 'completed') ? (
-                <div className="flex gap-3 items-center">
-                  {(task.status === 'paused' || task.status === 'failed') && (
-                    <button
-                      disabled={isProcessing}
-                      onClick={handleResume}
-                      className="bg-black text-white px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-800 transition-colors disabled:opacity-50"
-                    >
-                      {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="white" />}
-                      Resume Research
-                    </button>
-                  )}
-                  <button
-                    disabled={isProcessing}
-                    onClick={() => onDeleteRequest(task.id)}
-                    className="border-2 border-red-600 text-red-600 px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-red-50 transition-colors disabled:opacity-50"
-                  >
-                    <Trash2 size={12} /> Delete Research
-                  </button>
-                </div>
+              ) : (task.status === 'paused' || task.status === 'failed') ? (
+                <button
+                  disabled={isProcessing}
+                  onClick={handleResume}
+                  className="bg-black text-white px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-800 transition-colors disabled:opacity-50"
+                >
+                  {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="white" />}
+                  Resume Research
+                </button>
               ) : null}
+
+              <button
+                disabled={isProcessing}
+                onClick={() => setShowGuidanceModal(true)}
+                className="border-2 border-black text-black px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                <Compass size={12} /> Provide Guidance
+              </button>
+
+              {(task.status === 'paused' || task.status === 'failed' || task.status === 'completed') && (
+                <button
+                  disabled={isProcessing}
+                  onClick={() => onDeleteRequest(task.id)}
+                  className="border-2 border-red-600 text-red-600 px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-red-50 transition-colors disabled:opacity-50"
+                >
+                  <Trash2 size={12} /> Delete Research
+                </button>
+              )}
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -222,7 +232,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
           <div className="flex border-b-2 border-black bg-white">
             <button
               onClick={() => setActiveRightTab('stepDetails')}
-              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors ${activeRightTab === 'stepDetails'
+              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'stepDetails'
                 ? 'bg-black text-white'
                 : 'text-black hover:bg-gray-100'
                 }`}
@@ -231,18 +241,29 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             </button>
             <button
               onClick={() => setActiveRightTab('topTheories')}
-              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors ${activeRightTab === 'topTheories'
+              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'topTheories'
                 ? 'bg-black text-white'
                 : 'text-black hover:bg-gray-100'
                 }`}
             >
               Theories
             </button>
+            <button
+              onClick={() => setActiveRightTab('experiments')}
+              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'experiments'
+                ? 'bg-black text-white'
+                : 'text-black hover:bg-gray-100'
+                }`}
+            >
+              Experiments
+            </button>
           </div>
 
           <div className="flex-1 overflow-hidden flex flex-col">
             {activeRightTab === 'topTheories' ? (
               <TheoriesList taskId={task.id} />
+            ) : activeRightTab === 'experiments' ? (
+              <ExperimentsList taskId={task.id} />
             ) : selectedStage !== null ? (
               <div className="flex flex-col h-full">
                 <div className="p-6 border-b border-black bg-white flex justify-between items-center">
@@ -250,7 +271,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     <div className="bg-black text-white p-1 rounded-sm"><Workflow size={16} /></div>
                     <span className="font-black text-xs tracking-widest">{formatStageName(selectedStage)}</span>
                   </div>
-                  {['failed', 'paused', 'pending'].includes(task.steps.find(s => s.stage === selectedStage)?.status || 'pending') && (
+                  {['failed', 'paused', 'pending', 'waiting'].includes(task.steps.find(s => s.stage === selectedStage)?.status || 'pending') && (
                     <button
                       disabled={isProcessing}
                       onClick={async () => {
@@ -285,9 +306,14 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                       <>
                         {step.session_id && (() => {
                           const isMngr = task.framework === 'mngr-claude' || task.framework === 'mngr-antigravity';
-                          const cmd = isMngr
-                            ? `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr connect ${step.session_id}`
-                            : `cd "${task.env_folder}" && claude --resume ${step.session_id}`;
+                          let cmd: string;
+                          if (isMngr) {
+                            cmd = `MNGR_HOST_DIR=~/.mngr-catalyst mngr connect ${step.session_id}`;
+                          } else if (task.framework === 'gemini') {
+                            cmd = `cd "${task.env_folder}" && gemini --resume ${step.session_id}`;
+                          } else {
+                            cmd = `cd "${task.env_folder}" && claude --resume ${step.session_id}`;
+                          }
                           const comment = isMngr
                             ? "# Attach to this agent's tmux session (restarts it if stopped)"
                             : '# Use this command to resume this session manually';
@@ -377,6 +403,17 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             onRefresh()
           }}
           isBackendDown={!!isBackendDown}
+        />
+      )}
+
+      {showGuidanceModal && (
+        <EditGuidanceModal
+          onClose={() => setShowGuidanceModal(false)}
+          initialGuidance={task.guidance || "No additional guidance."}
+          onSave={async (newGuidance) => {
+            await api.updateGuidance(task.id, newGuidance)
+            onRefresh()
+          }}
         />
       )}
     </div>

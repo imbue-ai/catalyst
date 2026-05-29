@@ -4,7 +4,7 @@ Runs `MngrAntigravityAgentRunner` directly (no orchestrator, no FastAPI)
 against a real local Antigravity (`agy`) agent with a trivial prompt.
 Verifies that:
 
-1. The agent shows up in `mngr list` (under ai-scientist's dedicated
+1. The agent shows up in `mngr list` (under Catalyst's dedicated
    host_dir).
 2. `mngr connect <agent-name>` attaches to the live tmux session — the
    script prints the agent name and pauses for ~10 s so the operator can
@@ -65,14 +65,14 @@ def main() -> int:
         print(f"\n  Agent name: {name}", flush=True)
         if pause_secs > 0:
             print(
-                f"  -> In another terminal, try: MNGR_HOST_DIR=~/.mngr-ai-scientist mngr connect {name}\n"
+                f"  -> In another terminal, try: MNGR_HOST_DIR=~/.mngr-catalyst mngr connect {name}\n"
                 f"  Sleeping {pause_secs}s so you can attach...\n",
                 flush=True,
             )
             time.sleep(pause_secs)
 
     runner = MngrAntigravityAgentRunner()
-    with tempfile.TemporaryDirectory(prefix="aisci-ag-smoke-") as env_folder:
+    with tempfile.TemporaryDirectory(prefix="cata-ag-smoke-") as env_folder:
         print(f"Running smoke task in {env_folder}")
         data, session_id, error = runner.run(
             task_id="task_agsmoketest",
@@ -93,7 +93,7 @@ def main() -> int:
         return 1
 
     list_result = subprocess.run(
-        ["mngr", "list", "--include", 'labels["app"] == "ai-scientist"', "--format", "jsonl"],
+        ["mngr", "list", "--include", 'labels["app"] == "catalyst"', "--format", "jsonl"],
         check=False,
         capture_output=True,
         text=True,

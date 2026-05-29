@@ -2,7 +2,7 @@
 set -e
 
 echo "======================================"
-echo "AI Scientist: Checking dependencies..."
+echo "Catalyst: Checking dependencies..."
 echo "======================================"
 
 if ! command -v uv &> /dev/null; then
@@ -31,32 +31,40 @@ if ! uv run mngr dependencies; then
     exit 1
 fi
 
-HAS_AGY=false
+HAS_GEMINI=false
 HAS_CLAUDE=false
+HAS_AGY=false
 
-# `agy` is the Antigravity CLI (the Gemini CLI successor), used by the
-# `mngr-antigravity` framework.
-if command -v agy &> /dev/null; then
-    HAS_AGY=true
+if command -v gemini &> /dev/null; then
+    HAS_GEMINI=true
 fi
 
 if command -v claude &> /dev/null; then
     HAS_CLAUDE=true
 fi
 
-if [ "$HAS_AGY" = false ] && [ "$HAS_CLAUDE" = false ]; then
-    echo "Error: Neither 'agy' (Antigravity CLI) nor 'claude' CLI is installed. At least one is required."
+# `agy` is the Antigravity CLI (the Gemini CLI successor), used by the
+# `agy` and `mngr-antigravity` frameworks.
+if command -v agy &> /dev/null; then
+    HAS_AGY=true
+fi
+
+if [ "$HAS_GEMINI" = false ] && [ "$HAS_CLAUDE" = false ] && [ "$HAS_AGY" = false ]; then
+    echo "Error: None of 'gemini', 'claude', or 'agy' CLIs are installed. At least one is required."
     exit 1
 fi
 
 echo "Dependencies met!"
 echo " - uv: $(uv --version)"
 echo " - npm: $(npm --version)"
-if [ "$HAS_AGY" = true ]; then
-    echo " - agy: $(agy --version)"
+if [ "$HAS_GEMINI" = true ]; then
+    echo " - gemini: $(gemini --version)"
 fi
 if [ "$HAS_CLAUDE" = true ]; then
     echo " - claude: $(claude --version)"
+fi
+if [ "$HAS_AGY" = true ]; then
+    echo " - agy: $(agy --version)"
 fi
 echo ""
 

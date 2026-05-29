@@ -2,6 +2,7 @@ from ..models import Addon
 from .base import AddonHandler
 from orchestrator.prompts import get_score_theories_prompt
 
+
 class ScoreTheoriesAddon(AddonHandler):
     @property
     def name(self) -> str:

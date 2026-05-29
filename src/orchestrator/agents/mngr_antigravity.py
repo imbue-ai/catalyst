@@ -10,14 +10,20 @@ _ANTIGRAVITY_TRANSCRIPT_SOURCE = "antigravity/common_transcript"
 
 def _build_agent_args(model: Optional[str]) -> List[str]:
     # The Antigravity CLI (`agy`) exposes no `--model` flag, so the model
-    # selection ai-scientist threads through for Claude has no CLI surface
-    # here -- agy uses its account default. Auto-approval
+    # selection Catalyst threads through for Claude has no CLI surface here
+    # -- agy uses its account default. Auto-approval
     # (`--dangerously-skip-permissions`) and workspace trust are handled by
     # the mngr_antigravity plugin via the `[agent_types.antigravity]`
-    # settings (`auto_allow_permissions` / `auto_dismiss_dialogs`), so there
-    # are no per-call agent args to add.
+    # settings (`auto_allow_permissions` / `auto_dismiss_dialogs`).
+    #
+    # `--sandbox` matches the isolation the direct `agy` runner uses
+    # (orchestrator/agents/agy.py): agy runs with terminal restrictions so a
+    # research step can't write outside its workspace ($TMPDIR, ~/.gemini,
+    # etc.). Under mngr the agent's work_dir is the task env_folder (exposed
+    # to agy via the plugin's workspace symlink), so sandboxed writes still
+    # land in the right place.
     del model
-    return []
+    return ["--sandbox"]
 
 
 def _extract_assistant_text(event: Dict[str, Any]) -> Optional[str]:
@@ -57,4 +63,7 @@ class MngrAntigravityAgentRunner(MngrAgentRunner):
             assistant_text_extractor=_extract_assistant_text,
             transcript_source=_ANTIGRAVITY_TRANSCRIPT_SOURCE,
             turn_completion=TurnCompletion.TRANSCRIPT_IDLE,
+            # Match the direct agy runner: don't let agy phone home for an
+            # update mid-task (orchestrator/agents/agy.py sets the same).
+            extra_env={"AGY_CLI_DISABLE_AUTO_UPDATE": "true"},
         )

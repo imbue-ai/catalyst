@@ -1,13 +1,17 @@
-import threading
 import logging
 from typing import Any, Callable, List, Dict
+import os
 from ..models import Task
 from .base import (
     Workflow,
-    get_step_output,
     run_step_if_needed,
 )
-from .common import run_refinement_loop, run_summarize_title
+from .common import (
+    run_refinement_loop,
+    run_summarize_title,
+    run_literature_review_and_exploration_parallel,
+    get_active_max_iterations,
+)
 from orchestrator.prompts import get_write_theory_prompt
 
 logger = logging.getLogger(__name__)
@@ -20,18 +24,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
 
     def get_structure(self, task: Task) -> List[Dict[str, Any]]:
         max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
-        # Count iterations dynamically based on steps
-        max_iters = max_refinements if max_refinements > 0 else 0
-        for s in task.steps:
-            if s.stage.startswith("review-theory-") or s.stage.startswith(
-                "refine-theory-"
-            ):
-                try:
-                    it = int(s.stage.split("-")[-1])
-                    if it > max_iters:
-                        max_iters = it
-                except ValueError:
-                    pass
+        max_iters = get_active_max_iterations(task, max_refinements)
 
         structure = [
             {"type": "step", "stage": "summarize-title"},
@@ -58,79 +51,18 @@ class DevelopTheoryLinearWorkflow(Workflow):
     def run(self, task: Task, run_step: Callable) -> None:
         self.init_db(task)
 
+        phenomenon = task.workflow_inputs.get("phenomenon")
+        assert phenomenon
+        with open(os.path.join(task.env_folder, "phenomenon.txt"), "w") as f:
+            f.write(phenomenon.strip() + "\n")
+
         # Step 0: Summarize Title
-        run_summarize_title(
-            task, run_step, f"phenomenon: {task.workflow_inputs.get('phenomenon')}"
-        )
+        run_summarize_title(task, run_step, f"phenomenon: {phenomenon}")
 
         # Step 1 & 2: Literature Review and Exploration in Parallel
-        lit_out = get_step_output(task, "literature-review")
-        lit_review_id = lit_out.get("literature_review_id") if lit_out else None
-
-        exp_out = get_step_output(task, "explore")
-        exploration_id = exp_out.get("exploration_id") if exp_out else None
-
-        if not lit_review_id or not exploration_id:
-            logger.debug(
-                f"[ORCHESTRATOR] [{task.id[:8]}] Running Literature Review and Exploration in parallel..."
-            )
-
-            results = {}
-            errors = []
-
-            def run_and_store(stage, prompt, key):
-                try:
-                    results[key] = run_step(task, stage, prompt)
-                except Exception as e:
-                    errors.append(e)
-
-            threads = []
-            if not lit_review_id:
-                t = threading.Thread(
-                    target=run_and_store,
-                    args=(
-                        "literature-review",
-                        f"Please run the literature-review skill for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
-                        "When you are done, return ONLY a JSON object with the key 'literature_review_id'.",
-                        "lit",
-                    ),
-                )
-                t.daemon = True
-                threads.append(t)
-
-            if not exploration_id:
-                t = threading.Thread(
-                    target=run_and_store,
-                    args=(
-                        "explore",
-                        f"Please run the explore skill for the following phenomenon:\n```\n{task.workflow_inputs.get('phenomenon')}\n```\n"
-                        "When you are done, return ONLY a JSON object with the key 'exploration_id'.",
-                        "exp",
-                    ),
-                )
-                t.daemon = True
-                threads.append(t)
-
-            for t in threads:
-                t.start()
-            for t in threads:
-                t.join()
-
-            if errors:
-                raise errors[0]
-
-            # Update IDs from results
-            for res in results.values():
-                if res and isinstance(res, dict):
-                    if "literature_review_id" in res:
-                        lit_review_id = res["literature_review_id"]
-                    elif "_canceled" in res:
-                        pass  # Allowed to be missing if canceled
-
-                    if "exploration_id" in res:
-                        exploration_id = res["exploration_id"]
-                    elif "_canceled" in res:
-                        pass
+        lit_review_id, exploration_id = run_literature_review_and_exploration_parallel(
+            task, run_step, phenomenon
+        )
 
         # Step 3: Initial Theory
         theory_data = run_step_if_needed(
@@ -138,7 +70,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
             run_step,
             "write-theory",
             get_write_theory_prompt(
-                task.workflow_inputs.get("phenomenon"),
+                phenomenon,
                 exploration_id,
                 lit_review_id,
             ),

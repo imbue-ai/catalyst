@@ -6,8 +6,10 @@ from .common import (
     DEFAULT_NUM_EXTRA_SCORES,
     DEFAULT_NUM_PARENTS,
     DEFAULT_MAX_STREAMLINE_PROB,
+    DEFAULT_WRITE_DIFFERENT_PROB,
     run_evolve_loop,
     run_summarize_title,
+    build_evolve_loop_structure,
 )
 from orchestrator.prompts import (
     get_support_idea_prompt,
@@ -31,50 +33,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
 
         evolve_iterations = int(task.workflow_inputs.get("evolve_iterations", 0))
         if evolve_iterations > 0:
-            iteration_structures = {}
-            for i in range(1, evolve_iterations + 1):
-                iter_struct = []
-                
-                # Sample Parents step
-                iter_struct.append({"type": "step", "stage": f"sample-parents-{i}"})
-
-                # Mutate parallel block
-                mutate_stages = [
-                    s.stage
-                    for s in task.steps
-                    if s.stage.startswith(f"mutate-streamline-{i}-")
-                    or s.stage.startswith(f"mutate-refine-{i}-")
-                ]
-                iter_struct.append(
-                    {"type": "parallel", "name": "Mutate", "stages": mutate_stages}
-                )
-
-                # Review parallel block
-                loop_review_stages = [
-                    s.stage
-                    for s in task.steps
-                    if s.stage.startswith(f"review-theory-{i}-")
-                ]
-                iter_struct.append(
-                    {"type": "parallel", "name": "Review", "stages": loop_review_stages}
-                )
-
-                # Sample Scoring step
-                iter_struct.append({"type": "step", "stage": f"sample-scoring-{i}"})
-
-                # Score step
-                iter_struct.append({"type": "step", "stage": f"score-theories-{i}"})
-
-                iteration_structures[str(i)] = iter_struct
-
-            structure.append(
-                {
-                    "type": "loop",
-                    "name": "Evolve Theories",
-                    "iterations": evolve_iterations,
-                    "iteration_structures": iteration_structures,
-                }
-            )
+            structure.extend(build_evolve_loop_structure(task, evolve_iterations))
 
         return structure
 
@@ -131,6 +90,11 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 max_streamline_prob = float(
                     task.workflow_inputs.get("max_streamline_prob", DEFAULT_MAX_STREAMLINE_PROB)
                 )
+                write_different_prob = float(
+                    task.workflow_inputs.get(
+                        "write_different_prob", DEFAULT_WRITE_DIFFERENT_PROB
+                    )
+                )
                 num_extra_scores = int(
                     task.workflow_inputs.get(
                         "num_extra_scores", DEFAULT_NUM_EXTRA_SCORES
@@ -144,6 +108,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
                     iterations=evolve_iterations,
                     num_parents=num_parents,
                     max_streamline_prob=max_streamline_prob,
+                    write_different_prob=write_different_prob,
                     num_extra_scores=num_extra_scores,
                     apply_expansions=apply_expansions,
                 )

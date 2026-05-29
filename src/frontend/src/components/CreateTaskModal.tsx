@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { XCircle, Folder, Cpu, ChevronRight, ChevronDown, Settings2, FileText, Lightbulb, Sparkles, GitMerge, GitCommit, UploadCloud, HelpCircle } from 'lucide-react'
 import * as api from '../api'
+import { DEFAULT_FRAMEWORK } from '../constants'
+import { useWorkflowParams } from '../hooks/useWorkflowParams'
+import { AdditionalParamsSection } from './AdditionalParamsSection'
 
 interface CreateTaskModalProps {
   onClose: () => void;
@@ -57,19 +60,31 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
   }, [])
 
   // State for all inputs
+  const {
+    numRootTheories,
+    setNumRootTheories,
+    maxRefinements,
+    setMaxRefinements,
+    evolveIterations,
+    setEvolveIterations,
+    numParents,
+    setNumParents,
+    maxStreamlineProb,
+    setMaxStreamlineProb,
+    writeDifferentProb,
+    setWriteDifferentProb,
+    numExtraScores,
+    setNumExtraScores,
+    applyExpansions,
+    setApplyExpansions
+  } = useWorkflowParams()
+
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [inputs, setInputs] = useState({
     phenomenon: '',
     idea: '',
-    numRootTheories: 3,
-    maxRefinements: 3,
-    evolveIterations: 3,
-    numParents: 2,
-    maxStreamlineProb: 0.5,
-    numExtraScores: 5,
-    applyExpansions: '',
     templateFolder: '',
-    framework: 'claude',
+    framework: DEFAULT_FRAMEWORK,
     model: ''
   })
 
@@ -89,28 +104,30 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     if (activeTab === 'develop-theory') {
       workflow_inputs = {
         phenomenon: inputs.phenomenon,
-        num_root_theories: inputs.numRootTheories,
-        max_refinements: inputs.maxRefinements,
-        evolve_iterations: inputs.evolveIterations,
-        num_parents: inputs.numParents,
-        max_streamline_prob: inputs.maxStreamlineProb,
-        num_extra_scores: inputs.numExtraScores,
-        apply_expansions: inputs.applyExpansions || undefined
+        num_root_theories: numRootTheories,
+        max_refinements: maxRefinements,
+        evolve_iterations: evolveIterations,
+        num_parents: numParents,
+        max_streamline_prob: maxStreamlineProb,
+        write_different_prob: writeDifferentProb,
+        num_extra_scores: numExtraScores,
+        apply_expansions: applyExpansions || undefined
       }
     } else if (activeTab === 'develop-theory-linear') {
-      workflow_inputs = { phenomenon: inputs.phenomenon, max_refinements: inputs.maxRefinements, apply_expansions: inputs.applyExpansions || undefined }
+      workflow_inputs = { phenomenon: inputs.phenomenon, max_refinements: maxRefinements, apply_expansions: applyExpansions || undefined }
     } else if (activeTab === 'refine-theory-idea') {
       workflow_inputs = {
         idea: inputs.idea,
-        apply_expansions: inputs.applyExpansions || undefined,
-        max_refinements: inputs.maxRefinements,
-        evolve_iterations: inputs.evolveIterations,
-        num_parents: inputs.numParents,
-        max_streamline_prob: inputs.maxStreamlineProb,
-        num_extra_scores: inputs.numExtraScores
+        apply_expansions: applyExpansions || undefined,
+        max_refinements: maxRefinements,
+        evolve_iterations: evolveIterations,
+        num_parents: numParents,
+        max_streamline_prob: maxStreamlineProb,
+        write_different_prob: writeDifferentProb,
+        num_extra_scores: numExtraScores
       }
     } else if (activeTab === 'refine-theory-idea-linear') {
-      workflow_inputs = { idea: inputs.idea, apply_expansions: inputs.applyExpansions || undefined, max_refinements: inputs.maxRefinements }
+      workflow_inputs = { idea: inputs.idea, apply_expansions: applyExpansions || undefined, max_refinements: maxRefinements }
     } else if (activeTab === 'import-theory') {
       workflow_inputs = {}
     }
@@ -132,6 +149,9 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
 
   const isEvolve = activeTab === 'develop-theory' || activeTab === 'refine-theory-idea'
   const isImport = activeTab === 'import-theory'
+  // Antigravity (`agy`) exposes no model flag, whether run directly or via
+  // mngr, so the model selector is disabled for both framework variants.
+  const isModelless = inputs.framework === 'agy' || inputs.framework === 'mngr-antigravity'
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -321,10 +341,18 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                     <div className="relative group">
                       <select
                         value={inputs.framework}
-                        onChange={e => updateInput('framework', e.target.value)}
+                        onChange={e => {
+                          const val = e.target.value;
+                          updateInput('framework', val);
+                          if (val === 'agy' || val === 'mngr-antigravity') {
+                            updateInput('model', '');
+                          }
+                        }}
                         className="w-full border-2 border-black p-3 pr-10 outline-none font-bold text-sm bg-white appearance-none cursor-pointer focus:bg-gray-50 transition-colors"
                       >
                         <option value="claude">Claude Code</option>
+                        <option value="gemini">Gemini CLI</option>
+                        <option value="agy">Antigravity CLI</option>
                         <option value="mngr-claude">Claude Code (mngr)</option>
                         <option value="mngr-antigravity">Antigravity CLI (mngr)</option>
                       </select>
@@ -336,23 +364,30 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
 
                   <div>
                     <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Model Identifier</label>
-                    <div className="flex items-center gap-3 border-2 border-black p-3 focus-within:bg-gray-50 transition-colors relative" ref={modelDropdownRef}>
+                    <div className={`flex items-center gap-3 border-2 border-black p-3 transition-colors relative ${isModelless ? 'bg-gray-100 opacity-50 cursor-not-allowed' : 'focus-within:bg-gray-50'}`} ref={modelDropdownRef}>
                       <Cpu size={18} className="text-black shrink-0" />
                       <input
-                        value={inputs.model}
-                        onChange={e => updateInput('model', e.target.value)}
+                        value={isModelless ? 'Not Supported' : inputs.model}
+                        onChange={e => {
+                          if (!isModelless) {
+                            updateInput('model', e.target.value);
+                          }
+                        }}
+                        disabled={isModelless}
                         placeholder="Default"
-                        className="w-full outline-none text-sm font-bold bg-transparent"
+                        className={`w-full outline-none text-sm font-bold bg-transparent ${isModelless ? 'cursor-not-allowed' : ''}`}
                       />
-                      <button
-                        type="button"
-                        onClick={() => setShowModelDropdown(!showModelDropdown)}
-                        className="hover:text-gray-500 transition-colors"
-                      >
-                        <ChevronDown size={14} className={`transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
-                      </button>
+                      {!isModelless && (
+                        <button
+                          type="button"
+                          onClick={() => setShowModelDropdown(!showModelDropdown)}
+                          className="hover:text-gray-500 transition-colors"
+                        >
+                          <ChevronDown size={14} className={`transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
+                        </button>
+                      )}
 
-                      {showModelDropdown && (
+                      {showModelDropdown && !isModelless && (
                         <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 max-h-60 overflow-y-auto custom-scrollbar">
                           <button
                             type="button"
@@ -392,87 +427,28 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                     </button>
 
                     {showAdditional && (
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 p-6 border-2 border-dashed border-gray-200">
-                        {activeTab === 'develop-theory' && (
-                          <div className="col-span-1">
-                            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Root Theories</label>
-                            <input
-                              type="number" min="1" max="20" required
-                              value={inputs.numRootTheories}
-                              onChange={e => updateInput('numRootTheories', parseInt(e.target.value, 10))}
-                              className="w-full border-2 border-black p-2 outline-none text-sm font-bold"
-                            />
-                          </div>
-                        )}
-
-                        {(activeTab === 'develop-theory-linear' || activeTab === 'refine-theory-idea-linear') && (
-                          <div className="col-span-1">
-                            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Refinements</label>
-                            <input
-                              type="number" min="0" max="10" required
-                              value={inputs.maxRefinements}
-                              onChange={e => updateInput('maxRefinements', parseInt(e.target.value, 10))}
-                              className="w-full border-2 border-black p-2 outline-none text-sm font-bold"
-                            />
-                          </div>
-                        )}
-
-                        {isEvolve && (
-                          <>
-                            <div className="col-span-1">
-                              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Evolve Iterations</label>
-                              <input
-                                type="number" min="0" max="10" required
-                                value={inputs.evolveIterations}
-                                onChange={e => updateInput('evolveIterations', parseInt(e.target.value, 10))}
-                                className="w-full border-2 border-black p-2 outline-none text-sm font-bold"
-                              />
-                            </div>
-                            <div className="col-span-1">
-                              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Num Parents</label>
-                              <input
-                                type="number" min="1" max="10" required
-                                value={inputs.numParents}
-                                onChange={e => updateInput('numParents', parseInt(e.target.value, 10))}
-                                className="w-full border-2 border-black p-2 outline-none text-sm font-bold"
-                              />
-                            </div>
-                            <div className="col-span-1">
-                              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Streamline Prob</label>
-                              <input
-                                type="number" min="0" max="1" step="any" required
-                                value={inputs.maxStreamlineProb}
-                                onChange={e => updateInput('maxStreamlineProb', parseFloat(e.target.value))}
-                                className="w-full border-2 border-black p-2 outline-none text-sm font-bold"
-                              />
-                            </div>
-                            <div className="col-span-1">
-                              <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Scores</label>
-                              <input
-                                type="number" min="0" max="10" required
-                                value={inputs.numExtraScores}
-                                onChange={e => updateInput('numExtraScores', parseInt(e.target.value, 10))}
-                                className="w-full border-2 border-black p-2 outline-none text-sm font-bold"
-                              />
-                            </div>
-                          </>
-                        )}
-
-                        {!isImport && (
-                          <div className="col-span-1">
-                            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Apply Expansion Reviews</label>
-                            <select
-                              value={inputs.applyExpansions}
-                              onChange={e => updateInput('applyExpansions', e.target.value)}
-                              className="w-full border-2 border-black p-2 outline-none text-sm font-bold bg-white cursor-pointer"
-                            >
-                              <option value="">Auto (Default)</option>
-                              <option value="always">Always</option>
-                              <option value="never">Never</option>
-                            </select>
-                          </div>
-                        )}
-                      </div>
+                      <AdditionalParamsSection
+                        showRootTheories={activeTab === 'develop-theory'}
+                        showMaxRefinements={activeTab === 'develop-theory-linear' || activeTab === 'refine-theory-idea-linear'}
+                        showEvolveParams={isEvolve}
+                        showApplyExpansions={!isImport}
+                        numRootTheories={numRootTheories}
+                        setNumRootTheories={setNumRootTheories}
+                        maxRefinements={maxRefinements}
+                        setMaxRefinements={setMaxRefinements}
+                        evolveIterations={evolveIterations}
+                        setEvolveIterations={setEvolveIterations}
+                        numParents={numParents}
+                        setNumParents={setNumParents}
+                        maxStreamlineProb={maxStreamlineProb}
+                        setMaxStreamlineProb={setMaxStreamlineProb}
+                        writeDifferentProb={writeDifferentProb}
+                        setWriteDifferentProb={setWriteDifferentProb}
+                        numExtraScores={numExtraScores}
+                        setNumExtraScores={setNumExtraScores}
+                        applyExpansions={applyExpansions}
+                        setApplyExpansions={setApplyExpansions}
+                      />
                     )}
                   </div>
                 )}

@@ -12,17 +12,17 @@ Arguments: $ARGUMENTS
 The arguments contain multiple prediction IDs (like `P_20260414_...`) and an experiment ID (like `X_20260414_...`). Parse the prediction IDs and experiment ID from the arguments.
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder or TMPDIR (only use the local `./tmp` folder).
 
 Set up a context folder for your input:
 CONTEXT_DIR: `mktemp -d -p ./tmp rank-predictions-context-XXXX`
 
 Run this command to populate the context:
 ```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type rank-predictions --target_folder <CONTEXT_DIR> --from_prediction <PREDICTION_ID_1> [--from_prediction <PREDICTION_ID_2> ...] --from_experiment <EXPERIMENT_ID>
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_agent_type rank-predictions --target_folder <CONTEXT_DIR> --from_prediction <PREDICTION_ID_1> [--from_prediction <PREDICTION_ID_2> ...] --from_experiment <EXPERIMENT_ID>
 ```
 
-- `<CONTEXT_DIR>/predictions/<prediction_id>/prediction.md` — the predictions to rank. The file may contain predictions for multiple experiments. You only need to look at the predictions for the one experiment specified in the input arguments.
+- `<CONTEXT_DIR>/predictions/<prediction_id>/predictions.md` — the predictions to rank. The file may contain predictions for multiple experiments. You only need to look at the predictions for the one experiment specified in the input arguments.
 - `<CONTEXT_DIR>/experiment/` — contains any result files from the experiment (e.g. plots, numeric results)
 - `<CONTEXT_DIR>/experiment/description.md` — the description of the experiment (for context)
 - `<CONTEXT_DIR>/experiment/script.py` — the script used to run the experiment (for context)
@@ -31,12 +31,12 @@ uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --
 
 
 ## Performing calculations
-The execution steps below involve numeric calculations. Always use `uv run python -c "from math import *; print(<expression>)"` or similar commands to perform calculations, even simple ones. Do not perform calculations manually or in your head.
+The execution steps below may involve numeric calculations. Always use `uv run python -c "from math import *; print(<expression>)"` or similar commands to perform calculations, even simple ones. Do not perform calculations manually or in your head.
 
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the predictions and experiment results using `context_manager.py`.
-2. **Review the Experiment Results**: Read the experiment description and script to understand what the experiment was testing. Then carefully review the experiment results, starting with the `stdout.log` file, followed by inspecting any plots and numeric outputs in the `<CONTEXT_DIR>/experiment/results/` folder.
-3. **Find the Predictions for this Experiment**: For each prediction ID, extract the prediction for this experiment from the corresponding `prediction.md` file by looking for a section titled `## [Experiment ID]` and reading the content under that section. Some predictions might say "NO_PREDICTION". This means that the particular theory did not make a prediction for this experiment. Also find the theory ID associated with each prediction ID by looking for a line starting with `Theory used: ` (it will be close to the top of each `prediction.md`).
+2. **Review the Experiment Results**: Read the experiment description and script to understand what the experiment was testing. Then carefully review the experiment results, starting with the `stdout.log` file, followed by inspecting any plots and numeric outputs in the `<CONTEXT_DIR>/experiment` folder.
+3. **Find the Predictions for this Experiment**: For each prediction ID, extract the prediction for this experiment from the corresponding `predictions.md` file by looking for a section titled `## [Experiment ID]` and reading the content under that section. Some predictions might say "NO_PREDICTION". This means that the particular theory did not make a prediction for this experiment. Also find the theory ID associated with each prediction ID by looking for a line starting with `Theory used: ` (it will be close to the top of each `predictions.md`).
 4. **Compare Predictions to Results**: Compare each prediction to the actual results of the experiment.
-5. **Rank the Predictions**: Rank the predictions based on how closely they matched the actual results. The prediction that is closest to the actual results should receive rank 1, the next closest rank 2, and so on. Do not include predictions that said "NO_PREDICTION" in the ranking - we will list their theory IDs separately.
-6. **Final Output**: Report the ranked list of theory IDs together with the ranks of their predictions, from best fit (rank 1) to worst fit. Additionally, report a separate list of theory IDs that did not make any prediction for this experiment, under the heading "NO_PREDICTION".
+5. **Rank the Predictions**: Rank the predictions based on how closely they matched the actual results. The prediction that is closest to the actual results should receive rank 1, the next closest rank 2, and so on. Prefer more specific predictions (e.g. those that predict specific numeric values, rather than general trends), as long as they're approximately correct. Do not include predictions in the ranking that said "NO_PREDICTION" - we will list their theory IDs separately.
+6. **Final Output**: Report the ranked list of theory IDs together with the ranks of their predictions, from best fit (rank 1) to worst fit. Additionally, report a separate list of theory IDs that did not make any prediction for this experiment, under the heading "NO_PREDICTION". Do not include any other commentary in your output.

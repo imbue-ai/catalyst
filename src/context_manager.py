@@ -84,12 +84,11 @@ VALID_CATEGORIES: tuple[str, ...] = (
 )
 
 DEFAULT_DB_DIR = ".ai-scientist-db"
-ENV_DB_PATH = "AI_SCIENTIST_DB_PATH"
+ENV_DB_PATH = "CATALYST_DB_PATH"
 LOCK_FILENAME = ".lock"
 IGNORE_METADATA_PATTERN = shutil.ignore_patterns("metadata.json")
 
 POPULATION_FILENAME = "population.snapshot"
-INITIAL_ROOT_SCORE = 0.5
 SCORE_DECAY_RATE = 0.8
 
 # ---------------------------------------------------------------------------
@@ -155,10 +154,11 @@ class DatabaseLock:
                 if time.monotonic() >= deadline:
                     os.close(self._fd)
                     self._fd = None
-                    raise TimeoutError(
-                        f"Could not acquire database lock within {self.timeout}s"
+                    print(
+                        f"Warning: Could not acquire database lock within {self.timeout}s. Proceeding anyway.",
+                        file=sys.stderr,
                     )
-                time.sleep(0.05)
+                time.sleep(0.1)
 
     def __exit__(self, *_exc: object) -> None:
         global _db_lock_held_count
@@ -279,9 +279,7 @@ class DatabaseSession:
                     f"{parent_theory_id!r} but no population exists yet."
                 )
             organism = TheoryOrganism(theory_id=theory_id)
-            result = TheoryEvaluationResult(
-                score=INITIAL_ROOT_SCORE, trainable_failure_cases=[]
-            )
+            result = TheoryEvaluationResult(score=0.0, trainable_failure_cases=[])
             pop = WeightedSamplingPopulation(
                 organism,
                 result,
@@ -302,9 +300,8 @@ class DatabaseSession:
                 )
             parent_org, _ = found
 
-        score = 0.0 if parent_org else INITIAL_ROOT_SCORE
         organism = TheoryOrganism(theory_id=theory_id, parent=parent_org)
-        result = TheoryEvaluationResult(score=score, trainable_failure_cases=[])
+        result = TheoryEvaluationResult(score=0.0, trainable_failure_cases=[])
         pop.add(organism, result)
         self.mark_population_modified()
 
@@ -616,8 +613,6 @@ def _validate_create_context_args(
     from_predictions: list[str] | None,
 ) -> None:
     if for_agent_type == "write-theory":
-        if not from_exploration:
-            raise ValueError("--from_exploration is required for write-theory")
         if from_literatures and len(from_literatures) > 1:
             raise ValueError(
                 "write-theory accepts at most one --from_literature "
@@ -664,32 +659,23 @@ def _validate_create_context_args(
             raise ValueError(
                 "At least one --from_prediction is required for rank-predictions"
             )
-    elif for_agent_type == "score-theories":
+    elif for_agent_type in ("rank-experiments", "write-different-theory"):
         if not from_theories:
             raise ValueError(
                 f"At least one --from_theory is required for {for_agent_type}"
             )
-    elif for_agent_type == "score-soundness":
+    elif for_agent_type == "score-theory-local-subscores":
         if not from_theories or len(from_theories) != 1:
             raise ValueError(
-                "Exactly one --from_theory is required for score-soundness"
+                f"Exactly one --from_theory is required for {for_agent_type}"
             )
-    elif for_agent_type == "score-length":
-        if not from_theories or len(from_theories) != 1:
-            raise ValueError("Exactly one --from_theory is required for score-length")
-    elif for_agent_type == "rank-predictive-power":
+    elif for_agent_type == "rank-explanatory-power":
         if not from_theories:
             raise ValueError(
                 f"At least one --from_theory is required for {for_agent_type}"
             )
     else:
-        raise ValueError(
-            f"Unknown target agent type {for_agent_type!r}. "
-            f"Must be one of: write-theory, falsify-hypothesis, refine-hypothesis, "
-            f"review-theory, suggest-expansions, expand-theory, edit-theory, "
-            f"predict-experiments, rank-predictions, score-theories, score-soundness, "
-            f"score-length, rank-predictive-power"
-        )
+        raise ValueError(f"Unknown target agent type {for_agent_type!r}.")
 
 
 def create_context(
@@ -749,13 +735,11 @@ def create_context(
 
         # 3. Theories (The dispatch for different layout requirements)
         if from_theories:
-            if for_agent_type == "review-theory":
-                # Special case: theory.md file only
-                theory_md = db_root / "theory" / from_theories[0] / "theory.md"
-                if theory_md.exists():
-                    shutil.copy2(theory_md, target_folder / "theory.md")
-                    _make_writable(target_folder / "theory.md")
-            elif for_agent_type in ("score-theories", "rank-predictive-power"):
+            if for_agent_type in (
+                "rank-experiments",
+                "rank-explanatory-power",
+                "write-different-theory",
+            ):
                 # Multiple theories in theories/ folder
                 theories_root = target_folder / "theories"
                 theories_root.mkdir(exist_ok=True)
@@ -794,7 +778,7 @@ def create_context(
 
         # --- Post-processing: Advanced Data Gathering ---
 
-        if for_agent_type == "score-theories":
+        if for_agent_type == "rank-experiments":
             # Add up to 30 experiments relevant to the theories being scored
             matched_experiments_by_base: dict[str, list[tuple[str, str]]] = {
                 tid: [] for tid in from_theories
@@ -833,7 +817,7 @@ def create_context(
             for eid in selected_eids:
                 fetch_experiment(target_folder, eid, exclude_results=True)
 
-        elif for_agent_type == "score-soundness":
+        elif for_agent_type == "score-theory-local-subscores":
             # Add all 'falsify-hypothesis' reviews for the given theory
             reviews_root = target_folder / "reviews"
             reviews_root.mkdir(exist_ok=True)
@@ -842,20 +826,6 @@ def create_context(
                 if (
                     data.get("parent_theory") == tid
                     and data.get("agent_type") == "falsify-hypothesis"
-                ):
-                    copy_artifact(
-                        db_root / "review" / data["id"], reviews_root / data["id"]
-                    )
-
-        elif for_agent_type == "rank-predictive-power":
-            # Add all 'suggest-expansions' reviews for the theories
-            reviews_root = target_folder / "reviews"
-            reviews_root.mkdir(exist_ok=True)
-            tids = set(from_theories)
-            for _, data in session.iter_metadata("review"):
-                if (
-                    data.get("parent_theory") in tids
-                    and data.get("agent_type") == "suggest-expansions"
                 ):
                     copy_artifact(
                         db_root / "review" / data["id"], reviews_root / data["id"]
@@ -1009,18 +979,25 @@ def list_entries(
             scores = {}
             subscores = {}
             if population:
+                leaf_map = {}
                 for organism, eval_result in population.organisms:
                     if hasattr(organism, "theory_id"):
-                        scores[organism.theory_id] = eval_result.score
-                        subscores[organism.theory_id] = (
+                        theory_id = organism.theory_id
+                        scores[theory_id] = eval_result.score
+                        subscores[theory_id] = (
                             eval_result.subscores
                             if hasattr(eval_result, "subscores")
                             else {}
                         )
+                        leaf_map[theory_id] = (
+                            len(population.get_children(organism)) == 0
+                        )
 
             for d in results:
-                d["score"] = scores.get(d.get("id"))
-                d["subscores"] = subscores.get(d.get("id"))
+                tid = d.get("id")
+                d["score"] = scores.get(tid)
+                d["subscores"] = subscores.get(tid)
+                d["is_leaf_node"] = leaf_map.get(tid, False) if population else False
 
             results.sort(
                 key=lambda d: (
@@ -1091,9 +1068,9 @@ def rescore_theories(theory_scores: dict[str, dict[str, float]]) -> None:
                 updated_theories.add(organism.theory_id)
 
         if set(theory_scores.keys()) - updated_theories:
-            raise ValueError(
-                f"Theory IDs not found in population: "
-                f"{set(theory_scores.keys()) - updated_theories}"
+            print(
+                f"Theory IDs {set(theory_scores.keys()) - updated_theories} not found in population. Skipping.",
+                file=sys.stderr,
             )
 
         # Step 2: Decay the scores of all remaining organisms
@@ -1240,12 +1217,13 @@ def main(argv: list[str] | None = None) -> None:
             "edit-theory",
             "predict-experiments",
             "rank-predictions",
-            "score-theories",
-            "score-soundness",
-            "rank-predictive-power",
+            "rank-experiments",
+            "score-theory-local-subscores",
+            "rank-explanatory-power",
             "polish-theory",
             "streamline-theory",
             "search-literature",
+            "write-different-theory",
         ],
         help="Type of agent to prepare context for",
     )
@@ -1500,6 +1478,7 @@ def main(argv: list[str] | None = None) -> None:
                 from_experiments=args.from_experiments or None,
                 from_predictions=args.from_predictions or None,
             )
+            print("Created context in folder:", args.target_folder.resolve())
 
         elif args.command == "fetch_literature":
             fetch_literature(

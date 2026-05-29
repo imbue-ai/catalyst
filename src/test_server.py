@@ -26,7 +26,7 @@ class TestServerEndpoints(unittest.TestCase):
             workflow_name="develop-theory",
             workflow_structure=[]
         )
-        self.path_patcher = patch("server.get_ai_scientist_path", return_value="/tmp/test_ai_scientist")
+        self.path_patcher = patch("server.get_catalyst_path", return_value="/tmp/test_catalyst")
         self.path_patcher.start()
 
     def tearDown(self):
@@ -142,6 +142,18 @@ class TestServerEndpoints(unittest.TestCase):
         response = client.post("/api/tasks/test_task_123/resume")
         self.assertEqual(response.status_code, 200)
         self.assertTrue(mock_start_task.called)
+
+    @patch("server.get_task")
+    @patch("server.update_task")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_update_task_guidance(self, mock_file, mock_update_task, mock_get_task):
+        mock_get_task.return_value = self.dummy_task
+        guidance_req = {"guidance": "New custom user guidance."}
+        response = client.post("/api/tasks/test_task_123/guidance", json=guidance_req)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["guidance"], "New custom user guidance.")
+        self.assertTrue(mock_update_task.called)
+        mock_file.assert_called_once_with("/fake/env/folder/GUIDANCE.txt", "w", encoding="utf-8")
 
     @patch("server.get_task")
     @patch("server.cancel_task_process")

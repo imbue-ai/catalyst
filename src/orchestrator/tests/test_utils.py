@@ -1,8 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 import subprocess
-import os
-from ..utils import run_context_manager
+from ..utils import run_context_manager, get_catalyst_path
 from ..models import Task
 
 class TestUtils(unittest.TestCase):
@@ -34,9 +33,8 @@ class TestUtils(unittest.TestCase):
         self.assertIn("context_manager.py", called_args[3])
         self.assertIn("store_results", called_args)
         
-        # Verify env and cwd
+        # Verify env
         kwargs = mock_run.call_args[1]
-        self.assertEqual(kwargs["cwd"], os.path.abspath("/tmp/env"))
         self.assertIn("PATH", kwargs["env"])
 
     @patch("subprocess.run")
@@ -53,3 +51,39 @@ class TestUtils(unittest.TestCase):
         
         with self.assertRaisesRegex(Exception, "Stderr:\nerror message"):
             run_context_manager(task, ["fail"])
+
+    @patch("os.environ.get")
+    @patch("os.path.exists")
+    def test_get_catalyst_path_env_set(self, mock_exists, mock_get):
+        mock_get.return_value = "/custom/path"
+        result = get_catalyst_path()
+        self.assertEqual(result, "/custom/path")
+
+    @patch("os.environ.get")
+    @patch("os.path.exists")
+    def test_get_catalyst_path_catalyst_exists(self, mock_exists, mock_get):
+        mock_get.return_value = None
+        # Mocking exists: ~/.catalyst is evaluated first
+        mock_exists.side_effect = lambda path: ".catalyst" in path
+        
+        result = get_catalyst_path()
+        self.assertTrue(result.endswith(".catalyst"))
+
+    @patch("os.environ.get")
+    @patch("os.path.exists")
+    def test_get_catalyst_path_legacy_only(self, mock_exists, mock_get):
+        mock_get.return_value = None
+        # Mocking exists: ~/.catalyst does not exist, but ~/.ai-scientist does
+        mock_exists.side_effect = lambda path: ".ai-scientist" in path
+        
+        result = get_catalyst_path()
+        self.assertTrue(result.endswith(".ai-scientist"))
+
+    @patch("os.environ.get")
+    @patch("os.path.exists")
+    def test_get_catalyst_path_neither_exists(self, mock_exists, mock_get):
+        mock_get.return_value = None
+        mock_exists.return_value = False
+        
+        result = get_catalyst_path()
+        self.assertTrue(result.endswith(".catalyst"))

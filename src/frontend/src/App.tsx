@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Folder, Activity, FlaskConical } from 'lucide-react'
+import { Plus, Folder, Activity, Sun, Moon } from 'lucide-react'
 import * as api from './api'
 import { StatusBadge } from './components/StatusBadge'
 import { TaskDetail } from './components/TaskDetail'
@@ -15,6 +15,43 @@ function App() {
   const [deleteInput, setDeleteInput] = useState('')
   const [isBackendDown, setIsBackendDown] = useState(false)
   const prevTasksRef = useRef<api.Task[]>([])
+
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+      return saved === 'dark';
+    }
+    return window.matchMedia('(prefers-color-scheme: dark)').matches;
+  });
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isDarkMode) {
+      root.classList.add('dark');
+    } else {
+      root.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const handleChange = (e: MediaQueryListEvent) => {
+      const saved = localStorage.getItem('theme');
+      if (!saved) {
+        setIsDarkMode(e.matches);
+      }
+    };
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(prev => {
+      const next = !prev;
+      localStorage.setItem('theme', next ? 'dark' : 'light');
+      return next;
+    });
+  };
 
   useEffect(() => {
     if ("Notification" in window && Notification.permission === "default") {
@@ -49,7 +86,7 @@ function App() {
             if (Notification.permission === "granted") {
               const notification = new Notification("Research Status Update", {
                 body: `Research "${task.title || task.workflow_inputs.summary || task.id}" is now ${task.status}.`,
-                icon: "/favicon.svg"
+                icon: "/favicon.png"
               });
               notification.onclick = () => {
                 window.focus();
@@ -104,16 +141,15 @@ function App() {
       <div className="flex h-screen overflow-hidden">
         <aside className="w-96 border-r border-black flex flex-col bg-white">
           <div
-            className="p-6 border-b border-black flex items-center gap-3 cursor-pointer hover:bg-gray-50 transition-colors"
+            className="p-6 border-b border-black flex items-center justify-center cursor-pointer"
             onClick={() => { window.location.hash = ''; }}
             title="Return to Home"
           >
-            <div className="bg-black p-2 rounded-sm text-white">
-              <FlaskConical size={20} />
-            </div>
-            <h1 className="text-lg font-black tracking-tight leading-none uppercase">
-              AI Scientist<br /><span className="text-gray-400">Catalyst</span>
-            </h1>
+            <img
+              src="/catalyst-small.png"
+              alt="Catalyst"
+              className="w-full h-auto object-contain"
+            />
           </div>
 
           <div className="p-4 border-b border-black flex items-center justify-between bg-gray-50/50">
@@ -166,9 +202,16 @@ function App() {
           </div>
 
           <div className="p-4 border-t border-black bg-white flex justify-between items-center text-[9px] font-bold text-gray-400 tracking-[0.2em] mt-auto">
-            <span className={isBackendDown ? "text-red-500 animate-pulse" : "text-black"}>
+            <span className={isBackendDown ? "text-red-500 animate-pulse no-invert" : "text-black"}>
               {isBackendDown ? "● Disconnected" : "● Connected"}
             </span>
+            <button
+              onClick={toggleDarkMode}
+              className="p-1 hover:bg-gray-100 rounded transition-colors text-black flex items-center justify-center cursor-pointer"
+              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {isDarkMode ? <Sun size={12} /> : <Moon size={12} />}
+            </button>
           </div>
         </aside>
 

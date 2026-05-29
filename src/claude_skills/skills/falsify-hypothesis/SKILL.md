@@ -12,7 +12,7 @@ Instead of seeking confirmation, adopt a "killer" mindset to identify cases wher
 - Focus on exactly the **ONE** hypothesis given below.
 - Do whatever is needed to test falsification ideas and try to produce empirical or logical evidence of the falsification.
 - If (and only if) the hypothesis is trivial or obviously true, or is already well-supported by existing literature, you do not need to spend much time on it. In that case, your report can simply state why you concluded that the hypothesis is correct, citing existing literature as needed.
-- Honor any limited validity domain and/or assumptions that are explicitly stated in the theory. Try to falsify the hypothesis *within* the domain of those assumptions. A falsification is only valid if it invalidates the hypothesis *within* its stated domain.
+- Honor any limited validity domain and/or assumptions that are explicitly stated in the theory. Try to falsify the hypothesis *within* the domain of those assumptions. A falsification is only valid if it invalidates the hypothesis *within* its stated domain. Make sure you check the full theory for stated limitations, not just the hypothesis itself.
 - All experiment execution must go through the `run-experiment` skill. Never run a Python experiment script directly. See the "Running experiments" section below.
 
 ## Input
@@ -21,7 +21,7 @@ Arguments: $ARGUMENTS
 The arguments contain a theory ID (like `T_20260414_...`) and the specific observation, theorem, lemma or corollary to target. Parse the theory ID and the target hypothesis from the arguments.
 
 ## Folder setup
-All commands must be run in the current working directory. Do not `cd` anywhere else.
+All commands must be run in the current working directory. Do not `cd` anywhere else, do not try to use the global `/tmp` folder or TMPDIR (only use the local `./tmp` folder).
 
 Set up two folders — one for input context, one for your own output:
 CONTEXT_DIR: `mktemp -d -p ./tmp falsify-hypothesis-context-XXXX`
@@ -29,7 +29,7 @@ OUTPUT_DIR: `mktemp -d -p ./tmp falsify-hypothesis-output-XXXX`
 
 Run this command to populate the context:
 ```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" create_context --for_agent_type falsify-hypothesis --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_agent_type falsify-hypothesis --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
 ```
 
 - `<CONTEXT_DIR>/theory/` — the theory to falsify (read-only input). Read `<CONTEXT_DIR>/theory/theory.md` and any artifacts.
@@ -40,7 +40,7 @@ Any temporary files (including experiment scripts, intermediate results, etc.) m
 ## Reviewing cited experiment IDs
 The current version of the hypothesis (and/or an appendix referring to it) may cite specific experiment IDs (`X_...`) as evidence. You can review these experiments by running:
 ```bash
-uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
 ```
 
 This command will place the experiment description (`description.md`), Python script (`script.py`), and results into the `<CONTEXT_DIR>/experiments/<EXPERIMENT_ID>` folder.
@@ -53,11 +53,12 @@ Cite each experiment by its `X_...` ID in your `review.md` under the relevant fa
 
 ## Falsification Strategies
 Consider these approaches to generate falsification ideas:
-1. **Boundary and Edge Cases**: Parameter extremes (e.g., $N=1$, limits), singularities.
-2. **Violation of Assumptions**: Test highly correlated variables if independence is assumed, or test non-linear regimes if linearity is assumed.
+1. **Boundary and Edge Cases**: Parameter extremes (e.g., $N=1$, limits), singularities. (to the extent that such parameter extremes are plausible within the stated assumptions of the theory)
+2. **Violation of Implicit Assumptions**: Test highly correlated variables if independence is implicitly assumed, or test non-linear regimes if linearity is implicitly assumed.
 3. **Generalization Limits**: Out-of-distribution scenarios, scale invariance.
 4. **Counter-Examples**: Analytical construction, or search-based (optimization to find a "poisoned" input).
 5. **Noise and Perturbations**: Sensitivity analysis, stochasticity.
+6. **Mathematical Issues**: Logical inconsistencies, contradictions, mathematical errors, or unstated premises.
 
 ## Falsification Report Format
 Your `review.md` file MUST be formatted as follows:
@@ -96,7 +97,7 @@ Your `review.md` file MUST be formatted as follows:
 4. **Reporting**: Write your falsification report to `<OUTPUT_DIR>/review.md` (this exact filename is required). See the output format below.
 5. **Store results**: Persist your output and return the review ID:
    ```bash
-   uv run python "${CLAUDE_SKILL_DIR}/scripts/context_manager.py" store_results --from_agent_type falsify-hypothesis --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
+   uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type falsify-hypothesis --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
    Note down the returned review ID (e.g. `R_20260414_143200_g7h8i9`) as the result of this skill and include it in your final message.
 
