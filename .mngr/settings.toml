@@ -12,3 +12,17 @@ auto_dismiss_dialogs = true
 # only contributes --model and (for the smoke flow) -p; everything that
 # applies to every ai-scientist step lives here.
 cli_args = ["--dangerously-skip-permissions", "--verbose"]
+
+[agent_types.antigravity]
+# Required for headless `mngr create --type antigravity --no-connect`
+# against fresh env_folders. agy's first-launch trust dialog would
+# otherwise intercept the initial message keystrokes; auto_dismiss_dialogs
+# silently appends the work_dir to agy's trustedWorkspaces during
+# provisioning so the agent starts without user interaction.
+auto_dismiss_dialogs = true
+
+# Auto-approve every tool call (adds `--dangerously-skip-permissions` to
+# the agy launch command). This is the antigravity analog of the legacy
+# Gemini CLI's `--approval-mode yolo`: ai-scientist steps run unattended,
+# so the agent can't stop to ask for permission.
+auto_allow_permissions = true

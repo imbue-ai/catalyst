@@ -284,11 +284,10 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     return (
                       <>
                         {step.session_id && (() => {
-                          const isMngr = task.framework === 'mngr-claude' || task.framework === 'mngr-gemini';
-                          const isGemini = task.framework === 'gemini' || task.framework === 'mngr-gemini';
+                          const isMngr = task.framework === 'mngr-claude' || task.framework === 'mngr-antigravity';
                           const cmd = isMngr
                             ? `MNGR_HOST_DIR=~/.mngr-ai-scientist mngr connect ${step.session_id}`
-                            : `cd "${task.env_folder}" && ${isGemini ? 'gemini' : 'claude'} --resume ${step.session_id}`;
+                            : `cd "${task.env_folder}" && claude --resume ${step.session_id}`;
                           const comment = isMngr
                             ? "# Attach to this agent's tmux session (restarts it if stopped)"
                             : '# Use this command to resume this session manually';

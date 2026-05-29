@@ -325,9 +325,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         className="w-full border-2 border-black p-3 pr-10 outline-none font-bold text-sm bg-white appearance-none cursor-pointer focus:bg-gray-50 transition-colors"
                       >
                         <option value="claude">Claude Code</option>
-                        <option value="gemini">Gemini CLI</option>
                         <option value="mngr-claude">Claude Code (mngr)</option>
-                        <option value="mngr-gemini">Gemini CLI (mngr)</option>
+                        <option value="mngr-antigravity">Antigravity CLI (mngr)</option>
                       </select>
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-black group-hover:translate-y-[-40%] transition-transform">
                         <ChevronDown size={14} />
@@ -362,7 +361,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                           >
                             Default
                           </button>
-                          {(inputs.framework === 'claude' || inputs.framework === 'mngr-claude' ? ['opus', 'sonnet', 'haiku'] : ['pro', 'flash']).map(m => (
+                          {/* The Antigravity CLI (agy) has no --model flag, so it only offers "Default" (its account model). */}
+                          {(inputs.framework === 'claude' || inputs.framework === 'mngr-claude' ? ['opus', 'sonnet', 'haiku'] : []).map(m => (
                             <button
                               key={m}
                               type="button"

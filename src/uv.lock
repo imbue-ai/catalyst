@@ -16,8 +16,9 @@ imbue-mngr-claude = "2026-06-02T07:00:00Z"
 concurrency-group = "2026-06-02T07:00:00Z"
 resource-guards = "2026-06-02T07:00:00Z"
 imbue-mngr = "2026-06-02T07:00:00Z"
-imbue-common = "2026-06-02T07:00:00Z"
+imbue-mngr-antigravity = "2026-06-02T07:00:00Z"
 imbue-mngr-wait = "2026-06-02T07:00:00Z"
+imbue-common = "2026-06-02T07:00:00Z"
 
 [[package]]
 name = "ai-scientist"
@@ -27,6 +28,7 @@ dependencies = [
     { name = "darwinian-evolver" },
     { name = "fastapi" },
     { name = "imbue-mngr" },
+    { name = "imbue-mngr-antigravity" },
     { name = "imbue-mngr-claude" },
     { name = "imbue-mngr-wait" },
     { name = "pydantic" },
@@ -44,8 +46,9 @@ dev = [
 requires-dist = [
     { name = "darwinian-evolver", editable = "../darwinian_evolver" },
     { name = "fastapi", specifier = ">=0.135.3" },
-    { name = "imbue-mngr", specifier = ">=0.2.7" },
-    { name = "imbue-mngr-claude", specifier = ">=0.2.7" },
+    { name = "imbue-mngr", specifier = ">=0.2.9" },
+    { name = "imbue-mngr-antigravity", specifier = ">=0.1.0" },
+    { name = "imbue-mngr-claude", specifier = ">=0.2.9" },
     { name = "imbue-mngr-wait", specifier = ">=0.1.4" },
     { name = "pydantic", specifier = ">=2.0" },
     { name = "python-multipart", specifier = ">=0.0.26" },
@@ -402,16 +405,16 @@ wheels = [
 
 [[package]]
 name = "concurrency-group"
-version = "0.1.16"
+version = "0.1.18"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "imbue-common" },
     { name = "loguru" },
     { name = "pydantic" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/9d/ec/dcfdd8bda546b721468557d6813d2597275557e4135c99ecf16292a547c4/concurrency_group-0.1.16.tar.gz", hash = "sha256:81176b5fa62443a82e5600df3588f16c5d4d47f4929b8b3d3dc9eeacc1322932", size = 28681, upload-time = "2026-05-11T20:28:19.496Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/16/b4/f77bd76b5cdbecefff6b13e617995b712dcb36785eba7ddafcd12976260a/concurrency_group-0.1.18.tar.gz", hash = "sha256:d91501840f7f7c0447c38e387a109733e9319266966db040d10449117cfc213d", size = 31111, upload-time = "2026-05-29T00:51:52.79Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/98/76/235f7f700b8f51c2cf9f4398931f7ab53193b8c53a487abc4a9cdf7bb4b7/concurrency_group-0.1.16-py3-none-any.whl", hash = "sha256:3a453ab44d7069a07c83156637db81173eb8f6c08d5c977b874cfb91ba31fe55", size = 17761, upload-time = "2026-05-11T19:33:27.51Z" },
+    { url = "https://files.pythonhosted.org/packages/95/59/1f3ecd58cf533f4f016c8ab2d6993a461b660502230fae05cf75d80a6c7c/concurrency_group-0.1.18-py3-none-any.whl", hash = "sha256:6d0728cc7dc07b81251c80d8714c07165ab67d98546cd7a192d1e7bd44a45669", size = 17955, upload-time = "2026-05-29T00:47:19.042Z" },
 ]
 
 [[package]]
@@ -806,7 +809,7 @@ wheels = [
 
 [[package]]
 name = "imbue-common"
-version = "0.1.16"
+version = "0.1.18"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -816,14 +819,14 @@ dependencies = [
     { name = "pydantic" },
     { name = "tenacity" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c3/3a/0547a05add365dc7bbd681fb343fa82ae3a41dfd30784aa06ff133b0e536/imbue_common-0.1.16.tar.gz", hash = "sha256:b9af91ac94728dc1b70e1789a2314b366aef6cec081dc7cba841da2c1fe43c14", size = 58892, upload-time = "2026-05-11T20:28:20.713Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/ab/5e/8bc2a6f91c46d69fa4e8eb6c7049bcc893ad91397d49bec7cf4bf5a40f24/imbue_common-0.1.18.tar.gz", hash = "sha256:6b92be1742fc391fe51da105b0c99af7646d8a27a1b57ae9e6779ee029b8c58f", size = 63123, upload-time = "2026-05-29T00:51:53.602Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/85/32/614e5863e8b10bbc2800f06598ba2c119409e9da02b2d00ce761ff58b513/imbue_common-0.1.16-py3-none-any.whl", hash = "sha256:db2a0d8ad19bfff6b4fb56d063636f13d26958d22e9684753478eef1f88ffb1e", size = 34144, upload-time = "2026-05-11T19:33:28.768Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/16/f816974c0aa92957facb5e52879626e97bfcb1fcace835a4e7b7053cbc66/imbue_common-0.1.18-py3-none-any.whl", hash = "sha256:8793f777b320a83dbf6435c8494abb6cefcab81fa402919efa649e23d2b30e5a", size = 35504, upload-time = "2026-05-29T00:47:20.303Z" },
 ]
 
 [[package]]
 name = "imbue-mngr"
-version = "0.2.7"
+version = "0.2.9"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "cel-python" },
@@ -849,34 +852,46 @@ dependencies = [
     { name = "tomlkit" },
     { name = "urwid" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/49/98/914678f31f817f18e04641757b4acc7892a17e08dedb4562f40b74987715/imbue_mngr-0.2.7.tar.gz", hash = "sha256:cbbb9f46d0d0582ad501bcd43eeb15c9052746c80aedd69cfb9123ae7d524bf5", size = 1076866, upload-time = "2026-05-11T20:28:22.248Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e6/e5/813e4a823bc23a57d6b1cdb2adde1dc24c436b521a3ec955a722084ad816/imbue_mngr-0.2.9.tar.gz", hash = "sha256:f3b461594be54fe56d6515283b4eebe7c74ff8fe4ffc9c687d020715092cc17d", size = 1200781, upload-time = "2026-05-29T00:51:54.541Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/a4/fd/6e124d6f351b9d7c329cea01ec12ead07023d3848cc42c6f3181c3fd1120/imbue_mngr-0.2.7-py3-none-any.whl", hash = "sha256:331f76a0b8bee19479d7d49b2388a1d9b35716c308b51cb9e1af508f475fad57", size = 594832, upload-time = "2026-05-11T19:33:30.37Z" },
+    { url = "https://files.pythonhosted.org/packages/f5/78/a74ef3877f5ea114be42d01a0261b51ed80fbedb8d3340517db4be44f29e/imbue_mngr-0.2.9-py3-none-any.whl", hash = "sha256:2912bf5973d0aac2863d563db14c654eb13545437eaca6d69ed3da0727b812fc", size = 651132, upload-time = "2026-05-29T00:47:21.547Z" },
 ]
 
 [[package]]
-name = "imbue-mngr-claude"
-version = "0.2.7"
+name = "imbue-mngr-antigravity"
+version = "0.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "imbue-mngr" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/86/ef/6a05cd8ed3e81d235aecbd7a2f47c33d3da5b359880aacede1f6080e7be1/imbue_mngr_claude-0.2.7.tar.gz", hash = "sha256:4a522a7f0ab940c053077996e2aebf167fbd7ad2245a7b70f0ab8a71a002fde3", size = 125669, upload-time = "2026-05-11T20:28:23.805Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/e0/0d/225cfd65ff00939e7d6a35501f6eceda0930a9e398f05a9c279727b5a8e8/imbue_mngr_antigravity-0.1.0.tar.gz", hash = "sha256:3c2af411bccadc4d246e697fca0bde1e98ff7d5140b643a8ac69e75e165356f1", size = 42872, upload-time = "2026-05-29T00:51:55.864Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/73/f3/5e4d4f8fc5d377cd43214834a42d1f8f56f801206a7dbc4ba954a4dd45b5/imbue_mngr_claude-0.2.7-py3-none-any.whl", hash = "sha256:b5a81152d4a789cdddf2f860d7770b8b211fbbb347e645ba87f11bcb7394a467", size = 67979, upload-time = "2026-05-11T19:33:32.121Z" },
+    { url = "https://files.pythonhosted.org/packages/5d/1e/01df5c3691ebb4e10aa0b2105a8da3b50acb3329d5e1991073cd56842bc3/imbue_mngr_antigravity-0.1.0-py3-none-any.whl", hash = "sha256:fa88da1ffc1c4d0a8a06ebac4beda1d1005cd803c58d843ed00d451eec319657", size = 24069, upload-time = "2026-05-29T00:51:33.016Z" },
+]
+
+[[package]]
+name = "imbue-mngr-claude"
+version = "0.2.9"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "imbue-mngr" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/a9/6f/60ea9236476dd899dcd58b8329f469380e02313bff956f70394d2b74d289/imbue_mngr_claude-0.2.9.tar.gz", hash = "sha256:6b1cafa7483fd3c93041f5a07528ef59857c8a3a152405aa9491a900336f6a5d", size = 141169, upload-time = "2026-05-29T00:51:56.814Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6a/52/3bb6c9e777474bc1ad4bf3163e7366d1b26578fa2a35fc135ffb071fa11b/imbue_mngr_claude-0.2.9-py3-none-any.whl", hash = "sha256:a2fdf8d18a686d44338886177c718985f590822cf491e60ec4a37af114491530", size = 72875, upload-time = "2026-05-29T00:51:34.103Z" },
 ]
 
 [[package]]
 name = "imbue-mngr-wait"
-version = "0.1.4"
+version = "0.1.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click-option-group" },
     { name = "imbue-mngr" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/66/b1/7c81d99601a7135c8740cf284b35f8cdb3a7b0c27b6efdd09c6a36a2a6dd/imbue_mngr_wait-0.1.4.tar.gz", hash = "sha256:c34511ec96111d8da63657d135e71adf1b2d2613be598d413be5ce76c0ba99cb", size = 17908, upload-time = "2026-05-11T20:28:38.645Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/25/f0/dce8eb66a3b7d1941b84c4aefa2645f73748976b9acd4c316895b7a99953/imbue_mngr_wait-0.1.6.tar.gz", hash = "sha256:427ac8e51fce9bc6d5522f5b4d0998f458235378ce046b45eb3b02d88b4b2d62", size = 18403, upload-time = "2026-05-29T00:52:08.613Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/48/88/ef5dc390ba49854c58873ee105609cb08ec379afc381270b686685b85350/imbue_mngr_wait-0.1.4-py3-none-any.whl", hash = "sha256:f398fe09d3af8f4d5557c1500d2185f0adcfd2d49bb86163a114045e4400d4cf", size = 11525, upload-time = "2026-05-11T20:28:14.911Z" },
+    { url = "https://files.pythonhosted.org/packages/2d/79/9370fdb6cba3510580a79c58e390ee9b75277e0e78e5e0ec8a852029cf1f/imbue_mngr_wait-0.1.6-py3-none-any.whl", hash = "sha256:324eeda71cf5aa75c9d70b078ef82c30f0d733e25b43ebe793db21fd49c0016e", size = 10821, upload-time = "2026-05-29T00:51:49.654Z" },
 ]
 
 [[package]]
@@ -1801,15 +1816,15 @@ wheels = [
 
 [[package]]
 name = "resource-guards"
-version = "0.1.6"
+version = "0.1.7"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pluggy" },
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/24/ce/867257ba9d43ae7a54c723891cf9c8af19faa36458ecbf0236b21f8b928a/resource_guards-0.1.6.tar.gz", hash = "sha256:d933161eafa48811eb55a005eb832a0aed89b9610a291cbe69c59bc0bf2cf4fc", size = 20793, upload-time = "2026-05-11T20:28:40.801Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/d8/ee/00a1df61bd5e5f979e4160038779c61204ff3dbb3d312b395de3ce1eeade/resource_guards-0.1.7.tar.gz", hash = "sha256:7af4b29dd35e699a15def97dea7b6d0dca2ad58c4eae6671a111e01f388a889d", size = 38527, upload-time = "2026-05-29T00:52:10.24Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/44/87/7bd85b5ecc6dabce49e0063af182f5256c4d3d1de0c4631572a6531aa262/resource_guards-0.1.6-py3-none-any.whl", hash = "sha256:2e386d8f8f5f78f69fb18808166a224f1e25dc1671fcc86c4ba7a11e6335298d", size = 10516, upload-time = "2026-05-11T20:28:17.978Z" },
+    { url = "https://files.pythonhosted.org/packages/73/94/19a7643640224139c944e857487cb3de66ca8ae9abcd4465f9c89bf5c3c8/resource_guards-0.1.7-py3-none-any.whl", hash = "sha256:9b375e1338fd11ae4755341f42a298c7f203910e05f0eb04fb5771cea146dcc3", size = 16507, upload-time = "2026-05-29T00:51:51.788Z" },
 ]
 
 [[package]]

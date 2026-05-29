@@ -19,9 +19,9 @@ fi
 
 # Check mngr's system deps (tmux, ssh, git, jq) before touching uv/npm.
 # This only matters for tasks created with framework `mngr-claude` /
-# `mngr-gemini`; legacy `claude` / `gemini` framework tasks don't strictly
-# need mngr's deps. But both options are in the dropdown at runtime, so
-# we check up-front rather than waiting for the first mngr task to crash.
+# `mngr-antigravity`; legacy `claude` framework tasks don't strictly need
+# mngr's deps. But all options are in the dropdown at runtime, so we check
+# up-front rather than waiting for the first mngr task to crash.
 if ! uv run mngr dependencies; then
     echo ""
     echo "Some mngr-required system dependencies are missing."
@@ -31,27 +31,29 @@ if ! uv run mngr dependencies; then
     exit 1
 fi
 
-HAS_GEMINI=false
+HAS_AGY=false
 HAS_CLAUDE=false
 
-if command -v gemini &> /dev/null; then
-    HAS_GEMINI=true
+# `agy` is the Antigravity CLI (the Gemini CLI successor), used by the
+# `mngr-antigravity` framework.
+if command -v agy &> /dev/null; then
+    HAS_AGY=true
 fi
 
 if command -v claude &> /dev/null; then
     HAS_CLAUDE=true
 fi
 
-if [ "$HAS_GEMINI" = false ] && [ "$HAS_CLAUDE" = false ]; then
-    echo "Error: Neither 'gemini' nor 'claude' CLI is installed. At least one is required."
+if [ "$HAS_AGY" = false ] && [ "$HAS_CLAUDE" = false ]; then
+    echo "Error: Neither 'agy' (Antigravity CLI) nor 'claude' CLI is installed. At least one is required."
     exit 1
 fi
 
 echo "Dependencies met!"
 echo " - uv: $(uv --version)"
 echo " - npm: $(npm --version)"
-if [ "$HAS_GEMINI" = true ]; then
-    echo " - gemini: $(gemini --version)"
+if [ "$HAS_AGY" = true ]; then
+    echo " - agy: $(agy --version)"
 fi
 if [ "$HAS_CLAUDE" = true ]; then
     echo " - claude: $(claude --version)"

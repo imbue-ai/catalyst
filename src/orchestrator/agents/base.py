@@ -18,14 +18,13 @@ class AgentRunner(ABC):
         Runs the agent and returns (json_output, session_id, error).
 
         `session_id` is the identifier used by the dashboard's "Inspect
-        Agent" panel. The legacy `claude`/`gemini` runners write the
-        claude/gemini session UUID here; the `mngr-claude`/`mngr-gemini`
-        runners write the mngr agent name (e.g. "aisci-abcd1234-...").
-        The frontend picks the right `Inspect Agent` command from the
-        framework type.
+        Agent" panel. The legacy `claude` runner writes the claude session
+        UUID here; the `mngr-claude`/`mngr-antigravity` runners write the
+        mngr agent name (e.g. "aisci-abcd1234-..."). The frontend picks the
+        right `Inspect Agent` command from the framework type.
 
         `stage` is the workflow stage name (e.g. "write-theory"). The
         mngr runners use it to label and name their agents; the legacy
-        runners ignore it.
+        runner ignores it.
         """
         pass

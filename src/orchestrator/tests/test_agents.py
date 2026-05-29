@@ -11,16 +11,12 @@ instead.
 
 import unittest
 
-from ..agents.mngr_claude import (
-    _build_agent_args as _claude_build_agent_args,
-    _extract_assistant_text as _claude_extract_assistant_text,
-    _extract_status as _claude_extract_status,
-)
-from ..agents.mngr_gemini import (
-    _build_agent_args as _gemini_build_agent_args,
-    _extract_assistant_text as _gemini_extract_assistant_text,
-    _extract_status as _gemini_extract_status,
-)
+from ..agents.mngr_antigravity import _build_agent_args as _antigravity_build_agent_args
+from ..agents.mngr_antigravity import _extract_assistant_text as _antigravity_extract_assistant_text
+from ..agents.mngr_antigravity import _extract_status as _antigravity_extract_status
+from ..agents.mngr_claude import _build_agent_args as _claude_build_agent_args
+from ..agents.mngr_claude import _extract_assistant_text as _claude_extract_assistant_text
+from ..agents.mngr_claude import _extract_status as _claude_extract_status
 from ..agents.mngr_runner import parse_json_result
 
 
@@ -79,52 +75,47 @@ class TestClaudeAgentHelpers(unittest.TestCase):
         self.assertEqual(_claude_extract_status(event), "two newlines")
 
 
-class TestGeminiAgentHelpers(unittest.TestCase):
-    def test_build_agent_args_with_model(self):
-        self.assertEqual(_gemini_build_agent_args("gemini-flash-x"), ["--model", "gemini-flash-x"])
-
-    def test_build_agent_args_no_model(self):
-        self.assertEqual(_gemini_build_agent_args(None), [])
-
-    def test_extract_status_pulls_update_topic_summary(self):
-        event = {
-            "type": "assistant_message",
-            "text": "",
-            "tool_calls": [
-                {
-                    "tool_name": "update_topic",
-                    "parameters": {"summary": "investigating phenomena"},
-                }
-            ],
-        }
-        self.assertEqual(_gemini_extract_status(event), "investigating phenomena")
-
-    def test_extract_status_ignores_unrelated_tool_calls(self):
-        event = {
-            "type": "assistant_message",
-            "text": "",
-            "tool_calls": [{"tool_name": "ReadFile", "parameters": {"path": "/etc/passwd"}}],
-        }
-        self.assertIsNone(_gemini_extract_status(event))
-
-    def test_extract_status_raises_on_unknown_update_topic_shape(self):
-        # Tripwire: when mngr_gemini ships, if its update_topic shape
-        # doesn't have a `parameters` dict we want to know loudly so we
-        # can update the extractor instead of silently swallowing it.
-        event = {
-            "type": "assistant_message",
-            "text": "",
-            "tool_calls": [{"tool_name": "update_topic", "input_preview": "{...}"}],
-        }
-        with self.assertRaises(NotImplementedError):
-            _gemini_extract_status(event)
+class TestAntigravityAgentHelpers(unittest.TestCase):
+    def test_build_agent_args_ignores_model(self):
+        # agy has no --model flag, so the runner contributes no per-call
+        # agent args regardless of the requested model.
+        self.assertEqual(_antigravity_build_agent_args("some-model"), [])
+        self.assertEqual(_antigravity_build_agent_args(None), [])
 
     def test_extract_assistant_text_picks_text(self):
         self.assertEqual(
-            _gemini_extract_assistant_text(
-                {"type": "assistant_message", "text": "g hello"}
+            _antigravity_extract_assistant_text(
+                {"type": "assistant_message", "text": '{"created": true}'}
             ),
-            "g hello",
+            '{"created": true}',
+        )
+
+    def test_extract_assistant_text_skips_empty(self):
+        # The tool-calling PLANNER_RESPONSE carries empty text; it must not
+        # contribute to the harvested final result.
+        self.assertIsNone(
+            _antigravity_extract_assistant_text(
+                {"type": "assistant_message", "text": "", "tool_calls": [{"tool_name": "run_command"}]}
+            )
+        )
+
+    def test_extract_status_collapses_text(self):
+        event = {"type": "assistant_message", "text": "two\n\n  newlines", "tool_calls": []}
+        self.assertEqual(_antigravity_extract_status(event), "two newlines")
+
+    def test_extract_status_names_tool_when_text_empty(self):
+        # A tool-using step has empty text but a requested tool; surface the
+        # tool name so the dashboard shows live progress.
+        event = {
+            "type": "assistant_message",
+            "text": "",
+            "tool_calls": [{"tool_name": "run_command", "input_preview": "{...}"}],
+        }
+        self.assertEqual(_antigravity_extract_status(event), "Running run_command")
+
+    def test_extract_status_ignores_non_assistant_events(self):
+        self.assertIsNone(
+            _antigravity_extract_status({"type": "user_message", "content": "hi"})
         )
 
 
