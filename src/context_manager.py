@@ -1141,7 +1141,7 @@ def export_theory_population(dest_path: Path) -> None:
         if not population:
             raise RuntimeError("Population is empty; cannot export")
 
-        data = population.log_to_json_dict()
+        data = {"population": population.log_to_json_dict()}
         with open(dest_path, "w", encoding="utf-8") as f:
             f.write(json.dumps(data) + "\n")
 
