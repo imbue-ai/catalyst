@@ -62,7 +62,7 @@ class MngrAntigravityAgentRunner(MngrAgentRunner):
             status_extractor=_extract_status,
             assistant_text_extractor=_extract_assistant_text,
             transcript_source=_ANTIGRAVITY_TRANSCRIPT_SOURCE,
-            turn_completion=TurnCompletion.TRANSCRIPT_IDLE,
+            turn_completion=TurnCompletion.WAITING_STATE,
             # Match the direct agy runner: don't let agy phone home for an
             # update mid-task (orchestrator/agents/agy.py sets the same).
             extra_env={"AGY_CLI_DISABLE_AUTO_UPDATE": "true"},

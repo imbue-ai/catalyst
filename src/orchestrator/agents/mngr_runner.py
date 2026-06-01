@@ -44,32 +44,16 @@ class TurnCompletion(enum.Enum):
         after the final assistant_message is flushed and never trips on
         intermediate idle.
 
-    TRANSCRIPT_IDLE -- the agent type has no working turn-end hook
-        (mngr_antigravity: agy loads hooks.json but execution is gated
-        behind a per-account experiment flag). Its mngr lifecycle state
-        also sits at WAITING the whole time it runs (no active-file hook),
-        so `mngr wait --state WAITING` is useless too. We instead poll the
-        common transcript and call the turn done once the latest
-        assistant_message carries no tool_calls and the transcript has been
-        stable for a short confirmation window. See
-        `_wait_for_turn_end_transcript_idle`.
+    WAITING_STATE -- the agent type's plugin provisions an active-marker
+        hook (mngr_antigravity 0.1.1+: PreInvocation touches the marker,
+        Stop removes it) so `BaseAgent.get_lifecycle_state` reports RUNNING
+        while the agent works and WAITING when idle. We use `mngr wait
+        --state WAITING` as the turn-end signal.
     """
 
     STOP_HOOK = "stop_hook"
-    TRANSCRIPT_IDLE = "transcript_idle"
+    WAITING_STATE = "waiting_state"
 
-
-# Polling cadence for TRANSCRIPT_IDLE turn detection. The antigravity
-# common-transcript converter flushes on a ~5s timer, so a 3s poll keeps
-# latency low without hammering `mngr event`.
-_TRANSCRIPT_IDLE_POLL_INTERVAL = 3.0
-# How long the common transcript must be unchanged, with the latest message
-# carrying no tool_calls, before we treat the turn as finished. Must exceed
-# the converter's ~5s flush so a tool-call message and the final text
-# message can't straddle a single poll and be mistaken for quiescence; the
-# margin also absorbs a mid-turn text-only message that agy follows with
-# more tool calls.
-_TRANSCRIPT_IDLE_CONFIRM_SECONDS = 12.0
 
 # Source + event-type written by the Stop hook in
 # `src/claude_skills/settings.local.json`. Fires exactly once per agent
@@ -449,14 +433,14 @@ class MngrAgentRunner(AgentRunner):
         Phrased per the turn-completion strategy so the message points at
         the actual failure mode rather than a generic one.
         """
-        if self._turn_completion is TurnCompletion.TRANSCRIPT_IDLE:
+        if self._turn_completion is TurnCompletion.WAITING_STATE:
             return (
-                f"Agent stopped without producing a final response "
+                f"Agent never reached the WAITING lifecycle state "
                 f"(deadline was {_WAIT_TIMEOUT_SECONDS}s). {self._framework} "
-                "completion is detected when the agent's latest transcript "
-                "message carries no tool calls; a timeout means the agent "
-                "either never emitted a final text message or was paused / "
-                "stopped externally."
+                "completion is signalled when the agent's per-task active "
+                "marker is cleared; a timeout means either the agent never "
+                "finished its turn, the plugin's hooks didn't fire, or it "
+                "was paused / stopped externally."
             )
         return (
             f"Agent stopped without signaling turn_end "
@@ -478,8 +462,8 @@ class MngrAgentRunner(AgentRunner):
         expiring and an external stop (pause/cancel) -- the orchestrator
         distinguishes by checking the task's status after run() returns.
         """
-        if self._turn_completion is TurnCompletion.TRANSCRIPT_IDLE:
-            return self._wait_for_turn_end_transcript_idle(agent_name, on_status)
+        if self._turn_completion is TurnCompletion.WAITING_STATE:
+            return self._wait_for_turn_end_waiting_state(agent_name, on_status)
         return self._wait_for_turn_end_stop_hook(agent_name, on_status)
 
     def _spawn_stopped_watcher(
@@ -612,82 +596,97 @@ class MngrAgentRunner(AgentRunner):
             wait_thread.join(timeout=5)
         return saw_turn_end.is_set()
 
-    def _wait_for_turn_end_transcript_idle(
+    def _wait_for_turn_end_waiting_state(
         self,
         agent_name: str,
         on_status: Optional[Callable[[str], None]],
     ) -> bool:
-        """Turn-end detection for agent types with no turn-end hook
-        (TRANSCRIPT_IDLE strategy; mngr_antigravity).
+        """Turn-end detection via the WAITING lifecycle state
+        (WAITING_STATE strategy; mngr_antigravity 0.1.1+).
 
-        agy emits no `turn_end` event, and its mngr lifecycle state sits at
-        WAITING the whole time it runs (no active-file hook), so neither the
-        `mngr/turn_complete` event nor `mngr wait --state WAITING` is usable.
-        We instead poll the common transcript and treat the turn as finished
-        once the latest message is an assistant_message with no tool_calls
-        and the transcript has been unchanged for
-        `_TRANSCRIPT_IDLE_CONFIRM_SECONDS`.
-
-        Why the latest-message-has-no-tool_calls signal is robust: while agy
-        is running a tool, the latest transcript message is the
-        PLANNER_RESPONSE that *requested* the tool, which carries
-        tool_calls, so a long-running experiment never trips a false
-        positive regardless of how long it blocks. The confirmation window
-        guards the rarer case of a mid-turn text-only message that agy
-        follows with more tool calls. A parallel `mngr wait --state STOPPED`
-        catches external pause/cancel.
+        The plugin provisions an active-marker hook (PreInvocation creates
+        it, Stop removes it) so `BaseAgent.get_lifecycle_state` reports
+        RUNNING while the agent works and WAITING when idle. We block on
+        `mngr wait --state WAITING`; rc=0 means the turn finished. A
+        parallel STOPPED watcher catches external pause/cancel, and an
+        `mngr event --follow` is consumed in the background purely for
+        status updates -- the turn-end signal comes from `mngr wait`, so
+        the event stream is never inspected for transcript content here.
         """
-        # TODO: replace this whole transcript-idle strategy with the precise
-        # STOP_HOOK path once mngr supports an antigravity turn-end hook. agy
-        # already loads hooks.json, but hook *execution* is gated behind
-        # Google's per-account `json-hooks-enabled` experiment; when that
-        # ships GA, mngr_antigravity can install a Stop hook (as mngr_claude
-        # does) that emits a `mngr/turn_complete` `turn_end` event. At that
-        # point, switch MngrAntigravityAgentRunner to
-        # TurnCompletion.STOP_HOOK and delete this method -- the precise
-        # signal removes both the ~12s confirmation-window latency and the
-        # mid-turn-text-only false-positive risk this heuristic carries.
         deadline = time.monotonic() + _WAIT_TIMEOUT_SECONDS
         saw_turn_end = threading.Event()
         done = threading.Event()
-        wait_proc, wait_thread = self._spawn_stopped_watcher(agent_name, done)
 
-        seen_event_ids: set[str] = set()
-        last_event_id: Optional[str] = None
-        last_change = time.monotonic()
+        event_proc = subprocess.Popen(
+            [
+                "mngr",
+                "event",
+                agent_name,
+                "--follow",
+                "--format",
+                "jsonl",
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            bufsize=1,
+        )
+
+        stop_proc, stop_thread = self._spawn_stopped_watcher(agent_name, done)
+
+        wait_proc = subprocess.Popen(
+            [
+                "mngr",
+                "wait",
+                agent_name,
+                "--state",
+                "WAITING",
+                "--timeout",
+                f"{_WAIT_TIMEOUT_SECONDS}s",
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+
+        def watch_waiting() -> None:
+            rc = wait_proc.wait()
+            if rc == 0:
+                saw_turn_end.set()
+            done.set()
+
+        def consume_events() -> None:
+            assert event_proc.stdout is not None
+            for line in event_proc.stdout:
+                if not line.strip() or not on_status:
+                    continue
+                try:
+                    event = json.loads(line)
+                except json.JSONDecodeError:
+                    continue
+                status = self._status_extractor(event)
+                if status:
+                    try:
+                        on_status(status)
+                    except Exception as cb_err:
+                        logger.error(f"[AGENT] on_status error: {cb_err}")
+
+        wait_thread = threading.Thread(target=watch_waiting, daemon=True)
+        wait_thread.start()
+        event_thread = threading.Thread(target=consume_events, daemon=True)
+        event_thread.start()
+
         try:
-            while not done.is_set() and time.monotonic() < deadline:
-                events = self._read_transcript_events(agent_name)
-                if on_status:
-                    for event in events:
-                        event_id = event.get("event_id")
-                        if not event_id or event_id in seen_event_ids:
-                            continue
-                        seen_event_ids.add(event_id)
-                        status = self._status_extractor(event)
-                        if status:
-                            try:
-                                on_status(status)
-                            except Exception as cb_err:
-                                logger.error(f"[AGENT] on_status error: {cb_err}")
-                if events:
-                    latest = events[-1]
-                    latest_id = latest.get("event_id")
-                    if latest_id != last_event_id:
-                        last_event_id = latest_id
-                        last_change = time.monotonic()
-                    is_idle = (
-                        latest.get("type") == "assistant_message"
-                        and not latest.get("tool_calls")
-                    )
-                    if is_idle and (time.monotonic() - last_change) >= _TRANSCRIPT_IDLE_CONFIRM_SECONDS:
-                        saw_turn_end.set()
-                        done.set()
-                        break
-                done.wait(timeout=_TRANSCRIPT_IDLE_POLL_INTERVAL)
+            remaining = max(0.0, deadline - time.monotonic())
+            done.wait(timeout=remaining)
         finally:
+            self._terminate_proc(event_proc)
             self._terminate_proc(wait_proc)
+            self._terminate_proc(stop_proc)
+            event_thread.join(timeout=5)
             wait_thread.join(timeout=5)
+            stop_thread.join(timeout=5)
         return saw_turn_end.is_set()
 
     def _read_transcript_events(self, agent_name: str) -> List[Dict[str, Any]]:
