@@ -8,7 +8,7 @@ resolution-markers = [
 ]
 
 [options]
-exclude-newer = "2026-05-12T17:29:38.847328741Z"
+exclude-newer = "2026-05-18T17:13:32.069502421Z"
 exclude-newer-span = "P2W"
 
 [[package]]
@@ -397,14 +397,14 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", specifier = "==0.78.0" },
-    { name = "fsspec", specifier = "==2026.1.0" },
-    { name = "func-timeout", specifier = "==4.3.5" },
-    { name = "google-genai", specifier = "==1.56.0" },
-    { name = "jinja2", specifier = "==3.1.6" },
-    { name = "numpy", specifier = "==2.4.2" },
-    { name = "openai", specifier = "==2.16.0" },
-    { name = "pydantic", specifier = "==2.12.5" },
+    { name = "anthropic", specifier = ">=0.78.0" },
+    { name = "fsspec", specifier = ">=2026.1.0" },
+    { name = "func-timeout", specifier = ">=4.3.5" },
+    { name = "google-genai", specifier = ">=1.56.0" },
+    { name = "jinja2", specifier = ">=3.1.6" },
+    { name = "numpy", specifier = ">=2.4.2" },
+    { name = "openai", specifier = ">=2.16.0" },
+    { name = "pydantic", specifier = ">=2.12.5" },
 ]
 
 [package.metadata.requires-dev]
