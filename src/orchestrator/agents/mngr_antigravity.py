@@ -18,15 +18,12 @@ class MngrAntigravityAgentRunner(MngrAgentRunner):
             # here makes the lack-of-isolation explicit rather than fake.
             # https://github.com/google-antigravity/antigravity-cli/issues/36
             #
-            # agy has no `--model` flag, so `model_flag` is left unset and
-            # agy uses its account default. `--dangerously-skip-permissions`
-            # is added by the mngr_antigravity plugin via
-            # `auto_allow_permissions = true` in `.mngr/settings.toml`.
+            # No model_flag: agy has no `--model` CLI flag, so it uses its
+            # account default. `--dangerously-skip-permissions` is added
+            # by the plugin via `auto_allow_permissions = true` in
+            # `.mngr/settings.toml`. `--print-timeout` only matters in
+            # `-p` mode, which mngr doesn't use, so we don't pass it.
             #
-            # `--print-timeout 6h` matches the direct `agy` runner -- agy's
-            # default print-timeout (5m) is far too short for a research
-            # turn that runs experiments.
-            agent_args=("--print-timeout", "6h"),
             # Match the direct agy runner: don't let agy phone home for an
             # update mid-task (orchestrator/agents/agy.py sets the same).
             extra_env={"AGY_CLI_DISABLE_AUTO_UPDATE": "true"},

@@ -25,9 +25,10 @@ logger = logging.getLogger(__name__)
 
 # How long the runner may block waiting for a turn to finish (seconds).
 # Multi-skill cascades (e.g. `/swarm` spawning Task subagents) can run
-# for hours; this cap is generous on purpose. The agent's tmux session
-# is the source of cost, not this timeout.
-_WAIT_TIMEOUT_SECONDS = 4 * 60 * 60
+# for hours; this cap is generous on purpose. Matches the timeout the
+# direct Antigravity CLI runner uses. The agent's tmux session is the
+# source of cost, not this timeout.
+_WAIT_TIMEOUT_SECONDS = 6 * 60 * 60
 
 
 class TurnCompletion(enum.Enum):
