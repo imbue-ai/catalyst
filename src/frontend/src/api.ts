@@ -77,7 +77,6 @@ export interface ExperimentArtifact {
 export interface TaskShallow {
   id: string;
   title?: string;
-  workflow_inputs: any;
   env_folder: string;
   framework: string;
   model?: string;
