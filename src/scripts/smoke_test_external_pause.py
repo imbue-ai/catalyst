@@ -77,7 +77,7 @@ def main() -> int:
 
             def stop_after_delay():
                 time.sleep(PAUSE_DELAY_S)
-                print(f"  >>> External stop firing now <<<", flush=True)
+                print("  >>> External stop firing now <<<", flush=True)
                 subprocess.run(
                     ["mngr", "stop", name],
                     check=False,
