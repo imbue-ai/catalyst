@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Folder, Activity, Sun, Moon } from 'lucide-react'
+import { Plus, Folder, Activity, Sun, Moon, Loader2 } from 'lucide-react'
 import * as api from './api'
 import { StatusBadge } from './components/StatusBadge'
 import { TaskDetail } from './components/TaskDetail'
@@ -8,13 +8,14 @@ import { DeleteConfirmModal } from './components/DeleteConfirmModal'
 import { GameOfLife } from './components/GameOfLife'
 
 function App() {
-  const [tasks, setTasks] = useState<api.Task[]>([])
+  const [tasks, setTasks] = useState<api.TaskShallow[]>([])
   const [currentHash, setCurrentHash] = useState(window.location.hash)
   const [showCreate, setShowCreate] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [deleteInput, setDeleteInput] = useState('')
   const [isBackendDown, setIsBackendDown] = useState(false)
-  const prevTasksRef = useRef<api.Task[]>([])
+  const prevTasksRef = useRef<api.TaskShallow[]>([])
+  const [selectedTaskDetails, setSelectedTaskDetails] = useState<api.Task | null>(null)
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme');
@@ -106,11 +107,44 @@ function App() {
     }
   }
 
+  const fetchSelectedTaskDetails = async (id: string) => {
+    try {
+      const detail = await api.getTask(id)
+      setSelectedTaskDetails(detail)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleRefresh = () => {
+    fetchTasks()
+    if (selectedTaskId) {
+      fetchSelectedTaskDetails(selectedTaskId)
+    }
+  }
+
+  useEffect(() => {
+    if (selectedTaskId) {
+      setSelectedTaskDetails(null)
+      fetchSelectedTaskDetails(selectedTaskId)
+    } else {
+      setSelectedTaskDetails(null)
+    }
+  }, [selectedTaskId])
+
   useEffect(() => {
     fetchTasks()
-    const interval = setInterval(fetchTasks, 2000)
+    if (selectedTaskId) {
+      fetchSelectedTaskDetails(selectedTaskId)
+    }
+    const interval = setInterval(() => {
+      fetchTasks()
+      if (selectedTaskId) {
+        fetchSelectedTaskDetails(selectedTaskId)
+      }
+    }, 2000)
     return () => clearInterval(interval)
-  }, [])
+  }, [selectedTaskId])
 
   const handleDelete = async () => {
     if (deleteInput.toLowerCase() === 'delete' && showDeleteConfirm) {
@@ -128,7 +162,6 @@ function App() {
     }
   }
 
-  const selectedTask = tasks.find(t => t.id === selectedTaskId)
   const isAnyTaskRunning = tasks.some(t => t.status === 'running')
 
   return (
@@ -217,15 +250,22 @@ function App() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-white flex flex-col relative">
-          {selectedTask ? (
-            <TaskDetail
-              key={selectedTask.id}
-              task={selectedTask}
-              viewingArtifactId={viewingArtifactId}
-              onDeleteRequest={(id) => setShowDeleteConfirm(id)}
-              onRefresh={fetchTasks}
-              isBackendDown={isBackendDown}
-            />
+          {selectedTaskId ? (
+            selectedTaskDetails ? (
+              <TaskDetail
+                key={selectedTaskDetails.id}
+                task={selectedTaskDetails}
+                viewingArtifactId={viewingArtifactId}
+                onDeleteRequest={(id) => setShowDeleteConfirm(id)}
+                onRefresh={handleRefresh}
+                isBackendDown={isBackendDown}
+              />
+            ) : (
+              <div className="flex-1 flex flex-col items-center justify-center p-20 text-center opacity-50">
+                <Loader2 size={40} className="animate-spin mb-4" strokeWidth={3} />
+                <div className="font-bold text-xs tracking-widest">Loading Research...</div>
+              </div>
+            )
           ) : isAnyTaskRunning ? (
             <GameOfLife />
           ) : (
