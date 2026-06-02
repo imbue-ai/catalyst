@@ -384,39 +384,45 @@ class MngrAgentRunner(AgentRunner):
                 f"stderr+stdout tail:\n{tail}",
             )
 
-        prompt_file = tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False, prefix=f"{agent_name}-resume-"
-        )
-        try:
-            prompt_file.write("Continue where you left off.")
-            prompt_file.close()
-
+        # `mngr start` succeeded -- the agent is now live on the mngr
+        # side. Everything from here on goes inside `_registered_agent`
+        # so that any failure (tempfile error, `mngr message` exit code,
+        # missing CLI) still triggers `_stop_agent` on exit. Without
+        # this, a failed `mngr message` would leave the agent running
+        # untracked and burning credits until something else stops it.
+        with self._registered_agent(task_id, agent_name):
+            prompt_file = tempfile.NamedTemporaryFile(
+                mode="w", suffix=".md", delete=False, prefix=f"{agent_name}-resume-"
+            )
             try:
-                message_result = subprocess.run(
-                    [
-                        "mngr",
-                        "message",
+                prompt_file.write("Continue where you left off.")
+                prompt_file.close()
+
+                try:
+                    message_result = subprocess.run(
+                        [
+                            "mngr",
+                            "message",
+                            agent_name,
+                            "--message-file",
+                            prompt_file.name,
+                        ],
+                        check=False,
+                        capture_output=True,
+                        text=True,
+                    )
+                except FileNotFoundError as e:
+                    return None, agent_name, f"resume_unrecoverable: mngr CLI not found on PATH: {e}"
+
+                if message_result.returncode != 0:
+                    tail = ((message_result.stderr or "") + "\n" + (message_result.stdout or ""))[-1500:]
+                    return (
+                        None,
                         agent_name,
-                        "--message-file",
-                        prompt_file.name,
-                    ],
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                )
-            except FileNotFoundError as e:
-                return None, agent_name, f"resume_unrecoverable: mngr CLI not found on PATH: {e}"
+                        f"mngr message failed (exit {message_result.returncode}). "
+                        f"stderr+stdout tail:\n{tail}",
+                    )
 
-            if message_result.returncode != 0:
-                tail = ((message_result.stderr or "") + "\n" + (message_result.stdout or ""))[-1500:]
-                return (
-                    None,
-                    agent_name,
-                    f"mngr message failed (exit {message_result.returncode}). "
-                    f"stderr+stdout tail:\n{tail}",
-                )
-
-            with self._registered_agent(task_id, agent_name):
                 if on_session_id:
                     try:
                         on_session_id(agent_name)
@@ -426,14 +432,14 @@ class MngrAgentRunner(AgentRunner):
                         )
                 return self._wait_and_harvest(task_id, agent_name, on_status)
 
-        except Exception as e:
-            return None, agent_name, f"{self.framework} resume execution error: {e}"
+            except Exception as e:
+                return None, agent_name, f"{self.framework} resume execution error: {e}"
 
-        finally:
-            try:
-                os.unlink(prompt_file.name)
-            except OSError:
-                pass
+            finally:
+                try:
+                    os.unlink(prompt_file.name)
+                except OSError:
+                    pass
 
     def _wait_and_harvest(
         self,
