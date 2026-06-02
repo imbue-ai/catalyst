@@ -259,10 +259,17 @@ class MngrAgentRunner(AgentRunner):
             "catalyst-framework": self.framework,
         }
 
-        prompt_file = tempfile.NamedTemporaryFile(
-            mode="w", suffix=".md", delete=False, prefix=f"{agent_name}-"
-        )
+        # `prompt_file` is created inside the try so that a failure to
+        # create the tempfile (disk full, EROFS, etc.) is converted to
+        # the runner's structured `(None, agent_name, error)` return
+        # instead of an unhandled exception. The `finally` below guards
+        # `prompt_file is not None` so the cleanup never raises
+        # UnboundLocalError on that failure path.
+        prompt_file = None
         try:
+            prompt_file = tempfile.NamedTemporaryFile(
+                mode="w", suffix=".md", delete=False, prefix=f"{agent_name}-"
+            )
             prompt_file.write(prompt)
             prompt_file.close()
 
@@ -328,10 +335,11 @@ class MngrAgentRunner(AgentRunner):
             return None, agent_name, f"{self.framework} execution error: {e}"
 
         finally:
-            try:
-                os.unlink(prompt_file.name)
-            except OSError:
-                pass
+            if prompt_file is not None:
+                try:
+                    os.unlink(prompt_file.name)
+                except OSError:
+                    pass
 
     def resume_in_place(
         self,
@@ -391,10 +399,16 @@ class MngrAgentRunner(AgentRunner):
         # this, a failed `mngr message` would leave the agent running
         # untracked and burning credits until something else stops it.
         with self._registered_agent(task_id, agent_name):
-            prompt_file = tempfile.NamedTemporaryFile(
-                mode="w", suffix=".md", delete=False, prefix=f"{agent_name}-resume-"
-            )
+            # `prompt_file` is created inside the try (and guarded in
+            # the finally) so a tempfile-creation failure becomes the
+            # runner's structured error tuple instead of an
+            # UnboundLocalError in the cleanup path. Same shape as
+            # `run()` above.
+            prompt_file = None
             try:
+                prompt_file = tempfile.NamedTemporaryFile(
+                    mode="w", suffix=".md", delete=False, prefix=f"{agent_name}-resume-"
+                )
                 prompt_file.write("Continue where you left off.")
                 prompt_file.close()
 
@@ -436,10 +450,11 @@ class MngrAgentRunner(AgentRunner):
                 return None, agent_name, f"{self.framework} resume execution error: {e}"
 
             finally:
-                try:
-                    os.unlink(prompt_file.name)
-                except OSError:
-                    pass
+                if prompt_file is not None:
+                    try:
+                        os.unlink(prompt_file.name)
+                    except OSError:
+                        pass
 
     def _wait_and_harvest(
         self,
