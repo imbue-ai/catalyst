@@ -2,6 +2,7 @@ import uuid
 import os
 import shutil
 import logging
+import fcntl
 import subprocess
 import json
 import io
@@ -48,12 +49,40 @@ async def lifespan(app: FastAPI):
     # Apply filter to uvicorn access logger
     logging.getLogger("uvicorn.access").addFilter(EndpointFilter())
 
-    # Initialize state on startup (move RUNNING to PAUSED)
-    initialize_state()
-    yield
-    # Clean up processes on shutdown
-    logger.info("[SERVER] Shutting down, cleaning up processes...")
-    shutdown_all()
+    # Hold a file lock to ensure only one server instance is running at a time
+    catalyst_path = get_catalyst_path()
+    os.makedirs(catalyst_path, exist_ok=True)
+    lock_file_path = os.path.join(catalyst_path, "server.lock")
+    try:
+        lock_file = open(lock_file_path, "w")
+    except Exception as e:
+        logger.error(f"[SERVER] Failed to open lock file {lock_file_path}: {e}")
+        raise RuntimeError(f"Failed to open lock file: {e}") from e
+
+    try:
+        fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except (OSError, BlockingIOError) as e:
+        lock_file.close()
+        logger.error(f"[SERVER] Another server instance is already running (failed to acquire lock on {lock_file_path}).")
+        raise RuntimeError("Another server instance is already running.") from e
+
+    logger.info(f"[SERVER] Successfully acquired lock on {lock_file_path}")
+
+    try:
+        # Initialize state on startup (move RUNNING to PAUSED)
+        initialize_state()
+        yield
+    finally:
+        # Clean up processes on shutdown
+        logger.info("[SERVER] Shutting down, cleaning up processes...")
+        shutdown_all()
+        try:
+            fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+        except Exception as e:
+            logger.error(f"[SERVER] Failed to unlock {lock_file_path}: {e}")
+        finally:
+            lock_file.close()
+            logger.info(f"[SERVER] Released lock on {lock_file_path}")
 
 
 app = FastAPI(title="Catalyst Orchestrator", lifespan=lifespan)
