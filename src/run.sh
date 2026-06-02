@@ -17,18 +17,20 @@ if ! command -v npm &> /dev/null; then
     exit 1
 fi
 
-# Check mngr's system deps (tmux, ssh, git, jq) before touching uv/npm.
-# This only matters for tasks created with framework `mngr-claude` /
-# `mngr-antigravity`; direct `claude` framework tasks don't strictly need
-# mngr's deps. But all options are in the dropdown at runtime, so we check
-# up-front rather than waiting for the first mngr task to crash.
+# Surface mngr's system deps (tmux, ssh, git, jq) -- only matters for
+# `mngr-claude` / `mngr-antigravity` tasks. Don't exit on missing deps:
+# the direct `claude` / `gemini` / `agy` frameworks work without them,
+# and the user finds out about missing deps the first time they actually
+# pick an mngr framework (same behavior as picking a framework whose
+# CLI isn't installed).
 if ! uv run mngr dependencies; then
     echo ""
-    echo "Some mngr-required system dependencies are missing."
-    echo "Re-run with one of:"
+    echo "Some mngr-required system dependencies are missing -- mngr-claude /"
+    echo "mngr-antigravity tasks will fail until you install them. Direct"
+    echo "claude / gemini / agy frameworks are unaffected. To install:"
     echo "  uv run mngr dependencies -i   # interactive install"
     echo "  uv run mngr dependencies -c   # auto-install core deps"
-    exit 1
+    echo ""
 fi
 
 HAS_GEMINI=false

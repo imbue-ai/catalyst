@@ -8,12 +8,15 @@ class MngrAntigravityAgentRunner(MngrAgentRunner):
             framework="mngr-antigravity",
             transcript_source="antigravity/common_transcript",
             turn_completion=TurnCompletion.WAITING_STATE,
-            # `--sandbox` matches the isolation the direct `agy` runner
-            # uses (orchestrator/agents/agy.py): terminal restrictions so
-            # a research step can't write outside its workspace ($TMPDIR,
-            # ~/.gemini, etc.). Under mngr the agent's work_dir is the
-            # task env_folder (exposed to agy via the plugin's workspace
-            # symlink), so sandboxed writes still land in the right place.
+            # `--sandbox` is *intentionally* omitted here even though the
+            # direct `agy` runner sets it. agy bug #36 (combining
+            # `--dangerously-skip-permissions` with `--sandbox` is broken)
+            # means our `auto_allow_permissions = true` setting -- which
+            # the mngr_antigravity plugin implements by adding
+            # `--dangerously-skip-permissions` -- silently bypasses
+            # sandboxing if we also set `--sandbox`. Dropping `--sandbox`
+            # here makes the lack-of-isolation explicit rather than fake.
+            # https://github.com/google-antigravity/antigravity-cli/issues/36
             #
             # agy has no `--model` flag, so `model_flag` is left unset and
             # agy uses its account default. `--dangerously-skip-permissions`
@@ -23,7 +26,7 @@ class MngrAntigravityAgentRunner(MngrAgentRunner):
             # `--print-timeout 6h` matches the direct `agy` runner -- agy's
             # default print-timeout (5m) is far too short for a research
             # turn that runs experiments.
-            agent_args=("--sandbox", "--print-timeout", "6h"),
+            agent_args=("--print-timeout", "6h"),
             # Match the direct agy runner: don't let agy phone home for an
             # update mid-task (orchestrator/agents/agy.py sets the same).
             extra_env={"AGY_CLI_DISABLE_AUTO_UPDATE": "true"},
