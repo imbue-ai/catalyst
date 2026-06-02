@@ -74,7 +74,19 @@ export interface ExperimentArtifact {
   extra?: Record<string, string>;
 }
 
-export const listTasks = async (): Promise<Task[]> => {
+export interface TaskShallow {
+  id: string;
+  title?: string;
+  env_folder: string;
+  framework: string;
+  model?: string;
+  status: "pending" | "running" | "completed" | "failed" | "paused";
+  current_stage?: string;
+  workflow_name: string;
+  created_at?: string;
+}
+
+export const listTasks = async (): Promise<TaskShallow[]> => {
   const res = await fetch(`${API_BASE}/tasks`);
   return res.json();
 }

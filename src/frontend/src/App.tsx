@@ -6,15 +6,17 @@ import { TaskDetail } from './components/TaskDetail'
 import { CreateTaskModal } from './components/CreateTaskModal'
 import { DeleteConfirmModal } from './components/DeleteConfirmModal'
 import { GameOfLife } from './components/GameOfLife'
+import { TaskDetailSkeleton } from './components/TaskDetailSkeleton'
 
 function App() {
-  const [tasks, setTasks] = useState<api.Task[]>([])
+  const [tasks, setTasks] = useState<api.TaskShallow[]>([])
   const [currentHash, setCurrentHash] = useState(window.location.hash)
   const [showCreate, setShowCreate] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [deleteInput, setDeleteInput] = useState('')
   const [isBackendDown, setIsBackendDown] = useState(false)
-  const prevTasksRef = useRef<api.Task[]>([])
+  const prevTasksRef = useRef<api.TaskShallow[]>([])
+  const [selectedTaskDetails, setSelectedTaskDetails] = useState<api.Task | null>(null)
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme');
@@ -85,7 +87,7 @@ function App() {
           if (oldTask && oldTask.status !== task.status) {
             if (Notification.permission === "granted") {
               const notification = new Notification("Research Status Update", {
-                body: `Research "${task.title || task.workflow_inputs.summary || task.id}" is now ${task.status}.`,
+                body: `Research "${task.title || task.id}" is now ${task.status}.`,
                 icon: "/favicon.png"
               });
               notification.onclick = () => {
@@ -106,11 +108,44 @@ function App() {
     }
   }
 
+  const fetchSelectedTaskDetails = async (id: string) => {
+    try {
+      const detail = await api.getTask(id)
+      setSelectedTaskDetails(detail)
+    } catch (e) {
+      console.error(e)
+    }
+  }
+
+  const handleRefresh = () => {
+    fetchTasks()
+    if (selectedTaskId) {
+      fetchSelectedTaskDetails(selectedTaskId)
+    }
+  }
+
+  useEffect(() => {
+    if (selectedTaskId) {
+      setSelectedTaskDetails(null)
+      fetchSelectedTaskDetails(selectedTaskId)
+    } else {
+      setSelectedTaskDetails(null)
+    }
+  }, [selectedTaskId])
+
   useEffect(() => {
     fetchTasks()
-    const interval = setInterval(fetchTasks, 2000)
+    if (selectedTaskId) {
+      fetchSelectedTaskDetails(selectedTaskId)
+    }
+    const interval = setInterval(() => {
+      fetchTasks()
+      if (selectedTaskId) {
+        fetchSelectedTaskDetails(selectedTaskId)
+      }
+    }, 2000)
     return () => clearInterval(interval)
-  }, [])
+  }, [selectedTaskId])
 
   const handleDelete = async () => {
     if (deleteInput.toLowerCase() === 'delete' && showDeleteConfirm) {
@@ -128,7 +163,6 @@ function App() {
     }
   }
 
-  const selectedTask = tasks.find(t => t.id === selectedTaskId)
   const isAnyTaskRunning = tasks.some(t => t.status === 'running')
 
   return (
@@ -179,7 +213,7 @@ function App() {
               >
                 <div className="flex justify-between items-start mb-2 gap-2">
                   <span className={`font-bold text-xs truncate flex-1 ${selectedTaskId === task.id ? 'text-white' : 'text-black'}`}>
-                    {task.title || task.workflow_inputs.summary}
+                    {task.title}
                   </span>
                   <StatusBadge status={task.status} />
                 </div>
@@ -217,15 +251,19 @@ function App() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-white flex flex-col relative">
-          {selectedTask ? (
-            <TaskDetail
-              key={selectedTask.id}
-              task={selectedTask}
-              viewingArtifactId={viewingArtifactId}
-              onDeleteRequest={(id) => setShowDeleteConfirm(id)}
-              onRefresh={fetchTasks}
-              isBackendDown={isBackendDown}
-            />
+          {selectedTaskId ? (
+            selectedTaskDetails ? (
+              <TaskDetail
+                key={selectedTaskDetails.id}
+                task={selectedTaskDetails}
+                viewingArtifactId={viewingArtifactId}
+                onDeleteRequest={(id) => setShowDeleteConfirm(id)}
+                onRefresh={handleRefresh}
+                isBackendDown={isBackendDown}
+              />
+            ) : (
+              <TaskDetailSkeleton />
+            )
           ) : isAnyTaskRunning ? (
             <GameOfLife />
           ) : (

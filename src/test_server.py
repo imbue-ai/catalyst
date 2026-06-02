@@ -38,7 +38,13 @@ class TestServerEndpoints(unittest.TestCase):
         response = client.get("/api/tasks")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.json()), 1)
-        self.assertEqual(response.json()[0]["id"], "test_task_123")
+        task_json = response.json()[0]
+        self.assertEqual(task_json["id"], "test_task_123")
+        self.assertNotIn("steps", task_json)
+        self.assertNotIn("addons", task_json)
+        self.assertNotIn("workflow_structure", task_json)
+        self.assertNotIn("guidance", task_json)
+        self.assertNotIn("workflow_inputs", task_json)
 
     @patch("server.get_task")
     def test_get_task(self, mock_get_task):
