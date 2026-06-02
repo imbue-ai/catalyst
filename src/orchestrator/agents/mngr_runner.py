@@ -14,7 +14,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Generator, List, Optional, Tuple
 
 from context_manager import DEFAULT_DB_DIR
-from .base import AgentRunner
+from .base import AgentRunner, parse_json_result
 from ..state import register_agent, unregister_agent
 # Ensures the process-wide MNGR_HOST_DIR default is set before any
 # subprocess `mngr` call inherits os.environ.
@@ -36,7 +36,7 @@ class TurnCompletion(enum.Enum):
 
     STOP_HOOK -- the agent type emits a `mngr/turn_complete` / `turn_end`
         event exactly once per turn (mngr_claude, via the Stop hook in
-        `.claude/settings.local.json`). The most precise signal: it fires
+        `.claude/settings.json`). The most precise signal: it fires
         after the final assistant_message is flushed and never trips on
         intermediate idle.
 
@@ -52,7 +52,7 @@ class TurnCompletion(enum.Enum):
 
 
 # Source + event-type written by the Stop hook in
-# `src/claude_skills/settings.local.json`. Fires exactly once per agent
+# `src/claude_skills/settings.json`. Fires exactly once per agent
 # turn, *after* the final assistant_message has been flushed to the
 # transcript. Used by the STOP_HOOK strategy.
 _TURN_COMPLETE_SOURCE = "mngr/turn_complete"
@@ -66,49 +66,6 @@ _TURN_END_EVENT_TYPE = "turn_end"
 # the assistant_message and we'd return empty text.
 _POST_TURN_END_POLL_SECONDS = 10.0
 _POST_TURN_END_POLL_INTERVAL = 0.5
-
-
-def parse_json_result(raw_result: Any) -> Optional[Dict[str, Any]]:
-    """Extract a JSON object out of an agent's freeform final assistant text.
-
-    Catalyst's skills are prompted to "output JSON as your final
-    message" but the wrapping varies: sometimes a fenced ```json block,
-    sometimes raw text containing braces. Migrating every skill to a
-    structured tool_use convention is tracked as a follow-up; until then
-    this regex/brace-walk is the bridge.
-    """
-    if isinstance(raw_result, dict):
-        return raw_result
-
-    text = str(raw_result)
-
-    json_blocks = re.findall(r"```json\s*(.*?)\s*```", text, re.DOTALL)
-    if json_blocks:
-        try:
-            return json.loads(json_blocks[-1])
-        except json.JSONDecodeError:
-            pass
-
-    last_brace = text.rfind("}")
-    while last_brace != -1:
-        balance = 0
-        for i in range(last_brace, -1, -1):
-            if text[i] == "}":
-                balance += 1
-            elif text[i] == "{":
-                balance -= 1
-                if balance == 0:
-                    obj_str = text[i : last_brace + 1]
-                    try:
-                        data = json.loads(obj_str)
-                        if isinstance(data, dict):
-                            return data
-                    except json.JSONDecodeError:
-                        break
-
-        last_brace = text.rfind("}", 0, last_brace)
-
-    return None
 
 
 def extract_assistant_text(event: Dict[str, Any]) -> Optional[str]:
@@ -231,9 +188,9 @@ class MngrAgentRunner(AgentRunner):
         task_id: str,
         prompt: str,
         env_folder: str,
+        stage: str,
         model: Optional[str] = None,
         tx_id: Optional[str] = None,
-        stage: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
@@ -383,7 +340,7 @@ class MngrAgentRunner(AgentRunner):
             f"Agent stopped without signaling turn_end "
             f"(deadline was {_WAIT_TIMEOUT_SECONDS}s). If this wasn't a "
             "manual pause, the env_folder may pre-date the change that "
-            "added the Stop hook to .claude/settings.local.json -- delete "
+            "added the Stop hook to .claude/settings.json -- delete "
             "the task and recreate it to pick up the new env_folder template."
         )
 

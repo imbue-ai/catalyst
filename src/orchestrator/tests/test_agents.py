@@ -1,39 +1,33 @@
 import unittest
 from unittest.mock import patch, MagicMock
+from ..agents.base import parse_json_result
 from ..agents.gemini import GeminiAgentRunner
 from ..agents.claude import ClaudeAgentRunner
-from ..agents.mngr_runner import (
-    extract_assistant_text,
-    extract_status,
-    parse_json_result,
-)
+from ..agents.mngr_runner import extract_assistant_text, extract_status
 
 class TestAgents(unittest.TestCase):
     def test_parse_json_result(self):
-        # BaseCliAgentRunner is abstract, use GeminiAgentRunner to test the inherited method
-        runner = GeminiAgentRunner()
-
         # Simple JSON
-        self.assertEqual(runner._parse_json_result('{"a": 1}'), {"a": 1})
+        self.assertEqual(parse_json_result('{"a": 1}'), {"a": 1})
 
         # Markdown JSON
         raw = "Here is the result:\n```json\n{\"score\": 0.5}\n```\nDone."
-        self.assertEqual(runner._parse_json_result(raw), {"score": 0.5})
+        self.assertEqual(parse_json_result(raw), {"score": 0.5})
 
         # Multiple JSONs, should pick the last one
         raw = '{"first": 1} ... some text ... {"last": 2}'
-        self.assertEqual(runner._parse_json_result(raw), {"last": 2})
+        self.assertEqual(parse_json_result(raw), {"last": 2})
 
         # Nested JSON, should correctly find the outer boundaries
         raw = 'Random text before {"outer": {"inner": 42}, "other": "val"} text after'
-        self.assertEqual(runner._parse_json_result(raw), {"outer": {"inner": 42}, "other": "val"})
+        self.assertEqual(parse_json_result(raw), {"outer": {"inner": 42}, "other": "val"})
 
         # Multiple JSONs with nesting
         raw = '{"first": {"a": 1}} some noise {"last": {"b": 2}}'
-        self.assertEqual(runner._parse_json_result(raw), {"last": {"b": 2}})
+        self.assertEqual(parse_json_result(raw), {"last": {"b": 2}})
 
         # Malformed
-        self.assertIsNone(runner._parse_json_result("not json"))
+        self.assertIsNone(parse_json_result("not json"))
 
     @patch("orchestrator.agents.cli_base.register_process")
     @patch("orchestrator.agents.cli_base.unregister_process")
@@ -55,7 +49,7 @@ class TestAgents(unittest.TestCase):
             task_id="t1",
             prompt="p1",
             env_folder="/tmp",
-            tx_id="tx_42"
+            tx_id="tx_42", stage="t1-stage"
         )
 
         self.assertIsNone(error)
@@ -86,7 +80,7 @@ class TestAgents(unittest.TestCase):
             task_id="t1",
             prompt="p1",
             env_folder="/tmp",
-            tx_id="tx_99"
+            tx_id="tx_99", stage="t1-stage"
         )
 
         self.assertIsNone(error)
@@ -118,7 +112,7 @@ class TestAgents(unittest.TestCase):
             prompt="p1",
             env_folder="/tmp",
             tx_id="tx_101",
-            model="ignored-model"
+            model="ignored-model", stage="t1-stage"
         )
 
         self.assertIsNone(error)
@@ -138,36 +132,6 @@ class TestAgents(unittest.TestCase):
         self.assertIn("6h", cmd)
         self.assertNotIn("ignored-model", cmd)
         self.assertNotIn("--model", cmd)
-
-
-class TestMngrParseJsonResult(unittest.TestCase):
-    """Covers `mngr_runner.parse_json_result`, the standalone function the
-    mngr-backed runners use to extract a JSON object out of the agent's
-    final assistant text. (Distinct from `BaseCliAgentRunner._parse_json_result`
-    above; same logic but a different code path the mngr runners reach
-    without inheriting from cli_base.)"""
-
-    def test_simple_json(self):
-        self.assertEqual(parse_json_result('{"a": 1}'), {"a": 1})
-
-    def test_markdown_json_block(self):
-        raw = "Here is the result:\n```json\n{\"score\": 0.5}\n```\nDone."
-        self.assertEqual(parse_json_result(raw), {"score": 0.5})
-
-    def test_picks_last_json(self):
-        raw = '{"first": 1} ... some text ... {"last": 2}'
-        self.assertEqual(parse_json_result(raw), {"last": 2})
-
-    def test_nested_json(self):
-        raw = 'Random text before {"outer": {"inner": 42}, "other": "val"} text after'
-        self.assertEqual(parse_json_result(raw), {"outer": {"inner": 42}, "other": "val"})
-
-    def test_multiple_nested(self):
-        raw = '{"first": {"a": 1}} some noise {"last": {"b": 2}}'
-        self.assertEqual(parse_json_result(raw), {"last": {"b": 2}})
-
-    def test_malformed(self):
-        self.assertIsNone(parse_json_result("not json"))
 
 
 class TestSharedExtractors(unittest.TestCase):

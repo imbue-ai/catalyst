@@ -45,11 +45,11 @@ def main() -> int:
         src_settings = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
             "claude_skills",
-            "settings.local.json",
+            "settings.json",
         )
         dst_claude = os.path.join(env_folder, ".claude")
         os.makedirs(dst_claude, exist_ok=True)
-        shutil.copy2(src_settings, os.path.join(dst_claude, "settings.local.json"))
+        shutil.copy2(src_settings, os.path.join(dst_claude, "settings.json"))
 
         print(f"Running multi-turn smoke task in {env_folder}", flush=True)
         captured_name: dict[str, str | None] = {"name": None}

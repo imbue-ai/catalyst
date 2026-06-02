@@ -15,7 +15,7 @@ Verifies that:
 5. `parse_json_result` returns the expected dict (proving the
    WAITING-state turn-completion strategy fired correctly).
 
-Unlike the Claude smoke test there is no `.claude/settings.local.json` to
+Unlike the Claude smoke test there is no `.claude/settings.json` to
 provision: the `mngr_antigravity` plugin provisions its own `hooks.json`
 (per-agent, under the agent state dir) that maintains the lifecycle
 `active` marker, so `mngr wait --state WAITING` is the turn-end signal.

@@ -66,17 +66,17 @@ def main() -> int:
     runner = MngrClaudeAgentRunner()
     with tempfile.TemporaryDirectory(prefix="cata-smoke-") as env_folder:
         # Mirror what `create_environment.py` does for real tasks: copy
-        # the `.claude/settings.local.json` from `claude_skills/` so the
+        # the `.claude/settings.json` from `claude_skills/` so the
         # Stop hook that emits `mngr/turn_complete` is wired up. Without
         # it the runner would wait its full 4-hour timeout.
         src_settings = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
             "claude_skills",
-            "settings.local.json",
+            "settings.json",
         )
         dst_claude = os.path.join(env_folder, ".claude")
         os.makedirs(dst_claude, exist_ok=True)
-        shutil.copy2(src_settings, os.path.join(dst_claude, "settings.local.json"))
+        shutil.copy2(src_settings, os.path.join(dst_claude, "settings.json"))
 
         print(f"Running smoke task in {env_folder}")
         data, session_id, error = runner.run(
