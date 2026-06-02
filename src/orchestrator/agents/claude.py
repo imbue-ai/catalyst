@@ -17,7 +17,7 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
         env_folder: str,
         model: Optional[str] = None,
         tx_id: Optional[str] = None,
-        stage: Optional[str] = None,  # ignored by the legacy runner
+        stage: Optional[str] = None,  # ignored by the direct runner
         on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
