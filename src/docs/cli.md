@@ -62,7 +62,7 @@ These skills focus on a single statement (hypothesis, theorem, lemma, etc.) with
 
 ## Context Management
 
-The `context_manager.py` script is the core of Catalyst's data persistence. It manages the `.catalyst-db` directory.
+The `context_manager.py` script is the core of Catalyst's data persistence. It manages the `.ai-scientist-db` directory.
 
 All Catalyst skills will internally utilize the context manager to retrieve context (such as an existing theory), and store their results. The context database is immutable: Once a result has been stored, it cannot be changed. This means that each change that a Catalyst skill makes to a theory will result in a brand new theory ID.
 
@@ -72,7 +72,7 @@ All Catalyst skills will internally utilize the context manager to retrieve cont
 
 ## Outputs and Database Structure
 
-All results are stored in the `.catalyst-db` directory:
+All results are stored in the `.ai-scientist-db` directory:
 
 - `exploration/`: Reports from the `explore` skill.
 - `literature/`: Summaries from `literature-review`.
