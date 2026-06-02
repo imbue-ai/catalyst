@@ -15,7 +15,7 @@ for it to complete. Verifies that:
 Cost control: pins claude-haiku-4-5-20251001.
 
 Usage (from src/, after starting the backend separately):
-    AI_SCIENTIST_PATH=/tmp/aisci-smoke-c uv run python scripts/smoke_test_orchestrator.py
+    CATALYST_PATH=/tmp/aisci-smoke-c uv run python scripts/smoke_test_orchestrator.py
 """
 
 import json
