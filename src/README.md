@@ -67,7 +67,7 @@ For tasks created with the `mngr-claude` / `mngr-antigravity` frameworks, `mngr`
 
 Deleting a task from the dashboard removes its env_folder and cancels any running step. **Per-session state outside the env_folder is preserved** for every framework — this is intentional so transcripts remain inspectable after a task is gone, and it matches the underlying CLI's own behavior:
 
-- The direct `gemini` / `claude` runners leave their session JSONLs under `~/.gemini/` and `~/.claude/projects/<sanitized-env-folder>/<session_id>.jsonl` respectively. The direct `agy` runner leaves agy's per-conversation logs under `~/.gemini/antigravity-cli/`. None of the CLIs clean these up on their own.
+- The direct `gemini` / `claude` runners leave their session JSONLs under `~/.gemini/` and `~/.claude/projects/<sanitized-env-folder>/<session_id>.jsonl` respectively. The direct `agy` runner leaves agy's per-conversation logs under `~/.gemini/antigravity-cli/`. Each CLI auto-prunes its session data on its own schedule (Claude Code defaults to a 30-day retention; Gemini CLI prunes similarly), so they're not committed-forever clutter.
 - `mngr-claude` / `mngr-antigravity` leave the agent's transcript + work_dir under `~/.mngr-catalyst/agents/<agent-id>/` (mngr keeps the per-agent state even after `mngr destroy`). `mngr-antigravity` additionally leaves agy's per-conversation logs under `~/.gemini/antigravity-cli/`.
 
 To remove every mngr agent associated with a finished task:

@@ -9,7 +9,7 @@ class TestOrchestrator(OrchestratorTestCase):
         self.task = Task(
             id="task_1",
             workflow_name="develop-theory",
-            framework="mngr-antigravity",
+            framework="gemini",
             env_folder="/tmp/env",
             workflow_inputs={}
         )

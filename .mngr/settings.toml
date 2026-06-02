@@ -8,7 +8,6 @@ auto_dismiss_dialogs = true
 # Catalyst steps run unattended -- can't stop to ask for tool permission.
 # The plugin adds `--dangerously-skip-permissions` to the launch command.
 auto_allow_permissions = true
-cli_args = ["--verbose"]
 
 [agent_types.antigravity]
 # agy's first-launch trust dialog would otherwise intercept the initial
