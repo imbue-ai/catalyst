@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Folder, Activity, Sun, Moon, Loader2 } from 'lucide-react'
+import { Plus, Folder, Activity, Sun, Moon } from 'lucide-react'
 import * as api from './api'
 import { StatusBadge } from './components/StatusBadge'
 import { TaskDetail } from './components/TaskDetail'
 import { CreateTaskModal } from './components/CreateTaskModal'
 import { DeleteConfirmModal } from './components/DeleteConfirmModal'
 import { GameOfLife } from './components/GameOfLife'
+import { TaskDetailSkeleton } from './components/TaskDetailSkeleton'
 
 function App() {
   const [tasks, setTasks] = useState<api.TaskShallow[]>([])
@@ -261,10 +262,7 @@ function App() {
                 isBackendDown={isBackendDown}
               />
             ) : (
-              <div className="flex-1 flex flex-col items-center justify-center p-20 text-center opacity-50">
-                <Loader2 size={40} className="animate-spin mb-4" strokeWidth={3} />
-                <div className="font-bold text-xs tracking-widest">Loading Research...</div>
-              </div>
+              <TaskDetailSkeleton />
             )
           ) : isAnyTaskRunning ? (
             <GameOfLife />
