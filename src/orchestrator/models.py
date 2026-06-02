@@ -64,7 +64,6 @@ class Task(BaseModel):
 class TaskShallow(BaseModel):
     id: str
     title: Optional[str] = None
-    workflow_inputs: Dict[str, Any] = {}
     env_folder: str
     framework: str
     model: Optional[str] = None

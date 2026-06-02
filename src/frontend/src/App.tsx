@@ -86,7 +86,7 @@ function App() {
           if (oldTask && oldTask.status !== task.status) {
             if (Notification.permission === "granted") {
               const notification = new Notification("Research Status Update", {
-                body: `Research "${task.title || task.workflow_inputs.summary || task.id}" is now ${task.status}.`,
+                body: `Research "${task.title || task.id}" is now ${task.status}.`,
                 icon: "/favicon.png"
               });
               notification.onclick = () => {
@@ -212,7 +212,7 @@ function App() {
               >
                 <div className="flex justify-between items-start mb-2 gap-2">
                   <span className={`font-bold text-xs truncate flex-1 ${selectedTaskId === task.id ? 'text-white' : 'text-black'}`}>
-                    {task.title || task.workflow_inputs.summary}
+                    {task.title}
                   </span>
                   <StatusBadge status={task.status} />
                 </div>

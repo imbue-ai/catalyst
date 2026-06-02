@@ -79,7 +79,17 @@ class CreateTaskRequest(BaseModel):
 def list_tasks():
     tasks = get_tasks()
     return [
-        TaskShallow(**task.model_dump(exclude={"steps", "addons", "workflow_structure", "guidance"}))
+        TaskShallow(
+            id=task.id,
+            title=task.title or task.workflow_inputs.get("summary"),
+            env_folder=task.env_folder,
+            framework=task.framework,
+            model=task.model,
+            status=task.status,
+            current_stage=task.current_stage,
+            workflow_name=task.workflow_name,
+            created_at=task.created_at,
+        )
         for task in tasks
     ]
 

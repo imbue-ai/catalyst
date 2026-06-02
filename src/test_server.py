@@ -44,6 +44,7 @@ class TestServerEndpoints(unittest.TestCase):
         self.assertNotIn("addons", task_json)
         self.assertNotIn("workflow_structure", task_json)
         self.assertNotIn("guidance", task_json)
+        self.assertNotIn("workflow_inputs", task_json)
 
     @patch("server.get_task")
     def test_get_task(self, mock_get_task):
