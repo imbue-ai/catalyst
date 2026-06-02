@@ -38,7 +38,7 @@ The dashboard will be available at `http://localhost:8939`.
 
 The system can be configured using the following environment variables:
 
-- `CATALYST_PATH`: The base directory where state and research environments are stored. Defaults to `~/.catalyst`.
+- `CATALYST_PATH`: The base directory where state and research environments are stored. Defaults to `~/catalyst-research`.
 - `CATALYST_MAX_CONCURRENCY_PER_TASK`: The maximum number of concurrent agent steps per task. Defaults to `3`. Some steps (e.g. `review-theory`) will consume more than one unit, as they utilize subagents internally.
 
 ## Usage
@@ -56,8 +56,8 @@ The system can be configured using the following environment variables:
 
 ## Data Persistence
 
-- **Tasks State:** The service maintains its state in `tasks_state.json` inside the `CATALYST_PATH` (defaults to `~/.catalyst/tasks_state.json`). You can stop and restart the backend server without losing track of ongoing or completed research tasks.
-- **Research Environments:** Research artifacts and agent workspaces are stored in the `research` subfolder of `CATALYST_PATH` (defaults to `~/.catalyst/research`). Each task gets its own folder named `task_<short_id>`.
+- **Tasks State:** The service maintains its state in `tasks_state.json` inside the `CATALYST_PATH` (defaults to `~/catalyst-research/tasks_state.json`). You can stop and restart the backend server without losing track of ongoing or completed research tasks.
+- **Research Environments:** Research artifacts and agent workspaces are stored in the `research` subfolder of `CATALYST_PATH` (defaults to `~/catalyst-research/tasks`). Each task gets its own folder named `task_<short_id>`.
 
 
 ## Troubleshooting

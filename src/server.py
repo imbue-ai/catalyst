@@ -114,8 +114,10 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
     task_id = str(uuid.uuid4())
 
     # Generate unique target path inside configured research directory
-    base_research_dir = os.path.join(get_catalyst_path(), "research")
-    target_path = os.path.abspath(os.path.join(base_research_dir, f"task_{task_id[:8]}"))
+    base_research_dir = os.path.join(get_catalyst_path(), "tasks")
+    target_path = os.path.abspath(
+        os.path.join(base_research_dir, f"task_{task_id[:8]}")
+    )
 
     # Run create_environment.py
     cmd = ["uv", "run", "python", "create_environment.py", target_path]
@@ -249,7 +251,12 @@ def cancel_step(task_id: str, stage: str):
     # Actually, we can just mark it as canceled if it's paused, failed, or pending.
     step = next((s for s in task.steps if s.stage == stage), None)
     if step:
-        if step.status in (StepStatus.FAILED, StepStatus.PAUSED, StepStatus.PENDING, StepStatus.WAITING):
+        if step.status in (
+            StepStatus.FAILED,
+            StepStatus.PAUSED,
+            StepStatus.PENDING,
+            StepStatus.WAITING,
+        ):
             step.status = StepStatus.CANCELED
             update_task(task)
             return {"status": "canceled"}
@@ -311,6 +318,7 @@ def cancel_task(task_id: str):
 
     task.status = TaskStatus.PAUSED
     from orchestrator.models import StepStatus
+
     for step in task.steps:
         if step.status in (StepStatus.RUNNING, StepStatus.WAITING):
             step.status = StepStatus.PAUSED
@@ -494,9 +502,7 @@ def list_artifact_files(task_id: str, artifact_id: str):
     if not category:
         raise HTTPException(status_code=400, detail="Invalid artifact ID prefix")
 
-    dir_path = os.path.join(
-        task.env_folder, DEFAULT_DB_DIR, category, artifact_id
-    )
+    dir_path = os.path.join(task.env_folder, DEFAULT_DB_DIR, category, artifact_id)
     if not os.path.exists(dir_path):
         raise HTTPException(status_code=404, detail="Artifact directory not found")
 
@@ -506,10 +512,10 @@ def list_artifact_files(task_id: str, artifact_id: str):
             full_path = os.path.join(root, f)
             rel_path = os.path.relpath(full_path, dir_path)
             # Use forward slashes for consistent web paths
-            files.append(rel_path.replace(os.sep, '/'))
+            files.append(rel_path.replace(os.sep, "/"))
 
     def sort_key(path):
-        parts = path.split('/')
+        parts = path.split("/")
         return [(1 if i < len(parts) - 1 else 0, part) for i, part in enumerate(parts)]
 
     return sorted(files, key=sort_key)
@@ -557,9 +563,7 @@ def export_artifact(task_id: str, artifact_id: str):
             status_code=500, detail="No primary markdown configured for category"
         )
 
-    artifact_dir = os.path.join(
-        task.env_folder, DEFAULT_DB_DIR, category, artifact_id
-    )
+    artifact_dir = os.path.join(task.env_folder, DEFAULT_DB_DIR, category, artifact_id)
     md_path = os.path.join(artifact_dir, md_filename)
 
     if not os.path.exists(md_path):
