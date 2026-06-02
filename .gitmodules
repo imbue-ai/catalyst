@@ -1,3 +1,6 @@
 [submodule "darwinian_evolver"]
 	path = darwinian_evolver
 	url = https://github.com/imbue-ai/darwinian_evolver.git
+[submodule "templates"]
+	path = templates
+	url = https://github.com/imbue-ai/catalyst-templates.git
