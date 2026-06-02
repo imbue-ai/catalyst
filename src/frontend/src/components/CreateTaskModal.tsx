@@ -397,7 +397,12 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                             Default
                           </button>
                           {/* The Antigravity CLI (agy) has no --model flag, so it only offers "Default" (its account model). */}
-                          {(inputs.framework === 'claude' || inputs.framework === 'mngr-claude' ? ['opus', 'sonnet', 'haiku'] : []).map(m => (
+                          {((inputs.framework === 'claude' || inputs.framework === 'mngr-claude')
+                              ? ['opus', 'sonnet', 'haiku']
+                              : inputs.framework === 'gemini'
+                              ? ['pro', 'flash']
+                              : []
+                          ).map(m => (
                             <button
                               key={m}
                               type="button"
