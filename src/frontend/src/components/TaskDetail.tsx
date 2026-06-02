@@ -318,8 +318,10 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                             cmd = `MNGR_HOST_DIR=~/.mngr-catalyst mngr connect ${step.session_id}`;
                           } else if (task.framework === 'gemini') {
                             cmd = `cd "${task.env_folder}" && gemini --resume ${step.session_id}`;
-                          } else {
+                          } else if (task.framework === 'claude') {
                             cmd = `cd "${task.env_folder}" && claude --resume ${step.session_id}`;
+                          } else {
+                            cmd = `cd "${task.env_folder}" && agy --resume ${step.session_id}`;
                           }
                           const comment = isMngr
                             ? "# Attach to this agent's tmux session (restarts it if stopped)"
