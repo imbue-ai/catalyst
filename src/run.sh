@@ -67,6 +67,10 @@ echo "Running 'npm install' in frontend directory..."
 (cd frontend && npm install)
 echo ""
 
+echo "Populating template blobs: 'uv run python ../templates/download_blobs.py'..."
+uv run python ../templates/download_blobs.py
+echo ""
+
 echo "======================================"
 echo "Starting services..."
 echo "======================================"
