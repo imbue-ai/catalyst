@@ -14,7 +14,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from contextlib import asynccontextmanager
 
-from orchestrator.models import Task, TaskStatus
+from orchestrator.models import Task, TaskStatus, TaskShallow
 from orchestrator.state import (
     get_tasks,
     get_task,
@@ -75,9 +75,13 @@ class CreateTaskRequest(BaseModel):
     model: Optional[str] = None
 
 
-@app.get("/api/tasks", response_model=List[Task])
+@app.get("/api/tasks", response_model=List[TaskShallow])
 def list_tasks():
-    return get_tasks()
+    tasks = get_tasks()
+    return [
+        TaskShallow(**task.model_dump(exclude={"steps", "addons", "workflow_structure", "guidance"}))
+        for task in tasks
+    ]
 
 
 @app.get("/api/tasks/{task_id}", response_model=Task)

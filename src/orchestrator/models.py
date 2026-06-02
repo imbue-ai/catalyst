@@ -61,5 +61,17 @@ class Task(BaseModel):
     guidance: str = "No additional guidance."
     created_at: Optional[str] = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
+class TaskShallow(BaseModel):
+    id: str
+    title: Optional[str] = None
+    workflow_inputs: Dict[str, Any] = {}
+    env_folder: str
+    framework: str
+    model: Optional[str] = None
+    status: TaskStatus = TaskStatus.PENDING
+    current_stage: Optional[str] = None
+    workflow_name: str = "develop-theory"
+    created_at: Optional[str] = None
+
 class TasksState(BaseModel):
     tasks: List[Task] = []
