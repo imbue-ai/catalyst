@@ -64,7 +64,7 @@ def main() -> int:
             print(
                 f"  Agent name: {name}\n"
                 f"  Tail transcript:\n"
-                f"    MNGR_HOST_DIR=~/.mngr-ai-scientist mngr transcript {name}",
+                f"    MNGR_HOST_DIR=~/.mngr-catalyst mngr transcript {name}",
                 flush=True,
             )
 
