@@ -240,5 +240,60 @@ More text.'''
         write_args = [call_args[0][1] for call_args in mock_zip_write.call_args_list]
         self.assertIn("T_123/image.png", write_args)
 
+    @patch("server.get_catalyst_path", return_value="/tmp/test_catalyst")
+    @patch("server.open")
+    @patch("server.fcntl.flock")
+    @patch("server.initialize_state")
+    @patch("server.shutdown_all")
+    @patch("server.os.makedirs")
+    def test_lifespan_lock_success(self, mock_makedirs, mock_shutdown_all, mock_initialize_state, mock_flock, mock_open_file, mock_get_path):
+        import asyncio
+        from server import lifespan
+
+        # Mock the opened lock file
+        mock_file = MagicMock()
+        mock_file.fileno.return_value = 123
+        mock_open_file.return_value = mock_file
+
+        async def run_lifespan():
+            async with lifespan(None):
+                pass
+
+        asyncio.run(run_lifespan())
+
+        # Check that we made the directory and opened the lock file
+        mock_makedirs.assert_called_with("/tmp/test_catalyst", exist_ok=True)
+        mock_open_file.assert_called_with("/tmp/test_catalyst/server.lock", "w")
+
+        # Check that we acquired and released the lock
+        import fcntl
+        mock_flock.assert_any_call(123, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        mock_flock.assert_any_call(123, fcntl.LOCK_UN)
+        mock_file.close.assert_called()
+
+    @patch("server.get_catalyst_path", return_value="/tmp/test_catalyst")
+    @patch("server.open")
+    @patch("server.fcntl.flock")
+    @patch("server.os.makedirs")
+    def test_lifespan_lock_already_locked(self, mock_makedirs, mock_flock, mock_open_file, mock_get_path):
+        import asyncio
+        from server import lifespan
+
+        # Mock lock failure
+        mock_file = MagicMock()
+        mock_file.fileno.return_value = 123
+        mock_open_file.return_value = mock_file
+        mock_flock.side_effect = BlockingIOError("Lock already held")
+
+        async def run_lifespan():
+            async with lifespan(None):
+                pass
+
+        with self.assertRaises(RuntimeError) as ctx:
+            asyncio.run(run_lifespan())
+
+        self.assertEqual(str(ctx.exception), "Another server instance is already running.")
+        mock_file.close.assert_called_once()
+
 if __name__ == '__main__':
     unittest.main()
