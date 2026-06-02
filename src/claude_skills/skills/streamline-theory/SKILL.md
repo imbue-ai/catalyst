@@ -20,10 +20,9 @@ Set up two folders — one for input context, one for your own output:
 CONTEXT_DIR: `mktemp -d -p ./tmp streamline-theory-context-XXXX`
 OUTPUT_DIR: `mktemp -d -p ./tmp streamline-theory-output-XXXX`
 
-Run this command to populate the context, and then initialize the output folder with a copy of the original theory files:
+Run this command to populate the context:
 ```bash
 uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_agent_type streamline-theory --target_folder <CONTEXT_DIR> --from_theory <THEORY_ID>
-cp -r "<CONTEXT_DIR>/theory/"* "<OUTPUT_DIR>/"
 ```
 
 - `<CONTEXT_DIR>/theory/` — the current theory (read-only input). Read `<CONTEXT_DIR>/theory/theory.md`.
@@ -40,7 +39,8 @@ Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audi
 2. **Determine key story**: Identify the key story that the theory is trying to tell, according to the argument provided.
 3. **Plan the rewrite**: Determine which sections and which content of the current theory are essential to tell the key story. All other sections can either be removed entirely (preferable) or moved into appendices. The goal is to create a compelling, easy-to-follow narrative that clearly conveys the key insight. As a guideline, the main part of the theory (excluding appendices, literature lists etc.) should be no more than ~5,000 words.
 4. **Writing**: Write a new version of the theory in `<OUTPUT_DIR>/theory.md`, following your plan. Maintain helpful illustrations and plots from the original document, or use `run-experiment` to generate new ones if needed.
-5. **Store results**: Persist your output and return the new theory ID:
+5. **Copy over images**: Copy any image files from `<CONTEXT_DIR>/theory/` that are still being referenced in your new theory into `<OUTPUT_DIR>/`.
+6. **Store results**: Persist your output and return the new theory ID:
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type streamline-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```

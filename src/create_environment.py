@@ -31,6 +31,13 @@ BASE_CLAUDE_MD = """GENERAL INSTRUCTIONS:
 * The user might have provided additional guidance in the file `GUIDANCE.txt`.  You MUST read this file before you start any work and treat its contents as user instructions.
 * If you encounter any issues with following the instructions in a skill, or run into issues with your execution environment (e.g. missing permission, error while running a pre-provided script, etc.), please take a second to append a short, one-line issue description to `./tmp/agent_friction_log.txt`.
 * ONLY spawn a subagent when the execution steps in a skill explicitly tell you to.
+
+THEORY.MD INSTRUCTIONS:
+* `theory.md` files are the main output of the research process that will be consumed by human researchers.
+* Assume you're writing a high-quality scientific paper to be published in a leading journal in the field! Use language and rigour appropriate for that audience.
+* Use rigorous, objective language in all theories, reviews and reports. Be extremely precise, using specific objective observations, precise mathematical definitions, and mathematical proofs. NEVER present speculation as fact.
+* Completely avoid self-promoting language. Never call your own theories "profound", "elegant", etc. Use neutral, factual language at all times.
+* Avoid *unnecessary* jargon. When you invoke a technical term, it should be for the purpose of adding clarity and/or precision.
 """
 
 

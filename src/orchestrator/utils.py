@@ -11,7 +11,7 @@ def get_catalyst_path() -> str:
     if path:
         return path
 
-    catalyst_path = os.path.expanduser("~/.catalyst")
+    catalyst_path = os.path.expanduser("~/catalyst-research")
     legacy_path = os.path.expanduser("~/.ai-scientist")
     if not os.path.exists(catalyst_path) and os.path.exists(legacy_path):
         return legacy_path

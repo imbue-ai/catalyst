@@ -403,8 +403,10 @@ class TestContextManager(unittest.TestCase):
 
         self.assertTrue(export_path.exists())
         data = json.loads(export_path.read_text())
-        self.assertIn("organisms", data)
-        self.assertEqual(len(data["organisms"]), 1)
+        self.assertIn("population", data)
+        population = data["population"]
+        self.assertIn("organisms", population)
+        self.assertEqual(len(population["organisms"]), 1)
 
 
 if __name__ == "__main__":

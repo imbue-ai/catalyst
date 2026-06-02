@@ -88,7 +88,7 @@ The resulting theory MUST use language and rigor that is adequate for publishing
    - **Literature grounding**: You can cite prior literature to support your statement. Always read the full paper before citing it. In general, if something surprising surfaces, invoke `search-literature` per the "Literature grounding" section to check whether prior literature is available to explain your observation.
 6. **Iteration**: Keep iterating until you're COMPLETELY CONFIDENT in your expansion and have ruled out ALL alternative hypotheses.
    - Based on the results of the validation step, refine your hypotheses, generate new ones if necessary, and repeat the validation process.
-7. **Reporting**: Write the expanded theory to `<OUTPUT_DIR>/theory.md` (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
+7. **Reporting**: Edit the theory in `<OUTPUT_DIR>/theory.md` to apply your expansions (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
 8. **Store results**: Persist your output and return the new theory ID:
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type expand-theory --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>

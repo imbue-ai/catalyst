@@ -5,6 +5,7 @@ argument-hint: the phenomenon and optionally direction to explore
 ---
 
 You are the **Exploration Lead**. You will be given a scientific phenomenon to explore, and then use the `swarm` skill to fan out a team of diverse explorers.
+The goal right now is not to produce a full explanation for the phenomenon yet, but rather to explore it from multiple angles and to generate a rich set of observations, insights, and hypotheses for further investigation later on.
 
 ## Inputs
 The phenomenon to explore is: $ARGUMENTS
@@ -20,7 +21,6 @@ All exploration artifacts and temporary files go under this folder. Swarm agents
 1. Understand the given phenomenon and what's interesting to explore around it.
 2. Construct a detailed task string for swarm that includes:
    - What to explore (the phenomenon, the system, any specific direction from your inputs)
-   - Available CLI tools and how to invoke them (if provided)
    - Output conventions: Put files under `<OUTPUT_DIR>/<agent-name>/`, write lab-notebook entries to `<OUTPUT_DIR>/<agent-name>/explorer_log.md`, actually read image outputs, run at least 3 experiments, follow up on surprises
    - Experiment discipline (IMPORTANT): Never execute experiment scripts directly. Every experiment must be run through the `run-experiment` skill. The skill will need to know an AGENT_TYPE name, which should be `explorer`. Record each resulting `X_...` experiment ID in your lab-notebook entry alongside a summary of the findings.
    - Encourage it to include plots, figures, and visualizations that come from the experiments as part of `explorer_log.md`. Markdown image references should be relative to `<OUTPUT_DIR>/`.
