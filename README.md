@@ -1,6 +1,6 @@
 # Catalyst AI Scientist
 
-A tool for autonomous scientific research and discovery.
+A tool for semi-autonomous scientific research and discovery.
 
 ![Catalyst Logo](src/assets/catalyst-small.png)
 
