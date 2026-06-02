@@ -14,7 +14,7 @@ For more detailed information, please see the following guides:
 
 - **Agent Skills:** The main functionality of Catalyst is implemented through a set of Agent skills that each perform different steps of the research process.
 - **Backend (Python + FastAPI):** Manages the research lifecycle using multi-threading.
-- **Agent Layer:** Per step, spawns `gemini` / `claude` / `agy` (the Antigravity CLI) as a direct headless CLI subprocess (the original implementation), or runs `claude` / `agy` inside a `mngr`-managed interactive tmux session (the `mngr-claude` / `mngr-antigravity` framework variants). Both paths capture JSON outputs for the dashboard; the mngr variants additionally expose each step's session for live attach.
+- **Agent Layer:** Spawns `gemini`, `claude`, or `agy` CLI processes in headless mode, or `claude` / `agy` inside a `mngr`-managed tmux session you can attach to live (the `mngr-claude` / `mngr-antigravity` variants). JSON outputs and session IDs captured for traceability either way.
 - **Frontend (React + TypeScript):** A dashboard for starting research tasks, monitoring progress in real-time, and inspecting the data exchange at each step.
 
 ## Prerequisites
@@ -22,7 +22,7 @@ For more detailed information, please see the following guides:
 - MacOS, Linux, or WSL2 (Windows)
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) (for Python dependency management)
 - [Node.js & npm](https://nodejs.org/en/download) (for the frontend)
-- [Gemini CLI](https://geminicli.com/docs/get-started/installation/), [Antigravity CLI](https://antigravity.google/docs/cli-overview) (`agy`), or [Claude Code](https://code.claude.com/docs/en/quickstart#step-1-install-claude-code) installed and authenticated.
+- [Gemini CLI](https://geminicli.com/docs/get-started/installation/), [Antigravity CLI](https://antigravity.google/download), or [Claude Code](https://code.claude.com/docs/en/quickstart#step-1-install-claude-code) installed and authenticated.
 - [Claude Code Sandboxing Prerequisites](https://code.claude.com/docs/en/sandboxing#prerequisites) correctly set up when using Claude Code on Linux or WSL
 
 ## Getting Started
@@ -46,11 +46,14 @@ The system can be configured using the following environment variables:
 1. **Start a Task:** Click "NEW TASK" in the dashboard.
 2. **Configure:**
    - **Phenomenon:** The scientific topic to investigate.
-   - **Framework:** `Gemini CLI` / `Claude Code` / `Antigravity CLI` run their CLI directly as a headless subprocess (the original implementation; the `agy` runner is sandboxed via `agy --sandbox`). `Claude Code (mngr)` / `Antigravity CLI (mngr)` run `claude` / `agy` inside a `mngr`-managed tmux session you can attach to live via `mngr connect`. The mngr variants need `imbue-mngr` plus the matching plugin (`imbue-mngr-claude` / `imbue-mngr-antigravity`) and the `agy` binary on PATH.
+   - **Framework:** Choose between Gemini CLI, Antigravity CLI, Claude Code, or the `mngr-` variants of Claude Code / Antigravity CLI (which run inside a `mngr`-managed tmux session you can attach to live).
    - **Model:** Choose a model identifier from the dropdown or enter one manually.
 3. **Monitor:** The dashboard polls the backend every 2 seconds to update the timeline.
-4. **Inspect:** Click any completed or running step in the timeline to view the raw inputs, JSON outputs, and the **Agent Name** / **Session ID**.
-5. **Recover:** The dashboard's "Inspect Agent" panel shows the right command for the framework. For the direct `gemini` / `claude` tasks it's `cd <env_folder> && gemini --resume <session_id>` (or `claude --resume <session_id>`); the direct `agy` runner keeps no resumable session. For `mngr-claude` / `mngr-antigravity` tasks it's `MNGR_HOST_DIR=~/.mngr-catalyst mngr connect <session_id>` — attaches a terminal to the agent's tmux session whether it's running or stopped.
+4. **Inspect:** Click any completed or running step in the timeline to view the raw inputs, JSON outputs, and the **Session ID**.
+5. **Recover:** If you want to see the detailed agent logs or manually intervene, use the session ID provided in the inspection panel (where supported):
+   - For Gemini: `gemini --resume <session_id>`
+   - For Claude: `claude --resume <session_id>`
+   - For `mngr-claude` / `mngr-antigravity`: `MNGR_HOST_DIR=~/.mngr-catalyst mngr connect <session_id>` (attaches a terminal to the agent's tmux session, running or stopped)
 
 ## Inspecting past mngr sessions
 
@@ -90,11 +93,13 @@ If you're on Ubuntu 24.04, follow https://www.jdhodges.com/blog/codex-sandbox-ub
 ### Claude can't enable sandbox
 Follow the prerequisites steps from https://code.claude.com/docs/en/sandboxing#prerequisites
 
-### Antigravity (`agy`) is not signed in
-The `mngr-antigravity` framework drives the Antigravity CLI in a headless tmux session, so it can't complete an interactive OAuth sign-in. Authenticate `agy` once in a normal terminal (run `agy`, follow the sign-in prompt) before starting antigravity tasks. mngr reuses the credentials it writes under `~/.gemini/antigravity-cli/`.
+### Gemini CLI fails with `When using Gemini API, you must specify the GEMINI_API_KEY environment variable.`
+If you've configured Gemini CLI to use API key authentication, it will refuse to run in headless mode unless the GEMINI_API_KEY environment variable is also set.
 
-### Antigravity (`agy`) is shadowed by the desktop app
-If the Antigravity desktop app is installed, its bundled `agy` shim can shadow the standalone CLI on `PATH`. Confirm `which agy` points at the standalone Go binary (e.g. `~/.local/bin/agy`); if not, remove the desktop app's `bin/agy` or set an absolute `command` path on the `antigravity` agent type in your mngr config.
+To resolve this issue, export the GEMINI_API_KEY environment variable before launching the server:
+```bash
+GEMINI_API_KEY=<your Google AI Studio API key> ./run.sh
+```
 
 ### Antigravity CLI cannot run any commands on Ubuntu, fails with `CORTEX_STEP_TYPE_RUN_COMMAND: read unix @ -> @: recvmsg: connection reset by peer`
 Try
@@ -104,10 +109,8 @@ sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 ```
 and consider adding the same settings to your /etc/sysctl.conf to survive a system restart.
 
-### Gemini CLI fails with `When using Gemini API, you must specify the GEMINI_API_KEY environment variable.`
-If you've configured Gemini CLI to use API key authentication, it will refuse to run in headless mode unless the GEMINI_API_KEY environment variable is also set.
+### Antigravity (`agy`) is not signed in
+The `mngr-antigravity` framework drives the Antigravity CLI in a headless tmux session, so it can't complete an interactive OAuth sign-in. Authenticate `agy` once in a normal terminal (run `agy`, follow the sign-in prompt) before starting antigravity tasks. mngr reuses the credentials it writes under `~/.gemini/antigravity-cli/`.
 
-To resolve this issue, export the GEMINI_API_KEY environment variable before launching the server:
-```bash
-GEMINI_API_KEY=<your Google AI Studio API key> ./run.sh
-```
+### Antigravity (`agy`) is shadowed by the desktop app
+If the Antigravity desktop app is installed, its bundled `agy` shim can shadow the standalone CLI on `PATH`. Confirm `which agy` points at the standalone Go binary (e.g. `~/.local/bin/agy`); if not, remove the desktop app's `bin/agy` or set an absolute `command` path on the `antigravity` agent type in your mngr config.

@@ -13,12 +13,13 @@ Verifies that:
 4. After agy finishes, the agent is STOPPED (not destroyed) and is still
    listed.
 5. `parse_json_result` returns the expected dict (proving the
-   transcript-idle turn-completion strategy fired correctly).
+   WAITING-state turn-completion strategy fired correctly).
 
 Unlike the Claude smoke test there is no `.claude/settings.local.json` to
-provision: antigravity has no turn-end Stop hook, so the runner detects
-completion by polling the common transcript for a final no-tool-calls
-message. The `[agent_types.antigravity]` settings in `.mngr/settings.toml`
+provision: the `mngr_antigravity` plugin provisions its own `hooks.json`
+(per-agent, under the agent state dir) that maintains the lifecycle
+`active` marker, so `mngr wait --state WAITING` is the turn-end signal.
+The `[agent_types.antigravity]` settings in `.mngr/settings.toml`
 (auto_dismiss_dialogs / auto_allow_permissions) handle the trust dialog and
 auto-approval, so a bare temp env_folder is enough.
 

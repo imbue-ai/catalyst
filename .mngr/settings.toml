@@ -2,27 +2,17 @@
 # Catalyst step. Auto-discovered via the git root.
 
 [agent_types.claude]
-# Required for headless `mngr create --type claude --no-connect` against
-# fresh env_folders. Auto-trusts the work_dir during provisioning and
-# dismisses Claude Code's effort-callout / onboarding dialogs so the
-# agent starts cleanly without user interaction.
+# Auto-trust the work_dir and dismiss Claude Code's onboarding dialogs so
+# headless `mngr create --no-connect` starts cleanly.
 auto_dismiss_dialogs = true
-
-# Project-wide CLI args appended after the per-call --model. The runner
-# only contributes --model and (for the smoke flow) -p; everything that
-# applies to every Catalyst step lives here.
-cli_args = ["--dangerously-skip-permissions", "--verbose"]
+# Catalyst steps run unattended -- can't stop to ask for tool permission.
+# The plugin adds `--dangerously-skip-permissions` to the launch command.
+auto_allow_permissions = true
+cli_args = ["--verbose"]
 
 [agent_types.antigravity]
-# Required for headless `mngr create --type antigravity --no-connect`
-# against fresh env_folders. agy's first-launch trust dialog would
-# otherwise intercept the initial message keystrokes; auto_dismiss_dialogs
-# silently appends the work_dir to agy's trustedWorkspaces during
-# provisioning so the agent starts without user interaction.
+# agy's first-launch trust dialog would otherwise intercept the initial
+# message keystrokes; this silently appends the work_dir to agy's
+# trustedWorkspaces during provisioning.
 auto_dismiss_dialogs = true
-
-# Auto-approve every tool call (adds `--dangerously-skip-permissions` to
-# the agy launch command). This is the antigravity analog of the legacy
-# Gemini CLI's `--approval-mode yolo`: Catalyst steps run unattended,
-# so the agent can't stop to ask for permission.
 auto_allow_permissions = true

@@ -5,7 +5,8 @@ import subprocess
 import threading
 import time
 import logging
-from typing import Dict, List, Optional, Set
+from dataclasses import dataclass
+from typing import Dict, List, Optional, TypeAlias, Union
 from .models import Task, TasksState, TaskStatus, StepStatus
 from .utils import get_catalyst_path
 
@@ -20,17 +21,27 @@ def _get_state_file() -> str:
 
 _lock = threading.Lock()
 _task_locks: Dict[str, threading.Lock] = {}
-# Live direct-CLI subprocesses, keyed by task id. Used by the direct
-# `claude` / `gemini` / `agy` framework runners (cli_base.py).
-# `cancel_task_process` SIGTERMs the process group, then SIGKILLs after
-# timeout.
-_running_processes: Dict[str, List[subprocess.Popen]] = {}
-# Mngr agent names currently RUNNING for each Catalyst task. Used by
-# the `mngr-claude` / `mngr-antigravity` framework runners (mngr_runner.py).
-# `cancel_task_process` shells out to `mngr stop` for each. Stopped agents
-# stay in `mngr list` so users can `mngr connect` / `mngr transcript`
-# them post-mortem.
-_running_agents: Dict[str, Set[str]] = {}
+
+
+# Cancellable work for each Catalyst task. The two variants are exclusive
+# wrappers so dispatch in `cancel_task_process` is a plain isinstance check
+# against a tagged type, not a guess about the underlying object.
+@dataclass(frozen=True)
+class _DirectSubprocess:
+    """A direct CLI subprocess (`claude` / `gemini` / `agy`) registered by
+    cli_base.py; cancelled via SIGTERM -> SIGKILL on its process group."""
+    process: subprocess.Popen
+
+
+@dataclass(frozen=True)
+class _MngrAgent:
+    """An mngr-managed agent registered by mngr_runner.py; cancelled by
+    shelling out to `mngr stop <agent_name>`."""
+    agent_name: str
+
+
+_RunningEntry: TypeAlias = Union[_DirectSubprocess, _MngrAgent]
+_running: Dict[str, List[_RunningEntry]] = {}
 
 _state_cache: Optional[TasksState] = None
 
@@ -45,52 +56,50 @@ def get_task_lock(task_id: str) -> threading.Lock:
 def register_process(task_id: str, process: subprocess.Popen):
     """Direct runners: track a `claude` / `gemini` / `agy` subprocess."""
     with _lock:
-        if task_id not in _running_processes:
-            _running_processes[task_id] = []
-        _running_processes[task_id].append(process)
+        _running.setdefault(task_id, []).append(_DirectSubprocess(process))
 
 
 def unregister_process(task_id: str, process: subprocess.Popen):
-    with _lock:
-        if task_id in _running_processes:
-            try:
-                _running_processes[task_id].remove(process)
-            except ValueError:
-                pass
-            if not _running_processes[task_id]:
-                del _running_processes[task_id]
+    _remove_entry(task_id, _DirectSubprocess(process))
 
 
 def register_agent(task_id: str, agent_name: str) -> None:
-    """Mngr: track a `mngr create`-spawned agent by name."""
+    """Mngr runners: track a `mngr create`-spawned agent by name."""
+    entry = _MngrAgent(agent_name)
     with _lock:
-        _running_agents.setdefault(task_id, set()).add(agent_name)
+        entries = _running.setdefault(task_id, [])
+        if entry not in entries:
+            entries.append(entry)
 
 
 def unregister_agent(task_id: str, agent_name: str) -> None:
+    _remove_entry(task_id, _MngrAgent(agent_name))
+
+
+def _remove_entry(task_id: str, entry: _RunningEntry) -> None:
     with _lock:
-        agents = _running_agents.get(task_id)
-        if agents:
-            agents.discard(agent_name)
-            if not agents:
-                del _running_agents[task_id]
+        entries = _running.get(task_id)
+        if not entries:
+            return
+        try:
+            entries.remove(entry)
+        except ValueError:
+            pass
+        if not entries:
+            del _running[task_id]
 
 
 def cancel_task_process(task_id: str, timeout: int = 30) -> None:
-    """Cancel both legacy subprocesses and mngr agents for `task_id`.
-
-    Tasks created with the direct `claude` / `gemini` / `agy` frameworks
-    register into `_running_processes`; tasks created with `mngr-claude` /
-    `mngr-antigravity` register into `_running_agents`. A single task only
-    uses one path, but cancel handles both so it doesn't have to care
-    which framework created the task.
-    """
+    """Cancel everything `task_id` registered: direct subprocesses get
+    SIGTERM (then SIGKILL after `timeout`); mngr agents get `mngr stop`."""
     with _lock:
-        processes_to_cancel = list(_running_processes.get(task_id, ()))
-        agents_to_stop = list(_running_agents.get(task_id, ()))
+        entries = list(_running.get(task_id, ()))
 
-    if not processes_to_cancel and not agents_to_stop:
+    if not entries:
         return
+
+    processes_to_cancel = [e.process for e in entries if isinstance(e, _DirectSubprocess)]
+    agents_to_stop = [e.agent_name for e in entries if isinstance(e, _MngrAgent)]
 
     if processes_to_cancel:
         logger.info(
@@ -142,10 +151,7 @@ def cancel_task_process(task_id: str, timeout: int = 30) -> None:
                 logger.error(f"[PROCESS] mngr stop {agent_name} failed: {e}")
 
     with _lock:
-        if task_id in _running_processes:
-            del _running_processes[task_id]
-        if task_id in _running_agents:
-            del _running_agents[task_id]
+        _running.pop(task_id, None)
 
 
 _last_written_json: Optional[str] = None
@@ -284,10 +290,9 @@ def delete_task(task_id: str):
 
 
 def shutdown_all():
-    """Stop all running agents (legacy + mngr) and mark tasks as PAUSED."""
-    task_ids: List[str] = []
+    """Stop all running agents (direct + mngr) and mark tasks as PAUSED."""
     with _lock:
-        task_ids = list(set(_running_processes.keys()) | set(_running_agents.keys()))
+        task_ids = list(_running.keys())
 
         # Also mark all tasks as PAUSED so they don't look like they failed
         state = _load_state()

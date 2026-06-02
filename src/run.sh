@@ -19,7 +19,7 @@ fi
 
 # Check mngr's system deps (tmux, ssh, git, jq) before touching uv/npm.
 # This only matters for tasks created with framework `mngr-claude` /
-# `mngr-antigravity`; legacy `claude` framework tasks don't strictly need
+# `mngr-antigravity`; direct `claude` framework tasks don't strictly need
 # mngr's deps. But all options are in the dropdown at runtime, so we check
 # up-front rather than waiting for the first mngr task to crash.
 if ! uv run mngr dependencies; then
@@ -43,8 +43,6 @@ if command -v claude &> /dev/null; then
     HAS_CLAUDE=true
 fi
 
-# `agy` is the Antigravity CLI (the Gemini CLI successor), used by the
-# `agy` and `mngr-antigravity` frameworks.
 if command -v agy &> /dev/null; then
     HAS_AGY=true
 fi

@@ -1,14 +1,14 @@
-"""Stage B-Legacy smoke test for the legacy subprocess-based runners.
+"""Stage B-Direct smoke test for the direct subprocess-based runners.
 
 Runs `orchestrator.agents.claude.ClaudeAgentRunner` (the
 `subprocess.Popen(["claude", "-p", ...])` path that exists in
 `framework: "claude"` tasks) against a trivial prompt. Verifies that
-restoring the legacy code from `origin/main` didn't break it.
+restoring the direct code from `origin/main` didn't break it.
 
 Cost: a few cents on Haiku.
 
 Usage (from src/):
-    uv run python scripts/smoke_test_legacy_runner.py
+    uv run python scripts/smoke_test_direct_runner.py
 """
 
 import logging
@@ -43,15 +43,15 @@ def main() -> int:
         print(f"  Session ID: {sid}", flush=True)
 
     runner = ClaudeAgentRunner()
-    with tempfile.TemporaryDirectory(prefix="aisci-legacy-smoke-") as env_folder:
-        print(f"Running legacy smoke task in {env_folder}", flush=True)
+    with tempfile.TemporaryDirectory(prefix="aisci-direct-smoke-") as env_folder:
+        print(f"Running direct smoke task in {env_folder}", flush=True)
         data, session_id, error = runner.run(
-            task_id="task_legacy_smoke",
+            task_id="task_direct_smoke",
             prompt=PROMPT,
             env_folder=env_folder,
             model=MODEL,
-            tx_id="tx_legacy_smoke",
-            stage="legacy-smoke",
+            tx_id="tx_direct_smoke",
+            stage="direct-smoke",
             on_session_id=on_session_id,
             on_status=on_status,
         )
@@ -62,7 +62,7 @@ def main() -> int:
         ("got data dict", data == {"hello": "world"}),
         ("no error", error is None),
         ("session_id captured", bool(session_id) and session_id == captured_sid["sid"]),
-        # Status callback is optional for legacy (stream-json may or may not
+        # Status callback is optional for direct (stream-json may or may not
         # surface intermediate text), but we still report it.
     ]
     print("\nChecks:")

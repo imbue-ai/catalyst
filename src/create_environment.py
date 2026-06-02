@@ -33,12 +33,6 @@ BASE_CLAUDE_MD = """GENERAL INSTRUCTIONS:
 * ONLY spawn a subagent when the execution steps in a skill explicitly tell you to.
 """
 
-# Auto-loaded by Claude from the work_dir. Mirrors the friction-log
-# instruction at the bottom of BASE_GEMINI_MD so both frameworks log
-# environment friction the same way.
-BASE_CLAUDE_MD = """If you encounter any issues with following the instructions in a skill, or run into issues with your execution environment (e.g. missing permission, error while running a pre-provided script, etc.), please take a second to append a short, one-line issue description to `./tmp/agent_friction_log.txt`.
-"""
-
 
 def copy_resolved_and_no_hidden(src: Path, dst: Path, is_root: bool = False):
     """
@@ -117,15 +111,6 @@ def create_environment(target_path: str, template_path: str = None):
     guidance_path = target / "GUIDANCE.txt"
     with open(guidance_path, "w") as f:
         f.write("No additional guidance.\n")
-
-    # 4. Same for Claude. Auto-loaded by Claude from the work_dir.
-    claude_md_path = target / "CLAUDE.md"
-    if claude_md_path.exists():
-        with open(claude_md_path, "a") as f:
-            f.write("\n\n" + BASE_CLAUDE_MD)
-    else:
-        with open(claude_md_path, "w") as f:
-            f.write(BASE_CLAUDE_MD)
 
     print(f"Environment initialized at {target}")
 

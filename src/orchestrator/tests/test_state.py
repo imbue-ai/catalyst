@@ -1,18 +1,8 @@
 import json
 from unittest.mock import patch, MagicMock
 from .helpers import OrchestratorTestCase
-from ..state import (
-    add_task,
-    cancel_task_process,
-    delete_task,
-    get_task,
-    get_tasks,
-    register_agent,
-    unregister_agent,
-    update_task,
-)
+from ..state import add_task, get_task, update_task, get_tasks, delete_task
 from ..models import Task, TaskStatus
-
 
 class TestState(OrchestratorTestCase):
     def test_create_and_get_task(self):
@@ -81,14 +71,28 @@ class TestState(OrchestratorTestCase):
         delete_task("t1")
         self.assertEqual(len(get_tasks()), 0)
 
+    @patch("os.killpg")
+    @patch("os.getpgid")
+    def test_cancel_task_process(self, mock_getpgid, mock_killpg):
+        mock_process = MagicMock()
+        mock_process.pid = 123
+        mock_getpgid.return_value = 456
+
+        from ..state import register_process, cancel_task_process
+        register_process("t1", mock_process)
+
+        cancel_task_process("t1")
+
+        mock_killpg.assert_called_with(456, 15) # signal.SIGTERM is 15
+        mock_process.wait.assert_called()
+
     @patch("subprocess.run")
     def test_cancel_task_process_stops_each_agent(self, mock_run):
-        mock_result = MagicMock()
-        mock_result.returncode = 0
-        mock_run.return_value = mock_result
+        mock_run.return_value = MagicMock(returncode=0)
 
-        register_agent("t1", "aisci-t1-stage-aaa")
-        register_agent("t1", "aisci-t1-stage-bbb")
+        from ..state import register_agent, cancel_task_process
+        register_agent("t1", "cata-t1-stage-aaa")
+        register_agent("t1", "cata-t1-stage-bbb")
 
         cancel_task_process("t1")
 
@@ -97,20 +101,22 @@ class TestState(OrchestratorTestCase):
         for cmd in called_cmds:
             self.assertEqual(cmd[:2], ["mngr", "stop"])
         stopped_names = sorted(cmd[2] for cmd in called_cmds)
-        self.assertEqual(stopped_names, ["aisci-t1-stage-aaa", "aisci-t1-stage-bbb"])
+        self.assertEqual(stopped_names, ["cata-t1-stage-aaa", "cata-t1-stage-bbb"])
 
     def test_cancel_task_process_no_agents(self):
-        # No registered agents → no-op, doesn't even try to subprocess.
+        # No registered work for `task_id` -> no-op, doesn't even subprocess.
+        from ..state import cancel_task_process
         with patch("subprocess.run") as mock_run:
             cancel_task_process("never-registered")
             mock_run.assert_not_called()
 
     def test_unregister_agent(self):
+        from ..state import register_agent, unregister_agent, cancel_task_process
         register_agent("t1", "agent-a")
         register_agent("t1", "agent-b")
         unregister_agent("t1", "agent-a")
 
-        # Calling cancel after unregister should only stop the remaining one.
+        # Cancel after unregister: only the remaining one gets stopped.
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(returncode=0)
             cancel_task_process("t1")

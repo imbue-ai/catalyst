@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import threading
 import time
+from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Generator, List, Optional, Tuple
 
 from context_manager import DEFAULT_DB_DIR
@@ -27,12 +28,6 @@ logger = logging.getLogger(__name__)
 # for hours; this cap is generous on purpose. The agent's tmux session
 # is the source of cost, not this timeout.
 _WAIT_TIMEOUT_SECONDS = 4 * 60 * 60
-
-# Source path (under the agent's events/ dir) that carries the normalized
-# transcript for any agent type that maps onto Anthropic-style assistant /
-# tool_use events. mngr_claude writes here; mngr_antigravity writes to its
-# own `antigravity/common_transcript` source (passed via `transcript_source`).
-_COMMON_TRANSCRIPT_SOURCE = "claude/common_transcript"
 
 
 class TurnCompletion(enum.Enum):
@@ -58,19 +53,16 @@ class TurnCompletion(enum.Enum):
 # Source + event-type written by the Stop hook in
 # `src/claude_skills/settings.local.json`. Fires exactly once per agent
 # turn, *after* the final assistant_message has been flushed to the
-# transcript -- which is the signal we actually want, rather than mngr's
-# WAITING state (which trips on every intermediate idle, including
-# mid-swarm while Task subagents are running).
+# transcript. Used by the STOP_HOOK strategy.
 _TURN_COMPLETE_SOURCE = "mngr/turn_complete"
 _TURN_END_EVENT_TYPE = "turn_end"
 
-# How long to wait, after `turn_end` fires, for the assistant_message
-# event to show up in `claude/common_transcript`. mngr_claude's
-# `common_transcript.sh` polls Claude's raw session JSONL on a ~5s
-# interval (see libs/mngr_claude/.../common_transcript.sh), so the
-# Stop-hook-emitted `turn_end` event can outrun the converted
-# assistant_message event by up to one poll cycle. We bound the
-# read-side wait at twice that interval for safety.
+# How long to wait, after the turn-end signal fires, for the
+# assistant_message event to show up in the common transcript. The
+# converters write `events/<source>/common_transcript/events.jsonl` on a
+# ~5s timer, while our turn-end signal can fire sooner. Without a wait
+# here, a fast turn could be detected as done before the conversion sees
+# the assistant_message and we'd return empty text.
 _POST_TURN_END_POLL_SECONDS = 10.0
 _POST_TURN_END_POLL_INTERVAL = 0.5
 
@@ -118,6 +110,44 @@ def parse_json_result(raw_result: Any) -> Optional[Dict[str, Any]]:
     return None
 
 
+def extract_assistant_text(event: Dict[str, Any]) -> Optional[str]:
+    """Return an assistant_message's text content, or None if absent.
+
+    Used to concatenate the agent's final response from the common
+    transcript. The common-transcript converters for both mngr_claude and
+    mngr_antigravity normalize to the same `assistant_message` shape, so
+    one extractor serves both.
+    """
+    if event.get("type") != "assistant_message":
+        return None
+    text = event.get("text")
+    if isinstance(text, str) and text:
+        return text
+    return None
+
+
+def extract_status(event: Dict[str, Any]) -> Optional[str]:
+    """Return a short status line for the dashboard, or None if irrelevant.
+
+    Prefers the assistant_message text when present (whitespace-collapsed);
+    falls back to the first tool_call name when the message carries no text
+    (e.g. agy's PLANNER_RESPONSE for a tool-use step has empty text and
+    only tool_calls; claude can produce the same shape when it calls a
+    tool with no preamble). The fallback gives the dashboard a live
+    "Running <tool>" status during tool runs.
+    """
+    if event.get("type") != "assistant_message":
+        return None
+    text = event.get("text")
+    if isinstance(text, str) and text.strip():
+        return " ".join(text.split())
+    for call in event.get("tool_calls", []) or []:
+        tool_name = call.get("tool_name")
+        if isinstance(tool_name, str) and tool_name:
+            return f"Running {tool_name}"
+    return None
+
+
 def _generate_agent_name(task_id: str, stage: str) -> str:
     short_task = task_id.split("_")[-1][:8] if "_" in task_id else task_id[:8]
     safe_stage = re.sub(r"[^a-z0-9-]", "-", stage.lower())[:32].strip("-") or "step"
@@ -125,13 +155,16 @@ def _generate_agent_name(task_id: str, stage: str) -> str:
     return f"cata-{short_task}-{safe_stage}-{suffix}"
 
 
+@dataclass(eq=False, repr=False)
 class MngrAgentRunner(AgentRunner):
     """Drives an mngr-managed interactive agent for a single Catalyst step.
 
     Lifecycle per `run()` call:
         1. mngr create --no-connect ...    (returns once agent is spawned)
-        2. mngr event --follow             (background, accumulates assistant text)
-        3. mngr wait --state WAITING ...   (blocks until turn finishes)
+        2. mngr event --follow             (background, status + STOP_HOOK
+                                            turn-end detection)
+        3. mngr wait --state WAITING       (only for WAITING_STATE strategy)
+           or wait for turn_end event      (STOP_HOOK strategy)
         4. mngr stop                       (halts cleanly; transcript preserved)
 
     Stopped agents stay visible in `mngr list` for `mngr connect` /
@@ -139,28 +172,29 @@ class MngrAgentRunner(AgentRunner):
     a separate user-invoked path.
     """
 
-    def __init__(
-        self,
-        agent_type: str,
-        framework: str,
-        agent_args_builder: Callable[[Optional[str]], List[str]],
-        status_extractor: Callable[[Dict[str, Any]], Optional[str]],
-        assistant_text_extractor: Callable[[Dict[str, Any]], Optional[str]],
-        transcript_source: str = _COMMON_TRANSCRIPT_SOURCE,
-        turn_completion: TurnCompletion = TurnCompletion.STOP_HOOK,
-        extra_env: Optional[Dict[str, str]] = None,
-    ):
-        self._agent_type = agent_type
-        self._framework = framework
-        self._agent_args_builder = agent_args_builder
-        self._status_extractor = status_extractor
-        self._assistant_text_extractor = assistant_text_extractor
-        self._transcript_source = transcript_source
-        self._turn_completion = turn_completion
-        # Per-agent-type env vars layered on top of the shared set in run()
-        # (e.g. mngr_claude's CLAUDE_CODE_DISABLE_BACKGROUND_TASKS,
-        # mngr_antigravity's AGY_CLI_DISABLE_AUTO_UPDATE).
-        self._extra_env = dict(extra_env) if extra_env else {}
+    # CLI agent type passed to `mngr create --type ...` (e.g. "claude",
+    # "antigravity").
+    agent_type: str
+    # User-facing framework string the orchestrator/dashboard use (e.g.
+    # "mngr-claude").
+    framework: str
+    # `events/<source>/common_transcript/events.jsonl` is read for harvest
+    # + status. Per-agent-type because each plugin writes to its own
+    # source (mngr_claude -> "claude/common_transcript",
+    # mngr_antigravity -> "antigravity/common_transcript").
+    transcript_source: str
+    # Strategy for detecting "this turn finished" -- see TurnCompletion.
+    turn_completion: TurnCompletion
+    # Static CLI args appended after `--` on every `mngr create`. Use this
+    # for flags the agent always wants (e.g. agy's "--sandbox").
+    agent_args: Tuple[str, ...] = ()
+    # If set, `[model_flag, model]` is appended to agent_args whenever the
+    # caller passes a model. Agents that have no model selection (agy)
+    # leave this None.
+    model_flag: Optional[str] = None
+    # Per-agent-type env vars layered on top of the shared set built in
+    # `run()` (UV_CACHE_DIR, CATALYST_DB_PATH, MPLCONFIGDIR).
+    extra_env: Dict[str, str] = field(default_factory=dict)
 
     @contextlib.contextmanager
     def _registered_agent(self, task_id: str, agent_name: str) -> Generator[None, None, None]:
@@ -185,6 +219,12 @@ class MngrAgentRunner(AgentRunner):
                 )
             unregister_agent(task_id, agent_name)
 
+    def _build_agent_args(self, model: Optional[str]) -> List[str]:
+        args = list(self.agent_args)
+        if model and self.model_flag:
+            args.extend([self.model_flag, model])
+        return args
+
     def run(
         self,
         task_id: str,
@@ -208,8 +248,7 @@ class MngrAgentRunner(AgentRunner):
             "CATALYST_DB_PATH": os.path.join(abs_env_folder, DEFAULT_DB_DIR),
             "MPLCONFIGDIR": os.path.join(abs_env_folder, "tmp/matplotlib_cache"),
         }
-        # Per-agent-type additions (see `extra_env` on __init__).
-        env_vars.update(self._extra_env)
+        env_vars.update(self.extra_env)
         if tx_id:
             env_vars["CONTEXT_TRANSACTION_ID"] = tx_id
 
@@ -217,7 +256,7 @@ class MngrAgentRunner(AgentRunner):
             "app": "catalyst",
             "catalyst-task": task_id,
             "catalyst-stage": resolved_stage,
-            "catalyst-framework": self._framework,
+            "catalyst-framework": self.framework,
         }
 
         prompt_file = tempfile.NamedTemporaryFile(
@@ -232,7 +271,7 @@ class MngrAgentRunner(AgentRunner):
                 "create",
                 agent_name,
                 "--type",
-                self._agent_type,
+                self.agent_type,
                 "--from",
                 f":{abs_env_folder}",
                 "--transfer",
@@ -246,13 +285,13 @@ class MngrAgentRunner(AgentRunner):
             for key, value in env_vars.items():
                 create_cmd.extend(["--env", f"{key}={value}"])
 
-            agent_args = self._agent_args_builder(model)
+            agent_args = self._build_agent_args(model)
             if agent_args:
                 create_cmd.append("--")
                 create_cmd.extend(agent_args)
 
             logger.debug(
-                f"[AGENT] [{task_id[:8]}] {self._framework} via mngr: {shlex.join(create_cmd)}"
+                f"[AGENT] [{task_id[:8]}] {self.framework} via mngr: {shlex.join(create_cmd)}"
             )
 
             try:
@@ -286,7 +325,7 @@ class MngrAgentRunner(AgentRunner):
                 return self._wait_and_harvest(task_id, agent_name, on_status)
 
         except Exception as e:
-            return None, agent_name, f"{self._framework} execution error: {e}"
+            return None, agent_name, f"{self.framework} execution error: {e}"
 
         finally:
             try:
@@ -388,7 +427,7 @@ class MngrAgentRunner(AgentRunner):
                 return self._wait_and_harvest(task_id, agent_name, on_status)
 
         except Exception as e:
-            return None, agent_name, f"{self._framework} resume execution error: {e}"
+            return None, agent_name, f"{self.framework} resume execution error: {e}"
 
         finally:
             try:
@@ -402,17 +441,11 @@ class MngrAgentRunner(AgentRunner):
         agent_name: str,
         on_status: Optional[Callable[[str], None]],
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
-        """Shared "wait for turn_end, then parse the final assistant
+        """Shared "wait for turn end, then parse the final assistant
         text" path used by both `run()` and `resume_in_place()`."""
         del task_id  # only used for log prefix today; kept on the signature for future use
         saw_turn_end = self._wait_for_turn_end(agent_name, on_status)
         if not saw_turn_end:
-            # The turn never completed and the agent was stopped (either
-            # the deadline expired or the agent was stopped externally,
-            # e.g. the user clicked Pause). Distinguishing here would
-            # require us to read task state, so we leave the message
-            # generic and let the orchestrator's task-status check
-            # overwrite it with "Paused" when appropriate.
             return (None, agent_name, self._no_completion_error())
 
         assistant_text = self._read_assistant_text(agent_name, on_status)
@@ -424,19 +457,17 @@ class MngrAgentRunner(AgentRunner):
         return (
             None,
             agent_name,
-            f"Could not parse JSON output from {self._framework} result. Preview: {assistant_text[:800]}...",
+            f"Could not parse JSON output from {self.framework} result. Preview: {assistant_text[:800]}...",
         )
 
     def _no_completion_error(self) -> str:
-        """Error string for the case where the turn never completed.
-
-        Phrased per the turn-completion strategy so the message points at
-        the actual failure mode rather than a generic one.
-        """
-        if self._turn_completion is TurnCompletion.WAITING_STATE:
+        """Error string when the turn never completed. Phrased per the
+        turn-completion strategy so the message points at the actual
+        failure mode rather than a generic one."""
+        if self.turn_completion is TurnCompletion.WAITING_STATE:
             return (
                 f"Agent never reached the WAITING lifecycle state "
-                f"(deadline was {_WAIT_TIMEOUT_SECONDS}s). {self._framework} "
+                f"(deadline was {_WAIT_TIMEOUT_SECONDS}s). {self.framework} "
                 "completion is signalled when the agent's per-task active "
                 "marker is cleared; a timeout means either the agent never "
                 "finished its turn, the plugin's hooks didn't fire, or it "
@@ -457,33 +488,85 @@ class MngrAgentRunner(AgentRunner):
     ) -> bool:
         """Block until the agent's turn finishes (or it is stopped).
 
-        Dispatches to the strategy configured at construction. Returns True
-        iff the turn completed normally; False covers both the deadline
-        expiring and an external stop (pause/cancel) -- the orchestrator
+        Three concurrent watchers feed a shared `done` event; whichever
+        fires first wins:
+
+        * `mngr event --follow` -- streams transcript events. Always
+          consumed for `on_status` updates; for STOP_HOOK it also sets
+          `saw_turn_end` on a `mngr/turn_complete` `turn_end` event.
+        * `mngr wait --state STOPPED` -- catches external pause / cancel
+          (server.py calls `mngr stop` via `cancel_task_process`).
+        * `mngr wait --state WAITING` -- only spawned for WAITING_STATE;
+          sets `saw_turn_end` when the agent's per-task active marker is
+          cleared by the plugin's Stop hook.
+
+        Returns True iff a turn-end signal was seen. False covers both
+        the deadline expiring and an external stop; the orchestrator
         distinguishes by checking the task's status after run() returns.
         """
-        if self._turn_completion is TurnCompletion.WAITING_STATE:
-            return self._wait_for_turn_end_waiting_state(agent_name, on_status)
-        return self._wait_for_turn_end_stop_hook(agent_name, on_status)
+        deadline = time.monotonic() + _WAIT_TIMEOUT_SECONDS
+        saw_turn_end = threading.Event()
+        done = threading.Event()
 
-    def _spawn_stopped_watcher(
-        self, agent_name: str, done: threading.Event
-    ) -> Tuple[subprocess.Popen, threading.Thread]:
-        """Spawn `mngr wait --state STOPPED` and a thread that sets `done`
-        when it returns.
+        event_proc = subprocess.Popen(
+            ["mngr", "event", agent_name, "--follow", "--format", "jsonl"],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            text=True,
+            bufsize=1,
+        )
+        stop_proc = self._spawn_wait_for_state(agent_name, "STOPPED")
+        wait_proc = (
+            self._spawn_wait_for_state(agent_name, "WAITING")
+            if self.turn_completion is TurnCompletion.WAITING_STATE
+            else None
+        )
 
-        Shared by both turn-completion strategies: it's how a pause / cancel
-        (server.py calls `mngr stop` via `cancel_task_process`) unblocks the
-        runner instead of leaving it parked for the full timeout while the
-        dashboard still shows the step RUNNING.
-        """
-        wait_proc = subprocess.Popen(
+        threads: List[threading.Thread] = [
+            threading.Thread(
+                target=self._consume_events,
+                args=(event_proc, on_status, saw_turn_end, done),
+                daemon=True,
+            ),
+            threading.Thread(
+                target=self._watch_proc,
+                args=(stop_proc, done, None),
+                daemon=True,
+            ),
+        ]
+        if wait_proc is not None:
+            threads.append(
+                threading.Thread(
+                    target=self._watch_proc,
+                    args=(wait_proc, done, saw_turn_end),
+                    daemon=True,
+                )
+            )
+
+        for t in threads:
+            t.start()
+
+        try:
+            remaining = max(0.0, deadline - time.monotonic())
+            done.wait(timeout=remaining)
+        finally:
+            for proc in (event_proc, stop_proc, wait_proc):
+                if proc is not None:
+                    self._terminate_proc(proc)
+            for t in threads:
+                t.join(timeout=5)
+        return saw_turn_end.is_set()
+
+    @staticmethod
+    def _spawn_wait_for_state(agent_name: str, state: str) -> subprocess.Popen:
+        return subprocess.Popen(
             [
                 "mngr",
                 "wait",
                 agent_name,
                 "--state",
-                "STOPPED",
+                state,
                 "--timeout",
                 f"{_WAIT_TIMEOUT_SECONDS}s",
             ],
@@ -492,24 +575,59 @@ class MngrAgentRunner(AgentRunner):
             stderr=subprocess.DEVNULL,
         )
 
-        def watch_stopped() -> None:
-            # rc=0 means the agent reached STOPPED state, rc=2 means wait
-            # timed out (we'll have hit our own deadline by then). Either
-            # way, the runner should exit.
-            wait_proc.wait()
-            done.set()
+    @staticmethod
+    def _watch_proc(
+        proc: subprocess.Popen,
+        done: threading.Event,
+        success_event: Optional[threading.Event],
+    ) -> None:
+        """Wait for `proc` to exit, then set `done`. If `success_event` is
+        given, also set it when `proc` exited 0 (used by the WAITING
+        watcher to signal "turn ended cleanly")."""
+        rc = proc.wait()
+        if success_event is not None and rc == 0:
+            success_event.set()
+        done.set()
 
-        wait_thread = threading.Thread(target=watch_stopped, daemon=True)
-        wait_thread.start()
-        return wait_proc, wait_thread
+    def _consume_events(
+        self,
+        event_proc: subprocess.Popen,
+        on_status: Optional[Callable[[str], None]],
+        saw_turn_end: threading.Event,
+        done: threading.Event,
+    ) -> None:
+        """Read `event_proc`'s stdout line-by-line, dispatching events to
+        the status callback and (for STOP_HOOK) checking for the turn_end
+        signal."""
+        assert event_proc.stdout is not None
+        for line in event_proc.stdout:
+            if not line.strip():
+                continue
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if on_status:
+                status = extract_status(event)
+                if status:
+                    try:
+                        on_status(status)
+                    except Exception as cb_err:
+                        logger.error(f"[AGENT] on_status error: {cb_err}")
+            if (
+                self.turn_completion is TurnCompletion.STOP_HOOK
+                and event.get("source") == _TURN_COMPLETE_SOURCE
+                and event.get("type") == _TURN_END_EVENT_TYPE
+            ):
+                saw_turn_end.set()
+                done.set()
+                return
 
     @staticmethod
     def _terminate_proc(proc: subprocess.Popen) -> None:
         """Best-effort terminate -> wait -> kill of a helper subprocess.
-
-        Same shape as mngr's own RunningProcess.terminate: SIGTERM, give it
-        5s, SIGKILL on timeout.
-        """
+        Same shape as mngr's own RunningProcess.terminate: SIGTERM, give
+        it 5s, SIGKILL on timeout."""
         try:
             proc.terminate()
         except ProcessLookupError:
@@ -523,172 +641,6 @@ class MngrAgentRunner(AgentRunner):
             except Exception:
                 pass
 
-    def _wait_for_turn_end_stop_hook(
-        self,
-        agent_name: str,
-        on_status: Optional[Callable[[str], None]],
-    ) -> bool:
-        """Turn-end detection for agent types that emit a `turn_end` event
-        (STOP_HOOK strategy; mngr_claude).
-
-        `mngr event --follow` streams transcript events; on a `turn_end`
-        event from the `mngr/turn_complete` source we set `saw_turn_end`.
-        Every event also feeds `status_extractor` so the dashboard's
-        per-step status stays current. A parallel `mngr wait --state
-        STOPPED` catches external pause/cancel.
-        """
-        deadline = time.monotonic() + _WAIT_TIMEOUT_SECONDS
-        saw_turn_end = threading.Event()
-        done = threading.Event()
-
-        event_proc = subprocess.Popen(
-            [
-                "mngr",
-                "event",
-                agent_name,
-                "--follow",
-                "--format",
-                "jsonl",
-            ],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-            bufsize=1,
-        )
-
-        wait_proc, wait_thread = self._spawn_stopped_watcher(agent_name, done)
-
-        def consume_events() -> None:
-            assert event_proc.stdout is not None
-            for line in event_proc.stdout:
-                if not line.strip():
-                    continue
-                try:
-                    event = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                if on_status:
-                    status = self._status_extractor(event)
-                    if status:
-                        try:
-                            on_status(status)
-                        except Exception as cb_err:
-                            logger.error(f"[AGENT] on_status error: {cb_err}")
-                if (
-                    event.get("source") == _TURN_COMPLETE_SOURCE
-                    and event.get("type") == _TURN_END_EVENT_TYPE
-                ):
-                    saw_turn_end.set()
-                    done.set()
-                    return
-
-        event_thread = threading.Thread(target=consume_events, daemon=True)
-        event_thread.start()
-
-        try:
-            remaining = max(0.0, deadline - time.monotonic())
-            done.wait(timeout=remaining)
-        finally:
-            self._terminate_proc(event_proc)
-            self._terminate_proc(wait_proc)
-            event_thread.join(timeout=5)
-            wait_thread.join(timeout=5)
-        return saw_turn_end.is_set()
-
-    def _wait_for_turn_end_waiting_state(
-        self,
-        agent_name: str,
-        on_status: Optional[Callable[[str], None]],
-    ) -> bool:
-        """Turn-end detection via the WAITING lifecycle state
-        (WAITING_STATE strategy; mngr_antigravity 0.1.1+).
-
-        The plugin provisions an active-marker hook (PreInvocation creates
-        it, Stop removes it) so `BaseAgent.get_lifecycle_state` reports
-        RUNNING while the agent works and WAITING when idle. We block on
-        `mngr wait --state WAITING`; rc=0 means the turn finished. A
-        parallel STOPPED watcher catches external pause/cancel, and an
-        `mngr event --follow` is consumed in the background purely for
-        status updates -- the turn-end signal comes from `mngr wait`, so
-        the event stream is never inspected for transcript content here.
-        """
-        deadline = time.monotonic() + _WAIT_TIMEOUT_SECONDS
-        saw_turn_end = threading.Event()
-        done = threading.Event()
-
-        event_proc = subprocess.Popen(
-            [
-                "mngr",
-                "event",
-                agent_name,
-                "--follow",
-                "--format",
-                "jsonl",
-            ],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-            bufsize=1,
-        )
-
-        stop_proc, stop_thread = self._spawn_stopped_watcher(agent_name, done)
-
-        wait_proc = subprocess.Popen(
-            [
-                "mngr",
-                "wait",
-                agent_name,
-                "--state",
-                "WAITING",
-                "--timeout",
-                f"{_WAIT_TIMEOUT_SECONDS}s",
-            ],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-
-        def watch_waiting() -> None:
-            rc = wait_proc.wait()
-            if rc == 0:
-                saw_turn_end.set()
-            done.set()
-
-        def consume_events() -> None:
-            assert event_proc.stdout is not None
-            for line in event_proc.stdout:
-                if not line.strip() or not on_status:
-                    continue
-                try:
-                    event = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                status = self._status_extractor(event)
-                if status:
-                    try:
-                        on_status(status)
-                    except Exception as cb_err:
-                        logger.error(f"[AGENT] on_status error: {cb_err}")
-
-        wait_thread = threading.Thread(target=watch_waiting, daemon=True)
-        wait_thread.start()
-        event_thread = threading.Thread(target=consume_events, daemon=True)
-        event_thread.start()
-
-        try:
-            remaining = max(0.0, deadline - time.monotonic())
-            done.wait(timeout=remaining)
-        finally:
-            self._terminate_proc(event_proc)
-            self._terminate_proc(wait_proc)
-            self._terminate_proc(stop_proc)
-            event_thread.join(timeout=5)
-            wait_thread.join(timeout=5)
-            stop_thread.join(timeout=5)
-        return saw_turn_end.is_set()
-
     def _read_transcript_events(self, agent_name: str) -> List[Dict[str, Any]]:
         """Read the agent's common transcript as a list of parsed events,
         in file order. Returns [] if the source has no events yet."""
@@ -698,7 +650,7 @@ class MngrAgentRunner(AgentRunner):
                 "event",
                 agent_name,
                 "--source",
-                self._transcript_source,
+                self.transcript_source,
                 "--format",
                 "jsonl",
             ],
@@ -728,31 +680,30 @@ class MngrAgentRunner(AgentRunner):
         turn is done.
 
         Polls with a short bounded budget because the common-transcript
-        converters (mngr_claude's and mngr_antigravity's both) write
-        `events/<source>/common_transcript/events.jsonl` on a ~5s timer,
-        while our turn-end signal can fire sooner. Without a wait here, a
-        fast turn could be detected as done before the conversion sees the
-        assistant_message and we'd return empty text.
+        converters write `events/<source>/common_transcript/events.jsonl`
+        on a ~5s timer, while our turn-end signal can fire sooner. Without
+        a wait here, a fast turn could be detected as done before the
+        conversion sees the assistant_message and we'd return empty text.
 
         If `on_status` is given, fire a status callback for every event
-        as a backstop -- a fast turn can finish before the live
-        follower in `_wait_for_turn_end` ever sees the assistant_message
-        event. Driving on_status here guarantees the dashboard's
-        last_status field reflects the final output even in that race.
+        as a backstop -- a fast turn can finish before the live follower
+        in `_wait_for_turn_end` ever sees the assistant_message event.
+        Driving on_status here guarantees the dashboard's last_status
+        field reflects the final output even in that race.
         """
         deadline = time.monotonic() + _POST_TURN_END_POLL_SECONDS
         seen_event_ids: set[str] = set()
         while True:
             parts: List[str] = []
             for event in self._read_transcript_events(agent_name):
-                text = self._assistant_text_extractor(event)
+                text = extract_assistant_text(event)
                 if text:
                     parts.append(text)
                 if on_status:
                     event_id = event.get("event_id")
                     if event_id and event_id not in seen_event_ids:
                         seen_event_ids.add(event_id)
-                        status = self._status_extractor(event)
+                        status = extract_status(event)
                         if status:
                             try:
                                 on_status(status)
