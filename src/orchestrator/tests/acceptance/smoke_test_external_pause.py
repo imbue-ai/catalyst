@@ -17,7 +17,7 @@ Cost: a few cents on Haiku (one parent + the early-stopped subagent
 work). Wall time: ~20-30s.
 
 Usage (from src/):
-    uv run python scripts/smoke_test_external_pause.py
+    uv run python orchestrator/tests/acceptance/smoke_test_external_pause.py
 """
 
 import os
@@ -28,7 +28,7 @@ import tempfile
 import threading
 import time
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from orchestrator.agents.mngr_claude import MngrClaudeAgentRunner  # noqa: E402
 
@@ -50,7 +50,7 @@ def main() -> int:
     runner = MngrClaudeAgentRunner()
     with tempfile.TemporaryDirectory(prefix="aisci-pause-") as env_folder:
         src_settings = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
             "claude_skills",
             "settings.local.json",
         )

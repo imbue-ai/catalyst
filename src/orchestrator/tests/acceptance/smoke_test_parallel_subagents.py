@@ -17,7 +17,7 @@ Cost: ~tens of cents on Haiku for 3 subagents + parent. Wall time:
 ~30-60s.
 
 Usage (from src/):
-    uv run python scripts/smoke_test_parallel_subagents.py
+    uv run python orchestrator/tests/acceptance/smoke_test_parallel_subagents.py
 """
 
 import json
@@ -28,7 +28,7 @@ import sys
 import tempfile
 import time
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from orchestrator.agents.mngr_claude import MngrClaudeAgentRunner  # noqa: E402
 
@@ -48,7 +48,7 @@ def main() -> int:
     runner = MngrClaudeAgentRunner()
     with tempfile.TemporaryDirectory(prefix="aisci-parallel-") as env_folder:
         src_settings = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
             "claude_skills",
             "settings.local.json",
         )

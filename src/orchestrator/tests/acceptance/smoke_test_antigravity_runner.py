@@ -26,7 +26,7 @@ auto-approval, so a bare temp env_folder is enough.
 Requires the `agy` CLI installed and authenticated.
 
 Usage (from src/):
-    uv run python scripts/smoke_test_antigravity_runner.py
+    uv run python orchestrator/tests/acceptance/smoke_test_antigravity_runner.py
 """
 
 import json
@@ -40,7 +40,7 @@ import time
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 # Allow this script to import sibling packages when run from src/.
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from orchestrator.agents.mngr_antigravity import MngrAntigravityAgentRunner  # noqa: E402
 

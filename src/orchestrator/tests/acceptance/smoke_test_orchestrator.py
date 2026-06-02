@@ -1,6 +1,6 @@
 """Stage C smoke test for the orchestrator + agent runner end-to-end.
 
-Posts a single-step `_smoke` workflow task to a running backend and waits
+Posts a single-step `smoke` workflow task to a running backend and waits
 for it to complete. Verifies that:
 
 1. The dashboard would see live status updates (we read the backend's
@@ -15,7 +15,7 @@ for it to complete. Verifies that:
 Cost control: pins claude-haiku-4-5-20251001.
 
 Usage (from src/, after starting the backend separately):
-    CATALYST_PATH=/tmp/aisci-smoke-c uv run python scripts/smoke_test_orchestrator.py
+    CATALYST_PATH=/tmp/aisci-smoke-c uv run python orchestrator/tests/acceptance/smoke_test_orchestrator.py
 """
 
 import json
@@ -27,7 +27,7 @@ import urllib.request
 
 # Pick up the same isolated MNGR_HOST_DIR default the backend uses, so
 # our `mngr list` lookup finds the agent the runner just created.
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 from orchestrator import utils  # noqa: E402, F401
 
 BACKEND_URL = os.environ.get("AISCI_BACKEND_URL", "http://localhost:8939")
@@ -74,7 +74,7 @@ def main() -> int:
     create_resp = _http_post(
         "/api/tasks",
         {
-            "workflow_name": "_smoke",
+            "workflow_name": "smoke",
             "workflow_inputs": {},
             "framework": "mngr-claude",
             "model": MODEL,

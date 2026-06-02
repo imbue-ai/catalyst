@@ -15,7 +15,7 @@ local Claude agent with a trivial prompt. Verifies that:
 Cost control: pins claude-haiku-4-5-20251001. Don't run with Sonnet/Opus.
 
 Usage (from src/):
-    uv run python scripts/smoke_test_mngr_runner.py
+    uv run python orchestrator/tests/acceptance/smoke_test_mngr_runner.py
 """
 
 import json
@@ -30,7 +30,7 @@ import time
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 # Allow this script to import sibling packages when run from src/.
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from orchestrator.agents.mngr_claude import MngrClaudeAgentRunner  # noqa: E402
 
@@ -70,7 +70,7 @@ def main() -> int:
         # Stop hook that emits `mngr/turn_complete` is wired up. Without
         # it the runner would wait its full 4-hour timeout.
         src_settings = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
             "claude_skills",
             "settings.local.json",
         )

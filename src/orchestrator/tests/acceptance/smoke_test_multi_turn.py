@@ -16,7 +16,7 @@ Cost: ~few cents on Haiku (one parent + one trivial subagent).
 Wall time: ~30s typical.
 
 Usage (from src/):
-    uv run python scripts/smoke_test_multi_turn.py
+    uv run python orchestrator/tests/acceptance/smoke_test_multi_turn.py
 """
 
 import json
@@ -26,7 +26,7 @@ import subprocess
 import sys
 import tempfile
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from orchestrator.agents.mngr_claude import MngrClaudeAgentRunner  # noqa: E402
 
@@ -43,7 +43,7 @@ def main() -> int:
     runner = MngrClaudeAgentRunner()
     with tempfile.TemporaryDirectory(prefix="aisci-multiturn-") as env_folder:
         src_settings = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
             "claude_skills",
             "settings.local.json",
         )

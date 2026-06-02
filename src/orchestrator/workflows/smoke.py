@@ -16,7 +16,7 @@ class SmokeWorkflow(Workflow):
 
     @property
     def name(self) -> str:
-        return "_smoke"
+        return "smoke"
 
     def get_structure(self, task: Task) -> List[Dict[str, Any]]:
         return [{"type": "step", "stage": "smoke"}]

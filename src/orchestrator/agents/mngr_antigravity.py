@@ -19,7 +19,11 @@ class MngrAntigravityAgentRunner(MngrAgentRunner):
             # agy uses its account default. `--dangerously-skip-permissions`
             # is added by the mngr_antigravity plugin via
             # `auto_allow_permissions = true` in `.mngr/settings.toml`.
-            agent_args=("--sandbox",),
+            #
+            # `--print-timeout 6h` matches the direct `agy` runner -- agy's
+            # default print-timeout (5m) is far too short for a research
+            # turn that runs experiments.
+            agent_args=("--sandbox", "--print-timeout", "6h"),
             # Match the direct agy runner: don't let agy phone home for an
             # update mid-task (orchestrator/agents/agy.py sets the same).
             extra_env={"AGY_CLI_DISABLE_AUTO_UPDATE": "true"},

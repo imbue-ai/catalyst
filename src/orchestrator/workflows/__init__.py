@@ -1,4 +1,4 @@
-from ._smoke import SmokeWorkflow
+from .smoke import SmokeWorkflow
 from .base import Workflow
 from .develop_theory import DevelopTheoryWorkflow
 from .develop_theory_linear import DevelopTheoryLinearWorkflow
@@ -12,7 +12,7 @@ WORKFLOWS = {
     "refine-theory-idea": RefineTheoryIdeaWorkflow(),
     "refine-theory-idea-linear": RefineTheoryIdeaLinearWorkflow(),
     "import-theory": ImportTheoryWorkflow(),
-    "_smoke": SmokeWorkflow(),
+    "smoke": SmokeWorkflow(),
 }
 
 def get_workflow(name: str) -> Workflow:

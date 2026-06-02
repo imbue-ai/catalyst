@@ -8,7 +8,7 @@ restoring the direct code from `origin/main` didn't break it.
 Cost: a few cents on Haiku.
 
 Usage (from src/):
-    uv run python scripts/smoke_test_direct_runner.py
+    uv run python orchestrator/tests/acceptance/smoke_test_direct_runner.py
 """
 
 import logging
@@ -18,7 +18,7 @@ import tempfile
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from orchestrator.agents.claude import ClaudeAgentRunner  # noqa: E402
 
