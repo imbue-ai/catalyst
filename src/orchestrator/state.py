@@ -310,7 +310,7 @@ def shutdown_all():
 
     if task_ids:
         logger.info(
-            f"[SHUTDOWN] Stopping mngr agents for {len(task_ids)} tasks..."
+            f"[SHUTDOWN] Stopping agents for {len(task_ids)} tasks..."
         )
         for tid in task_ids:
             cancel_task_process(tid)
