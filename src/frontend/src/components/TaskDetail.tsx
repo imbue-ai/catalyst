@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect, useCallback } from 'react'
+import { useState, useMemo, useRef, useEffect, useCallback, lazy, Suspense } from 'react'
 import { Activity, Folder, Cpu, Loader2, Square, Play, Trash2, Workflow, Plus, XCircle, Copy, Check, Compass } from 'lucide-react'
 import * as api from '../api'
 import { StatusBadge } from './StatusBadge'
@@ -7,7 +7,8 @@ import { WorkflowStep } from './workflow/WorkflowStep'
 import { WorkflowLoop } from './workflow/WorkflowLoop'
 import { WorkflowParallel } from './workflow/WorkflowParallel'
 import { formatStageName } from './workflow/shared'
-import { ArtifactViewerModal } from './ArtifactViewerModal'
+
+const ArtifactViewerModal = lazy(() => import('./ArtifactViewerModal').then(m => ({ default: m.ArtifactViewerModal })))
 import { CreateAddonModal } from './CreateAddonModal'
 import { TheoriesList } from './TheoriesList'
 import { ExperimentsList } from './ExperimentsList'
@@ -384,11 +385,13 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
       </div>
 
       {viewingArtifactId && (
-        <ArtifactViewerModal
-          taskId={task.id}
-          artifactId={viewingArtifactId}
-          onClose={() => { window.location.hash = `#/task/${task.id}` }}
-        />
+        <Suspense fallback={null}>
+          <ArtifactViewerModal
+            taskId={task.id}
+            artifactId={viewingArtifactId}
+            onClose={() => { window.location.hash = `#/task/${task.id}` }}
+          />
+        </Suspense>
       )}
 
       {showAddonModal && (
