@@ -341,129 +341,13 @@ class MngrAgentRunner(AgentRunner):
                 except OSError:
                     pass
 
-    def resume_in_place(
-        self,
-        task_id: str,
-        agent_name: str,
-        env_folder: str,
-        model: Optional[str] = None,
-        tx_id: Optional[str] = None,
-        stage: Optional[str] = None,
-        on_session_id: Optional[Callable[[str], None]] = None,
-        on_status: Optional[Callable[[str], None]] = None,
-    ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
-        """Restart an existing (stopped) mngr agent and nudge it to finish.
-
-        Called by the orchestrator when a step is being resumed and the
-        Step already has a `session_id` from its prior run. Calls
-        `mngr start <agent>` (the agent's tmux session, env file,
-        work_dir, and transcript are all preserved on disk), then sends
-        "Continue where you left off." via `mngr message --message-file`.
-        The agent picks up its existing conversation context and emits
-        a new turn ending in JSON. We then run the same wait + harvest
-        the fresh `run()` path does.
-
-        `env_folder`, `model`, `tx_id`, and `stage` are accepted for
-        interface parity with `run()`. They're already baked into the
-        agent's env file from the original create; we don't re-send them.
-
-        On `mngr start` failure (agent was destroyed, work_dir is gone,
-        etc.) returns a `"resume_unrecoverable: ..."` error so the
-        orchestrator can fall back to a fresh `run()` call.
-        """
-        del env_folder, model, tx_id, stage  # already baked into the agent's env file
-
-        try:
-            start_result = subprocess.run(
-                ["mngr", "start", agent_name],
-                check=False,
-                capture_output=True,
-                text=True,
-            )
-        except FileNotFoundError as e:
-            return None, agent_name, f"resume_unrecoverable: mngr CLI not found on PATH: {e}"
-
-        if start_result.returncode != 0:
-            tail = ((start_result.stderr or "") + "\n" + (start_result.stdout or ""))[-1500:]
-            return (
-                None,
-                agent_name,
-                f"resume_unrecoverable: mngr start failed (exit {start_result.returncode}). "
-                f"stderr+stdout tail:\n{tail}",
-            )
-
-        # `mngr start` succeeded -- the agent is now live on the mngr
-        # side. Everything from here on goes inside `_registered_agent`
-        # so that any failure (tempfile error, `mngr message` exit code,
-        # missing CLI) still triggers `_stop_agent` on exit. Without
-        # this, a failed `mngr message` would leave the agent running
-        # untracked and burning credits until something else stops it.
-        with self._registered_agent(task_id, agent_name):
-            # `prompt_file` is created inside the try (and guarded in
-            # the finally) so a tempfile-creation failure becomes the
-            # runner's structured error tuple instead of an
-            # UnboundLocalError in the cleanup path. Same shape as
-            # `run()` above.
-            prompt_file = None
-            try:
-                prompt_file = tempfile.NamedTemporaryFile(
-                    mode="w", suffix=".md", delete=False, prefix=f"{agent_name}-resume-"
-                )
-                prompt_file.write("Continue where you left off.")
-                prompt_file.close()
-
-                try:
-                    message_result = subprocess.run(
-                        [
-                            "mngr",
-                            "message",
-                            agent_name,
-                            "--message-file",
-                            prompt_file.name,
-                        ],
-                        check=False,
-                        capture_output=True,
-                        text=True,
-                    )
-                except FileNotFoundError as e:
-                    return None, agent_name, f"resume_unrecoverable: mngr CLI not found on PATH: {e}"
-
-                if message_result.returncode != 0:
-                    tail = ((message_result.stderr or "") + "\n" + (message_result.stdout or ""))[-1500:]
-                    return (
-                        None,
-                        agent_name,
-                        f"mngr message failed (exit {message_result.returncode}). "
-                        f"stderr+stdout tail:\n{tail}",
-                    )
-
-                if on_session_id:
-                    try:
-                        on_session_id(agent_name)
-                    except Exception as cb_err:
-                        logger.error(
-                            f"[AGENT] [{task_id[:8]}] on_session_id error: {cb_err}"
-                        )
-                return self._wait_and_harvest(task_id, agent_name, on_status)
-
-            except Exception as e:
-                return None, agent_name, f"{self.framework} resume execution error: {e}"
-
-            finally:
-                if prompt_file is not None:
-                    try:
-                        os.unlink(prompt_file.name)
-                    except OSError:
-                        pass
-
     def _wait_and_harvest(
         self,
         task_id: str,
         agent_name: str,
         on_status: Optional[Callable[[str], None]],
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
-        """Shared "wait for turn end, then parse the final assistant
-        text" path used by both `run()` and `resume_in_place()`."""
+        """Wait for the turn to end, then parse the final assistant text."""
         del task_id  # only used for log prefix today; kept on the signature for future use
         saw_turn_end = self._wait_for_turn_end(agent_name, on_status)
         if not saw_turn_end:

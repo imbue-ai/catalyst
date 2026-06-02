@@ -33,14 +33,6 @@ class Step(BaseModel):
     # `MNGR_HOST_DIR=~/.mngr-catalyst mngr connect <session_id>`.
     # The frontend picks the right command from `task.framework`.
     session_id: Optional[str] = None
-    # `CONTEXT_TRANSACTION_ID` written into the agent's env on first run
-    # and reused on resume_in_place. context_manager stages DB writes
-    # under this tx_id and only un-stages them when the orchestrator
-    # commits the same tx_id post-step; if it changed across re-runs of
-    # the same step (fresh resume, resume-in-place after pause), every
-    # write the prior run staged would be orphaned. Persisting it here
-    # keeps the commit aligned with whatever the agent staged.
-    tx_id: Optional[str] = None
     last_status: Optional[str] = None
     error: Optional[str] = None
 
