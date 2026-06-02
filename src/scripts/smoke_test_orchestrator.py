@@ -5,8 +5,8 @@ for it to complete. Verifies that:
 
 1. The dashboard would see live status updates (we read the backend's
    /api/tasks polling endpoint, same as the React frontend does).
-2. The mngr agent for the step has the expected `app=ai-scientist` and
-   `ai-scientist-task=<id>` labels.
+2. The mngr agent for the step has the expected `app=catalyst` and
+   `catalyst-task=<id>` labels.
 3. On success, `Step.session_id` is set and the agent is STOPPED.
 4. The /smoke skill ran end-to-end (the recorded JSON output contains
    `skill_ran: true`), proving home-settings + skill resolution work
@@ -134,10 +134,10 @@ def main() -> int:
     checks = [
         ("task completed", final_task["status"] == "completed"),
         ("session_id set", bool(session_id)),
-        ("agent has app=ai-scientist label", agent_labels.get("app") == "ai-scientist"),
+        ("agent has app=catalyst label", agent_labels.get("app") == "catalyst"),
         (
-            "agent has ai-scientist-task label",
-            agent_labels.get("ai-scientist-task") == task_id,
+            "agent has catalyst-task label",
+            agent_labels.get("catalyst-task") == task_id,
         ),
         ("agent is STOPPED", agent_state == "STOPPED"),
         (
