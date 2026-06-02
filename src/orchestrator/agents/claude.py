@@ -29,6 +29,7 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
         env["CATALYST_DB_PATH"] = os.path.join(abs_env_folder, DEFAULT_DB_DIR)
         env["MPLCONFIGDIR"] = os.path.join(abs_env_folder, "tmp/matplotlib_cache")
         env["CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR"] = "1"
+        env["CLAUDE_CODE_DISABLE_BACKGROUND_TASKS"] = "1"
         env["BASH_DEFAULT_TIMEOUT_MS"] = "4000000"  # > 1 hour
         env["BASH_MAX_TIMEOUT_MS"] = "4000000"  # > 1 hour
 
