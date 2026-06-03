@@ -24,7 +24,11 @@ def get_write_n_theories_prompt(
 def get_review_theory_prompt(theory_id: str) -> str:
     return (
         f"Please run the review-theory skill for theory_id: {theory_id}. "
-        "When you are done, return ONLY a JSON object with three keys: 1. 'review_ids' containing the full list of generated review IDs (both falsification and expansion), 2. 'statement_reviews' containing a mapping of each reviewed statement (by number and/or title) to the associated falsification review ID, 3. 'expansion_reviews' containing a list of only the expansion review IDs."
+        "When you are done, return ONLY a JSON object with four keys: "
+        "1. 'review_ids' containing the full list of generated review IDs (falsification, expansion, and adherence), "
+        "2. 'statement_reviews' containing a mapping of each reviewed statement (by number and/or title) to the associated falsification review ID, "
+        "3. 'expansion_reviews' containing a list of only the expansion review IDs, "
+        "4. 'adherence_reviews' containing a list of only the adherence review IDs."
     )
 
 
@@ -95,6 +99,23 @@ def get_suggest_expansions_prompt(theory_id: str) -> str:
         f"Please run the suggest-expansions skill for theory_id: {theory_id}. "
         "When you are done, return ONLY a JSON object with the key 'review_id'."
     )
+
+
+def get_review_adherence_prompt(theory_id: str) -> str:
+    return (
+        f"Please run the review-adherence skill for theory_id: {theory_id}. "
+        "When you are done, return ONLY a JSON object with the key 'review_id'."
+    )
+
+
+def get_improve_adherence_prompt(
+    theory_id: str, review_id: str, lit_review_id: Optional[str] = None
+) -> str:
+    prompt = f"Please run the improve-adherence skill for theory_id: {theory_id} using review_id: {review_id}. "
+    if lit_review_id:
+        prompt += f"Also pass literature_review_id: {lit_review_id}. "
+    prompt += "When you are done, return ONLY a JSON object with the key 'theory_id'."
+    return prompt
 
 
 def get_expand_theory_prompt(

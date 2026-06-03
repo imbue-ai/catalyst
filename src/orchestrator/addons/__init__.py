@@ -10,6 +10,8 @@ from .refine_hypothesis import RefineHypothesisAddon
 from .falsify_hypothesis import FalsifyHypothesisAddon
 from .suggest_expansions import SuggestExpansionsAddon
 from .expand_theory import ExpandTheoryAddon
+from .review_adherence import ReviewAdherenceAddon
+from .improve_adherence import ImproveAdherenceAddon
 from .streamline_theory_variations import StreamlineTheoryVariationsAddon
 from .edit_theory import EditTheoryAddon
 from .score_theories import ScoreTheoriesAddon
@@ -26,6 +28,8 @@ _ADDONS: Dict[str, AddonHandler] = {
     "falsify-hypothesis": FalsifyHypothesisAddon(),
     "suggest-expansions": SuggestExpansionsAddon(),
     "expand-theory": ExpandTheoryAddon(),
+    "review-adherence": ReviewAdherenceAddon(),
+    "improve-adherence": ImproveAdherenceAddon(),
     "streamline-theory-variations": StreamlineTheoryVariationsAddon(),
     "edit-theory": EditTheoryAddon(),
     "score-theories": ScoreTheoriesAddon(),

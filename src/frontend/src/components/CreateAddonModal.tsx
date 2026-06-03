@@ -17,10 +17,12 @@ const ADDON_DESCRIPTIONS: Record<string, string> = {
   'evolve-loop': "Perform a Darwinian evolution on a population of theories, iteratively sampling parents, mutating them (via streamlining or refinement), and rescoring the results.",
   'expand-theory': "Expand a theory by applying suggested expansion reviews",
   'falsify-hypothesis': "Attempt to falsify a given hypothesis",
+  'improve-adherence': "Improve a theory based on adherence review findings",
   'polish-theory': "Polish a theory to improve its clarity and make it easier to read. Does not add or remove any content, just rewords and restructures it.",
   'refine-hypothesis': "Attempt to refine a given hypothesis",
   'refine-theory': "Refine a theory by sequentially applying all its available reviews. Then applies a final polish step.",
   'refinement-loop': "Repeatedly review & refine a theory until no more major changes are needed.",
+  'review-adherence': "Review a theory's adherence to guidance, constraints, and explanatory coverage",
   'review-theory': "Perform a full review. Combines reviewing all statements in a theory and suggesting expansions into a single step.",
   'streamline-theory': "Streamline a theory down to its core essence.",
   'streamline-theory-variations': "Derive several different variations of a theory, each one focused on a different key aspect.",
@@ -45,6 +47,7 @@ const getAvailableSkills = (cat: InputCategory, reviewed: boolean): { id: string
     return reviewed ? [
       { id: 'edit-theory', label: 'Edit Theory' },
       { id: 'expand-theory', label: 'Expand Theory' },
+      { id: 'improve-adherence', label: 'Improve Adherence' },
       { id: 'polish-theory', label: 'Polish Theory' },
       { id: 'refine-theory', label: 'Refine Theory' },
       { id: 'refinement-loop', label: 'Refinement Loop' },
@@ -54,6 +57,7 @@ const getAvailableSkills = (cat: InputCategory, reviewed: boolean): { id: string
       { id: 'edit-theory', label: 'Edit Theory' },
       { id: 'polish-theory', label: 'Polish Theory' },
       { id: 'refinement-loop', label: 'Refinement Loop' },
+      { id: 'review-adherence', label: 'Review Adherence' },
       { id: 'review-theory', label: 'Review Theory' },
       { id: 'streamline-theory', label: 'Streamline Theory' },
       { id: 'streamline-theory-variations', label: 'Streamline Theory Variations' },
@@ -154,7 +158,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
   const hasRequiredConfig = ['falsify-hypothesis', 'edit-theory'].includes(addonType);
   const hasOptionalConfig = addonType === 'streamline-theory' ||
     ['refinement-loop', 'evolve-loop', 'refine-theory'].includes(addonType) ||
-    (['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop', 'write-different-theory'].includes(addonType) && availableLiteratureIds.length > 0);
+    (['edit-theory', 'expand-theory', 'improve-adherence', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop', 'write-different-theory'].includes(addonType) && availableLiteratureIds.length > 0);
 
   const handleCategoryChange = (cat: InputCategory) => {
     setInputCategory(cat);
@@ -183,10 +187,10 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
         max_streamline_prob: addonType === 'evolve-loop' ? maxStreamlineProb : undefined,
         write_different_prob: addonType === 'evolve-loop' ? writeDifferentProb : undefined,
         num_extra_scores: addonType === 'evolve-loop' ? numExtraScores : undefined,
-        review_id: (addonType === 'refine-hypothesis' || addonType === 'expand-theory') ? reviewId : undefined,
+        review_id: (addonType === 'refine-hypothesis' || addonType === 'expand-theory' || addonType === 'improve-adherence') ? reviewId : undefined,
         hypothesis_title: addonType === 'falsify-hypothesis' ? hypothesisTitle : undefined,
         instruction: addonType === 'edit-theory' ? instruction : undefined,
-        lit_review_id: (['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop', 'write-different-theory'].includes(addonType)) ? (litReviewId || undefined) : undefined
+        lit_review_id: (['edit-theory', 'expand-theory', 'improve-adherence', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop', 'write-different-theory'].includes(addonType)) ? (litReviewId || undefined) : undefined
       })
       onCreated(updatedTask)
     } catch (e: any) {
@@ -342,7 +346,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                     )}
                   </div>
 
-                  {(addonType === 'refine-hypothesis' || addonType === 'expand-theory') && (
+                  {(addonType === 'refine-hypothesis' || addonType === 'expand-theory' || addonType === 'improve-adherence') && (
                     <div>
                       <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Apply Review</label>
                       {isLoading ? (
@@ -463,7 +467,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                             </div>
                           )}
 
-                          {['edit-theory', 'expand-theory', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop', 'write-different-theory'].includes(addonType) && availableLiteratureIds.length > 0 && (
+                          {['edit-theory', 'expand-theory', 'improve-adherence', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop', 'write-different-theory'].includes(addonType) && availableLiteratureIds.length > 0 && (
                             <div>
                               <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Literature Review ID (Optional)</label>
                               <select

@@ -79,6 +79,8 @@ Add-ons are individual steps that can be added to a task or run as part of a loo
 | `falsify-hypothesis` | Attempts to find evidence against a hypothesis. | `theory_id`, `hypothesis_title` |
 | `suggest-expansions` | Suggests ways to expand the scope of a theory. | `theory_id` |
 | `expand-theory` | Expands a theory based on suggestions. | `theory_id`, `lit_review_id` (optional) |
+| `review-adherence` | Reviews a theory's adherence to guidance, constraints, and explanatory coverage. | `theory_id` |
+| `improve-adherence` | Updates and refines a theory based on adherence review findings. | `theory_id`, `review_id`, `lit_review_id` (optional) |
 | `streamline-theory-variations` | Generates multiple streamlined variations. | `theory_id` |
 | `edit-theory` | Directly edits a theory. | `theory_id` |
 | `score-theories` | Assigns scores and ranks to theories. | `theory_ids` |

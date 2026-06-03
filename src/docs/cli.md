@@ -51,6 +51,8 @@ These skills modify or evaluate an existing theory stored in the database. Each 
 - `/polish-theory`: Improves the writing, formatting, and mathematical rigor of a theory.
 - `/suggest-expansions`: Analyzes a theory and suggests ways to broaden its scope or impact.
 - `/expand-theory`: Adds new sections or hypotheses to a theory based on expansion suggestions.
+- `/review-adherence`: Reviews a theory's adherence to guidance, constraints, and explanatory coverage.
+- `/improve-adherence`: Updates and refines a theory based on adherence review findings.
 - `/streamline-theory-variations`: Generates multiple distinct simplified versions of a theory.
 - `/score-theories`: Assigns scores and ranks to one or more theories based on multiple criteria.
 

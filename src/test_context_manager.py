@@ -97,6 +97,8 @@ class TestContextManager(unittest.TestCase):
                 "streamline-theory",
                 "expand-theory",
                 "edit-theory",
+                "review-adherence",
+                "improve-adherence",
             )
             parent_theory_allowed_agents = parent_theory_required_agents + (
                 "run-experiment",
@@ -160,6 +162,8 @@ class TestContextManager(unittest.TestCase):
             ("falsify-hypothesis", {"--from_theory": t_id}),
             ("refine-hypothesis", {"--from_theory": t_id, "--from_review": r_id}),
             ("review-theory", {"--from_theory": t_id}),
+            ("review-adherence", {"--from_theory": t_id}),
+            ("improve-adherence", {"--from_theory": t_id, "--from_review": r_id}),
             ("suggest-expansions", {"--from_theory": t_id}),
             ("expand-theory", {"--from_theory": t_id, "--from_review": r_id}),
             ("predict-experiments", {"--from_theory": t_id, "--from_experiment": x_id}),
