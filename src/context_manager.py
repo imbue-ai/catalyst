@@ -44,7 +44,9 @@ AGENT_TYPE_MAP: dict[str, str] = {
     "refine-hypothesis": "theory",
     "falsify-hypothesis": "review",
     "suggest-expansions": "review",
+    "review-adherence": "review",
     "expand-theory": "theory",
+    "improve-adherence": "theory",
     "polish-theory": "theory",
     "edit-theory": "theory",
     "streamline-theory": "theory",
@@ -500,6 +502,8 @@ def store_results(
         "edit-theory",
         "streamline-theory",
         "expand-theory",
+        "review-adherence",
+        "improve-adherence",
     )
     parent_theory_allowed_agents = parent_theory_required_agents + (
         "run-experiment",
@@ -624,12 +628,13 @@ def _validate_create_context_args(
         "polish-theory",
         "streamline-theory",
         "edit-theory",
+        "review-adherence",
     ):
         if not from_theories or len(from_theories) != 1:
             raise ValueError(
                 f"Exactly one --from_theory is required for {for_agent_type}"
             )
-    elif for_agent_type in ("refine-hypothesis", "expand-theory"):
+    elif for_agent_type in ("refine-hypothesis", "expand-theory", "improve-adherence"):
         if not from_theories or len(from_theories) != 1:
             raise ValueError(
                 f"Exactly one --from_theory is required for {for_agent_type}"
@@ -1212,6 +1217,8 @@ def main(argv: list[str] | None = None) -> None:
             "falsify-hypothesis",
             "refine-hypothesis",
             "review-theory",
+            "review-adherence",
+            "improve-adherence",
             "suggest-expansions",
             "expand-theory",
             "edit-theory",

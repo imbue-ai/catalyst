@@ -20,8 +20,9 @@ Optionally, the arguments might instruct you to skip or always run the expansion
    ```
    Parse the JSON output to extract the list of reviews. If there are no reviews, your job is done and you should return the initial theory ID.
 
-2. **Classify Reviews**: Separate the reviews into two groups based on their `agent_type` field:
+2. **Classify Reviews**: Separate the reviews into three groups based on their `agent_type` field:
    - **Falsification reviews**: entries where `agent_type` is `"falsify-hypothesis"` — these will be processed via `refine-hypothesis`.
+   - **Adherence reviews**: entries where `agent_type` is `"review-adherence"` — these will be processed via `improve-adherence`.
    - **Expansion reviews**: entries where `agent_type` is `"suggest-expansions"` — these will be processed via `expand-theory`.
 
 3. **Sequential Refinement** (falsification reviews):
@@ -34,14 +35,20 @@ Optionally, the arguments might instruct you to skip or always run the expansion
      - Update `CURRENT_THEORY_ID` to this new theory ID.
      - **CRITICAL**: Do not run these in parallel. The output of one refinement must be the input to the next.
 
-4. **Expansion** (expansion reviews):
+4. **Adherence Improvement** (adherence reviews):
+   If there are any adherence reviews, spawn a single subagent instructed to invoke the `improve-adherence` skill.
+   - Provide the subagent with `CURRENT_THEORY_ID` (the latest theory after all falsification refinements) and **all** adherence review IDs. Also pass any literature review IDs you might have. It should pass these as arguments to the `improve-adherence` skill.
+   - Wait for the subagent to finish and retrieve the new theory ID it returns.
+   - Update `CURRENT_THEORY_ID` to this new theory ID.
+
+5. **Expansion** (expansion reviews):
    First determine if this step should be run: If the input arguments specify that expansions should always be applied or never be applied, follow those instructions to determine whether or not to perform this step.
    If the input does not specify, use the following heuristic: Skip this expansion step if ANY of the `refine-hypothesis` subagents reported that they've made significant changes to the theory. Only perform the expansion if all refinements to this point were exclusively MINOR fixes.
    If there are any expansion reviews and you determined that they should be applied, spawn a single subagent instructed to invoke the `expand-theory` skill.
-   - Provide the subagent with `CURRENT_THEORY_ID` (the latest theory after all refinements) and **all** expansion review IDs. Also pass any literature review IDs you might have. It should pass these as arguments to the `expand-theory` skill.
+   - Provide the subagent with `CURRENT_THEORY_ID` (the latest theory after all refinements and adherence improvements) and **all** expansion review IDs. Also pass any literature review IDs you might have. It should pass these as arguments to the `expand-theory` skill.
    - Wait for the subagent to finish and retrieve the new theory ID it returns. Note that the subagent may take a long time to finish (up to several hours), so do not interrupt it prematurely.
    - Update `CURRENT_THEORY_ID` to this new theory ID.
 
-5. **Polish**: After all refinements and expansions are done, spawn a subagent to do a final polish of the theory. Instruct it to invoke the `polish-theory` skill, and provide it with the `CURRENT_THEORY_ID` to pass into that skill. Wait for it to finish and retrieve the new theory ID it returns. Update `CURRENT_THEORY_ID` to this new theory ID.
+6. **Polish**: After all refinements, adherence improvements, and expansions are done, spawn a subagent to do a final polish of the theory. Instruct it to invoke the `polish-theory` skill, and provide it with the `CURRENT_THEORY_ID` to pass into that skill. Wait for it to finish and retrieve the new theory ID it returns. Update `CURRENT_THEORY_ID` to this new theory ID.
 
-6. **Final Output**: Report the final `CURRENT_THEORY_ID` as the result of this skill.
+7. **Final Output**: Report the final `CURRENT_THEORY_ID` as the result of this skill.

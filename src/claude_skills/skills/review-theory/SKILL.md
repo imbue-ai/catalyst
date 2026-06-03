@@ -30,6 +30,7 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_a
 3. **Spawn Agents**: Launch the following agents in parallel:
    - For each theorem, lemma, corollary, and observation, spawn an agent instructed to invoke the `falsify-hypothesis` skill, passing the `<THEORY_ID>` and theorem/lemma/corollary/observation name and number.
    - Spawn **one** agent instructed to invoke the `suggest-expansions` skill, passing only `<THEORY_ID>`. This agent reviews the entire theory at once.
+   - Spawn **one** agent instructed to invoke the `review-adherence` skill, passing only `<THEORY_ID>`. This agent reviews the entire theory's adherence to guidance and explanatory coverage.
    - Use the available tools to spawn independent agents (e.g., via `Agent`). All agents can run in parallel.
 4. **Collection**: Wait for *all subagents to finish* and collect their final result messages. Each agent's response should contain a review ID (e.g. `R_20260414_143200_g7h8i9`). Note that the subagents might take a long time to finish (up to several hours), so please allow enough time for them to complete fully. Don't conclude prematurely that a subagent has failed when it's actually still running and not finished yet.
-5. **Final Output**: Report the list of all review IDs (from the falsification reviews and the expansion review) as the skill's final result.
+5. **Final Output**: Report the list of all review IDs (from the falsification reviews, the expansion review, and the adherence review) as the skill's final result.
