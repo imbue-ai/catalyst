@@ -98,18 +98,19 @@ The resulting theory MUST use language and rigor that is adequate for publishing
 
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the existing theory, the falsification reports, and literature review results using `context_manager.py`.
-2. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md`, all falsification reports in `<CONTEXT_DIR>/reviews/*/review.md`, and (if present) each `<CONTEXT_DIR>/literature/*/summary.md` to understand the hypothesis, its identified flaws, and any prior literature grounding.
-3. **Refinement Idea Generation**: Analyze the falsification reports. Generate ideas for how to address the raised flaws in the current hypothesis. Generate 2-3 alternative approaches for addressing the flaws, such as: more rigid prerequisites or assumptions, localized fixes and modifications to the existing hypothesis, or even a full replacement of the hypothesis by an alternative explanation. Think about how each alternative could be tested and what evidence would support or refute it.
-  - Exception: If none of the falsification reports successfully falsified the hypothesis, you should stop here and just report back the original theory ID from your inputs together with a note that no changes were needed.
+2. **Check Reviews**: Read all falsification reports in `<CONTEXT_DIR>/reviews/*/review.md` and check if any of them successfully falsified the hypothesis.
+  - If none of the falsification reports successfully falsified the hypothesis, stop here. Simply report back the original theory ID from your inputs, together with a note that no changes were needed. You DO NOT need to read the `theory.md` or store a new result in this case. Simply report your input theory ID back unchanged.
+3. **Theory Review**: Read `<CONTEXT_DIR>/theory/theory.md`, and (if present) each `<CONTEXT_DIR>/literature/*/summary.md` to understand the hypothesis and any prior literature grounding.
+4. **Refinement Idea Generation**: Analyze the falsification reports. Generate ideas for how to address the raised flaws in the current hypothesis. Generate 2-3 alternative approaches for addressing the flaws, such as: more rigid prerequisites or assumptions, localized fixes and modifications to the existing hypothesis, or even a full replacement of the hypothesis by an alternative explanation. Think about how each alternative could be tested and what evidence would support or refute it.
   - The falsification report can ON OCCASION contain a false conclusion, and claim that the hypothesis is flawed when it really isn't. NEVER assume that as your first conclusion though. If you have reason to believe that there's a mistake in the falsification report, try to devise an experiment or mathematical derivation that would confirm or refute the falsification report's claims. If in doubt, assume that the falsification report is correct, and try to refine the hypothesis accordingly.
-4. **Validation**: Test your ideas using the available tools.
+5. **Validation**: Test your ideas using the available tools.
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` in your refined theory.
    - **Proof**: If applicable, use mathematical derivations.
    - **Literature grounding**: You can cite prior literature to support the hypothesis. Always read the full paper before citing it. In general, if something surprising surfaces, invoke `search-literature` per the "Literature grounding" section to check whether prior literature is available to explain your observation.
-5. **Iteration**: Keep iterating until you're COMPLETELY CONFIDENT in your revised hypothesis, or conclude that the hypothesis is fundamentally flawed and should be discarded.
+6. **Iteration**: Keep iterating until you're COMPLETELY CONFIDENT in your revised hypothesis, or conclude that the hypothesis is fundamentally flawed and should be discarded.
    - Based on the results of the validation step, refine your ideas, generate new ones if necessary, and repeat the validation process.
-6. **Reporting**: Edit the theory in `<OUTPUT_DIR>/theory.md` to apply your refinements (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
-7. **Store results** Persist your output and return the new theory ID:
+7. **Reporting**: Edit the theory in `<OUTPUT_DIR>/theory.md` to apply your refinements (this exact filename is required). Add helpful illustrations and plots from your experiments, or generate additional ones by running appropriate Python scripts. Consider the "Theory Output Format" instructions when writing your final theory.
+8. **Store results** Persist your output and return the new theory ID:
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type refine-hypothesis --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```

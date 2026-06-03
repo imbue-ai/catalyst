@@ -37,6 +37,7 @@ cp -r "<CONTEXT_DIR>/theory/"* "<OUTPUT_DIR>/"
 
 - `<CONTEXT_DIR>/theory/` — the original theory (read-only input). Read `<CONTEXT_DIR>/theory/theory.md` and any artifacts.
 - `<CONTEXT_DIR>/reviews/<review_id>/` — each adherence review report (read-only input). Read each `review.md`.
+- `<CONTEXT_DIR>/literature/<literature_id>/` — (if any literature IDs provided, or added mid-run) each literature review, with `summary.md` and downloaded PDFs in `papers/`. Read the `summary.md` and consult individual PDFs when relevant.
 - `<OUTPUT_DIR>/` — write your updated theory, experiments, and any supporting notes here.
 
 ## Running experiments
@@ -76,12 +77,14 @@ The resulting theory MUST use language and rigor that is adequate for publishing
 
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the existing theory, adherence reviews, and literature reviews using `context_manager.py`.
-2. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md`, all adherence reviews in `<CONTEXT_DIR>/reviews/*/review.md`, and any existing literature reviews.
-3. **Refinement Strategy**:
-   - For each adherence and explanatory gap raised in the adherence review, identify the necessary updates to the theory's assumptions, constraints, or models. Determine what additions, generalizations, or new lemmas are needed if any to expand the explanatory coverage to cover the entire described phenomenon.
-4. **Validation**: Test your updates mathematically or via experiments (via the `run-experiment` skill).
-5. **Reporting**: Edit the theory in `<OUTPUT_DIR>/theory.md` to apply your improvements.
-6. **Store results**: Persist your output and return the new theory ID:
+2. **Check Adherence Reviews**: Read all adherence reviews in `<CONTEXT_DIR>/reviews/*/review.md` and check if any of them raise adherence issues or explanatory gaps.
+   - If no issues are raised by the reviews, stop here. Simply report back the original theory ID from your inputs, together with a note that no changes were needed. You DO NOT need to read the `theory.md` or store a new result in this case. Simply report your input theory ID back unchanged.
+3. **Theory Review**: Read `<CONTEXT_DIR>/theory/theory.md`, and (if present) each existing literature review `<CONTEXT_DIR>/literature/*/summary.md` to understand the theory and any prior literature grounding.
+4. **Refinement Strategy**:
+   - For each adherence and explanatory gap raised in the adherence review, identify the necessary updates to the theory's assumptions, constraints, or models. Determine what additions, generalizations, or new lemmas are needed (if any) to expand the explanatory coverage to cover the entire described phenomenon. In extreme cases, a complete restructuring of the theory may be needed.
+5. **Validation**: Test your updates mathematically or via experiments, using the `run-experiment` skill.
+6. **Reporting**: Edit the theory in `<OUTPUT_DIR>/theory.md` to apply your improvements.
+7. **Store results**: Persist your output and return the new theory ID:
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type improve-adherence --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```
