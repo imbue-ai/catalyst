@@ -89,7 +89,7 @@ Your `review.md` file MUST be formatted as follows:
 ```
 
 ## Execution Steps
-1. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md` and any other files in `<CONTEXT_DIR>/theory/` to understand the theory and its hypotheses.
+1. **Context Review**: Read `<CONTEXT_DIR>/theory/theory.md` to understand the theory and its hypotheses.
 2. **Research**: Analyze the target hypothesis. Generate ideas using the falsification strategies above.
 3. **Implementation**: Test your ideas using the available tools.
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` under the corresponding falsification idea in your `review.md`.
