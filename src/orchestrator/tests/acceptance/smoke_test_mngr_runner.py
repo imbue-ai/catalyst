@@ -57,7 +57,7 @@ def main() -> int:
         print(f"\n  Agent name: {name}", flush=True)
         if pause_secs > 0:
             print(
-                f"  → In another terminal, try: MNGR_HOST_DIR=~/.mngr-catalyst mngr connect {name}\n"
+                f"  -> In another terminal, try: MNGR_HOST_DIR=~/.mngr-catalyst mngr connect {name}\n"
                 f"  Sleeping {pause_secs}s so you can attach...\n",
                 flush=True,
             )
