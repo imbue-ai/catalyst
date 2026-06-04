@@ -109,7 +109,7 @@ def main() -> int:
     PROMPT_RUN_CEILING = PAUSE_DELAY_S + 60.0  # generous upper bound
 
     checks = [
-        ("runner returned after external stop", error is not None or data is None),
+        ("runner returned an error and no data after external stop", error is not None and data is None),
         (
             f"runner exited within {PROMPT_RUN_CEILING:.0f}s of start "
             "(not the 21600s wait deadline)",
