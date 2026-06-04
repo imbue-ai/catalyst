@@ -460,8 +460,8 @@ class MngrAgentRunner(AgentRunner):
             remaining = max(0.0, deadline - time.monotonic())
             watch_done.wait(timeout=remaining)
 
-            # Allow some extra time before terminating, since assistant messages can sometimes arrive later than
-            # the stop condition is triggered.
+            # Allow some extra time before terminating, since assistant messages can sometimes be delievered after
+            # the stop condition. _consume_events will keep running until we terminate it or the agent process exits.
             time.sleep(_POST_TURN_END_SECONDS)
         finally:
             for proc in (event_proc, stop_proc, wait_proc):
