@@ -173,8 +173,12 @@ class MngrAgentRunner(AgentRunner):
         try:
             yield
         finally:
+            # Bound the cleanup-path stop so a hung `mngr stop` can't pin
+            # this thread forever. Matches `cancel_task_process`'s default
+            # timeout in `state.py`; `_stop_agent` already converts a
+            # `TimeoutExpired` into a logged warning and returns.
             try:
-                self._stop_agent(agent_name, task_id)
+                self._stop_agent(agent_name, task_id, timeout=30)
             except Exception as stop_err:
                 logger.warning(
                     f"[AGENT] [{task_id[:8]}] failed to stop {agent_name} on exit: {stop_err}"
