@@ -30,7 +30,12 @@ import time
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 
 # Allow this script to import sibling packages when run from src/.
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+sys.path.insert(
+    0,
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    ),
+)
 
 from orchestrator.agents.mngr_claude import MngrClaudeAgentRunner  # noqa: E402
 from orchestrator.utils import mngr_env  # noqa: E402
@@ -58,7 +63,7 @@ def main() -> int:
         print(f"\n  Agent name: {name}", flush=True)
         if pause_secs > 0:
             print(
-                f"  -> In another terminal, try: MNGR_HOST_DIR=~/.mngr-catalyst mngr connect {name}\n"
+                f"  -> In another terminal, try: MNGR_HOST_DIR=~/.mngr-catalyst uv run mngr connect {name}\n"
                 f"  Sleeping {pause_secs}s so you can attach...\n",
                 flush=True,
             )
@@ -71,7 +76,11 @@ def main() -> int:
         # Stop hook that emits `mngr/turn_complete` is wired up. Without
         # it the runner would wait its full 6-hour timeout.
         src_settings = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
+            os.path.dirname(
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                )
+            ),
             "claude_skills",
             "settings.json",
         )
@@ -99,7 +108,14 @@ def main() -> int:
         return 1
 
     list_result = subprocess.run(
-        ["mngr", "list", "--include", 'labels["app"] == "catalyst"', "--format", "jsonl"],
+        [
+            "mngr",
+            "list",
+            "--include",
+            'labels["app"] == "catalyst"',
+            "--format",
+            "jsonl",
+        ],
         check=False,
         capture_output=True,
         text=True,

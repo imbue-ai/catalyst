@@ -53,15 +53,15 @@ The system can be configured using the following environment variables:
 5. **Recover:** If you want to see the detailed agent logs or manually intervene, use the session ID provided in the inspection panel (where supported):
    - For Gemini: `gemini --resume <session_id>`
    - For Claude: `claude --resume <session_id>`
-   - For `mngr-claude` / `mngr-antigravity`: `MNGR_HOST_DIR=~/.mngr-catalyst mngr connect <session_id>` (attaches a terminal to the agent's tmux session, running or stopped)
+   - For `mngr-claude` / `mngr-antigravity`: `MNGR_HOST_DIR=~/.mngr-catalyst uv run mngr connect <session_id>` (attaches a terminal to the agent's tmux session, running or stopped)
 
 ## Inspecting past mngr sessions
 
 For tasks created with the `mngr-claude` / `mngr-antigravity` frameworks, `mngr` keeps each step's session around after it stops. Catalyst runs them under a dedicated host_dir at `~/.mngr-catalyst/` (separate from your main `~/.mngr/`), so every `mngr` command below needs the `MNGR_HOST_DIR=~/.mngr-catalyst` prefix. You can also `export MNGR_HOST_DIR=~/.mngr-catalyst` once per shell.
 
-- `MNGR_HOST_DIR=~/.mngr-catalyst mngr list --include 'labels["app"] == "catalyst"'` lists Catalyst's mngr-backed agents that haven't been destroyed yet.
-- `MNGR_HOST_DIR=~/.mngr-catalyst mngr transcript <session_id>` prints the recorded turn.
-- `MNGR_HOST_DIR=~/.mngr-catalyst mngr connect <session_id>` re-attaches to the tmux session (and restarts it if it had stopped).
+- `MNGR_HOST_DIR=~/.mngr-catalyst uv run mngr list --include 'labels["app"] == "catalyst"'` lists Catalyst's mngr-backed agents that haven't been destroyed yet.
+- `MNGR_HOST_DIR=~/.mngr-catalyst uv run mngr transcript <session_id>` prints the recorded turn.
+- `MNGR_HOST_DIR=~/.mngr-catalyst uv run mngr connect <session_id>` re-attaches to the tmux session (and restarts it if it had stopped).
 
 ## Cleanup
 

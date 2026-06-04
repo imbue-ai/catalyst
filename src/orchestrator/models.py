@@ -3,12 +3,14 @@ from typing import Dict, List, Optional, Any
 from pydantic import BaseModel, Field
 from datetime import datetime, timezone
 
+
 class TaskStatus(str, Enum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
     PAUSED = "paused"
+
 
 class StepStatus(str, Enum):
     PENDING = "pending"
@@ -18,6 +20,7 @@ class StepStatus(str, Enum):
     FAILED = "failed"
     PAUSED = "paused"
     CANCELED = "canceled"
+
 
 class Step(BaseModel):
     stage: str
@@ -30,14 +33,15 @@ class Step(BaseModel):
     # <session_id>` to attach); the direct `agy` framework has no resumable
     # session id. For `mngr-claude` / `mngr-antigravity` this is the mngr
     # agent name (e.g. "cata-abcd1234-write-theory-7f3a"); use
-    # `MNGR_HOST_DIR=~/.mngr-catalyst mngr connect <session_id>`.
+    # `MNGR_HOST_DIR=~/.mngr-catalyst uv run mngr connect <session_id>`.
     # The frontend picks the right command from `task.framework`.
     session_id: Optional[str] = None
     last_status: Optional[str] = None
     error: Optional[str] = None
 
+
 class Addon(BaseModel):
-    type: str # "streamline-theory", "review-theory", "refine-theory", "refinement-loop", "evolve-loop", "write-different-theory"
+    type: str  # "streamline-theory", "review-theory", "refine-theory", "refinement-loop", "evolve-loop", "write-different-theory"
     theory_id: Optional[str] = None
     theory_ids: Optional[List[str]] = None
     direction: Optional[str] = None
@@ -53,6 +57,7 @@ class Addon(BaseModel):
     instruction: Optional[str] = None
     lit_review_id: Optional[str] = None
 
+
 class Task(BaseModel):
     id: str
     title: Optional[str] = None
@@ -67,7 +72,10 @@ class Task(BaseModel):
     workflow_name: str = "develop-theory"
     workflow_structure: List[Dict[str, Any]] = []
     guidance: str = "No additional guidance."
-    created_at: Optional[str] = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
+    created_at: Optional[str] = Field(
+        default_factory=lambda: datetime.now(timezone.utc).isoformat()
+    )
+
 
 class TaskShallow(BaseModel):
     id: str
@@ -79,6 +87,7 @@ class TaskShallow(BaseModel):
     current_stage: Optional[str] = None
     workflow_name: str = "develop-theory"
     created_at: Optional[str] = None
+
 
 class TasksState(BaseModel):
     tasks: List[Task] = []

@@ -315,7 +315,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                           const isMngr = task.framework === 'mngr-claude' || task.framework === 'mngr-antigravity';
                           let cmd: string;
                           if (isMngr) {
-                            cmd = `MNGR_HOST_DIR=~/.mngr-catalyst mngr connect ${step.session_id}`;
+                            cmd = `MNGR_HOST_DIR=~/.mngr-catalyst uv run mngr connect ${step.session_id}`;
                           } else if (task.framework === 'gemini') {
                             cmd = `cd "${task.env_folder}" && gemini --resume ${step.session_id}`;
                           } else if (task.framework === 'claude') {
