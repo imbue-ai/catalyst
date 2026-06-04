@@ -393,46 +393,54 @@ class MngrAgentRunner(AgentRunner):
         saw_turn_end = threading.Event()
         done = threading.Event()
 
-        event_proc = subprocess.Popen(
-            ["mngr", "event", agent_name, "--follow", "--format", "jsonl"],
-            stdin=subprocess.DEVNULL,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.DEVNULL,
-            text=True,
-            bufsize=1,
-        )
-        stop_proc = self._spawn_wait_for_state(agent_name, "STOPPED")
-        wait_proc = (
-            self._spawn_wait_for_state(agent_name, "WAITING")
-            if self.turn_completion is TurnCompletion.WAITING_STATE
-            else None
-        )
+        # Initialize before the spawns so the `finally` always sees them.
+        # If a Popen partway through raises (transient fork/OS error, mngr
+        # CLI yanked mid-task), this guarantees any earlier-spawned helper
+        # subprocess still gets terminated rather than leaked.
+        event_proc: Optional[subprocess.Popen] = None
+        stop_proc: Optional[subprocess.Popen] = None
+        wait_proc: Optional[subprocess.Popen] = None
+        threads: List[threading.Thread] = []
 
-        threads: List[threading.Thread] = [
-            threading.Thread(
-                target=self._consume_events,
-                args=(event_proc, on_status, saw_turn_end, done),
-                daemon=True,
-            ),
-            threading.Thread(
-                target=self._watch_proc,
-                args=(stop_proc, done, None),
-                daemon=True,
-            ),
-        ]
-        if wait_proc is not None:
+        try:
+            event_proc = subprocess.Popen(
+                ["mngr", "event", agent_name, "--follow", "--format", "jsonl"],
+                stdin=subprocess.DEVNULL,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                text=True,
+                bufsize=1,
+            )
+            stop_proc = self._spawn_wait_for_state(agent_name, "STOPPED")
+            if self.turn_completion is TurnCompletion.WAITING_STATE:
+                wait_proc = self._spawn_wait_for_state(agent_name, "WAITING")
+
             threads.append(
                 threading.Thread(
-                    target=self._watch_proc,
-                    args=(wait_proc, done, saw_turn_end),
+                    target=self._consume_events,
+                    args=(event_proc, on_status, saw_turn_end, done),
                     daemon=True,
                 )
             )
+            threads.append(
+                threading.Thread(
+                    target=self._watch_proc,
+                    args=(stop_proc, done, None),
+                    daemon=True,
+                )
+            )
+            if wait_proc is not None:
+                threads.append(
+                    threading.Thread(
+                        target=self._watch_proc,
+                        args=(wait_proc, done, saw_turn_end),
+                        daemon=True,
+                    )
+                )
 
-        for t in threads:
-            t.start()
+            for t in threads:
+                t.start()
 
-        try:
             remaining = max(0.0, deadline - time.monotonic())
             done.wait(timeout=remaining)
         finally:
