@@ -8,3 +8,6 @@ __pycache__/
 dist/
 build/
 scheduled_tasks.lock
+.reviewer/outputs/
+src/cache/
+**/settings.local.json

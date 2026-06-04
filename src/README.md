@@ -14,7 +14,7 @@ For more detailed information, please see the following guides:
 
 - **Agent Skills:** The main functionality of Catalyst is implemented through a set of Agent skills that each perform different steps of the research process.
 - **Backend (Python + FastAPI):** Manages the research lifecycle using multi-threading.
-- **Agent Layer:** Spawns `gemini`, `claude`, or `agy` CLI processes in headless mode, capturing their JSON outputs and session IDs (where supported) for traceability.
+- **Agent Layer:** Spawns `gemini`, `claude`, or `agy` CLI processes in headless mode, or `claude` / `agy` inside a `mngr`-managed tmux session you can attach to live (the `mngr-claude` / `mngr-antigravity` variants). JSON outputs and session IDs captured for traceability either way.
 - **Frontend (React + TypeScript):** A dashboard for starting research tasks, monitoring progress in real-time, and inspecting the data exchange at each step.
 
 ## Prerequisites
@@ -46,13 +46,38 @@ The system can be configured using the following environment variables:
 1. **Start a Task:** Click "NEW TASK" in the dashboard.
 2. **Configure:**
    - **Phenomenon:** The scientific topic to investigate.
-   - **Framework:** Choose between Gemini CLI, Antigravity CLI, or Claude Code.
+   - **Framework:** Choose between Gemini CLI, Antigravity CLI, Claude Code, or the `mngr-` variants of Claude Code / Antigravity CLI (which run inside a `mngr`-managed tmux session you can attach to live).
    - **Model:** Choose a model identifier from the dropdown or enter one manually.
 3. **Monitor:** The dashboard polls the backend every 2 seconds to update the timeline.
 4. **Inspect:** Click any completed or running step in the timeline to view the raw inputs, JSON outputs, and the **Session ID**.
 5. **Recover:** If you want to see the detailed agent logs or manually intervene, use the session ID provided in the inspection panel (where supported):
    - For Gemini: `gemini --resume <session_id>`
    - For Claude: `claude --resume <session_id>`
+   - For `mngr-claude` / `mngr-antigravity`: `MNGR_HOST_DIR=~/.mngr-catalyst mngr connect <session_id>` (attaches a terminal to the agent's tmux session, running or stopped)
+
+## Inspecting past mngr sessions
+
+For tasks created with the `mngr-claude` / `mngr-antigravity` frameworks, `mngr` keeps each step's session around after it stops. Catalyst runs them under a dedicated host_dir at `~/.mngr-catalyst/` (separate from your main `~/.mngr/`), so every `mngr` command below needs the `MNGR_HOST_DIR=~/.mngr-catalyst` prefix. You can also `export MNGR_HOST_DIR=~/.mngr-catalyst` once per shell.
+
+- `MNGR_HOST_DIR=~/.mngr-catalyst mngr list --include 'labels["app"] == "catalyst"'` lists Catalyst's mngr-backed agents that haven't been destroyed yet.
+- `MNGR_HOST_DIR=~/.mngr-catalyst mngr transcript <session_id>` prints the recorded turn.
+- `MNGR_HOST_DIR=~/.mngr-catalyst mngr connect <session_id>` re-attaches to the tmux session (and restarts it if it had stopped).
+
+## Cleanup
+
+Deleting a task from the dashboard removes its env_folder and cancels any running step. **Per-session state outside the env_folder is preserved** for every framework — this is intentional so transcripts remain inspectable after a task is gone, and it matches the underlying CLI's own behavior:
+
+- The direct `gemini` / `claude` runners leave their session JSONLs under `~/.gemini/` and `~/.claude/projects/<sanitized-env-folder>/<session_id>.jsonl` respectively. The direct `agy` runner leaves agy's per-conversation logs under `~/.gemini/antigravity-cli/`. Each CLI auto-prunes its session data on its own schedule (Claude Code defaults to a 30-day retention; Gemini CLI prunes similarly), so they're not committed-forever clutter.
+- `mngr-claude` / `mngr-antigravity` leave the agent's transcript + work_dir under `~/.mngr-catalyst/agents/<agent-id>/` (mngr keeps the per-agent state even after `mngr destroy`). `mngr-antigravity` additionally leaves agy's per-conversation logs under `~/.gemini/antigravity-cli/`.
+
+To remove every mngr agent associated with a finished task:
+
+```bash
+export MNGR_HOST_DIR=~/.mngr-catalyst
+mngr list --include 'labels["catalyst-task"] == "<full_task_id>"' --format '{name}' | mngr destroy --force -
+```
+
+The `--format '{name}'` strips the column header that `--fields name` adds (which would break the pipe), and `--force` skips the interactive confirmation prompt so the pipeline runs unattended.
 
 ## Data Persistence
 
@@ -83,3 +108,9 @@ sudo sysctl -w kernel.apparmor_restrict_unprivileged_unconfined=0
 sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
 ```
 and consider adding the same settings to your /etc/sysctl.conf to survive a system restart.
+
+### Antigravity (`agy`) is not signed in
+The `mngr-antigravity` framework drives the Antigravity CLI in a headless tmux session, so it can't complete an interactive OAuth sign-in. Authenticate `agy` once in a normal terminal (run `agy`, follow the sign-in prompt) before starting antigravity tasks. mngr reuses the credentials it writes under `~/.gemini/antigravity-cli/`.
+
+### Antigravity (`agy`) is shadowed by the desktop app
+If the Antigravity desktop app is installed, its bundled `agy` shim can shadow the standalone CLI on `PATH`. Confirm `which agy` points at the standalone Go binary (e.g. `~/.local/bin/agy`); if not, remove the desktop app's `bin/agy` or set an absolute `command` path on the `antigravity` agent type in your mngr config.

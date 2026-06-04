@@ -3,6 +3,9 @@ from .base import AgentRunner
 from .gemini import GeminiAgentRunner
 from .claude import ClaudeAgentRunner
 from .agy import AgyAgentRunner
+from .mngr_claude import MngrClaudeAgentRunner
+from .mngr_antigravity import MngrAntigravityAgentRunner
+
 
 def get_agent_runner(framework: str) -> Optional[AgentRunner]:
     if framework == "gemini":
@@ -11,5 +14,8 @@ def get_agent_runner(framework: str) -> Optional[AgentRunner]:
         return ClaudeAgentRunner()
     if framework == "agy":
         return AgyAgentRunner()
+    if framework == "mngr-claude":
+        return MngrClaudeAgentRunner()
+    if framework == "mngr-antigravity":
+        return MngrAntigravityAgentRunner()
     return None
-

@@ -311,41 +311,45 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     }
                     return (
                       <>
-                        {step.session_id && (
-                          <div className="group relative">
-                            <div className="absolute -top-3 -left-1 px-2 py-1 bg-black text-white text-[8px] font-black tracking-widest z-10">
-                              Inspect Agent
-                            </div>
-                            <div className="bg-[#1a1a1a] text-gray-300 p-4 font-mono text-[11px] border border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
-                              <div className="flex justify-between items-start mb-2">
-                                <div className="text-gray-400"># Use this command to resume this session manually</div>
-                                <button
-                                  onClick={() => {
-                                    const cmd = task.framework === 'gemini'
-                                      ? `cd "${task.env_folder}" && gemini --resume ${step.session_id}`
-                                      : task.framework === 'claude'
-                                      ? `cd "${task.env_folder}" && claude --resume ${step.session_id}`
-                                      : `cd "${task.env_folder}" && agy --resume ${step.session_id}`;
-                                    handleCopy(cmd);
-                                  }}
-                                  className="text-gray-300 hover:text-white transition-colors p-1"
-                                  title="Copy to clipboard"
-                                >
-                                  {copied ? <Check size={14} /> : <Copy size={14} />}
-                                </button>
+                        {step.session_id && (() => {
+                          const isMngr = task.framework === 'mngr-claude' || task.framework === 'mngr-antigravity';
+                          let cmd: string;
+                          if (isMngr) {
+                            cmd = `MNGR_HOST_DIR=~/.mngr-catalyst mngr connect ${step.session_id}`;
+                          } else if (task.framework === 'gemini') {
+                            cmd = `cd "${task.env_folder}" && gemini --resume ${step.session_id}`;
+                          } else if (task.framework === 'claude') {
+                            cmd = `cd "${task.env_folder}" && claude --resume ${step.session_id}`;
+                          } else {
+                            cmd = `cd "${task.env_folder}" && agy --resume ${step.session_id}`;
+                          }
+                          const comment = isMngr
+                            ? "# Attach to this agent's tmux session (restarts it if stopped)"
+                            : '# Use this command to resume this session manually';
+                          return (
+                            <div className="group relative">
+                              <div className="absolute -top-3 -left-1 px-2 py-1 bg-black text-white text-[8px] font-black tracking-widest z-10">
+                                Inspect Agent
                               </div>
-                              <div className="flex items-center gap-2">
-                                <span className="text-gray-400">$</span>
-                                <code className="select-all">
-                                  {task.framework === 'gemini'
-                                    ? `cd "${task.env_folder}" && gemini --resume ${step.session_id}`
-                                    : task.framework === 'claude'
-                                    ? `cd "${task.env_folder}" && claude --resume ${step.session_id}`
-                                    : `cd "${task.env_folder}" && agy --resume ${step.session_id}`}
-                                </code>
-                              </div>                            </div>
-                          </div>
-                        )}
+                              <div className="bg-[#1a1a1a] text-gray-300 p-4 font-mono text-[11px] border border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]">
+                                <div className="flex justify-between items-start mb-2">
+                                  <div className="text-gray-400">{comment}</div>
+                                  <button
+                                    onClick={() => handleCopy(cmd)}
+                                    className="text-gray-300 hover:text-white transition-colors p-1"
+                                    title="Copy to clipboard"
+                                  >
+                                    {copied ? <Check size={14} /> : <Copy size={14} />}
+                                  </button>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-gray-400">$</span>
+                                  <code className="select-all">{cmd}</code>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })()}
 
                         <DataSection label="Prompt" data={step.inputs} taskId={task.id} />
 

@@ -7,6 +7,7 @@ import threading
 from typing import Dict, Any, Optional, Tuple, Callable
 
 from context_manager import DEFAULT_DB_DIR
+from .base import parse_json_result
 from .cli_base import BaseCliAgentRunner
 
 logger = logging.getLogger(__name__)
@@ -20,6 +21,7 @@ class GeminiAgentRunner(BaseCliAgentRunner):
         task_id: str,
         prompt: str,
         env_folder: str,
+        stage: str,  # ignored by the direct runner
         model: Optional[str] = None,
         tx_id: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
@@ -107,7 +109,7 @@ class GeminiAgentRunner(BaseCliAgentRunner):
                 )
 
             agent_raw_result = "".join(assistant_content)
-            data = self._parse_json_result(agent_raw_result)
+            data = parse_json_result(agent_raw_result)
             if data:
                 return data, session_id, None
 

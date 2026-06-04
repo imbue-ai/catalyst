@@ -1,37 +1,36 @@
 import unittest
 from unittest.mock import patch, MagicMock
+from ..agents.base import parse_json_result
 from ..agents.gemini import GeminiAgentRunner
 from ..agents.claude import ClaudeAgentRunner
+from ..agents.mngr_runner import extract_assistant_text, extract_status
 
 class TestAgents(unittest.TestCase):
     def test_parse_json_result(self):
-        # BaseCliAgentRunner is abstract, use GeminiAgentRunner to test the inherited method
-        runner = GeminiAgentRunner()
-        
         # Simple JSON
-        self.assertEqual(runner._parse_json_result('{"a": 1}'), {"a": 1})
-        
+        self.assertEqual(parse_json_result('{"a": 1}'), {"a": 1})
+
         # Markdown JSON
         raw = "Here is the result:\n```json\n{\"score\": 0.5}\n```\nDone."
-        self.assertEqual(runner._parse_json_result(raw), {"score": 0.5})
-        
+        self.assertEqual(parse_json_result(raw), {"score": 0.5})
+
         # Multiple JSONs, should pick the last one
         raw = '{"first": 1} ... some text ... {"last": 2}'
-        self.assertEqual(runner._parse_json_result(raw), {"last": 2})
+        self.assertEqual(parse_json_result(raw), {"last": 2})
 
         # Nested JSON, should correctly find the outer boundaries
         raw = 'Random text before {"outer": {"inner": 42}, "other": "val"} text after'
-        self.assertEqual(runner._parse_json_result(raw), {"outer": {"inner": 42}, "other": "val"})
+        self.assertEqual(parse_json_result(raw), {"outer": {"inner": 42}, "other": "val"})
 
         # Multiple JSONs with nesting
         raw = '{"first": {"a": 1}} some noise {"last": {"b": 2}}'
-        self.assertEqual(runner._parse_json_result(raw), {"last": {"b": 2}})
-        
-        # Malformed
-        self.assertIsNone(runner._parse_json_result("not json"))
+        self.assertEqual(parse_json_result(raw), {"last": {"b": 2}})
 
-    @patch("orchestrator.agents.cli_base.register_process")
-    @patch("orchestrator.agents.cli_base.unregister_process")
+        # Malformed
+        self.assertIsNone(parse_json_result("not json"))
+
+    @patch("orchestrator.agents.cli_base.register_cancellable")
+    @patch("orchestrator.agents.cli_base.unregister_cancellable")
     @patch("subprocess.Popen")
     def test_gemini_runner(self, mock_popen, mock_unreg, mock_reg):
         # Mock Popen to simulate streaming output
@@ -44,26 +43,26 @@ class TestAgents(unittest.TestCase):
         mock_process.wait.return_value = 0
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
-        
+
         runner = GeminiAgentRunner()
         data, session_id, error = runner.run(
             task_id="t1",
             prompt="p1",
             env_folder="/tmp",
-            tx_id="tx_42"
+            tx_id="tx_42", stage="t1-stage"
         )
-        
+
         self.assertIsNone(error)
         self.assertEqual(session_id, "sid_123")
         self.assertEqual(data, {"theory_id": "T1"})
-        
+
         # Verify tx_id propagation
         args, kwargs = mock_popen.call_args
         env = kwargs["env"]
         self.assertEqual(env["CONTEXT_TRANSACTION_ID"], "tx_42")
 
-    @patch("orchestrator.agents.cli_base.register_process")
-    @patch("orchestrator.agents.cli_base.unregister_process")
+    @patch("orchestrator.agents.cli_base.register_cancellable")
+    @patch("orchestrator.agents.cli_base.unregister_cancellable")
     @patch("subprocess.Popen")
     def test_claude_runner(self, mock_popen, mock_unreg, mock_reg):
         mock_process = MagicMock()
@@ -75,30 +74,30 @@ class TestAgents(unittest.TestCase):
         mock_process.wait.return_value = 0
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
-        
+
         runner = ClaudeAgentRunner()
         data, session_id, error = runner.run(
             task_id="t1",
             prompt="p1",
             env_folder="/tmp",
-            tx_id="tx_99"
+            tx_id="tx_99", stage="t1-stage"
         )
-        
+
         self.assertIsNone(error)
         self.assertEqual(session_id, "sid_456")
         self.assertEqual(data, {"theory_id": "T2"})
-        
+
         # Verify tx_id propagation
         args, kwargs = mock_popen.call_args
         env = kwargs["env"]
         self.assertEqual(env["CONTEXT_TRANSACTION_ID"], "tx_99")
 
-    @patch("orchestrator.agents.cli_base.register_process")
-    @patch("orchestrator.agents.cli_base.unregister_process")
+    @patch("orchestrator.agents.cli_base.register_cancellable")
+    @patch("orchestrator.agents.cli_base.unregister_cancellable")
     @patch("subprocess.Popen")
     def test_agy_runner(self, mock_popen, mock_unreg, mock_reg):
         from ..agents.agy import AgyAgentRunner
-        
+
         mock_process = MagicMock()
         mock_process.communicate.return_value = (
             "Random setup output...\n```json\n{\"theory_id\": \"T3\"}\n```\n",
@@ -106,31 +105,72 @@ class TestAgents(unittest.TestCase):
         )
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
-        
+
         runner = AgyAgentRunner()
         data, session_id, error = runner.run(
             task_id="t1",
             prompt="p1",
             env_folder="/tmp",
             tx_id="tx_101",
-            model="ignored-model"
+            model="Gemini 3.5 Flash (Low)", stage="t1-stage"
         )
-        
+
         self.assertIsNone(error)
         self.assertIsNone(session_id)
         self.assertEqual(data, {"theory_id": "T3"})
-        
+
         # Verify tx_id propagation
         args, kwargs = mock_popen.call_args
         env = kwargs["env"]
         self.assertEqual(env["CONTEXT_TRANSACTION_ID"], "tx_101")
-        
-        # Verify command flags (specifically print-timeout and model ignored)
+
+        # Verify command flags, including --model. Model name matches
+        # agy's in-session `/model` menu; passed through as a single
+        # argv element so spaces / parens survive without shell-quoting
+        # concerns.
         cmd = args[0]
         self.assertIn("agy", cmd)
         self.assertIn("--sandbox", cmd)
         self.assertIn("--print-timeout", cmd)
         self.assertIn("6h", cmd)
-        self.assertNotIn("ignored-model", cmd)
-        self.assertNotIn("--model", cmd)
+        self.assertIn("--model", cmd)
+        self.assertEqual(cmd[cmd.index("--model") + 1], "Gemini 3.5 Flash (Low)")
+        # --model lives before -p so the prompt remains the last arg.
+        self.assertLess(cmd.index("--model"), cmd.index("-p"))
 
+
+class TestSharedExtractors(unittest.TestCase):
+    """Covers `extract_assistant_text` and `extract_status` in mngr_runner.
+    Shared by mngr_claude + mngr_antigravity since both plugins' common
+    transcripts normalize to the same `assistant_message` shape."""
+
+    def test_extract_assistant_text_picks_text(self):
+        self.assertEqual(
+            extract_assistant_text({"type": "assistant_message", "text": "hello"}),
+            "hello",
+        )
+
+    def test_extract_assistant_text_skips_empty(self):
+        self.assertIsNone(extract_assistant_text({"type": "assistant_message", "text": ""}))
+
+    def test_extract_assistant_text_skips_other_types(self):
+        self.assertIsNone(extract_assistant_text({"type": "tool_result", "text": "irrelevant"}))
+
+    def test_extract_status_collapses_whitespace(self):
+        event = {"type": "assistant_message", "text": "two\n\n  newlines"}
+        self.assertEqual(extract_status(event), "two newlines")
+
+    def test_extract_status_falls_back_to_tool_name(self):
+        # A tool-using step has empty text but a requested tool; surface the
+        # tool name so the dashboard shows live progress. Applies to both
+        # agy's PLANNER_RESPONSE-for-tool and claude's assistant_message
+        # when it calls a tool with no preamble text.
+        event = {
+            "type": "assistant_message",
+            "text": "",
+            "tool_calls": [{"tool_name": "run_command", "input_preview": "{...}"}],
+        }
+        self.assertEqual(extract_status(event), "Running run_command")
+
+    def test_extract_status_ignores_non_assistant_events(self):
+        self.assertIsNone(extract_status({"type": "user_message", "content": "hi"}))

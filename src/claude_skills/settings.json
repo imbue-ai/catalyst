@@ -1,0 +1,31 @@
+{
+  "sandbox": {
+    "enabled": true,
+    "failIfUnavailable": true,
+    "allowUnsandboxedCommands": false,
+    "network": {
+      "allowedDomains": [
+        "arxiv.org",
+        "python.org",
+        "*.python.org",
+        "pypi.org",
+        "*.pypi.org",
+        "pythonhosted.org",
+        "*.pythonhosted.org",
+        "*.pytorch.org"
+      ]
+    }
+  },
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ -n \"${MNGR_CLAUDE_SUBAGENT_PROXY_CHILD:-}\" ] && exit 0; mkdir -p \"$MNGR_AGENT_STATE_DIR/events/mngr/turn_complete\" && printf '{\"timestamp\":\"%s\",\"event_id\":\"turn_end-%s\",\"type\":\"turn_end\",\"source\":\"mngr/turn_complete\"}\\n' \"$(date -u +%Y-%m-%dT%H:%M:%SZ)\" \"$(uuidgen 2>/dev/null || od -An -N16 -tx1 /dev/urandom | tr -d ' \\n')\" >> \"$MNGR_AGENT_STATE_DIR/events/mngr/turn_complete/events.jsonl\""
+          }
+        ]
+      }
+    ]
+  }
+}

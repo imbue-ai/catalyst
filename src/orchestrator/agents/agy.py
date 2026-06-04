@@ -5,8 +5,9 @@ import subprocess
 from typing import Dict, Any, Optional, Tuple, Callable
 
 from context_manager import DEFAULT_DB_DIR
-from .cli_base import BaseCliAgentRunner
-from ..state import register_process, unregister_process
+from .base import parse_json_result
+from .cli_base import BaseCliAgentRunner, make_subprocess_cancellable
+from ..state import register_cancellable, unregister_cancellable
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +20,7 @@ class AgyAgentRunner(BaseCliAgentRunner):
         task_id: str,
         prompt: str,
         env_folder: str,
+        stage: str,  # ignored by the direct runner
         model: Optional[str] = None,
         tx_id: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
@@ -50,9 +52,14 @@ class AgyAgentRunner(BaseCliAgentRunner):
             PRINT_TIMEOUT,
             "--add-dir",
             abs_env_folder,
-            "-p",
-            prompt,
         ]
+        if model:
+            # Model name is the same string shown in agy's in-session
+            # `/model` menu (e.g. "Gemini 3.5 Flash (Low)",
+            # "Claude Sonnet 4.6 (Thinking)"). Run `agy models` to list
+            # them.
+            cmd.extend(["--model", model])
+        cmd.extend(["-p", prompt])
 
         logger.debug(f"[AGENT] Starting Antigravity for task {task_id[:8]}")
         logger.debug(f"[AGENT] Executing in folder {abs_env_folder}: {shlex.join(cmd)}")
@@ -70,11 +77,13 @@ class AgyAgentRunner(BaseCliAgentRunner):
                 close_fds=True,
                 start_new_session=True,
             )
-            register_process(task_id, process)
-
-            stdout_data, _ = process.communicate()
-            returncode = process.returncode
-            unregister_process(task_id, process)
+            cancellable = make_subprocess_cancellable(process, label="agy")
+            register_cancellable(task_id, cancellable)
+            try:
+                stdout_data, _ = process.communicate()
+                returncode = process.returncode
+            finally:
+                unregister_cancellable(task_id, cancellable)
 
             logger.debug(
                 f"[AGENT] [{task_id[:8]}] Antigravity finished with exit code {returncode}"
@@ -93,7 +102,7 @@ class AgyAgentRunner(BaseCliAgentRunner):
                 )
 
             agent_raw_result = stdout_data
-            data = self._parse_json_result(agent_raw_result)
+            data = parse_json_result(agent_raw_result)
             if data:
                 return data, None, None
 
@@ -104,7 +113,4 @@ class AgyAgentRunner(BaseCliAgentRunner):
             )
 
         except Exception as e:
-            # Attempt to unregister if process exists
-            if "process" in locals():
-                unregister_process(task_id, process)
             return None, None, f"Antigravity execution error: {str(e)}"

@@ -24,6 +24,14 @@ class Step(BaseModel):
     status: StepStatus = StepStatus.PENDING
     inputs: Dict[str, Any] = {}
     outputs: Optional[Dict[str, Any]] = None
+    # Identifier surfaced by the dashboard's "Inspect Agent" panel.
+    # For the direct `claude` / `gemini` frameworks this is the CLI session
+    # UUID (use `claude --resume <session_id>` / `gemini --resume
+    # <session_id>` to attach); the direct `agy` framework has no resumable
+    # session id. For `mngr-claude` / `mngr-antigravity` this is the mngr
+    # agent name (e.g. "cata-abcd1234-write-theory-7f3a"); use
+    # `MNGR_HOST_DIR=~/.mngr-catalyst mngr connect <session_id>`.
+    # The frontend picks the right command from `task.framework`.
     session_id: Optional[str] = None
     last_status: Optional[str] = None
     error: Optional[str] = None
@@ -50,7 +58,7 @@ class Task(BaseModel):
     title: Optional[str] = None
     workflow_inputs: Dict[str, Any] = {}
     env_folder: str
-    framework: str # "gemini" or "claude"
+    framework: str  # "gemini", "claude", "agy", "mngr-claude", or "mngr-antigravity"
     model: Optional[str] = None
     status: TaskStatus = TaskStatus.PENDING
     current_stage: Optional[str] = None

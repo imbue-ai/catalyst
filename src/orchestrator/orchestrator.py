@@ -223,6 +223,7 @@ def _run_step_core(task: Task, stage: str, prompt: str) -> Any:
         env_folder=task.env_folder,
         model=task.model,
         tx_id=tx_id,
+        stage=stage,
         on_session_id=on_sid,
         on_status=on_status,
     )
