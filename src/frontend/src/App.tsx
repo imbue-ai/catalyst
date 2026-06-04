@@ -273,7 +273,7 @@ function App() {
               </div>
               <h2 className="text-2xl font-black tracking-tighter mb-2">Ready for Discovery</h2>
               <p className="text-gray-400 max-w-sm text-sm">
-                Select a research thread from the sidebar or start a new scientific inquiry.
+                Select a research thread from the sidebar or start a new inquiry.
               </p>
               <button
                 onClick={() => setShowCreate(true)}

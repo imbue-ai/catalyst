@@ -8,6 +8,7 @@ import json
 import io
 import zipfile
 import re
+import threading
 from fastapi import FastAPI, HTTPException, Response, File, Form, UploadFile
 from fastapi.responses import FileResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -28,6 +29,11 @@ from orchestrator.state import (
 )
 from orchestrator.orchestrator import start_task
 from orchestrator.utils import get_catalyst_path, run_context_manager
+from orchestrator.harness import (
+    HarnessInfo,
+    discover_frameworks_bg,
+    get_harnesses_list,
+)
 from context_manager import PREFIX_TO_CATEGORY, CATEGORY_MD_MAP, DEFAULT_DB_DIR
 
 # Setup logging
@@ -63,7 +69,9 @@ async def lifespan(app: FastAPI):
         fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
     except (OSError, BlockingIOError) as e:
         lock_file.close()
-        logger.error(f"[SERVER] Another server instance is already running (failed to acquire lock on {lock_file_path}).")
+        logger.error(
+            f"[SERVER] Another server instance is already running (failed to acquire lock on {lock_file_path})."
+        )
         raise RuntimeError("Another server instance is already running.") from e
 
     logger.info(f"[SERVER] Successfully acquired lock on {lock_file_path}")
@@ -71,6 +79,8 @@ async def lifespan(app: FastAPI):
     try:
         # Initialize state on startup (move RUNNING to PAUSED)
         initialize_state()
+        # Start background thread to discover available harnesses
+        threading.Thread(target=discover_frameworks_bg, daemon=True).start()
         yield
     finally:
         # Clean up processes on shutdown
@@ -94,6 +104,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+
+@app.get("/api/harnesses", response_model=List[HarnessInfo])
+def get_harnesses():
+    return get_harnesses_list()
+
 
 
 class CreateTaskRequest(BaseModel):
