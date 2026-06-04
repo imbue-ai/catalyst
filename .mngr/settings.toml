@@ -1,0 +1,20 @@
+# Project-level mngr settings, picked up by `mngr create` for every
+# Catalyst step. Auto-discovered via the git root.
+
+[agent_types.claude]
+# Auto-trust the work_dir and dismiss Claude Code's onboarding dialogs so
+# headless `mngr create --no-connect` starts cleanly.
+auto_dismiss_dialogs = true
+# Catalyst steps run unattended -- can't stop to ask for tool permission.
+# The plugin installs a `PermissionRequest` hook that auto-replies "allow"
+# to every per-tool prompt. Orthogonal to sandboxing: the sandbox-exec
+# filesystem/network policy and `allowUnsandboxedCommands: false` in
+# `src/claude_skills/settings.json` stay enforced.
+auto_allow_permissions = true
+
+[agent_types.antigravity]
+# agy's first-launch trust dialog would otherwise intercept the initial
+# message keystrokes; this silently appends the work_dir to agy's
+# trustedWorkspaces during provisioning.
+auto_dismiss_dialogs = true
+auto_allow_permissions = true

@@ -19,7 +19,7 @@ class OrchestratorTestCase(unittest.TestCase):
         orchestrator.state._state_cache = None
         orchestrator.state._last_written_json = None
         orchestrator.state._task_locks.clear()
-        orchestrator.state._running_processes.clear()
+        orchestrator.state._running.clear()
 
     def tearDown(self):
         self.patcher.stop()

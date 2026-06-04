@@ -1,11 +1,10 @@
 import json
+import logging
 import os
 import threading
-import subprocess
-import signal
-import time
-import logging
-from typing import List, Optional, Dict
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from dataclasses import dataclass
+from typing import Callable, Dict, List, Optional
 from .models import Task, TasksState, TaskStatus, StepStatus
 from .utils import get_catalyst_path
 
@@ -20,9 +19,24 @@ def _get_state_file() -> str:
 
 _lock = threading.Lock()
 _task_locks: Dict[str, threading.Lock] = {}
-_running_processes: Dict[str, List[subprocess.Popen]] = {}
 
-# In-memory cache to preserve transient fields like last_status
+
+# A piece of in-flight work for a task that external callers
+# (cancel/pause/shutdown) need to be able to stop without knowing what
+# kind of work it is. Each runner constructs its own Cancellable when
+# it spawns work and unregisters on exit; state.py just holds the
+# registry. The `cancel(timeout)` callback must be safe to call from
+# any thread, idempotent, and must fall back to force-kill if a clean
+# stop doesn't complete within `timeout` seconds. `description` is for
+# logging only.
+@dataclass(frozen=True)
+class Cancellable:
+    description: str
+    cancel: Callable[[float], None]
+
+
+_running: Dict[str, List[Cancellable]] = {}
+
 _state_cache: Optional[TasksState] = None
 
 
@@ -33,65 +47,48 @@ def get_task_lock(task_id: str) -> threading.Lock:
         return _task_locks[task_id]
 
 
-def register_process(task_id: str, process: subprocess.Popen):
+def register_cancellable(task_id: str, cancellable: Cancellable) -> None:
     with _lock:
-        if task_id not in _running_processes:
-            _running_processes[task_id] = []
-        _running_processes[task_id].append(process)
+        _running.setdefault(task_id, []).append(cancellable)
 
 
-def unregister_process(task_id: str, process: subprocess.Popen):
+def unregister_cancellable(task_id: str, cancellable: Cancellable) -> None:
     with _lock:
-        if task_id in _running_processes:
-            try:
-                _running_processes[task_id].remove(process)
-            except ValueError:
-                pass
-            if not _running_processes[task_id]:
-                del _running_processes[task_id]
+        entries = _running.get(task_id)
+        if not entries:
+            return
+        try:
+            entries.remove(cancellable)
+        except ValueError:
+            pass
+        if not entries:
+            del _running[task_id]
 
 
-def cancel_task_process(task_id: str, timeout: int = 30):
-    processes_to_cancel = []
+def cancel_task_process(task_id: str, timeout: float = 30) -> None:
+    """Cancel everything `task_id` registered. Each Cancellable's
+    `cancel(timeout)` runs concurrently so multiple in-flight items
+    share the deadline instead of serializing on it."""
     with _lock:
-        if task_id in _running_processes:
-            processes_to_cancel = _running_processes[task_id][:]
+        cancellables = list(_running.get(task_id, ()))
 
-    if not processes_to_cancel:
+    if not cancellables:
         return
 
     logger.info(
-        f"[PROCESS] Stopping {len(processes_to_cancel)} processes for task {task_id[:8]}"
+        f"[PROCESS] Cancelling {len(cancellables)} item(s) for task {task_id[:8]}"
     )
-
-    for proc in processes_to_cancel:
-        try:
-            os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
-        except Exception as e:
-            logger.error(f"[PROCESS] Failed to SIGTERM group for pid {proc.pid}: {e}")
-
-    deadline = time.time() + timeout
-    for proc in processes_to_cancel:
-        remaining = max(0, deadline - time.time())
-        try:
-            proc.wait(timeout=remaining)
-        except subprocess.TimeoutExpired:
-            logger.warning(
-                f"[PROCESS] PID {proc.pid} didn't exit after {timeout}s, sending SIGKILL to group"
-            )
+    with ThreadPoolExecutor(max_workers=len(cancellables)) as executor:
+        futures = {executor.submit(c.cancel, timeout): c for c in cancellables}
+        for fut in as_completed(futures):
+            c = futures[fut]
             try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-                proc.wait(timeout=5)
+                fut.result()
             except Exception as e:
-                logger.error(
-                    f"[PROCESS] Failed to SIGKILL group for pid {proc.pid}: {e}"
-                )
-        except Exception:
-            pass
+                logger.error(f"[PROCESS] cancel({c.description}) failed: {e}")
 
     with _lock:
-        if task_id in _running_processes:
-            del _running_processes[task_id]
+        _running.pop(task_id, None)
 
 
 _last_written_json: Optional[str] = None
@@ -230,10 +227,9 @@ def delete_task(task_id: str):
 
 
 def shutdown_all():
-    """Forcefully terminate all running agent processes across all tasks and mark them as PAUSED."""
-    task_ids = []
+    """Stop all running agents (direct + mngr) and mark tasks as PAUSED."""
     with _lock:
-        task_ids = list(_running_processes.keys())
+        task_ids = list(_running.keys())
 
         # Also mark all tasks as PAUSED so they don't look like they failed
         state = _load_state()
@@ -251,7 +247,7 @@ def shutdown_all():
 
     if task_ids:
         logger.info(
-            f"[SHUTDOWN] Terminating agent processes for {len(task_ids)} tasks..."
+            f"[SHUTDOWN] Stopping agents for {len(task_ids)} tasks..."
         )
         for tid in task_ids:
             cancel_task_process(tid)
