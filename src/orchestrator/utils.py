@@ -49,7 +49,7 @@ def run_context_manager(task: Task, args: List[str]) -> str:
     ctx_mgr_path = os.path.abspath(
         os.path.join(os.path.dirname(__file__), "..", "context_manager.py")
     )
-    cmd = ["uv", "run", "python", ctx_mgr_path] + args
+    cmd = ["python", ctx_mgr_path] + args
     try:
         result = subprocess.run(
             cmd,

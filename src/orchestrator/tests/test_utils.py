@@ -26,9 +26,8 @@ class TestUtils(unittest.TestCase):
         # Verify call arguments
         mock_run.assert_called_once()
         called_args = mock_run.call_args[0][0]
-        self.assertIn("uv", called_args)
         self.assertIn("python", called_args)
-        self.assertIn("context_manager.py", called_args[3])
+        self.assertIn("context_manager.py", called_args[1])
         self.assertIn("store_results", called_args)
 
         # Verify env
