@@ -20,7 +20,7 @@ Suitable problems for the autonomous theory development workflow are of the shap
 * "We sometimes see X while doing Y. Under what conditions does X happen, and why?"
 * "Explain what happens when we do X."
 
-In short, it aims to answer "Why" questions.
+In short, it aims to answer "Why" questions that lead to testable predictions.
 
 The current implementation of Catalyst is designed to work for problems that can be understood through computational experiments and mathematical derivation. Our testing so far has been limited to problems in the field of machine learning / deep learning theory.
 
