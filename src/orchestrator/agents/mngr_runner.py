@@ -539,7 +539,10 @@ class MngrAgentRunner(AgentRunner):
 
     def _read_transcript_events(self, agent_name: str) -> List[Dict[str, Any]]:
         """Read the agent's common transcript as a list of parsed events,
-        in file order. Returns [] if the source has no events yet."""
+        in file order. Returns [] if the source has no events yet or if
+        `mngr event` itself failed (in which case the failure is logged
+        so the polling loop's eventual "no assistant_message" error
+        message doesn't mask the real cause)."""
         result = subprocess.run(
             [
                 "mngr",
@@ -555,15 +558,21 @@ class MngrAgentRunner(AgentRunner):
             text=True,
         )
         events: List[Dict[str, Any]] = []
-        if result.returncode == 0:
-            for line in result.stdout.splitlines():
-                line = line.strip()
-                if not line:
-                    continue
-                try:
-                    events.append(json.loads(line))
-                except json.JSONDecodeError:
-                    continue
+        if result.returncode != 0:
+            stderr_tail = (result.stderr or "").strip()[-300:]
+            logger.warning(
+                f"[AGENT] mngr event {agent_name} --source {self.transcript_source} "
+                f"failed (exit {result.returncode}). stderr tail: {stderr_tail}"
+            )
+            return events
+        for line in result.stdout.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                events.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
         return events
 
     def _read_assistant_text(
