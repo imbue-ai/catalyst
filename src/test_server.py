@@ -189,10 +189,12 @@ class TestServerEndpoints(unittest.TestCase):
         response = client.get("/api/harnesses")
         self.assertEqual(response.status_code, 200)
         harnesses = response.json()
-        self.assertEqual(len(harnesses), 3)
+        self.assertEqual(len(harnesses), 5)
         claude = next(h for h in harnesses if h["name"] == "claude")
         self.assertEqual(claude["display_name"], "Claude Code")
         self.assertIn("opus", claude["models"])
+        mngr_claude = next(h for h in harnesses if h["name"] == "mngr-claude")
+        self.assertEqual(mngr_claude["display_name"], "Claude Code (mngr)")
 
     @patch("server.get_task")
     @patch("server.os.path.exists")

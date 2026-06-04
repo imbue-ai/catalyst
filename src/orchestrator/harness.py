@@ -42,6 +42,20 @@ harnesses_cache: Dict[str, Dict[str, Any]] = {
         "help_message": "Checking framework availability...",
         "models": [],
     },
+    "mngr-claude": {
+        "name": "mngr-claude",
+        "display_name": "Claude Code (mngr)",
+        "available": False,
+        "help_message": "Checking framework availability...",
+        "models": ["opus", "sonnet", "haiku"],
+    },
+    "mngr-antigravity": {
+        "name": "mngr-antigravity",
+        "display_name": "Antigravity CLI (mngr)",
+        "available": False,
+        "help_message": "Checking framework availability...",
+        "models": [],
+    },
 }
 
 
@@ -170,6 +184,16 @@ def _check_agy() -> tuple[bool, Optional[str], List[str]]:
     return True, None, agy_models
 
 
+def _check_mngr_deps() -> tuple[bool, Optional[str]]:
+    code, stdout, stderr = run_cmd(["uv", "run", "mngr", "dependencies"])
+    if code != 0:
+        return False, (
+            "Some mngr dependencies are missing. "
+            "Please run `uv run mngr dependencies -i` in your terminal to install them."
+        )
+    return True, None
+
+
 def discover_frameworks_bg(once: bool = False):
     logger.info("[SERVER] Starting agent frameworks discovery background loop...")
 
@@ -180,6 +204,8 @@ def discover_frameworks_bg(once: bool = False):
                 claude_was_avail = harnesses_cache["claude"]["available"]
                 gemini_was_avail = harnesses_cache["gemini"]["available"]
                 agy_was_avail = harnesses_cache["agy"]["available"]
+                mngr_claude_was_avail = harnesses_cache["mngr-claude"]["available"]
+                mngr_agy_was_avail = harnesses_cache["mngr-antigravity"]["available"]
 
             # Only check if currently unavailable
             if not claude_was_avail:
@@ -187,6 +213,10 @@ def discover_frameworks_bg(once: bool = False):
                 with harnesses_lock:
                     harnesses_cache["claude"]["available"] = claude_available
                     harnesses_cache["claude"]["help_message"] = claude_help
+            else:
+                claude_available = True
+                with harnesses_lock:
+                    claude_help = harnesses_cache["claude"]["help_message"]
 
             if not gemini_was_avail:
                 gemini_available, gemini_help = _check_gemini()
@@ -200,6 +230,58 @@ def discover_frameworks_bg(once: bool = False):
                     harnesses_cache["agy"]["available"] = agy_available
                     harnesses_cache["agy"]["help_message"] = agy_help
                     harnesses_cache["agy"]["models"] = agy_models
+            else:
+                agy_available = True
+                with harnesses_lock:
+                    agy_help = harnesses_cache["agy"]["help_message"]
+                    agy_models = harnesses_cache["agy"]["models"]
+
+            mngr_deps_ok = None
+            mngr_deps_help = None
+
+            def check_mngr_lazy():
+                nonlocal mngr_deps_ok, mngr_deps_help
+                if mngr_deps_ok is None:
+                    mngr_deps_ok, mngr_deps_help = _check_mngr_deps()
+                return mngr_deps_ok, mngr_deps_help
+
+            if not mngr_claude_was_avail:
+                if claude_available:
+                    deps_ok, deps_help = check_mngr_lazy()
+                    if deps_ok:
+                        m_claude_avail = True
+                        m_claude_help = None
+                    else:
+                        m_claude_avail = False
+                        m_claude_help = deps_help
+                else:
+                    m_claude_avail = False
+                    m_claude_help = claude_help
+
+                with harnesses_lock:
+                    harnesses_cache["mngr-claude"]["available"] = m_claude_avail
+                    harnesses_cache["mngr-claude"]["help_message"] = m_claude_help
+
+            if not mngr_agy_was_avail:
+                if agy_available:
+                    deps_ok, deps_help = check_mngr_lazy()
+                    if deps_ok:
+                        m_agy_avail = True
+                        m_agy_help = None
+                    else:
+                        m_agy_avail = False
+                        m_agy_help = deps_help
+                else:
+                    m_agy_avail = False
+                    m_agy_help = agy_help
+
+                with harnesses_lock:
+                    harnesses_cache["mngr-antigravity"]["available"] = m_agy_avail
+                    harnesses_cache["mngr-antigravity"]["help_message"] = m_agy_help
+                    harnesses_cache["mngr-antigravity"]["models"] = agy_models
+            else:
+                with harnesses_lock:
+                    harnesses_cache["mngr-antigravity"]["models"] = agy_models
 
         except Exception as e:
             logger.error(f"[SERVER] Error in discover_frameworks_bg: {e}")

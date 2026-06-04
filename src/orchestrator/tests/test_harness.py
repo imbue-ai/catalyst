@@ -4,6 +4,21 @@ from ..harness import parse_version, discover_frameworks_bg, get_harnesses_list,
 
 
 class TestHarness(unittest.TestCase):
+    def setUp(self):
+        with harnesses_lock:
+            harnesses_cache["claude"]["available"] = False
+            harnesses_cache["claude"]["help_message"] = "Checking framework availability..."
+            harnesses_cache["gemini"]["available"] = False
+            harnesses_cache["gemini"]["help_message"] = "Checking framework availability..."
+            harnesses_cache["agy"]["available"] = False
+            harnesses_cache["agy"]["help_message"] = "Checking framework availability..."
+            harnesses_cache["agy"]["models"] = []
+            harnesses_cache["mngr-claude"]["available"] = False
+            harnesses_cache["mngr-claude"]["help_message"] = "Checking framework availability..."
+            harnesses_cache["mngr-antigravity"]["available"] = False
+            harnesses_cache["mngr-antigravity"]["help_message"] = "Checking framework availability..."
+            harnesses_cache["mngr-antigravity"]["models"] = []
+
     def test_parse_version(self):
         self.assertEqual(parse_version("2.1.0"), (2, 1, 0))
         self.assertEqual(parse_version("0.43.2-alpha"), (0, 43, 2))
@@ -236,3 +251,116 @@ class TestHarness(unittest.TestCase):
         # Gemini and Agy should now be available
         self.assertTrue(gemini.available)
         self.assertTrue(agy.available)
+
+    @patch("shutil.which")
+    @patch("orchestrator.harness.run_cmd")
+    def test_discover_frameworks_mngr_dependencies_missing(self, mock_run_cmd, mock_which):
+        # Base harnesses (claude and agy) are available, but mngr deps are missing
+        def side_effect(args):
+            if args == ["claude", "--version"]:
+                return 0, "2.2.0", ""
+            if args == ["claude", "auth", "status"]:
+                return 0, '{"loggedIn": true}', ""
+            if args == ["gemini", "--version"]:
+                return 0, "0.43.0", ""
+            if args == ["agy", "--version"]:
+                return 0, "1.0.5", ""
+            if args == ["agy", "models"]:
+                return 0, "model-a\n", ""
+            if args == ["uv", "run", "mngr", "dependencies"]:
+                return 1, "", "tmux is missing"
+            return 0, "", ""
+
+        mock_which.return_value = "/usr/bin/cmd"
+        mock_run_cmd.side_effect = side_effect
+
+        discover_frameworks_bg(once=True)
+
+        harnesses = get_harnesses_list()
+        claude = next(h for h in harnesses if h.name == "claude")
+        agy = next(h for h in harnesses if h.name == "agy")
+        mngr_claude = next(h for h in harnesses if h.name == "mngr-claude")
+        mngr_agy = next(h for h in harnesses if h.name == "mngr-antigravity")
+
+        # Base harnesses are available
+        self.assertTrue(claude.available)
+        self.assertTrue(agy.available)
+
+        # mngr wrapper harnesses are not available
+        self.assertFalse(mngr_claude.available)
+        self.assertIn("Some mngr dependencies are missing", mngr_claude.help_message)
+        self.assertIn("uv run mngr dependencies -i", mngr_claude.help_message)
+
+        self.assertFalse(mngr_agy.available)
+        self.assertIn("Some mngr dependencies are missing", mngr_agy.help_message)
+        self.assertIn("uv run mngr dependencies -i", mngr_agy.help_message)
+        # mngr-antigravity still has model list synchronized
+        self.assertEqual(mngr_agy.models, ["model-a"])
+
+    @patch("shutil.which")
+    @patch("orchestrator.harness.run_cmd")
+    def test_discover_frameworks_mngr_dependencies_ok(self, mock_run_cmd, mock_which):
+        # Base harnesses are available, and mngr deps pass
+        def side_effect(args):
+            if args == ["claude", "--version"]:
+                return 0, "2.2.0", ""
+            if args == ["claude", "auth", "status"]:
+                return 0, '{"loggedIn": true}', ""
+            if args == ["gemini", "--version"]:
+                return 0, "0.43.0", ""
+            if args == ["agy", "--version"]:
+                return 0, "1.0.5", ""
+            if args == ["agy", "models"]:
+                return 0, "model-a\n", ""
+            if args == ["uv", "run", "mngr", "dependencies"]:
+                return 0, "", ""
+            return 0, "", ""
+
+        mock_which.return_value = "/usr/bin/cmd"
+        mock_run_cmd.side_effect = side_effect
+
+        discover_frameworks_bg(once=True)
+
+        harnesses = get_harnesses_list()
+        mngr_claude = next(h for h in harnesses if h.name == "mngr-claude")
+        mngr_agy = next(h for h in harnesses if h.name == "mngr-antigravity")
+
+        self.assertTrue(mngr_claude.available)
+        self.assertIsNone(mngr_claude.help_message)
+
+        self.assertTrue(mngr_agy.available)
+        self.assertIsNone(mngr_agy.help_message)
+        self.assertEqual(mngr_agy.models, ["model-a"])
+
+    @patch("shutil.which")
+    @patch("orchestrator.harness.run_cmd")
+    def test_discover_frameworks_mngr_base_unavailable(self, mock_run_cmd, mock_which):
+        # Base harnesses are not available (not installed / version old)
+        def side_effect(args):
+            if args == ["claude", "--version"]:
+                return 0, "2.0.0", ""  # older than 2.1.0
+            if args == ["gemini", "--version"]:
+                return 0, "0.43.0", ""
+            if args == ["agy", "--version"]:
+                return 0, "1.0.5", ""
+            if args == ["agy", "models"]:
+                return 0, "model-a\n", ""
+            if args == ["uv", "run", "mngr", "dependencies"]:
+                return 0, "", ""
+            return 0, "", ""
+
+        mock_which.side_effect = lambda cmd: "/usr/bin/" + cmd if cmd in ["claude", "gemini", "agy"] else None
+        mock_run_cmd.side_effect = side_effect
+
+        discover_frameworks_bg(once=True)
+
+        harnesses = get_harnesses_list()
+        mngr_claude = next(h for h in harnesses if h.name == "mngr-claude")
+        mngr_agy = next(h for h in harnesses if h.name == "mngr-antigravity")
+
+        # claude is old -> mngr-claude should be unavailable and share the same version failure
+        self.assertFalse(mngr_claude.available)
+        self.assertIn("older than the minimum required version", mngr_claude.help_message)
+
+        # agy is available and mngr deps are ok -> mngr-antigravity is available
+        self.assertTrue(mngr_agy.available)
