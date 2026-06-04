@@ -7,7 +7,7 @@ A tool for semi-autonomous scientific research and discovery.
 ## What Catalyst Can Do
 
 Catalyst provides three main workflows:
-1. Autonomously develop a theory to explain a (well constrained, well described) phenomenon
+1. Autonomously develop a theory to explain a given phenomenon
 2. Take a user-provided theory draft, fill in any gaps, and auto-correct mistakes and oversights
 3. A menu of pre-defined operations to choose from: Review a theory for correctness, propose corrections and refinements, perform experimental validations, etc.
 
@@ -30,7 +30,7 @@ You will have a higher chance of success *if*:
 * The phenomenon can be reproduced and probed at through programmatic experimentation, i.e. reproduced by a piece of Python code that you can run on your computer.
 * You can describe the *shape* of the explanation that you are looking for. E.g. "I'm looking for an analytical explanation that makes exact predictions about property Y.", or "I'm looking for an empirically validated approximation that holds in the value range A-B.
 
-### What Catalyst is NOT
+### What Catalyst is Not a Good Fit For
 
 Catalyst is *not* a good fit for:
 * Optimization problems, e.g. "find the optimal hyperparameters for training this ANN", "discover a more optimal matrix multiplication algorithm", or "find a function that maximizes metric X"
@@ -42,7 +42,7 @@ Catalyst is *not* a good fit for:
 
 ### Why Choose Catalyst Over a Bare LLM Chat or Coding Agent?
 
-First of all: There are a lot of use cases for which an LLM Chatbot or an off-the-shelf coding agent are going to be a better fit. They will almost always give you an answer faster, and will be a better fit for interactive, conversational exploration.
+First of all: There are a lot of use cases for which an LLM Chatbot or an off-the-shelf coding agent is going to be the better fit. They will almost always give you an answer faster, and will be a better fit for interactive, conversational exploration.
 
 While Catalyst is built on top of the same LLMs, it adds some unique techniques that can, in some cases, produce results beyond the capabilities of the raw model and harness:
 
