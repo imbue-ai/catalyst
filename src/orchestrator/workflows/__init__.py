@@ -1,10 +1,10 @@
-from .smoke import SmokeWorkflow
 from .base import Workflow
 from .develop_theory import DevelopTheoryWorkflow
 from .develop_theory_linear import DevelopTheoryLinearWorkflow
 from .refine_theory_idea import RefineTheoryIdeaWorkflow
 from .refine_theory_idea_linear import RefineTheoryIdeaLinearWorkflow
 from .import_theory import ImportTheoryWorkflow
+from .smoke import SmokeWorkflow
 
 WORKFLOWS = {
     "develop-theory": DevelopTheoryWorkflow(),
