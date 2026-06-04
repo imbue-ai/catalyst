@@ -74,13 +74,13 @@ The costs shown below are rough estimates (order of magnitude), and will vary **
 
 | Harness | Can use subscription plan? | Runs in sandbox | Model | Cost per "Develop Theory (Evolution)" | Cost per "Develop Theory (Linear)" | Cost per manual step |
 | -- | -- | -- | -- | -- | -- | -- |
-| **Claude Code** | API-pricing only after 06/15/2026 | Yes | Opus 4.8 | ~$1,000 USD | ~$200 USD | ~$20 USD |
+| **Claude Code** | No, only API-pricing after 06/15/2026 | Yes | Opus 4.8 | ~$1,000 USD | ~$200 USD | ~$20 USD |
 | | | | Sonnet 4.6 | ~$500 USD | ~$100 USD | ~$10 USD |
 | | | | Haiku 4.5 | ~$150 USD | ~$30 USD | ~$3 USD |
 | **Claude Code (via mngr)**  | Yes, Max 20x recommended | Yes | Opus 4.8 | included in plan (1-2 per week with Max 20x), see above when using API auth | included in plan (~5 per week with Max 20x), see above when using API auth | included in plan, see above when using API auth |
 | | | | Sonnet 4.6 | included in plan, see above when using API auth | included in plan, see above when using API auth | included in plan, see above when using API auth |
 | | | | Haiku 4.5 | included in plan, see above when using API auth | included in plan, see above when using API auth | included in plan, see above when using API auth |
-| **Gemini CLI** | API-pricing only after 06/18/2026 | Yes | 3.5 Flash | ~$200 USD | ~$40 USD | ~$4 USD |
+| **Gemini CLI** | No, only API-pricing after 06/18/2026 | Yes | 3.5 Flash | ~$200 USD | ~$40 USD | ~$4 USD |
 | | | | 3.1 Pro | ~$300 USD | ~$60 USD | ~$6 USD |
 | | | | 3 Flash | ~$100 USD | ~$20 USD | ~$2 USD |
 | **Antigravity CLI** | Yes, AI Ultra recommended | [No](https://github.com/google-antigravity/antigravity-cli/issues/286) | 3.5 Flash | included in plan, same as Gemini CLI when using API auth | included in plan, same as Gemini CLI when using API auth | included in plan, same as Gemini CLI when using API auth |
