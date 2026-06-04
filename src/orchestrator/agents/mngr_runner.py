@@ -321,6 +321,20 @@ class MngrAgentRunner(AgentRunner):
         if data:
             return data, agent_name, None
 
+        if not assistant_text:
+            # Distinguish "agent emitted nothing we could harvest" from
+            # "agent emitted unparseable text" -- they imply different
+            # debugging paths (transcript converter lag / agent never
+            # produced a final message vs. wrong skill output shape).
+            return (
+                None,
+                agent_name,
+                f"No assistant_message text found in {self.framework} "
+                "transcript after turn_end. The common-transcript "
+                "converter may not have caught up, or the agent did not "
+                "emit a final message.",
+            )
+
         return (
             None,
             agent_name,
