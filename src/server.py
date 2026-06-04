@@ -106,11 +106,9 @@ app.add_middleware(
 )
 
 
-
 @app.get("/api/harnesses", response_model=List[HarnessInfo])
 def get_harnesses():
     return get_harnesses_list()
-
 
 
 class CreateTaskRequest(BaseModel):
@@ -180,7 +178,7 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
     )
 
     # Run create_environment.py
-    cmd = ["uv", "run", "python", "create_environment.py", target_path]
+    cmd = ["python", "create_environment.py", target_path]
     if req.template_folder:
         abs_template = os.path.abspath(req.template_folder)
         if not os.path.exists(abs_template) or not os.path.isdir(abs_template):
