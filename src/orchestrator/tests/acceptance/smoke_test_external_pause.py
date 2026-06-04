@@ -105,16 +105,18 @@ def main() -> int:
     print(f"Wall time: {wall:.1f}s")
 
     # Acceptance: runner returned within ~30s of the stop firing,
-    # NOT 6 hours later.
-    PROMPT_RUN_FLOOR = PAUSE_DELAY_S  # rough lower bound
-    PROMPT_RUN_CEILING = PAUSE_DELAY_S + 60.0  # generous upper bound
+    # NOT 6 hours later. `wall` is the runner's wall time, so the
+    # floor is "cannot exit before the external stop fires" and the
+    # ceiling is "must exit shortly after the external stop fires".
+    WALL_TIME_FLOOR = PAUSE_DELAY_S  # rough lower bound
+    WALL_TIME_CEILING = PAUSE_DELAY_S + 60.0  # generous upper bound
 
     checks = [
         ("runner returned an error and no data after external stop", error is not None and data is None),
         (
-            f"runner exited within {PROMPT_RUN_CEILING:.0f}s of start "
+            f"runner exited within {WALL_TIME_CEILING:.0f}s of start "
             f"(not the {_WAIT_TIMEOUT_SECONDS}s wait deadline)",
-            PROMPT_RUN_FLOOR <= wall <= PROMPT_RUN_CEILING,
+            WALL_TIME_FLOOR <= wall <= WALL_TIME_CEILING,
         ),
         ("session_id was captured", bool(session_id)),
     ]
