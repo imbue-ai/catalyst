@@ -380,7 +380,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                     <div className="flex items-center gap-3 border-2 border-black p-3 focus-within:bg-gray-50 transition-colors relative" ref={frameworkDropdownRef}>
                       <Cpu size={18} className="text-black shrink-0" />
                       <div className="w-full text-sm font-bold bg-transparent select-none cursor-pointer" onClick={() => setShowFrameworkDropdown(!showFrameworkDropdown)}>
-                        {harnesses.find(h => h.name === inputs.framework)?.display_name || (inputs.framework === 'claude' ? 'Claude Code' : inputs.framework === 'gemini' ? 'Gemini CLI' : 'Antigravity CLI')}
+                        {harnesses.find(h => h.name === inputs.framework)?.display_name || inputs.framework}
                       </div>
                       <button
                         type="button"
@@ -392,11 +392,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
 
                       {showFrameworkDropdown && (
                         <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50">
-                          {(harnesses.length > 0 ? harnesses : [
-                            { name: 'claude', display_name: 'Claude Code', available: true, help_message: '', models: ['opus', 'sonnet', 'haiku'] },
-                            { name: 'gemini', display_name: 'Gemini CLI', available: true, help_message: '', models: ['pro', 'flash'] },
-                            { name: 'agy', display_name: 'Antigravity CLI', available: true, help_message: '', models: [] }
-                          ]).map(h => (
+                          {harnesses.map(h => (
                             <div
                               key={h.name}
                               className={`w-full flex justify-between items-center px-4 py-3 text-xs font-bold border-b border-gray-100 last:border-0 relative group/item transition-colors ${
@@ -443,7 +439,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         placeholder="Default"
                         className="w-full outline-none text-sm font-bold bg-transparent"
                       />
-                      {(harnesses.find(h => h.name === inputs.framework)?.models || (inputs.framework === 'claude' ? ['opus', 'sonnet', 'haiku'] : inputs.framework === 'gemini' ? ['pro', 'flash'] : [])).length > 0 && (
+                      {(harnesses.find(h => h.name === inputs.framework)?.models || []).length > 0 && (
                         <button
                           type="button"
                           onClick={() => setShowModelDropdown(!showModelDropdown)}
@@ -453,7 +449,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         </button>
                       )}
 
-                      {showModelDropdown && (harnesses.find(h => h.name === inputs.framework)?.models || (inputs.framework === 'claude' ? ['opus', 'sonnet', 'haiku'] : inputs.framework === 'gemini' ? ['pro', 'flash'] : [])).length > 0 && (
+                      {showModelDropdown && (harnesses.find(h => h.name === inputs.framework)?.models || []).length > 0 && (
                         <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 max-h-60 overflow-y-auto custom-scrollbar">
                           <button
                             type="button"
@@ -462,7 +458,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                           >
                             Default
                           </button>
-                          {(harnesses.find(h => h.name === inputs.framework)?.models || (inputs.framework === 'claude' ? ['opus', 'sonnet', 'haiku'] : inputs.framework === 'gemini' ? ['pro', 'flash'] : [])).map(m => (
+                          {(harnesses.find(h => h.name === inputs.framework)?.models || []).map(m => (
                             <button
                               key={m}
                               type="button"
