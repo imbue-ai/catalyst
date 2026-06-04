@@ -62,8 +62,7 @@ _TURN_END_EVENT_TYPE = "turn_end"
 # ~5s timer, while our turn-end signal can fire sooner. Without a wait
 # here, a fast turn could be detected as done before the conversion sees
 # the assistant_message and we'd return empty text.
-_POST_TURN_END_POLL_SECONDS = 10.0
-_POST_TURN_END_POLL_INTERVAL = 0.5
+_POST_TURN_END_SECONDS = 10.0
 
 
 def extract_assistant_text(event: Dict[str, Any]) -> Optional[str]:
@@ -153,7 +152,9 @@ class MngrAgentRunner(AgentRunner):
     extra_env: Dict[str, str] = field(default_factory=dict)
 
     @contextlib.contextmanager
-    def _registered_agent(self, task_id: str, agent_name: str) -> Generator[None, None, None]:
+    def _registered_agent(
+        self, task_id: str, agent_name: str
+    ) -> Generator[None, None, None]:
         """Scope a registered agent to a `with` block: register on entry,
         always stop + unregister on exit. Used to centralize the
         "best-effort halt this agent no matter how we exit" pattern so
@@ -165,7 +166,9 @@ class MngrAgentRunner(AgentRunner):
         """
         cancellable = Cancellable(
             description=f"mngr agent {agent_name}",
-            cancel=lambda timeout: self._stop_agent(agent_name, task_id, timeout=timeout),
+            cancel=lambda timeout: self._stop_agent(
+                agent_name, task_id, timeout=timeout
+            ),
         )
         register_cancellable(task_id, cancellable)
         try:
@@ -277,7 +280,9 @@ class MngrAgentRunner(AgentRunner):
                 return None, None, f"mngr CLI not found on PATH: {e}"
 
             if create_result.returncode != 0:
-                combined = (create_result.stderr or "") + "\n" + (create_result.stdout or "")
+                combined = (
+                    (create_result.stderr or "") + "\n" + (create_result.stdout or "")
+                )
                 tail = combined[-1500:]
                 return (
                     None,
@@ -321,12 +326,12 @@ class MngrAgentRunner(AgentRunner):
         on_status: Optional[Callable[[str], None]],
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
         """Wait for the turn to end, then parse the final assistant text."""
-        del task_id  # only used for log prefix today; kept on the signature for future use
-        saw_turn_end = self._wait_for_turn_end(agent_name, on_status)
+        del (
+            task_id
+        )  # only used for log prefix today; kept on the signature for future use
+        saw_turn_end, assistant_text = self._wait_for_turn_end(agent_name, on_status)
         if not saw_turn_end:
             return (None, agent_name, self._no_completion_error())
-
-        assistant_text = self._read_assistant_text(agent_name, on_status)
 
         data = parse_json_result(assistant_text)
         if data:
@@ -380,10 +385,10 @@ class MngrAgentRunner(AgentRunner):
         self,
         agent_name: str,
         on_status: Optional[Callable[[str], None]],
-    ) -> bool:
+    ) -> Tuple[bool, Optional[str]]:
         """Block until the agent's turn finishes (or it is stopped).
 
-        Three concurrent watchers feed a shared `done` event; whichever
+        Three concurrent watchers feed a shared `watch_done` event; whichever
         fires first wins:
 
         * `mngr event --follow` -- streams transcript events. Always
@@ -395,13 +400,13 @@ class MngrAgentRunner(AgentRunner):
           sets `saw_turn_end` when the agent's per-task active marker is
           cleared by the plugin's Stop hook.
 
-        Returns True iff a turn-end signal was seen. False covers both
-        the deadline expiring and an external stop; the orchestrator
-        distinguishes by checking the task's status after run() returns.
+        Returns (saw_turn_end, last_assistant_text).
         """
         deadline = time.monotonic() + _WAIT_TIMEOUT_SECONDS
         saw_turn_end = threading.Event()
-        done = threading.Event()
+        watch_done = threading.Event()
+
+        state = {"last_assistant_text": None}
 
         # Initialize before the spawns so the `finally` always sees them.
         # If a Popen partway through raises (transient fork/OS error, mngr
@@ -429,14 +434,14 @@ class MngrAgentRunner(AgentRunner):
             threads.append(
                 threading.Thread(
                     target=self._consume_events,
-                    args=(event_proc, on_status, saw_turn_end, done),
+                    args=(event_proc, on_status, saw_turn_end, watch_done, state),
                     daemon=True,
                 )
             )
             threads.append(
                 threading.Thread(
                     target=self._watch_proc,
-                    args=(stop_proc, done, None),
+                    args=(stop_proc, watch_done, None),
                     daemon=True,
                 )
             )
@@ -444,7 +449,7 @@ class MngrAgentRunner(AgentRunner):
                 threads.append(
                     threading.Thread(
                         target=self._watch_proc,
-                        args=(wait_proc, done, saw_turn_end),
+                        args=(wait_proc, watch_done, saw_turn_end),
                         daemon=True,
                     )
                 )
@@ -453,14 +458,18 @@ class MngrAgentRunner(AgentRunner):
                 t.start()
 
             remaining = max(0.0, deadline - time.monotonic())
-            done.wait(timeout=remaining)
+            watch_done.wait(timeout=remaining)
+
+            # Allow some extra time before terminating, since assistant messages can sometimes arrive later than
+            # the stop condition is triggered.
+            time.sleep(_POST_TURN_END_SECONDS)
         finally:
             for proc in (event_proc, stop_proc, wait_proc):
                 if proc is not None:
                     self._terminate_proc(proc)
             for t in threads:
                 t.join(timeout=5)
-        return saw_turn_end.is_set()
+        return saw_turn_end.is_set(), state["last_assistant_text"]
 
     @staticmethod
     def _spawn_wait_for_state(agent_name: str, state: str) -> subprocess.Popen:
@@ -483,23 +492,24 @@ class MngrAgentRunner(AgentRunner):
     @staticmethod
     def _watch_proc(
         proc: subprocess.Popen,
-        done: threading.Event,
+        watch_done: threading.Event,
         success_event: Optional[threading.Event],
     ) -> None:
-        """Wait for `proc` to exit, then set `done`. If `success_event` is
+        """Wait for `proc` to exit, then set `watch_done`. If `success_event` is
         given, also set it when `proc` exited 0 (used by the WAITING
         watcher to signal "turn ended cleanly")."""
         rc = proc.wait()
         if success_event is not None and rc == 0:
             success_event.set()
-        done.set()
+        watch_done.set()
 
     def _consume_events(
         self,
         event_proc: subprocess.Popen,
         on_status: Optional[Callable[[str], None]],
         saw_turn_end: threading.Event,
-        done: threading.Event,
+        watch_done: threading.Event,
+        state: Dict[str, Any],
     ) -> None:
         """Read `event_proc`'s stdout line-by-line, dispatching events to
         the status callback and (for STOP_HOOK) checking for the turn_end
@@ -519,14 +529,22 @@ class MngrAgentRunner(AgentRunner):
                         on_status(status)
                     except Exception as cb_err:
                         logger.error(f"[AGENT] on_status error: {cb_err}")
+
+            if event.get("source") == self.transcript_source:
+                text = extract_assistant_text(event)
+                if text is not None:
+                    state["last_assistant_text"] = text
+
             if (
                 self.turn_completion is TurnCompletion.STOP_HOOK
                 and event.get("source") == _TURN_COMPLETE_SOURCE
                 and event.get("type") == _TURN_END_EVENT_TYPE
             ):
                 saw_turn_end.set()
-                done.set()
-                return
+                watch_done.set()
+                # Keep running for a little longer, since the final assistant message might
+                # arrive out-of-order after the stop hook fires.
+                # _wait_for_turn_end will eventually terminate us.
 
     @staticmethod
     def _terminate_proc(proc: subprocess.Popen) -> None:
@@ -546,91 +564,9 @@ class MngrAgentRunner(AgentRunner):
             except Exception:
                 pass
 
-    def _read_transcript_events(self, agent_name: str) -> List[Dict[str, Any]]:
-        """Read the agent's common transcript as a list of parsed events,
-        in file order. Returns [] if the source has no events yet or if
-        `mngr event` itself failed (in which case the failure is logged
-        so the polling loop's eventual "no assistant_message" error
-        message doesn't mask the real cause)."""
-        result = subprocess.run(
-            [
-                "mngr",
-                "event",
-                agent_name,
-                "--source",
-                self.transcript_source,
-                "--format",
-                "jsonl",
-            ],
-            check=False,
-            capture_output=True,
-            text=True,
-            env=mngr_env(),
-        )
-        events: List[Dict[str, Any]] = []
-        if result.returncode != 0:
-            stderr_tail = (result.stderr or "").strip()[-300:]
-            logger.warning(
-                f"[AGENT] mngr event {agent_name} --source {self.transcript_source} "
-                f"failed (exit {result.returncode}). stderr tail: {stderr_tail}"
-            )
-            return events
-        for line in result.stdout.splitlines():
-            line = line.strip()
-            if not line:
-                continue
-            try:
-                events.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue
-        return events
-
-    def _read_assistant_text(
-        self,
-        agent_name: str,
-        on_status: Optional[Callable[[str], None]] = None,
-    ) -> str:
-        """Read every assistant_message in the agent's transcript,
-        concatenated. Called after `_wait_for_turn_end` confirms the
-        turn is done.
-
-        Polls with a short bounded budget because the common-transcript
-        converters write `events/<source>/common_transcript/events.jsonl`
-        on a ~5s timer, while our turn-end signal can fire sooner. Without
-        a wait here, a fast turn could be detected as done before the
-        conversion sees the assistant_message and we'd return empty text.
-
-        If `on_status` is given, fire a status callback for every event
-        as a backstop -- a fast turn can finish before the live follower
-        in `_wait_for_turn_end` ever sees the assistant_message event.
-        Driving on_status here guarantees the dashboard's last_status
-        field reflects the final output even in that race.
-        """
-        deadline = time.monotonic() + _POST_TURN_END_POLL_SECONDS
-        seen_event_ids: set[str] = set()
-        while True:
-            parts: List[str] = []
-            for event in self._read_transcript_events(agent_name):
-                text = extract_assistant_text(event)
-                if text:
-                    parts.append(text)
-                if on_status:
-                    event_id = event.get("event_id")
-                    if event_id and event_id not in seen_event_ids:
-                        seen_event_ids.add(event_id)
-                        status = extract_status(event)
-                        if status:
-                            try:
-                                on_status(status)
-                            except Exception as cb_err:
-                                logger.error(
-                                    f"[AGENT] on_status (post-turn) error: {cb_err}"
-                                )
-            if parts or time.monotonic() >= deadline:
-                return "".join(parts)
-            time.sleep(_POST_TURN_END_POLL_INTERVAL)
-
-    def _stop_agent(self, agent_name: str, task_id: str, timeout: Optional[float] = None) -> None:
+    def _stop_agent(
+        self, agent_name: str, task_id: str, timeout: Optional[float] = None
+    ) -> None:
         try:
             result = subprocess.run(
                 ["mngr", "stop", agent_name],
