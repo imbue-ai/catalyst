@@ -18,12 +18,27 @@ def get_catalyst_path() -> str:
     return catalyst_path
 
 
-# Default Catalyst's `mngr` host_dir to an isolated location so Catalyst's
-# agents don't mix into the user's main `~/.mngr` and the runner's `mngr`
-# calls aren't blocked by stale fields in the user's profile settings
-# (e.g. `plugins.kanpan.column_order`). Set via `setdefault` so an explicit
-# `MNGR_HOST_DIR=...` export wins.
-os.environ.setdefault("MNGR_HOST_DIR", os.path.expanduser("~/.mngr-catalyst"))
+# Catalyst's isolated `mngr` host_dir, kept separate from the user's main
+# `~/.mngr` so Catalyst's agents don't mix in and the runner's `mngr` calls
+# aren't blocked by stale fields in the user's profile settings (e.g.
+# `plugins.kanpan.column_order`).
+DEFAULT_MNGR_HOST_DIR = os.path.expanduser("~/.mngr-catalyst")
+
+
+def mngr_env() -> dict[str, str]:
+    """Build a subprocess env for any `mngr` CLI invocation: copy the
+    parent env, then default `MNGR_HOST_DIR` to Catalyst's isolated
+    host_dir if the caller hasn't already exported one. An explicit
+    `MNGR_HOST_DIR=...` in the parent env wins.
+
+    Applied per-subprocess (via `env=`) rather than via
+    `os.environ.setdefault` at import time, so importing this module
+    never mutates the catalyst server process's environment -- only the
+    `mngr` child processes see the default.
+    """
+    env = os.environ.copy()
+    env.setdefault("MNGR_HOST_DIR", DEFAULT_MNGR_HOST_DIR)
+    return env
 
 
 def run_context_manager(task: Task, args: List[str]) -> str:

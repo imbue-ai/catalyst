@@ -16,9 +16,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Tuple
 from context_manager import DEFAULT_DB_DIR
 from .base import AgentRunner, parse_json_result
 from ..state import Cancellable, register_cancellable, unregister_cancellable
-# Ensures the process-wide MNGR_HOST_DIR default is set before any
-# subprocess `mngr` call inherits os.environ.
-from .. import utils  # noqa: F401
+from ..utils import mngr_env
 
 logger = logging.getLogger(__name__)
 
@@ -273,6 +271,7 @@ class MngrAgentRunner(AgentRunner):
                     check=False,
                     capture_output=True,
                     text=True,
+                    env=mngr_env(),
                 )
             except FileNotFoundError as e:
                 return None, None, f"mngr CLI not found on PATH: {e}"
@@ -421,6 +420,7 @@ class MngrAgentRunner(AgentRunner):
                 stderr=subprocess.DEVNULL,
                 text=True,
                 bufsize=1,
+                env=mngr_env(),
             )
             stop_proc = self._spawn_wait_for_state(agent_name, "STOPPED")
             if self.turn_completion is TurnCompletion.WAITING_STATE:
@@ -477,6 +477,7 @@ class MngrAgentRunner(AgentRunner):
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
+            env=mngr_env(),
         )
 
     @staticmethod
@@ -564,6 +565,7 @@ class MngrAgentRunner(AgentRunner):
             check=False,
             capture_output=True,
             text=True,
+            env=mngr_env(),
         )
         events: List[Dict[str, Any]] = []
         if result.returncode != 0:
@@ -636,6 +638,7 @@ class MngrAgentRunner(AgentRunner):
                 capture_output=True,
                 text=True,
                 timeout=timeout,
+                env=mngr_env(),
             )
         except subprocess.TimeoutExpired:
             logger.warning(

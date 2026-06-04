@@ -31,6 +31,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from orchestrator.agents.mngr_claude import MngrClaudeAgentRunner  # noqa: E402
+from orchestrator.utils import mngr_env  # noqa: E402
 
 MODEL = "claude-haiku-4-5-20251001"
 NUM_SUBAGENTS = 3
@@ -94,6 +95,7 @@ def main() -> int:
         check=False,
         capture_output=True,
         text=True,
+        env=mngr_env(),
     )
     state = None
     for line in list_result.stdout.splitlines():

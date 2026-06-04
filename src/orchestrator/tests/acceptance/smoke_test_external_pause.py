@@ -32,6 +32,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirna
 
 from orchestrator.agents.mngr_claude import MngrClaudeAgentRunner  # noqa: E402
 from orchestrator.agents.mngr_runner import _WAIT_TIMEOUT_SECONDS  # noqa: E402
+from orchestrator.utils import mngr_env  # noqa: E402
 
 MODEL = "claude-haiku-4-5-20251001"
 # A prompt that takes a while -- spawn 3 subagents that each report a
@@ -84,6 +85,7 @@ def main() -> int:
                     check=False,
                     capture_output=True,
                     text=True,
+                    env=mngr_env(),
                 )
 
             threading.Thread(target=stop_after_delay, daemon=True).start()

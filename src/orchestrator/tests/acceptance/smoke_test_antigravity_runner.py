@@ -43,6 +43,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(mess
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from orchestrator.agents.mngr_antigravity import MngrAntigravityAgentRunner  # noqa: E402
+from orchestrator.utils import mngr_env  # noqa: E402
 
 PROMPT = (
     'Output exactly the JSON `{"hello": "world"}` as your final message '
@@ -98,6 +99,7 @@ def main() -> int:
         check=False,
         capture_output=True,
         text=True,
+        env=mngr_env(),
     )
     list_names = []
     for line in list_result.stdout.splitlines():
