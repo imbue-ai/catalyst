@@ -348,22 +348,25 @@ class MngrAgentRunner(AgentRunner):
     def _no_completion_error(self) -> str:
         """Error string when the turn never completed. Phrased per the
         turn-completion strategy so the message points at the actual
-        failure mode rather than a generic one."""
+        failure mode rather than a generic one. `_wait_for_turn_end`
+        returns False both on actual deadline expiry AND on an external
+        `mngr stop` arriving (server.py pause), so the wording must not
+        present the deadline as the *only* explanation."""
         if self.turn_completion is TurnCompletion.WAITING_STATE:
             return (
-                f"Agent never reached the WAITING lifecycle state "
-                f"(deadline was {_WAIT_TIMEOUT_SECONDS}s). {self.framework} "
-                "completion is signalled when the agent's per-task active "
-                "marker is cleared; a timeout means either the agent never "
-                "finished its turn, the plugin's hooks didn't fire, or it "
-                "was paused / stopped externally."
+                f"Agent stopped without reaching the WAITING lifecycle state. "
+                f"{self.framework} completion is signalled when the agent's "
+                "per-task active marker is cleared; this can happen if the "
+                "agent was paused / stopped externally, the plugin's hooks "
+                "didn't fire, or the wait cap "
+                f"({_WAIT_TIMEOUT_SECONDS}s) elapsed before completion."
             )
         return (
-            f"Agent stopped without signaling turn_end "
-            f"(deadline was {_WAIT_TIMEOUT_SECONDS}s). If this wasn't a "
+            "Agent stopped without signaling turn_end. If this wasn't a "
             "manual pause, the env_folder may pre-date the change that "
-            "added the Stop hook to .claude/settings.json -- delete "
-            "the task and recreate it to pick up the new env_folder template."
+            "added the Stop hook to .claude/settings.json -- delete the "
+            "task and recreate it to pick up the new env_folder template. "
+            f"(wait cap was {_WAIT_TIMEOUT_SECONDS}s.)"
         )
 
     def _wait_for_turn_end(
