@@ -50,7 +50,7 @@ def main() -> int:
 
     captured_name: dict[str, str | None] = {"name": None}
 
-    pause_secs = int(os.environ.get("AISCI_SMOKE_PAUSE_SECONDS", "10"))
+    pause_secs = int(os.environ.get("CATALYST_SMOKE_PAUSE_SECONDS", "10"))
 
     def on_session_id(name: str) -> None:
         captured_name["name"] = name

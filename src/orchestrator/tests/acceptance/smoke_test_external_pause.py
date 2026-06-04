@@ -48,7 +48,7 @@ PAUSE_DELAY_S = 10.0
 
 def main() -> int:
     runner = MngrClaudeAgentRunner()
-    with tempfile.TemporaryDirectory(prefix="aisci-pause-") as env_folder:
+    with tempfile.TemporaryDirectory(prefix="catalyst-pause-") as env_folder:
         src_settings = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
             "claude_skills",

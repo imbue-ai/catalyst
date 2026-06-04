@@ -41,7 +41,7 @@ PROMPT = (
 
 def main() -> int:
     runner = MngrClaudeAgentRunner()
-    with tempfile.TemporaryDirectory(prefix="aisci-multiturn-") as env_folder:
+    with tempfile.TemporaryDirectory(prefix="catalyst-multiturn-") as env_folder:
         src_settings = os.path.join(
             os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
             "claude_skills",

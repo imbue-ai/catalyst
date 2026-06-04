@@ -43,7 +43,7 @@ def main() -> int:
         print(f"  Session ID: {sid}", flush=True)
 
     runner = ClaudeAgentRunner()
-    with tempfile.TemporaryDirectory(prefix="aisci-direct-smoke-") as env_folder:
+    with tempfile.TemporaryDirectory(prefix="catalyst-direct-smoke-") as env_folder:
         print(f"Running direct smoke task in {env_folder}", flush=True)
         data, session_id, error = runner.run(
             task_id="task_direct_smoke",

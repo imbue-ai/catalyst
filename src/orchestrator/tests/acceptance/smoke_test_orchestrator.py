@@ -15,7 +15,7 @@ for it to complete. Verifies that:
 Cost control: pins claude-haiku-4-5-20251001.
 
 Usage (from src/, after starting the backend separately):
-    CATALYST_PATH=/tmp/aisci-smoke-c uv run python orchestrator/tests/acceptance/smoke_test_orchestrator.py
+    CATALYST_PATH=/tmp/catalyst-smoke-c uv run python orchestrator/tests/acceptance/smoke_test_orchestrator.py
 """
 
 import json
@@ -30,7 +30,7 @@ import urllib.request
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 from orchestrator import utils  # noqa: E402, F401
 
-BACKEND_URL = os.environ.get("AISCI_BACKEND_URL", "http://localhost:8939")
+BACKEND_URL = os.environ.get("CATALYST_BACKEND_URL", "http://localhost:8939")
 MODEL = "claude-haiku-4-5-20251001"
 TIMEOUT_SECONDS = 300
 
@@ -43,7 +43,7 @@ def _http_post(path, body):
     if isinstance(body, dict):
         # The /api/tasks endpoint expects a multipart form with a `request`
         # JSON field, mirroring the React frontend.
-        boundary = "----aisci-smoke-boundary"
+        boundary = "----catalyst-smoke-boundary"
         req.add_header("Content-Type", f"multipart/form-data; boundary={boundary}")
         body_bytes = (
             f"--{boundary}\r\n"
