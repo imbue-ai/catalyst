@@ -230,3 +230,17 @@ export async function updateGuidance(taskId: string, guidance: string): Promise<
   }
   return res.json();
 }
+
+export interface HarnessInfo {
+  name: string;
+  display_name: string;
+  available: boolean;
+  help_message?: string;
+  models: string[];
+}
+
+export async function getHarnesses(): Promise<HarnessInfo[]> {
+  const res = await fetch(`${API_BASE}/harnesses`);
+  if (!res.ok) throw new Error("Failed to get harnesses");
+  return res.json();
+}
