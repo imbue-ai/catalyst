@@ -302,6 +302,14 @@ class MngrAgentRunner(AgentRunner):
 
         finally:
             if prompt_file is not None:
+                # Close before unlink so a failure between `NamedTemporaryFile(...)`
+                # and the explicit `close()` above (e.g. `.write()` raising on a
+                # full disk) doesn't leak the fd. close() is a no-op on an
+                # already-closed wrapper, so the success path is unchanged.
+                try:
+                    prompt_file.close()
+                except Exception:
+                    pass
                 try:
                     os.unlink(prompt_file.name)
                 except OSError:
