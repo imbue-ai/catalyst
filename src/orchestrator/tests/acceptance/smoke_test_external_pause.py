@@ -4,7 +4,7 @@ Reproduces the dashboard's pause behavior: while the runner is in
 `_wait_for_turn_end` (parent agent mid-turn, no Stop hook fired yet),
 something external calls `mngr stop <agent>` -- which is exactly what
 `cancel_task_process` does when the user clicks Pause. The runner
-should exit promptly, NOT block for the full 4-hour wait deadline.
+should exit promptly, NOT block for the full 6-hour wait deadline.
 
 How: spawn a thread that sleeps ~10s after the agent name is captured,
 then issues `mngr stop`. The main thread's `runner.run()` should return
@@ -104,7 +104,7 @@ def main() -> int:
     print(f"Wall time: {wall:.1f}s")
 
     # Acceptance: runner returned within ~30s of the stop firing,
-    # NOT 4 hours later.
+    # NOT 6 hours later.
     PROMPT_RUN_FLOOR = PAUSE_DELAY_S  # rough lower bound
     PROMPT_RUN_CEILING = PAUSE_DELAY_S + 60.0  # generous upper bound
 
@@ -112,7 +112,7 @@ def main() -> int:
         ("runner returned after external stop", error is not None or data is None),
         (
             f"runner exited within {PROMPT_RUN_CEILING:.0f}s of start "
-            "(not the 14400s wait deadline)",
+            "(not the 21600s wait deadline)",
             PROMPT_RUN_FLOOR <= wall <= PROMPT_RUN_CEILING,
         ),
         ("session_id was captured", bool(session_id)),
