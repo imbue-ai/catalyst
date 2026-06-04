@@ -31,6 +31,7 @@ import time
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
 
 from orchestrator.agents.mngr_claude import MngrClaudeAgentRunner  # noqa: E402
+from orchestrator.agents.mngr_runner import _WAIT_TIMEOUT_SECONDS  # noqa: E402
 
 MODEL = "claude-haiku-4-5-20251001"
 # A prompt that takes a while -- spawn 3 subagents that each report a
@@ -112,7 +113,7 @@ def main() -> int:
         ("runner returned an error and no data after external stop", error is not None and data is None),
         (
             f"runner exited within {PROMPT_RUN_CEILING:.0f}s of start "
-            "(not the 21600s wait deadline)",
+            f"(not the {_WAIT_TIMEOUT_SECONDS}s wait deadline)",
             PROMPT_RUN_FLOOR <= wall <= PROMPT_RUN_CEILING,
         ),
         ("session_id was captured", bool(session_id)),
