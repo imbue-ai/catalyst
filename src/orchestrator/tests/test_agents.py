@@ -29,8 +29,8 @@ class TestAgents(unittest.TestCase):
         # Malformed
         self.assertIsNone(parse_json_result("not json"))
 
-    @patch("orchestrator.agents.cli_base.register_process")
-    @patch("orchestrator.agents.cli_base.unregister_process")
+    @patch("orchestrator.agents.cli_base.register_cancellable")
+    @patch("orchestrator.agents.cli_base.unregister_cancellable")
     @patch("subprocess.Popen")
     def test_gemini_runner(self, mock_popen, mock_unreg, mock_reg):
         # Mock Popen to simulate streaming output
@@ -61,8 +61,8 @@ class TestAgents(unittest.TestCase):
         env = kwargs["env"]
         self.assertEqual(env["CONTEXT_TRANSACTION_ID"], "tx_42")
 
-    @patch("orchestrator.agents.cli_base.register_process")
-    @patch("orchestrator.agents.cli_base.unregister_process")
+    @patch("orchestrator.agents.cli_base.register_cancellable")
+    @patch("orchestrator.agents.cli_base.unregister_cancellable")
     @patch("subprocess.Popen")
     def test_claude_runner(self, mock_popen, mock_unreg, mock_reg):
         mock_process = MagicMock()
@@ -92,8 +92,8 @@ class TestAgents(unittest.TestCase):
         env = kwargs["env"]
         self.assertEqual(env["CONTEXT_TRANSACTION_ID"], "tx_99")
 
-    @patch("orchestrator.agents.cli_base.register_process")
-    @patch("orchestrator.agents.cli_base.unregister_process")
+    @patch("orchestrator.agents.cli_base.register_cancellable")
+    @patch("orchestrator.agents.cli_base.unregister_cancellable")
     @patch("subprocess.Popen")
     def test_agy_runner(self, mock_popen, mock_unreg, mock_reg):
         from ..agents.agy import AgyAgentRunner
@@ -112,7 +112,7 @@ class TestAgents(unittest.TestCase):
             prompt="p1",
             env_folder="/tmp",
             tx_id="tx_101",
-            model="ignored-model", stage="t1-stage"
+            model="Gemini 3.5 Flash (Low)", stage="t1-stage"
         )
 
         self.assertIsNone(error)
@@ -124,14 +124,19 @@ class TestAgents(unittest.TestCase):
         env = kwargs["env"]
         self.assertEqual(env["CONTEXT_TRANSACTION_ID"], "tx_101")
 
-        # Verify command flags (specifically print-timeout and model ignored)
+        # Verify command flags, including --model. Model name matches
+        # agy's in-session `/model` menu; passed through as a single
+        # argv element so spaces / parens survive without shell-quoting
+        # concerns.
         cmd = args[0]
         self.assertIn("agy", cmd)
         self.assertIn("--sandbox", cmd)
         self.assertIn("--print-timeout", cmd)
         self.assertIn("6h", cmd)
-        self.assertNotIn("ignored-model", cmd)
-        self.assertNotIn("--model", cmd)
+        self.assertIn("--model", cmd)
+        self.assertEqual(cmd[cmd.index("--model") + 1], "Gemini 3.5 Flash (Low)")
+        # --model lives before -p so the prompt remains the last arg.
+        self.assertLess(cmd.index("--model"), cmd.index("-p"))
 
 
 class TestSharedExtractors(unittest.TestCase):

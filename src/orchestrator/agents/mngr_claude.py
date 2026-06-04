@@ -1,10 +1,10 @@
 from .mngr_runner import MngrAgentRunner, TurnCompletion
 
-# `--dangerously-skip-permissions` is added by the mngr_claude plugin when
-# `auto_allow_permissions = true` (see `.mngr/settings.toml`). The
-# friction-log instruction lives in `BASE_CLAUDE_MD` (auto-loaded by Claude
-# from the work_dir's `CLAUDE.md`), so the runner contributes nothing more
-# than `--model` and the model name.
+# Per-tool permission prompts are auto-allowed by the mngr_claude plugin's
+# `PermissionRequest` hook when `auto_allow_permissions = true` (see
+# `.mngr/settings.toml`). The friction-log instruction lives in
+# `BASE_CLAUDE_MD` (auto-loaded by Claude from the work_dir's `CLAUDE.md`),
+# so the runner contributes nothing more than `--model` and the model name.
 
 
 class MngrClaudeAgentRunner(MngrAgentRunner):

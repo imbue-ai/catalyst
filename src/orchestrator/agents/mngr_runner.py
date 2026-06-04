@@ -15,7 +15,7 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Tuple
 
 from context_manager import DEFAULT_DB_DIR
 from .base import AgentRunner, parse_json_result
-from ..state import register_agent, unregister_agent
+from ..state import Cancellable, register_cancellable, unregister_cancellable
 # Ensures the process-wide MNGR_HOST_DIR default is set before any
 # subprocess `mngr` call inherits os.environ.
 from .. import utils  # noqa: F401
@@ -165,7 +165,11 @@ class MngrAgentRunner(AgentRunner):
         guard here so a stop failure can't mask the original exception
         when one is in flight.
         """
-        register_agent(task_id, agent_name)
+        cancellable = Cancellable(
+            description=f"mngr agent {agent_name}",
+            cancel=lambda timeout: self._stop_agent(agent_name, task_id, timeout=timeout),
+        )
+        register_cancellable(task_id, cancellable)
         try:
             yield
         finally:
@@ -175,7 +179,7 @@ class MngrAgentRunner(AgentRunner):
                 logger.warning(
                     f"[AGENT] [{task_id[:8]}] failed to stop {agent_name} on exit: {stop_err}"
                 )
-            unregister_agent(task_id, agent_name)
+            unregister_cancellable(task_id, cancellable)
 
     def _build_agent_args(self, model: Optional[str]) -> List[str]:
         args = list(self.agent_args)
@@ -578,13 +582,20 @@ class MngrAgentRunner(AgentRunner):
                 return "".join(parts)
             time.sleep(_POST_TURN_END_POLL_INTERVAL)
 
-    def _stop_agent(self, agent_name: str, task_id: str) -> None:
-        result = subprocess.run(
-            ["mngr", "stop", agent_name],
-            check=False,
-            capture_output=True,
-            text=True,
-        )
+    def _stop_agent(self, agent_name: str, task_id: str, timeout: Optional[float] = None) -> None:
+        try:
+            result = subprocess.run(
+                ["mngr", "stop", agent_name],
+                check=False,
+                capture_output=True,
+                text=True,
+                timeout=timeout,
+            )
+        except subprocess.TimeoutExpired:
+            logger.warning(
+                f"[AGENT] [{task_id[:8]}] mngr stop {agent_name} timed out after {timeout}s"
+            )
+            return
         if result.returncode != 0:
             logger.warning(
                 f"[AGENT] [{task_id[:8]}] mngr stop {agent_name} failed: "

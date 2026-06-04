@@ -1,12 +1,10 @@
 import json
-import os
-import signal
-import subprocess
-import threading
-import time
 import logging
+import os
+import threading
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
-from typing import Dict, List, Optional, TypeAlias, Union
+from typing import Callable, Dict, List, Optional
 from .models import Task, TasksState, TaskStatus, StepStatus
 from .utils import get_catalyst_path
 
@@ -23,25 +21,21 @@ _lock = threading.Lock()
 _task_locks: Dict[str, threading.Lock] = {}
 
 
-# Cancellable work for each Catalyst task. The two variants are exclusive
-# wrappers so dispatch in `cancel_task_process` is a plain isinstance check
-# against a tagged type, not a guess about the underlying object.
+# A piece of in-flight work for a task that external callers
+# (cancel/pause/shutdown) need to be able to stop without knowing what
+# kind of work it is. Each runner constructs its own Cancellable when
+# it spawns work and unregisters on exit; state.py just holds the
+# registry. The `cancel(timeout)` callback must be safe to call from
+# any thread, idempotent, and must fall back to force-kill if a clean
+# stop doesn't complete within `timeout` seconds. `description` is for
+# logging only.
 @dataclass(frozen=True)
-class _DirectSubprocess:
-    """A direct CLI subprocess (`claude` / `gemini` / `agy`) registered by
-    cli_base.py; cancelled via SIGTERM -> SIGKILL on its process group."""
-    process: subprocess.Popen
+class Cancellable:
+    description: str
+    cancel: Callable[[float], None]
 
 
-@dataclass(frozen=True)
-class _MngrAgent:
-    """An mngr-managed agent registered by mngr_runner.py; cancelled by
-    shelling out to `mngr stop <agent_name>`."""
-    agent_name: str
-
-
-_RunningEntry: TypeAlias = Union[_DirectSubprocess, _MngrAgent]
-_running: Dict[str, List[_RunningEntry]] = {}
+_running: Dict[str, List[Cancellable]] = {}
 
 _state_cache: Optional[TasksState] = None
 
@@ -53,102 +47,45 @@ def get_task_lock(task_id: str) -> threading.Lock:
         return _task_locks[task_id]
 
 
-def register_process(task_id: str, process: subprocess.Popen):
-    """Direct runners: track a `claude` / `gemini` / `agy` subprocess."""
+def register_cancellable(task_id: str, cancellable: Cancellable) -> None:
     with _lock:
-        _running.setdefault(task_id, []).append(_DirectSubprocess(process))
+        _running.setdefault(task_id, []).append(cancellable)
 
 
-def unregister_process(task_id: str, process: subprocess.Popen):
-    _remove_entry(task_id, _DirectSubprocess(process))
-
-
-def register_agent(task_id: str, agent_name: str) -> None:
-    """Mngr runners: track a `mngr create`-spawned agent by name."""
-    entry = _MngrAgent(agent_name)
-    with _lock:
-        entries = _running.setdefault(task_id, [])
-        if entry not in entries:
-            entries.append(entry)
-
-
-def unregister_agent(task_id: str, agent_name: str) -> None:
-    _remove_entry(task_id, _MngrAgent(agent_name))
-
-
-def _remove_entry(task_id: str, entry: _RunningEntry) -> None:
+def unregister_cancellable(task_id: str, cancellable: Cancellable) -> None:
     with _lock:
         entries = _running.get(task_id)
         if not entries:
             return
         try:
-            entries.remove(entry)
+            entries.remove(cancellable)
         except ValueError:
             pass
         if not entries:
             del _running[task_id]
 
 
-def cancel_task_process(task_id: str, timeout: int = 30) -> None:
-    """Cancel everything `task_id` registered: direct subprocesses get
-    SIGTERM (then SIGKILL after `timeout`); mngr agents get `mngr stop`."""
+def cancel_task_process(task_id: str, timeout: float = 30) -> None:
+    """Cancel everything `task_id` registered. Each Cancellable's
+    `cancel(timeout)` runs concurrently so multiple in-flight items
+    share the deadline instead of serializing on it."""
     with _lock:
-        entries = list(_running.get(task_id, ()))
+        cancellables = list(_running.get(task_id, ()))
 
-    if not entries:
+    if not cancellables:
         return
 
-    processes_to_cancel = [e.process for e in entries if isinstance(e, _DirectSubprocess)]
-    agents_to_stop = [e.agent_name for e in entries if isinstance(e, _MngrAgent)]
-
-    if processes_to_cancel:
-        logger.info(
-            f"[PROCESS] Stopping {len(processes_to_cancel)} subprocess(es) for task {task_id[:8]}"
-        )
-        for proc in processes_to_cancel:
+    logger.info(
+        f"[PROCESS] Cancelling {len(cancellables)} item(s) for task {task_id[:8]}"
+    )
+    with ThreadPoolExecutor(max_workers=len(cancellables)) as executor:
+        futures = {executor.submit(c.cancel, timeout): c for c in cancellables}
+        for fut in as_completed(futures):
+            c = futures[fut]
             try:
-                os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+                fut.result()
             except Exception as e:
-                logger.error(f"[PROCESS] Failed to SIGTERM group for pid {proc.pid}: {e}")
-
-        deadline = time.time() + timeout
-        for proc in processes_to_cancel:
-            remaining = max(0, deadline - time.time())
-            try:
-                proc.wait(timeout=remaining)
-            except subprocess.TimeoutExpired:
-                logger.warning(
-                    f"[PROCESS] PID {proc.pid} didn't exit after {timeout}s, sending SIGKILL to group"
-                )
-                try:
-                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-                    proc.wait(timeout=5)
-                except Exception as e:
-                    logger.error(
-                        f"[PROCESS] Failed to SIGKILL group for pid {proc.pid}: {e}"
-                    )
-            except Exception:
-                pass
-
-    if agents_to_stop:
-        logger.info(
-            f"[PROCESS] Stopping {len(agents_to_stop)} mngr agent(s) for task {task_id[:8]}"
-        )
-        for agent_name in agents_to_stop:
-            try:
-                subprocess.run(
-                    ["mngr", "stop", agent_name],
-                    check=False,
-                    capture_output=True,
-                    text=True,
-                    timeout=timeout,
-                )
-            except subprocess.TimeoutExpired:
-                logger.warning(
-                    f"[PROCESS] mngr stop {agent_name} timed out after {timeout}s"
-                )
-            except Exception as e:
-                logger.error(f"[PROCESS] mngr stop {agent_name} failed: {e}")
+                logger.error(f"[PROCESS] cancel({c.description}) failed: {e}")
 
     with _lock:
         _running.pop(task_id, None)

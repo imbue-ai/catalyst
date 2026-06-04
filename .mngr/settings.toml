@@ -6,7 +6,10 @@
 # headless `mngr create --no-connect` starts cleanly.
 auto_dismiss_dialogs = true
 # Catalyst steps run unattended -- can't stop to ask for tool permission.
-# The plugin adds `--dangerously-skip-permissions` to the launch command.
+# The plugin installs a `PermissionRequest` hook that auto-replies "allow"
+# to every per-tool prompt. Orthogonal to sandboxing: the sandbox-exec
+# filesystem/network policy and `allowUnsandboxedCommands: false` in
+# `src/claude_skills/settings.json` stay enforced.
 auto_allow_permissions = true
 
 [agent_types.antigravity]

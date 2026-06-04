@@ -149,9 +149,6 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
 
   const isEvolve = activeTab === 'develop-theory' || activeTab === 'refine-theory-idea'
   const isImport = activeTab === 'import-theory'
-  // Antigravity (`agy`) exposes no model flag, whether run directly or via
-  // mngr, so the model selector is disabled for both framework variants.
-  const isModelless = inputs.framework === 'agy' || inputs.framework === 'mngr-antigravity'
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -341,13 +338,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                     <div className="relative group">
                       <select
                         value={inputs.framework}
-                        onChange={e => {
-                          const val = e.target.value;
-                          updateInput('framework', val);
-                          if (val === 'agy' || val === 'mngr-antigravity') {
-                            updateInput('model', '');
-                          }
-                        }}
+                        onChange={e => updateInput('framework', e.target.value)}
                         className="w-full border-2 border-black p-3 pr-10 outline-none font-bold text-sm bg-white appearance-none cursor-pointer focus:bg-gray-50 transition-colors"
                       >
                         <option value="claude">Claude Code</option>
@@ -364,30 +355,23 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
 
                   <div>
                     <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Model Identifier</label>
-                    <div className={`flex items-center gap-3 border-2 border-black p-3 transition-colors relative ${isModelless ? 'bg-gray-100 opacity-50 cursor-not-allowed' : 'focus-within:bg-gray-50'}`} ref={modelDropdownRef}>
+                    <div className="flex items-center gap-3 border-2 border-black p-3 transition-colors relative focus-within:bg-gray-50" ref={modelDropdownRef}>
                       <Cpu size={18} className="text-black shrink-0" />
                       <input
-                        value={isModelless ? 'Not Supported' : inputs.model}
-                        onChange={e => {
-                          if (!isModelless) {
-                            updateInput('model', e.target.value);
-                          }
-                        }}
-                        disabled={isModelless}
+                        value={inputs.model}
+                        onChange={e => updateInput('model', e.target.value)}
                         placeholder="Default"
-                        className={`w-full outline-none text-sm font-bold bg-transparent ${isModelless ? 'cursor-not-allowed' : ''}`}
+                        className="w-full outline-none text-sm font-bold bg-transparent"
                       />
-                      {!isModelless && (
-                        <button
-                          type="button"
-                          onClick={() => setShowModelDropdown(!showModelDropdown)}
-                          className="hover:text-gray-500 transition-colors"
-                        >
-                          <ChevronDown size={14} className={`transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
-                        </button>
-                      )}
+                      <button
+                        type="button"
+                        onClick={() => setShowModelDropdown(!showModelDropdown)}
+                        className="hover:text-gray-500 transition-colors"
+                      >
+                        <ChevronDown size={14} className={`transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
+                      </button>
 
-                      {showModelDropdown && !isModelless && (
+                      {showModelDropdown && (
                         <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 max-h-60 overflow-y-auto custom-scrollbar">
                           <button
                             type="button"
@@ -396,11 +380,22 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                           >
                             Default
                           </button>
-                          {/* The Antigravity CLI (agy) has no --model flag, so it only offers "Default" (its account model). */}
+                          {/* Antigravity model names match agy's in-session `/model` menu (`agy models` to list). */}
                           {((inputs.framework === 'claude' || inputs.framework === 'mngr-claude')
                               ? ['opus', 'sonnet', 'haiku']
                               : inputs.framework === 'gemini'
                               ? ['pro', 'flash']
+                              : (inputs.framework === 'agy' || inputs.framework === 'mngr-antigravity')
+                              ? [
+                                  'Gemini 3.5 Flash (Low)',
+                                  'Gemini 3.5 Flash (Medium)',
+                                  'Gemini 3.5 Flash (High)',
+                                  'Gemini 3.1 Pro (Low)',
+                                  'Gemini 3.1 Pro (High)',
+                                  'Claude Sonnet 4.6 (Thinking)',
+                                  'Claude Opus 4.6 (Thinking)',
+                                  'GPT-OSS 120B (Medium)',
+                                ]
                               : []
                           ).map(m => (
                             <button
