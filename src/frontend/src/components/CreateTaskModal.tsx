@@ -50,21 +50,38 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
   }, [])
 
   useEffect(() => {
-    api.getHarnesses().then(data => {
-      setHarnesses(data)
-      // Auto-select framework based on availability
-      const defaultHarness = data.find(h => h.name === DEFAULT_FRAMEWORK)
-      if (defaultHarness && defaultHarness.available) {
-        updateInput('framework', DEFAULT_FRAMEWORK)
-      } else {
-        const firstAvailable = data.find(h => h.available)
-        if (firstAvailable) {
-          updateInput('framework', firstAvailable.name)
-        } else {
-          updateInput('framework', DEFAULT_FRAMEWORK)
+    let active = true
+    let hasAutoSelected = false
+
+    const fetchHarnesses = () => {
+      api.getHarnesses().then(data => {
+        if (!active) return
+        setHarnesses(data)
+        if (!hasAutoSelected) {
+          hasAutoSelected = true
+          // Auto-select framework based on availability
+          const defaultHarness = data.find(h => h.name === DEFAULT_FRAMEWORK)
+          if (defaultHarness && defaultHarness.available) {
+            updateInput('framework', DEFAULT_FRAMEWORK)
+          } else {
+            const firstAvailable = data.find(h => h.available)
+            if (firstAvailable) {
+              updateInput('framework', firstAvailable.name)
+            } else {
+              updateInput('framework', DEFAULT_FRAMEWORK)
+            }
+          }
         }
-      }
-    }).catch(console.error)
+      }).catch(console.error)
+    }
+
+    fetchHarnesses()
+    const interval = setInterval(fetchHarnesses, 10000)
+
+    return () => {
+      active = false
+      clearInterval(interval)
+    }
   }, [])
 
   // Close dropdown on click outside

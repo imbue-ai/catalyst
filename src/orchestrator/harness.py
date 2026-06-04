@@ -1,8 +1,10 @@
+import json
 import logging
 import re
 import shutil
 import subprocess
 import threading
+import time
 from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 
@@ -58,117 +60,153 @@ def run_cmd(args: List[str]) -> tuple:
         return -1, "", str(e)
 
 
-def discover_frameworks_bg():
-    global harnesses_cache
-    logger.info("[SERVER] Starting agent frameworks discovery in the background...")
-
-    # 1. Check Claude Code
+def _check_claude() -> tuple[bool, Optional[str]]:
     claude_path = shutil.which("claude")
     if not claude_path:
-        claude_available = False
-        claude_help = (
+        return False, (
             "Claude Code is not installed on the system. "
             "To install, run: `curl -fsSL https://claude.ai/install.sh | bash`"
         )
-    else:
-        code, stdout, stderr = run_cmd(["claude", "--version"])
-        if code != 0:
-            claude_available = False
-            claude_help = f"Failed to check Claude Code version. Executable found but execution failed: {stderr.strip()}"
-        else:
-            version_str = stdout.strip()
-            version = parse_version(version_str)
-            min_version = (2, 1, 0)
-            if version < min_version:
-                claude_available = False
-                claude_help = (
-                    f"Installed Claude Code version {version_str.split()[0]} is older than the minimum required version {'.'.join(map(str, min_version))}. "
-                    "Please upgrade by running: `claude upgrade`"
-                )
-            else:
-                claude_available = True
-                claude_help = None
 
-    # 2. Check Gemini CLI
+    code, stdout, stderr = run_cmd(["claude", "--version"])
+    if code != 0:
+        return False, f"Failed to check Claude Code version. Executable found but execution failed: {stderr.strip()}"
+
+    version_str = stdout.strip()
+    version = parse_version(version_str)
+    min_version = (2, 1, 0)
+    if version < min_version:
+        return False, (
+            f"Installed Claude Code version {version_str.split()[0]} is older than the minimum required version {'.'.join(map(str, min_version))}. "
+            "Please upgrade by running: `claude upgrade`"
+        )
+
+    # Check authentication status
+    auth_code, auth_stdout, auth_stderr = run_cmd(["claude", "auth", "status"])
+    claude_auth_help = (
+        "Claude Code is not authenticated. "
+        "Please login by running `claude auth login` in your terminal."
+    )
+    if auth_code != 0:
+        return False, claude_auth_help
+
+    try:
+        auth_data = json.loads(auth_stdout.strip())
+        if not auth_data.get("loggedIn"):
+            return False, claude_auth_help
+        return True, None
+    except Exception:
+        # Fallback if parsing json fails but exit code was 0
+        return True, None
+
+
+def _check_gemini() -> tuple[bool, Optional[str]]:
     gemini_path = shutil.which("gemini")
     if not gemini_path:
-        gemini_available = False
-        gemini_help = (
+        return False, (
             "Gemini CLI is not installed on the system. "
             "To install, run: `npm install -g @google/gemini-cli`"
         )
-    else:
-        code, stdout, stderr = run_cmd(["gemini", "--version"])
-        if code != 0:
-            gemini_available = False
-            gemini_help = f"Failed to check Gemini CLI version. Executable found but execution failed: {stderr.strip()}"
-        else:
-            version_str = stdout.strip()
-            version = parse_version(version_str)
-            min_version = (0, 43, 0)
-            if version < min_version:
-                gemini_available = False
-                gemini_help = (
-                    f"Installed Gemini CLI version {version_str} is older than the minimum required version {'.'.join(map(str, min_version))}. "
-                    "Please upgrade by running: `npm install -g @google/gemini-cli`"
-                )
-            else:
-                gemini_available = True
-                gemini_help = None
 
-    # 3. Check Antigravity CLI
+    code, stdout, stderr = run_cmd(["gemini", "--version"])
+    if code != 0:
+        return False, f"Failed to check Gemini CLI version. Executable found but execution failed: {stderr.strip()}"
+
+    version_str = stdout.strip()
+    version = parse_version(version_str)
+    min_version = (0, 43, 0)
+    if version < min_version:
+        return False, (
+            f"Installed Gemini CLI version {version_str} is older than the minimum required version {'.'.join(map(str, min_version))}. "
+            "Please upgrade by running: `npm install -g @google/gemini-cli`"
+        )
+
+    return True, None
+
+
+def _check_agy() -> tuple[bool, Optional[str], List[str]]:
     agy_path = shutil.which("agy")
-    agy_models = []
+    agy_models: List[str] = []
     if not agy_path:
-        agy_available = False
-        agy_help = (
+        return False, (
             "Antigravity CLI (agy) is not installed on the system. "
             "To install, run: `curl -fsSL https://antigravity.google/cli/install.sh | bash`"
-        )
-    else:
-        code, stdout, stderr = run_cmd(["agy", "--version"])
-        if code != 0:
-            agy_available = False
-            agy_help = f"Failed to check Antigravity CLI version. Executable found but execution failed: {stderr.strip()}"
-        else:
-            version_str = stdout.strip()
-            version = parse_version(version_str)
-            min_version = (1, 0, 5)
-            if version < min_version:
-                agy_available = False
-                agy_help = (
-                    f"Installed Antigravity CLI version {version_str} is older than the minimum required version {'.'.join(map(str, min_version))}. "
-                    "Please upgrade by running: `agy update`"
-                )
-            else:
-                agy_available = True
-                agy_help = None
+        ), agy_models
 
-                # Fetch models
-                m_code, m_stdout, m_stderr = run_cmd(["agy", "models"])
-                if m_code == 0:
-                    for line in m_stdout.splitlines():
-                        line = line.strip()
-                        if not line:
-                            continue
-                        if "Fetching" in line:
-                            continue
-                        if any(0x2800 <= ord(c) <= 0x28FF for c in line):
-                            continue
-                        agy_models.append(line)
+    code, stdout, stderr = run_cmd(["agy", "--version"])
+    if code != 0:
+        return False, f"Failed to check Antigravity CLI version. Executable found but execution failed: {stderr.strip()}", agy_models
 
-    with harnesses_lock:
-        harnesses_cache["claude"]["available"] = claude_available
-        harnesses_cache["claude"]["help_message"] = claude_help
+    version_str = stdout.strip()
+    version = parse_version(version_str)
+    min_version = (1, 0, 5)
+    if version < min_version:
+        return False, (
+            f"Installed Antigravity CLI version {version_str} is older than the minimum required version {'.'.join(map(str, min_version))}. "
+            "Please upgrade by running: `agy update`"
+        ), agy_models
 
-        harnesses_cache["gemini"]["available"] = gemini_available
-        harnesses_cache["gemini"]["help_message"] = gemini_help
+    # Fetch models and check auth status
+    m_code, m_stdout, m_stderr = run_cmd(["agy", "models"])
+    combined_output = (m_stdout + "\n" + m_stderr).lower()
 
-        harnesses_cache["agy"]["available"] = agy_available
-        harnesses_cache["agy"]["help_message"] = agy_help
-        harnesses_cache["agy"]["models"] = agy_models
+    if "error" in combined_output and "sign in" in combined_output:
+        return False, (
+            "Antigravity CLI is not authenticated. "
+            "Please login by running `agy` in your terminal."
+        ), agy_models
 
-    logger.info("[SERVER] Agent frameworks discovery complete.")
+    if m_code == 0:
+        for line in m_stdout.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            if "Fetching" in line:
+                continue
+            if any(0x2800 <= ord(c) <= 0x28FF for c in line):
+                continue
+            agy_models.append(line)
+
+    return True, None, agy_models
+
+
+def discover_frameworks_bg(once: bool = False):
+    logger.info("[SERVER] Starting agent frameworks discovery background loop...")
+
+    while True:
+        try:
+            # Check current availability status from cache
+            with harnesses_lock:
+                claude_was_avail = harnesses_cache["claude"]["available"]
+                gemini_was_avail = harnesses_cache["gemini"]["available"]
+                agy_was_avail = harnesses_cache["agy"]["available"]
+
+            # Only check if currently unavailable
+            if not claude_was_avail:
+                claude_available, claude_help = _check_claude()
+                with harnesses_lock:
+                    harnesses_cache["claude"]["available"] = claude_available
+                    harnesses_cache["claude"]["help_message"] = claude_help
+
+            if not gemini_was_avail:
+                gemini_available, gemini_help = _check_gemini()
+                with harnesses_lock:
+                    harnesses_cache["gemini"]["available"] = gemini_available
+                    harnesses_cache["gemini"]["help_message"] = gemini_help
+
+            if not agy_was_avail:
+                agy_available, agy_help, agy_models = _check_agy()
+                with harnesses_lock:
+                    harnesses_cache["agy"]["available"] = agy_available
+                    harnesses_cache["agy"]["help_message"] = agy_help
+                    harnesses_cache["agy"]["models"] = agy_models
+
+        except Exception as e:
+            logger.error(f"[SERVER] Error in discover_frameworks_bg: {e}")
+
+        if once:
+            break
+        time.sleep(30)
 
 
 def get_harnesses_list() -> List[HarnessInfo]:
