@@ -10,21 +10,21 @@ Workflows are high-level processes that orchestrate multiple steps to achieve a 
 Generates and evolves multiple theories in parallel for a given phenomenon.
 - **Inputs**:
     - `phenomenon`: A description of the phenomenon to explain.
-    - `num_root_theories` (default: 3): The number of initial theories to generate.
-    - `evolve_iterations` (default: 0): The number of evolution iterations to perform.
+    - `num_root_theories`: The number of initial theories to generate.
+    - `evolve_iterations`: The number of evolution iterations to perform.
 - **Stages**:
     1.  `summarize-title`: Summarizes the phenomenon into a short title.
-    2.  `literature-review` & `explore` (parallel): Gathers background information and performs initial exploration.
+    2.  `literature-review` & `explore`: Gathers background information and performs initial exploration.
     3.  `write-n-theories`: Generates the specified number of initial theories.
-    4.  `review-theory` (parallel): Reviews each generated theory.
+    4.  `review-theory`: Reviews each generated theory.
     5.  `score-theories`: Ranks and scores the theories.
-    6.  `evolve-loop`: (Optional) Repeatedly samples, mutates, reviews, and re-scores theories.
+    6.  `evolve-loop`: Repeatedly samples, mutates, reviews, and re-scores theories.
 
 ### `develop-theory-linear`
 Generates a single theory and refines it iteratively.
 - **Inputs**:
     - `phenomenon`: A description of the phenomenon to explain.
-    - `max_refinements` (default: 3): The maximum number of refinement iterations.
+    - `max_refinements`: The maximum number of refinement iterations.
 - **Stages**:
     1.  `summarize-title`: Summarizes the phenomenon.
     2.  `literature-review` & `explore` (parallel): Gathers background and explores.
@@ -36,20 +36,20 @@ Starts with a specific scientific idea and evolves it into a scored theory.
 - **Inputs**:
     - `idea`: The initial scientific idea.
     - `file_path`: (Optional) Path to supporting files.
-    - `evolve_iterations` (default: 0): The number of evolution iterations.
+    - `evolve_iterations`: The number of evolution iterations.
 - **Stages**:
     1.  `summarize-title`: Summarizes the idea.
     2.  `support-idea`: Develops the initial idea into a theory.
     3.  `review-theory`: Reviews the theory.
     4.  `score-theories`: Scores the theory.
-    5.  `evolve-loop`: (Optional) Evolves the theory.
+    5.  `evolve-loop`: Evolves the theory.
 
 ### `refine-theory-idea-linear`
 Starts with a specific idea and refines it iteratively.
 - **Inputs**:
     - `idea`: The initial scientific idea.
     - `file_path`: (Optional) Path to supporting files.
-    - `max_refinements` (default: 3): The maximum number of refinements.
+    - `max_refinements`: The maximum number of refinements.
 - **Stages**:
     1.  `summarize-title`: Summarizes the idea.
     2.  `support-idea`: Develops the idea into a theory.
