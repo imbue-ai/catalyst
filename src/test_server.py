@@ -191,7 +191,7 @@ class TestServerEndpoints(unittest.TestCase):
         harnesses = response.json()
         self.assertEqual(len(harnesses), 5)
         claude = next(h for h in harnesses if h["name"] == "claude")
-        self.assertEqual(claude["display_name"], "Claude Code")
+        self.assertEqual(claude["display_name"], "Claude Code (claude -p)")
         self.assertIn("opus", claude["models"])
         mngr_claude = next(h for h in harnesses if h["name"] == "mngr-claude")
         self.assertEqual(mngr_claude["display_name"], "Claude Code (mngr)")
