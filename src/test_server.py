@@ -260,7 +260,7 @@ class TestServerEndpoints(unittest.TestCase):
         harnesses = response.json()
         self.assertEqual(len(harnesses), 6)
         codex = next(h for h in harnesses if h["name"] == "codex")
-        self.assertEqual(codex["display_name"], "Codex CLI")
+        self.assertEqual(codex["display_name"], "Codex CLI (codex exec)")
         self.assertFalse(codex["available"])
         claude = next(h for h in harnesses if h["name"] == "claude")
         self.assertEqual(claude["display_name"], "Claude Code (claude -p)")
