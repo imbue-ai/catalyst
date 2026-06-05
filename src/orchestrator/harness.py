@@ -21,33 +21,33 @@ class HarnessInfo(BaseModel):
 
 harnesses_lock = threading.Lock()
 harnesses_cache: Dict[str, Dict[str, Any]] = {
-    "claude": {
-        "name": "claude",
-        "display_name": "Claude Code",
-        "available": False,
-        "help_message": "Checking framework availability...",
-        "models": ["opus", "sonnet", "haiku"],
-    },
-    "gemini": {
-        "name": "gemini",
-        "display_name": "Gemini CLI",
-        "available": False,
-        "help_message": "Checking framework availability...",
-        "models": ["pro", "flash"],
-    },
-    "agy": {
-        "name": "agy",
-        "display_name": "Antigravity CLI",
-        "available": False,
-        "help_message": "Checking framework availability...",
-        "models": [],
-    },
     "mngr-claude": {
         "name": "mngr-claude",
         "display_name": "Claude Code (mngr)",
         "available": False,
         "help_message": "Checking framework availability...",
         "models": ["opus", "sonnet", "haiku"],
+    },
+    "agy": {
+        "name": "agy",
+        "display_name": "Antigravity CLI (agy -p)",
+        "available": False,
+        "help_message": "Checking framework availability...",
+        "models": [],
+    },
+    "claude": {
+        "name": "claude",
+        "display_name": "Claude Code (claude -p)",
+        "available": False,
+        "help_message": "Checking framework availability...",
+        "models": ["opus", "sonnet", "haiku"],
+    },
+    "gemini": {
+        "name": "gemini",
+        "display_name": "Gemini CLI (gemini -p)",
+        "available": False,
+        "help_message": "Checking framework availability...",
+        "models": ["pro", "flash"],
     },
     "mngr-antigravity": {
         "name": "mngr-antigravity",
@@ -84,7 +84,10 @@ def _check_claude() -> tuple[bool, Optional[str]]:
 
     code, stdout, stderr = run_cmd(["claude", "--version"])
     if code != 0:
-        return False, f"Failed to check Claude Code version. Executable found but execution failed: {stderr.strip()}"
+        return (
+            False,
+            f"Failed to check Claude Code version. Executable found but execution failed: {stderr.strip()}",
+        )
 
     version_str = stdout.strip()
     version = parse_version(version_str)
@@ -124,7 +127,10 @@ def _check_gemini() -> tuple[bool, Optional[str]]:
 
     code, stdout, stderr = run_cmd(["gemini", "--version"])
     if code != 0:
-        return False, f"Failed to check Gemini CLI version. Executable found but execution failed: {stderr.strip()}"
+        return (
+            False,
+            f"Failed to check Gemini CLI version. Executable found but execution failed: {stderr.strip()}",
+        )
 
     version_str = stdout.strip()
     version = parse_version(version_str)
@@ -142,33 +148,49 @@ def _check_agy() -> tuple[bool, Optional[str], List[str]]:
     agy_path = shutil.which("agy")
     agy_models: List[str] = []
     if not agy_path:
-        return False, (
-            "Antigravity CLI (agy) is not installed on the system. "
-            "To install, run: `curl -fsSL https://antigravity.google/cli/install.sh | bash`"
-        ), agy_models
+        return (
+            False,
+            (
+                "Antigravity CLI (agy) is not installed on the system. "
+                "To install, run: `curl -fsSL https://antigravity.google/cli/install.sh | bash`"
+            ),
+            agy_models,
+        )
 
     code, stdout, stderr = run_cmd(["agy", "--version"])
     if code != 0:
-        return False, f"Failed to check Antigravity CLI version. Executable found but execution failed: {stderr.strip()}", agy_models
+        return (
+            False,
+            f"Failed to check Antigravity CLI version. Executable found but execution failed: {stderr.strip()}",
+            agy_models,
+        )
 
     version_str = stdout.strip()
     version = parse_version(version_str)
     min_version = (1, 0, 5)
     if version < min_version:
-        return False, (
-            f"Installed Antigravity CLI version {version_str} is older than the minimum required version {'.'.join(map(str, min_version))}. "
-            "Please upgrade by running: `agy update`"
-        ), agy_models
+        return (
+            False,
+            (
+                f"Installed Antigravity CLI version {version_str} is older than the minimum required version {'.'.join(map(str, min_version))}. "
+                "Please upgrade by running: `agy update`"
+            ),
+            agy_models,
+        )
 
     # Fetch models and check auth status
     m_code, m_stdout, m_stderr = run_cmd(["agy", "models"])
     combined_output = (m_stdout + "\n" + m_stderr).lower()
 
     if "error" in combined_output and "sign in" in combined_output:
-        return False, (
-            "Antigravity CLI is not authenticated. "
-            "Please login by running `agy` in your terminal."
-        ), agy_models
+        return (
+            False,
+            (
+                "Antigravity CLI is not authenticated. "
+                "Please login by running `agy` in your terminal."
+            ),
+            agy_models,
+        )
 
     if m_code == 0:
         for line in m_stdout.splitlines():
