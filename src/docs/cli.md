@@ -15,7 +15,7 @@ uv run python create_environment.py <target_path> [--template <template_path>]
 - `<target_path>`: The directory where the new environment will be created.
 - `--template`: (Optional) Path to a template directory containing necessary scripts and tools.
 
-This script sets up the `.claude/skills` and `.gemini/skills` directories, initializes a `pyproject.toml`, and creates a `GEMINI.md` file with project-specific instructions for the agent.
+This script sets up the `.claude/skills` and `.agents/skills` directories, initializes a `pyproject.toml`, and creates a `GEMINI.md` file with project-specific instructions for the agent.
 
 Then, launch your prefered CLI agent in the environment's target directory.
 
@@ -44,7 +44,7 @@ These skills are typically used to start a new project or bring external data in
 ### Operating on a Theory ID
 These skills modify or evaluate an existing theory stored in the database. Each invocation results in a new Theory ID.
 
-- **`/edit-theory`**: **(Highly Versatile)** Applies **ARBITRARY** modification or research tasks to a theory based on user-provided instructions. Use this for any custom edits, deep-dives, or specific refinements not covered by other skills.
+- `/edit-theory`: Applies **arbitrary** modification or research tasks to a theory based on user-provided instructions. Use this for any custom edits, deep-dives, or specific refinements not covered by other skills.
 - `/streamline-theory`: Focuses or simplifies a theory's scope.
 - `/review-theory`: Performs a critical evaluation and generates a review report.
 - `/refine-theory`: Updates a theory based on a previous review report.
