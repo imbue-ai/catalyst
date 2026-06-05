@@ -61,7 +61,7 @@ harnesses_cache: Dict[str, Dict[str, Any]] = {
         "display_name": "Codex CLI (codex exec)",
         "available": False,
         "help_message": "Checking framework availability...",
-        "models": [],
+        "models": ["gpt-5.5", "gpt-5.4-mini"],
     },
 }
 
