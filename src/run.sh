@@ -20,6 +20,7 @@ fi
 HAS_GEMINI=false
 HAS_CLAUDE=false
 HAS_AGY=false
+HAS_CODEX=false
 
 if command -v gemini &> /dev/null; then
     HAS_GEMINI=true
@@ -33,8 +34,12 @@ if command -v agy &> /dev/null; then
     HAS_AGY=true
 fi
 
-if [ "$HAS_GEMINI" = false ] && [ "$HAS_CLAUDE" = false ] && [ "$HAS_AGY" = false ]; then
-    echo "Error: None of 'gemini', 'claude', or 'agy' CLIs are installed. At least one is required."
+if command -v codex &> /dev/null; then
+    HAS_CODEX=true
+fi
+
+if [ "$HAS_GEMINI" = false ] && [ "$HAS_CLAUDE" = false ] && [ "$HAS_AGY" = false ] && [ "$HAS_CODEX" = false ]; then
+    echo "Error: None of 'gemini', 'claude', 'agy', or 'codex' CLIs are installed. At least one is required."
     exit 1
 fi
 
@@ -49,6 +54,9 @@ if [ "$HAS_CLAUDE" = true ]; then
 fi
 if [ "$HAS_AGY" = true ]; then
     echo " - agy: $(agy --version)"
+fi
+if [ "$HAS_CODEX" = true ]; then
+    echo " - codex: $(codex --version)"
 fi
 echo ""
 

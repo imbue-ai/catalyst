@@ -21,10 +21,10 @@ A **Template** is a directory that contains the base files, scripts, and configu
 
 To provide the best possible starting point for an automated scientific agent, a template should typically include:
 
-- **Custom Instructions (`CLAUDE.md` and `GEMINI.md`)**: Use these files to specify high-level goals, provide context on the phenomenon being researched, and give specific guidance on how to use the available tools and scripts.
+- **Custom Instructions (`CLAUDE.md`, `GEMINI.md`, and `AGENTS.md`)**: Use these files to specify high-level goals, provide context on the phenomenon being researched, and give specific guidance on how to use the available tools and scripts. `AGENTS.md` is specifically used by Codex CLI, while `CLAUDE.md` and `GEMINI.md` are used by Claude Code and Gemini CLI respectively.
 - **Experiment Scripts**: Include pre-existing Python packages or scripts that the agent can use to run simulations, train models, or analyze data (e.g., a `shallow_mlps` folder with a CLI for running MLP experiments).
 - **Project Configuration**: A `pyproject.toml` file with the necessary dependencies and tool settings for the specific research area. It's best to use `default_environment_pyproject.toml` as a baseline to make sure all dependencies needed for running the required scripts `context_manager.py` and `run_experiment.py` are included.
-- **Foundational Literature**: Include key papers or reference documents (e.g., `.pdf` files) that define the research paradigm and style. Instruct the agent in `CLAUDE.md`/`GEMINI.md` to review these at the start of a task.
+- **Foundational Literature**: Include key papers or reference documents (e.g., `.pdf` files) that define the research paradigm and style. Instruct the agent in `CLAUDE.md`/`GEMINI.md`/`AGENTS.md` to review these at the start of a task.
 - **Example Commands**: Provide concrete examples of how to run common experiments in the instruction files.
 
 This structured environment ensures that the agent has all the domain-specific knowledge and tools needed to perform rigorous scientific work from the outset.

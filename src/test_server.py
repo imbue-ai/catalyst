@@ -13,6 +13,7 @@ logging.disable(logging.CRITICAL)
 
 client = TestClient(app)
 
+
 class TestServerEndpoints(unittest.TestCase):
     def setUp(self):
         self.dummy_task = Task(
@@ -24,9 +25,11 @@ class TestServerEndpoints(unittest.TestCase):
             steps=[],
             addons=[],
             workflow_name="develop-theory",
-            workflow_structure=[]
+            workflow_structure=[],
         )
-        self.path_patcher = patch("server.get_catalyst_path", return_value="/tmp/test_catalyst")
+        self.path_patcher = patch(
+            "server.get_catalyst_path", return_value="/tmp/test_catalyst"
+        )
         self.path_patcher.start()
 
     def tearDown(self):
@@ -69,7 +72,7 @@ class TestServerEndpoints(unittest.TestCase):
         task_req = {
             "workflow_name": "develop-theory",
             "workflow_inputs": {"phenomenon": "new"},
-            "framework": "claude"
+            "framework": "claude",
         }
         response = client.post("/api/tasks", data={"request": json.dumps(task_req)})
         self.assertEqual(response.status_code, 200)
@@ -84,23 +87,34 @@ class TestServerEndpoints(unittest.TestCase):
     @patch("server.os.makedirs")
     @patch("server.os.remove")
     @patch("builtins.open", new_callable=mock_open)
-    def test_create_task_with_file(self, mock_file, mock_remove, mock_makedirs, mock_zip, mock_copy, mock_start_task, mock_add_task, mock_run):
+    def test_create_task_with_file(
+        self,
+        mock_file,
+        mock_remove,
+        mock_makedirs,
+        mock_zip,
+        mock_copy,
+        mock_start_task,
+        mock_add_task,
+        mock_run,
+    ):
         task_req = {
             "workflow_name": "import-theory",
             "workflow_inputs": {},
-            "framework": "claude"
+            "framework": "claude",
         }
         file_content = b"fake zip content"
         file = ("test.zip", file_content, "application/zip")
-        
+
         response = client.post(
-            "/api/tasks",
-            data={"request": json.dumps(task_req)},
-            files={"file": file}
+            "/api/tasks", data={"request": json.dumps(task_req)}, files={"file": file}
         )
         self.assertEqual(response.status_code, 200)
         self.assertTrue(mock_zip.called)
-        self.assertEqual(response.json()["workflow_inputs"]["file_path"], "tmp/import (a zip archive was unpacked into this folder)")
+        self.assertEqual(
+            response.json()["workflow_inputs"]["file_path"],
+            "tmp/import (a zip archive was unpacked into this folder)",
+        )
 
     @patch("server.get_task")
     @patch("server.update_task")
@@ -124,16 +138,23 @@ class TestServerEndpoints(unittest.TestCase):
     @patch("server.get_task")
     def test_bulk_cancel_steps(self, mock_get_task):
         task_with_steps = self.dummy_task.model_copy(deep=True)
-        task_with_steps.steps = [Step(stage="s1", status=StepStatus.RUNNING), Step(stage="s2", status=StepStatus.RUNNING)]
+        task_with_steps.steps = [
+            Step(stage="s1", status=StepStatus.RUNNING),
+            Step(stage="s2", status=StepStatus.RUNNING),
+        ]
         mock_get_task.return_value = task_with_steps
-        response = client.post("/api/tasks/test_task_123/steps/bulk-cancel", json={"stages": ["s1", "s2"]})
+        response = client.post(
+            "/api/tasks/test_task_123/steps/bulk-cancel", json={"stages": ["s1", "s2"]}
+        )
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["status"], "canceled")
 
     @patch("server.get_task")
     @patch("server.update_task")
     @patch("server.cancel_task_process")
-    def test_cancel_task(self, mock_cancel_task_process, mock_update_task, mock_get_task):
+    def test_cancel_task(
+        self, mock_cancel_task_process, mock_update_task, mock_get_task
+    ):
         mock_get_task.return_value = self.dummy_task
         response = client.post("/api/tasks/test_task_123/cancel")
         self.assertEqual(response.status_code, 200)
@@ -159,14 +180,18 @@ class TestServerEndpoints(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["guidance"], "New custom user guidance.")
         self.assertTrue(mock_update_task.called)
-        mock_file.assert_called_once_with("/fake/env/folder/GUIDANCE.txt", "w", encoding="utf-8")
+        mock_file.assert_called_once_with(
+            "/fake/env/folder/GUIDANCE.txt", "w", encoding="utf-8"
+        )
 
     @patch("server.get_task")
     @patch("server.cancel_task_process")
     @patch("server.os.path.exists")
     @patch("server.shutil.rmtree")
     @patch("server.delete_task")
-    def test_delete_task(self, mock_delete_task, mock_rmtree, mock_exists, mock_cancel, mock_get_task):
+    def test_delete_task(
+        self, mock_delete_task, mock_rmtree, mock_exists, mock_cancel, mock_get_task
+    ):
         mock_get_task.return_value = self.dummy_task
         mock_exists.return_value = True
         with patch("server.os.path.isdir", return_value=True):
@@ -182,7 +207,17 @@ class TestServerEndpoints(unittest.TestCase):
     @patch("server.os.path.isdir")
     @patch("server.os.unlink")
     @patch("server.shutil.rmtree")
-    def test_delete_temp_files(self, mock_rmtree, mock_unlink, mock_isdir, mock_islink, mock_isfile, mock_listdir, mock_exists, mock_get_task):
+    def test_delete_temp_files(
+        self,
+        mock_rmtree,
+        mock_unlink,
+        mock_isdir,
+        mock_islink,
+        mock_isfile,
+        mock_listdir,
+        mock_exists,
+        mock_get_task,
+    ):
         paused_task = self.dummy_task.model_copy(deep=True)
         paused_task.status = TaskStatus.PAUSED
         mock_get_task.return_value = paused_task
@@ -223,7 +258,10 @@ class TestServerEndpoints(unittest.TestCase):
         response = client.get("/api/harnesses")
         self.assertEqual(response.status_code, 200)
         harnesses = response.json()
-        self.assertEqual(len(harnesses), 5)
+        self.assertEqual(len(harnesses), 6)
+        codex = next(h for h in harnesses if h["name"] == "codex")
+        self.assertEqual(codex["display_name"], "Codex CLI")
+        self.assertFalse(codex["available"])
         claude = next(h for h in harnesses if h["name"] == "claude")
         self.assertEqual(claude["display_name"], "Claude Code (claude -p)")
         self.assertIn("opus", claude["models"])
@@ -240,6 +278,7 @@ class TestServerEndpoints(unittest.TestCase):
         response = client.get("/api/tasks/test_task_123/artifacts/T_123/primary")
         self.assertEqual(response.status_code, 200)
         from server import inject_disclaimer
+
         self.assertEqual(response.json()["content"], inject_disclaimer("content"))
 
     @patch("server.get_task")
@@ -261,24 +300,30 @@ class TestServerEndpoints(unittest.TestCase):
         mock_get_task.return_value = self.dummy_task
         mock_exists.return_value = True
 
-        md_content = '''Here is some text.
+        md_content = """Here is some text.
 ![Multi-line
 alt text
 example](image.png)
-More text.'''
+More text."""
 
         with patch("builtins.open", mock_open(read_data=md_content)):
             with patch("server.os.path.isfile", return_value=True):
-                with patch("server.os.path.abspath", side_effect=lambda x: x): # prevent traversal check failure
+                with patch(
+                    "server.os.path.abspath", side_effect=lambda x: x
+                ):  # prevent traversal check failure
                     with patch("zipfile.ZipFile.write") as mock_zip_write:
                         with patch("zipfile.ZipFile.writestr") as mock_zip_writestr:
-                            response = client.get("/api/tasks/test_task_123/artifacts/T_123/export")
+                            response = client.get(
+                                "/api/tasks/test_task_123/artifacts/T_123/export"
+                            )
 
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.headers["content-type"], "application/zip")
 
         # Verify that zipfile.writestr was called with theory.md
-        writestr_args = [call_args[0][0] for call_args in mock_zip_writestr.call_args_list]
+        writestr_args = [
+            call_args[0][0] for call_args in mock_zip_writestr.call_args_list
+        ]
         self.assertIn("T_123/theory.md", writestr_args)
 
         # Verify that zipfile.write was called with image.png
@@ -291,7 +336,15 @@ More text.'''
     @patch("server.initialize_state")
     @patch("server.shutdown_all")
     @patch("server.os.makedirs")
-    def test_lifespan_lock_success(self, mock_makedirs, mock_shutdown_all, mock_initialize_state, mock_flock, mock_open_file, mock_get_path):
+    def test_lifespan_lock_success(
+        self,
+        mock_makedirs,
+        mock_shutdown_all,
+        mock_initialize_state,
+        mock_flock,
+        mock_open_file,
+        mock_get_path,
+    ):
         import asyncio
         from server import lifespan
 
@@ -312,6 +365,7 @@ More text.'''
 
         # Check that we acquired and released the lock
         import fcntl
+
         mock_flock.assert_any_call(123, fcntl.LOCK_EX | fcntl.LOCK_NB)
         mock_flock.assert_any_call(123, fcntl.LOCK_UN)
         mock_file.close.assert_called()
@@ -320,7 +374,9 @@ More text.'''
     @patch("server.open")
     @patch("server.fcntl.flock")
     @patch("server.os.makedirs")
-    def test_lifespan_lock_already_locked(self, mock_makedirs, mock_flock, mock_open_file, mock_get_path):
+    def test_lifespan_lock_already_locked(
+        self, mock_makedirs, mock_flock, mock_open_file, mock_get_path
+    ):
         import asyncio
         from server import lifespan
 
@@ -337,8 +393,11 @@ More text.'''
         with self.assertRaises(RuntimeError) as ctx:
             asyncio.run(run_lifespan())
 
-        self.assertEqual(str(ctx.exception), "Another server instance is already running.")
+        self.assertEqual(
+            str(ctx.exception), "Another server instance is already running."
+        )
         mock_file.close.assert_called_once()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

@@ -86,12 +86,15 @@ class BaseCliAgentRunner(AgentRunner):
                     if json_match:
                         data = json.loads(json_match.group(1))
 
-                        if not session_id and "session_id" in data:
-                            session_id = data["session_id"]
-                            logger.debug(
-                                f"[AGENT] [{task_id[:8]}] Detected session ID: {session_id}"
-                            )
-                            if on_session_id:
+                        if not session_id:
+                            if "session_id" in data:
+                                session_id = data["session_id"]
+                            elif "thread_id" in data:
+                                session_id = data["thread_id"]
+                                logger.debug(
+                                    f"[AGENT] [{task_id[:8]}] Detected session ID from thread_id: {session_id}"
+                                )
+                            if session_id and on_session_id:
                                 try:
                                     on_session_id(session_id)
                                 except Exception as cb_err:

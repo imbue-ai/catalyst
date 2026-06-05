@@ -1,6 +1,6 @@
 # CLI Agent Usage
 
-This document explains how to use Catalyst skills within a CLI agent (e.g., Claude Code).
+This document explains how to use Catalyst skills within a CLI agent (e.g., Claude Code, Codex CLI).
 
 This is a more manual alternative to using the Catalyst graphical user interface.
 
@@ -15,9 +15,9 @@ uv run python create_environment.py <target_path> [--template <template_path>]
 - `<target_path>`: The directory where the new environment will be created.
 - `--template`: (Optional) Path to a template directory containing necessary scripts and tools.
 
-This script sets up the `.claude/skills` and `.agents/skills` directories, initializes a `pyproject.toml`, and creates a `GEMINI.md` file with project-specific instructions for the agent.
+This script sets up the `.claude/skills` and `.agents/skills` directories, initializes a `pyproject.toml`, and creates `GEMINI.md`, `CLAUDE.md`, and `AGENTS.md` files with project-specific instructions for the agent.
 
-Then, launch your prefered CLI agent in the environment's target directory.
+Then, launch your preferred CLI agent in the environment's target directory.
 
 ## Data Ingestion
 

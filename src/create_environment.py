@@ -27,7 +27,7 @@ If you find that the `uv` command is not installed:
 You might encounter a broken Python `.venv`, e.g. with symlinks pointing to non-existent files. If that happens, run `uv venv --clear` to recreate it.
 """
 
-BASE_CLAUDE_MD = """GENERAL INSTRUCTIONS:
+BASE_AGENTS_MD = """GENERAL INSTRUCTIONS:
 * The user might have provided additional guidance in the file `GUIDANCE.txt`.  You MUST read this file before you start any work and treat its contents as user instructions.
 * If you encounter any issues with following the instructions in a skill, or run into issues with your execution environment (e.g. missing permission, error while running a pre-provided script, etc.), please take a second to append a short, one-line issue description to `./tmp/agent_friction_log.txt`.
 * ONLY spawn a subagent when the execution steps in a skill explicitly tell you to.
@@ -39,6 +39,8 @@ THEORY.MD INSTRUCTIONS:
 * Completely avoid self-promoting language. Never call your own theories "profound", "elegant", etc. Use neutral, factual language at all times.
 * Avoid *unnecessary* jargon. When you invoke a technical term, it should be for the purpose of adding clarity and/or precision.
 """
+
+BASE_CLAUDE_MD = BASE_AGENTS_MD
 
 
 def copy_resolved_and_no_hidden(src: Path, dst: Path, is_root: bool = False):
@@ -101,10 +103,11 @@ def create_environment(target_path: str, template_path: str = None):
             for item in template.iterdir():
                 copy_resolved_and_no_hidden(item, target / item.name)
 
-    # 3. Append the base Gemini.md and Claude.md instructions
+    # 3. Append the base Gemini.md, Claude.md, and Agents.md instructions
     for md_filename, base_content in [
         ("GEMINI.md", BASE_GEMINI_MD),
         ("CLAUDE.md", BASE_CLAUDE_MD),
+        ("AGENTS.md", BASE_AGENTS_MD),
     ]:
         md_path = target / md_filename
         if md_path.exists():

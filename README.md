@@ -65,6 +65,7 @@ Catalyst utilizes an existing agentic harness installed on your system. It curre
 * Claude Code (either via `claude -p` or via [mngr](https://github.com/imbue-ai/mngr))
 * Gemini CLI (via `gemini -p`)
 * Antigravity CLI (via `agy -p`)
+* Codex CLI (via `codex exec`)
 
 Token usage will be billed directly by the provider (currently Anthropic or Google), based on the harness' existing authentication.
 
@@ -85,6 +86,7 @@ The costs shown below are rough estimates (order of magnitude), and will vary **
 | | | | 3 Flash | ~$100 USD | ~$20 USD | ~$2 USD |
 | **Antigravity CLI** | Yes, AI Ultra recommended | [No](https://github.com/google-antigravity/antigravity-cli/issues/286) | 3.5 Flash | included in plan, same as Gemini CLI when using API auth | included in plan, same as Gemini CLI when using API auth | included in plan, same as Gemini CLI when using API auth |
 | | | | 3.1 Pro | included in plan, same as Gemini CLI when using API auth | included in plan, same as Gemini CLI when using API auth | included in plan, same as Gemini CLI when using API auth |
+| **Codex CLI** | Yes | Yes | * | tbd | tbd | tbd |
 
 ## Further Documentation
 
