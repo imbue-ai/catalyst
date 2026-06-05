@@ -5,7 +5,7 @@
  * This avoids visual layout shift or flickering during transitions.
  */
 import { useState, useMemo, useRef, useEffect, useCallback, lazy, Suspense } from 'react'
-import { Activity, Folder, Cpu, Loader2, Square, Play, Trash2, Workflow, Plus, XCircle, Copy, Check, Compass } from 'lucide-react'
+import { Activity, Folder, Cpu, Loader2, Square, Play, Trash2, Workflow, Plus, XCircle, Copy, Check, Compass, BrushCleaning } from 'lucide-react'
 import * as api from '../api'
 import { StatusBadge } from './StatusBadge'
 import { DataSection } from './DataSection'
@@ -85,6 +85,18 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
     }
   }
 
+  const handleDeleteTempFiles = async () => {
+    setIsProcessing(true)
+    try {
+      await api.deleteTempFiles(task.id)
+      onRefresh()
+    } catch (e: any) {
+      alert(e.message || "Failed to delete temporary files")
+    } finally {
+      setIsProcessing(false)
+    }
+  }
+
   const availableLiteratureIds = useMemo(() => Array.from(new Set(
     task.steps
       .filter(s => s.outputs && s.outputs.literature_review_id)
@@ -132,6 +144,16 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               >
                 <Compass size={12} /> Provide Guidance
               </button>
+
+              {(task.status === 'paused' || task.status === 'failed' || task.status === 'completed') && (
+                <button
+                  disabled={isProcessing}
+                  onClick={handleDeleteTempFiles}
+                  className="border-2 border-black text-black px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  <BrushCleaning size={12} /> Clean Temp Files
+                </button>
+              )}
 
               {(task.status === 'paused' || task.status === 'failed' || task.status === 'completed') && (
                 <button

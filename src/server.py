@@ -424,6 +424,50 @@ def update_task_guidance(task_id: str, req: UpdateGuidanceRequest):
     return task
 
 
+@app.delete("/api/tasks/{task_id}/temp-files")
+def delete_task_temp_files(task_id: str):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    from orchestrator.models import TaskStatus
+
+    if task.status not in (TaskStatus.FAILED, TaskStatus.PAUSED, TaskStatus.COMPLETED):
+        raise HTTPException(
+            status_code=400,
+            detail="Cannot delete temporary files of a running task",
+        )
+
+    # 1. Delete tmp/* contents
+    tmp_path = os.path.join(task.env_folder, "tmp")
+    if os.path.exists(tmp_path):
+        try:
+            for filename in os.listdir(tmp_path):
+                file_path = os.path.join(tmp_path, filename)
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+        except Exception as e:
+            logger.error(f"Error deleting tmp/* for task {task_id}: {e}")
+            raise HTTPException(
+                status_code=500, detail=f"Failed to delete tmp/* contents: {e}"
+            )
+
+    # 2. Delete .venv
+    venv_path = os.path.join(task.env_folder, ".venv")
+    if os.path.exists(venv_path):
+        try:
+            shutil.rmtree(venv_path)
+        except Exception as e:
+            logger.error(f"Error deleting .venv for task {task_id}: {e}")
+            raise HTTPException(
+                status_code=500, detail=f"Failed to delete .venv: {e}"
+            )
+
+    return {"status": "success"}
+
+
 @app.delete("/api/tasks/{task_id}")
 def remove_task(task_id: str):
     task = get_task(task_id)

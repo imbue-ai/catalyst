@@ -218,6 +218,14 @@ export async function deleteTask(id: string): Promise<void> {
   await fetch(`${API_BASE}/tasks/${id}`, { method: "DELETE" });
 }
 
+export async function deleteTempFiles(taskId: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/tasks/${taskId}/temp-files`, { method: "DELETE" });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.detail || "Failed to delete temporary files");
+  }
+}
+
 export async function updateGuidance(taskId: string, guidance: string): Promise<Task> {
   const res = await fetch(`${API_BASE}/tasks/${taskId}/guidance`, {
     method: "POST",

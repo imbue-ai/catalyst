@@ -175,6 +175,40 @@ class TestServerEndpoints(unittest.TestCase):
         self.assertTrue(mock_delete_task.called)
 
     @patch("server.get_task")
+    @patch("server.os.path.exists")
+    @patch("server.os.listdir")
+    @patch("server.os.path.isfile")
+    @patch("server.os.path.islink")
+    @patch("server.os.path.isdir")
+    @patch("server.os.unlink")
+    @patch("server.shutil.rmtree")
+    def test_delete_temp_files(self, mock_rmtree, mock_unlink, mock_isdir, mock_islink, mock_isfile, mock_listdir, mock_exists, mock_get_task):
+        paused_task = self.dummy_task.model_copy(deep=True)
+        paused_task.status = TaskStatus.PAUSED
+        mock_get_task.return_value = paused_task
+        mock_exists.return_value = True
+        mock_listdir.return_value = ["file.txt", "subdir"]
+        mock_isfile.side_effect = lambda path: path.endswith("file.txt")
+        mock_islink.return_value = False
+        mock_isdir.side_effect = lambda path: path.endswith("subdir")
+
+        response = client.delete("/api/tasks/test_task_123/temp-files")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "success")
+        mock_unlink.assert_any_call("/fake/env/folder/tmp/file.txt")
+        mock_rmtree.assert_any_call("/fake/env/folder/tmp/subdir")
+        mock_rmtree.assert_any_call("/fake/env/folder/.venv")
+
+    @patch("server.get_task")
+    def test_delete_temp_files_running_fails(self, mock_get_task):
+        running_task = self.dummy_task.model_copy(deep=True)
+        running_task.status = TaskStatus.RUNNING
+        mock_get_task.return_value = running_task
+
+        response = client.delete("/api/tasks/test_task_123/temp-files")
+        self.assertEqual(response.status_code, 400)
+
+    @patch("server.get_task")
     @patch("server.subprocess.run")
     def test_get_task_theories(self, mock_run, mock_get_task):
         mock_get_task.return_value = self.dummy_task
