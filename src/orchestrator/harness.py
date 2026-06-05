@@ -28,13 +28,6 @@ harnesses_cache: Dict[str, Dict[str, Any]] = {
         "help_message": "Checking framework availability...",
         "models": ["opus", "sonnet", "haiku"],
     },
-    "agy": {
-        "name": "agy",
-        "display_name": "Antigravity CLI (agy -p)",
-        "available": False,
-        "help_message": "Checking framework availability...",
-        "models": [],
-    },
     "claude": {
         "name": "claude",
         "display_name": "Claude Code (claude -p)",
@@ -42,12 +35,12 @@ harnesses_cache: Dict[str, Dict[str, Any]] = {
         "help_message": "Checking framework availability...",
         "models": ["opus", "sonnet", "haiku"],
     },
-    "gemini": {
-        "name": "gemini",
-        "display_name": "Gemini CLI (gemini -p)",
+    "agy": {
+        "name": "agy",
+        "display_name": "Antigravity CLI (agy -p)",
         "available": False,
         "help_message": "Checking framework availability...",
-        "models": ["pro", "flash"],
+        "models": [],
     },
     "mngr-antigravity": {
         "name": "mngr-antigravity",
@@ -55,6 +48,13 @@ harnesses_cache: Dict[str, Dict[str, Any]] = {
         "available": False,
         "help_message": "Checking framework availability...",
         "models": [],
+    },
+    "gemini": {
+        "name": "gemini",
+        "display_name": "Gemini CLI (gemini -p)",
+        "available": False,
+        "help_message": "Checking framework availability...",
+        "models": ["pro", "flash"],
     },
 }
 

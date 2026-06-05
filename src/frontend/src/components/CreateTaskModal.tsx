@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { XCircle, Folder, Cpu, ChevronRight, ChevronDown, Settings2, FileText, Lightbulb, Sparkles, GitMerge, GitCommit, UploadCloud, HelpCircle } from 'lucide-react'
 import * as api from '../api'
-import { DEFAULT_FRAMEWORK } from '../constants'
 import { useWorkflowParams } from '../hooks/useWorkflowParams'
 import { AdditionalParamsSection } from './AdditionalParamsSection'
 
@@ -57,20 +56,14 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
       api.getHarnesses().then(data => {
         if (!active) return
         setHarnesses(data)
-        if (!hasAutoSelected) {
-          hasAutoSelected = true
-          // Auto-select framework based on availability
-          const defaultHarness = data.find(h => h.name === DEFAULT_FRAMEWORK)
-          if (defaultHarness && defaultHarness.available) {
-            updateInput('framework', DEFAULT_FRAMEWORK)
+        if (!hasAutoSelected && data.length > 0) {
+          const firstAvailable = data.find(h => h.available)
+          if (firstAvailable) {
+            updateInput('framework', firstAvailable.name)
           } else {
-            const firstAvailable = data.find(h => h.available)
-            if (firstAvailable) {
-              updateInput('framework', firstAvailable.name)
-            } else {
-              updateInput('framework', DEFAULT_FRAMEWORK)
-            }
+            updateInput('framework', data[0].name)
           }
+          hasAutoSelected = true
         }
       }).catch(console.error)
     }
@@ -126,7 +119,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     phenomenon: '',
     idea: '',
     templateFolder: '',
-    framework: DEFAULT_FRAMEWORK,
+    framework: '',
     model: ''
   })
 

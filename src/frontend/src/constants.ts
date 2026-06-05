@@ -11,4 +11,3 @@ export const DEFAULT_NUM_EXTRA_SCORES = 5;
 
 // CreateTaskModal specific defaults
 export const DEFAULT_NUM_ROOT_THEORIES = 3;
-export const DEFAULT_FRAMEWORK = 'claude';
