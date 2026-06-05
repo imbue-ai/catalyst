@@ -45,6 +45,8 @@ class CodexAgentRunner(BaseCliAgentRunner):
             "sandbox_workspace_write.network_access=true",
             "-c",
             "agents.job_max_runtime_seconds=21600",
+            "-c",
+            "agents.max_threads=50",
         ]
         if model:
             cmd.extend(["--model", model])
