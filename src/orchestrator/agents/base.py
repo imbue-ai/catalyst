@@ -9,10 +9,7 @@ def parse_json_result(raw_result: Any) -> Optional[Dict[str, Any]]:
 
     Catalyst's skills are prompted to "output JSON as your final message"
     but the wrapping varies: sometimes a fenced ```json block, sometimes
-    raw text containing braces. Migrating every skill to a structured
-    tool_use convention is tracked as a follow-up; until then this
-    regex/brace-walk is the bridge. Used by every runner -- both the
-    direct cli_base ones and the mngr ones.
+    raw text containing braces.
     """
     if isinstance(raw_result, dict):
         return raw_result
@@ -59,7 +56,7 @@ class AgentRunner(ABC):
         model: Optional[str] = None,
         tx_id: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
-        on_status: Optional[Callable[[str], None]] = None
+        on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
         """
         Runs the agent and returns (json_output, session_id, error).

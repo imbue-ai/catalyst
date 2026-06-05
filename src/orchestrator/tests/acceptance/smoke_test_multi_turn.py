@@ -26,7 +26,12 @@ import subprocess
 import sys
 import tempfile
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+sys.path.insert(
+    0,
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    ),
+)
 
 from orchestrator.agents.mngr_claude import MngrClaudeAgentRunner  # noqa: E402
 from orchestrator.utils import mngr_env  # noqa: E402
@@ -44,7 +49,11 @@ def main() -> int:
     runner = MngrClaudeAgentRunner()
     with tempfile.TemporaryDirectory(prefix="catalyst-multiturn-") as env_folder:
         src_settings = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
+            os.path.dirname(
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                )
+            ),
             "claude_skills",
             "settings.json",
         )
@@ -65,7 +74,7 @@ def main() -> int:
             print(
                 f"  Agent name: {name}\n"
                 f"  Tail transcript:\n"
-                f"    MNGR_HOST_DIR=~/.mngr-catalyst mngr transcript {name}",
+                f"    MNGR_HOST_DIR=~/.mngr-catalyst uv run mngr transcript {name}",
                 flush=True,
             )
 
@@ -107,7 +116,10 @@ def main() -> int:
     checks = [
         ("got data dict", isinstance(data, dict)),
         ("no error", error is None),
-        ("data has got_pong: true", isinstance(data, dict) and data.get("got_pong") is True),
+        (
+            "data has got_pong: true",
+            isinstance(data, dict) and data.get("got_pong") is True,
+        ),
         ("at least one status update", len(statuses) > 0),
         ("agent stopped cleanly", state == "STOPPED"),
     ]
