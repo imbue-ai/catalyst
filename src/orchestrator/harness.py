@@ -56,6 +56,13 @@ harnesses_cache: Dict[str, Dict[str, Any]] = {
         "help_message": "Checking framework availability...",
         "models": ["pro", "flash"],
     },
+    "codex": {
+        "name": "codex",
+        "display_name": "Codex CLI (codex exec)",
+        "available": False,
+        "help_message": "Checking framework availability...",
+        "models": ["gpt-5.5", "gpt-5.4-mini"],
+    },
 }
 
 
@@ -115,6 +122,50 @@ def _check_claude() -> tuple[bool, Optional[str]]:
     except Exception:
         # Fallback if parsing json fails but exit code was 0
         return True, None
+
+
+def _check_codex() -> tuple[bool, Optional[str]]:
+    codex_path = shutil.which("codex")
+    if not codex_path:
+        return False, (
+            "Codex CLI is not installed on the system. "
+            "To install, please check the Codex documentation."
+        )
+
+    code, stdout, stderr = run_cmd(["codex", "--version"])
+    if code != 0:
+        return (
+            False,
+            f"Failed to check Codex CLI version. Executable found but execution failed: {stderr.strip()}",
+        )
+
+    version_str = stdout.strip()
+    version = parse_version(version_str)
+    min_version = (0, 137, 0)
+    if version < min_version:
+        v_parts = version_str.split()
+        v_display = (
+            v_parts[1] if len(v_parts) > 1 else (v_parts[0] if v_parts else version_str)
+        )
+        return False, (
+            f"Installed Codex CLI version {v_display} is older than the minimum required version {'.'.join(map(str, min_version))}. "
+            "Please upgrade Codex CLI."
+        )
+
+    # Check authentication status
+    auth_code, auth_stdout, auth_stderr = run_cmd(["codex", "login", "status"])
+    codex_auth_help = (
+        "Codex CLI is not authenticated. "
+        "Please login by running `codex login` in your terminal."
+    )
+    if auth_code != 0:
+        return False, codex_auth_help
+
+    combined_output = (auth_stdout + "\n" + auth_stderr).strip()
+    if "Not logged in" in combined_output:
+        return False, codex_auth_help
+
+    return True, None
 
 
 def _check_gemini() -> tuple[bool, Optional[str]]:
@@ -223,11 +274,18 @@ def discover_frameworks_bg(once: bool = False):
         try:
             # Check current availability status from cache
             with harnesses_lock:
+                codex_was_avail = harnesses_cache["codex"]["available"]
                 claude_was_avail = harnesses_cache["claude"]["available"]
                 gemini_was_avail = harnesses_cache["gemini"]["available"]
                 agy_was_avail = harnesses_cache["agy"]["available"]
                 mngr_claude_was_avail = harnesses_cache["mngr-claude"]["available"]
                 mngr_agy_was_avail = harnesses_cache["mngr-antigravity"]["available"]
+
+            if not codex_was_avail:
+                codex_available, codex_help = _check_codex()
+                with harnesses_lock:
+                    harnesses_cache["codex"]["available"] = codex_available
+                    harnesses_cache["codex"]["help_message"] = codex_help
 
             # Only check if currently unavailable
             if not claude_was_avail:

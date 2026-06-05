@@ -6,6 +6,8 @@ from ..harness import parse_version, discover_frameworks_bg, get_harnesses_list,
 class TestHarness(unittest.TestCase):
     def setUp(self):
         with harnesses_lock:
+            harnesses_cache["codex"]["available"] = False
+            harnesses_cache["codex"]["help_message"] = "Checking framework availability..."
             harnesses_cache["claude"]["available"] = False
             harnesses_cache["claude"]["help_message"] = "Checking framework availability..."
             harnesses_cache["gemini"]["available"] = False
@@ -30,6 +32,7 @@ class TestHarness(unittest.TestCase):
     def test_discover_frameworks_all_unavailable(self, mock_run_cmd, mock_which):
         # Setup initial cache state: all unavailable
         with harnesses_lock:
+            harnesses_cache["codex"]["available"] = False
             harnesses_cache["claude"]["available"] = False
             harnesses_cache["gemini"]["available"] = False
             harnesses_cache["agy"]["available"] = False
@@ -40,9 +43,13 @@ class TestHarness(unittest.TestCase):
         discover_frameworks_bg(once=True)
 
         harnesses = get_harnesses_list()
+        codex = next(h for h in harnesses if h.name == "codex")
         claude = next(h for h in harnesses if h.name == "claude")
         gemini = next(h for h in harnesses if h.name == "gemini")
         agy = next(h for h in harnesses if h.name == "agy")
+
+        self.assertFalse(codex.available)
+        self.assertIn("not installed", codex.help_message)
 
         self.assertFalse(claude.available)
         self.assertIn("not installed", claude.help_message)
@@ -364,3 +371,74 @@ class TestHarness(unittest.TestCase):
 
         # agy is available and mngr deps are ok -> mngr-antigravity is available
         self.assertTrue(mngr_agy.available)
+
+    @patch("shutil.which")
+    @patch("orchestrator.harness.run_cmd")
+    def test_discover_frameworks_codex_version_old(self, mock_run_cmd, mock_which):
+        # Setup initial cache: all unavailable
+        with harnesses_lock:
+            harnesses_cache["codex"]["available"] = False
+
+        # codex version is 0.136.0 (older than 0.137.0)
+        def side_effect(args):
+            if args == ["codex", "--version"]:
+                return 0, "0.136.0", ""
+            return 0, "", ""
+
+        mock_which.side_effect = lambda cmd: "/usr/bin/" + cmd if cmd in ["codex"] else None
+        mock_run_cmd.side_effect = side_effect
+
+        discover_frameworks_bg(once=True)
+
+        harnesses = get_harnesses_list()
+        codex = next(h for h in harnesses if h.name == "codex")
+        self.assertFalse(codex.available)
+        self.assertIn("older than the minimum required version", codex.help_message)
+
+    @patch("shutil.which")
+    @patch("orchestrator.harness.run_cmd")
+    def test_discover_frameworks_codex_unauthenticated(self, mock_run_cmd, mock_which):
+        with harnesses_lock:
+            harnesses_cache["codex"]["available"] = False
+
+        # version 0.137.0 but 'Not logged in' in status
+        def side_effect(args):
+            if args == ["codex", "--version"]:
+                return 0, "0.137.0", ""
+            if args == ["codex", "login", "status"]:
+                return 0, "Not logged in", ""
+            return 0, "", ""
+
+        mock_which.side_effect = lambda cmd: "/usr/bin/" + cmd if cmd in ["codex"] else None
+        mock_run_cmd.side_effect = side_effect
+
+        discover_frameworks_bg(once=True)
+
+        harnesses = get_harnesses_list()
+        codex = next(h for h in harnesses if h.name == "codex")
+        self.assertFalse(codex.available)
+        self.assertIn("not authenticated", codex.help_message)
+
+    @patch("shutil.which")
+    @patch("orchestrator.harness.run_cmd")
+    def test_discover_frameworks_codex_available(self, mock_run_cmd, mock_which):
+        with harnesses_lock:
+            harnesses_cache["codex"]["available"] = False
+
+        # version 0.137.0 and logged in (status output has "Logged in using ChatGPT")
+        def side_effect(args):
+            if args == ["codex", "--version"]:
+                return 0, "0.137.0", ""
+            if args == ["codex", "login", "status"]:
+                return 0, "Logged in using ChatGPT", ""
+            return 0, "", ""
+
+        mock_which.side_effect = lambda cmd: "/usr/bin/" + cmd if cmd in ["codex"] else None
+        mock_run_cmd.side_effect = side_effect
+
+        discover_frameworks_bg(once=True)
+
+        harnesses = get_harnesses_list()
+        codex = next(h for h in harnesses if h.name == "codex")
+        self.assertTrue(codex.available)
+        self.assertIsNone(codex.help_message)
