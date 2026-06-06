@@ -86,7 +86,7 @@ The costs shown below are rough estimates (order of magnitude), and will vary **
 | | | | 3 Flash | ~$100 USD | ~$20 USD | ~$2 USD |
 | **Antigravity CLI** | Yes, AI Ultra recommended | [No](https://github.com/google-antigravity/antigravity-cli/issues/286) | 3.5 Flash | included in plan, same as Gemini CLI when using API auth | included in plan, same as Gemini CLI when using API auth | included in plan, same as Gemini CLI when using API auth |
 | | | | 3.1 Pro | included in plan, same as Gemini CLI when using API auth | included in plan, same as Gemini CLI when using API auth | included in plan, same as Gemini CLI when using API auth |
-| **Codex CLI** | Yes | Yes | * | tbd | tbd | tbd |
+| **Codex CLI** | Yes, Pro 20x recommended | Yes | GPT 5.5 | included in plan, ~$500 USD with API auth | included in plan, ~$100 USD with API auth | included in plan, ~$10 USD with API auth |
 
 ## Further Documentation
 
