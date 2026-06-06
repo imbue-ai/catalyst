@@ -136,14 +136,20 @@ def _save_state(state: TasksState, disk_save: bool = True):
     if _last_written_json == json_str:
         return
 
-    if os.path.exists(_get_state_file()):
+    state_file_name = _get_state_file()
+    bak_state_file_name = f"{state_file_name}.bak"
+    new_state_file_name = f"{state_file_name}.new"
+
+    with open(new_state_file_name, "w") as f:
+        f.write(json_str)
+
+    if os.path.exists(state_file_name):
         try:
-            os.replace(_get_state_file(), f"{_get_state_file()}.bak")
+            os.replace(state_file_name, bak_state_file_name)
         except Exception as e:
             logger.warning(f"Could not create backup of state file: {e}")
 
-    with open(_get_state_file(), "w") as f:
-        f.write(json_str)
+    os.replace(new_state_file_name, state_file_name)
 
     _last_written_json = json_str
 
@@ -246,8 +252,6 @@ def shutdown_all():
             _save_state(state)
 
     if task_ids:
-        logger.info(
-            f"[SHUTDOWN] Stopping agents for {len(task_ids)} tasks..."
-        )
+        logger.info(f"[SHUTDOWN] Stopping agents for {len(task_ids)} tasks...")
         for tid in task_ids:
             cancel_task_process(tid)
