@@ -82,7 +82,7 @@ class BaseCliAgentRunner(AgentRunner):
             for line in iter(process.stdout.readline, ""):
                 if line:
                     full_output.append(line)
-                    json_match = re.search(r"(\{.*\})", line)
+                    json_match = re.search(r"^(\{.*\})", line)
                     if json_match:
                         data = json.loads(json_match.group(1))
 
@@ -111,4 +111,3 @@ class BaseCliAgentRunner(AgentRunner):
             return stdout, session_id, process.returncode, full_output
         finally:
             unregister_cancellable(task_id, cancellable)
-
