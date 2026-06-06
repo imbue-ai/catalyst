@@ -73,8 +73,10 @@ class CodexAgentRunner(BaseCliAgentRunner):
                     item_type = item.get("type")
                     if item_type == "command_execution":
                         on_status(f"Running command: {item.get('command', '')}")
-                    elif item_type == "agent_message":
-                        on_status("Agent is generating message...")
+                elif data.get("type") == "item.completed":
+                    item = data.get("item", {})
+                    if item.get("type") == "agent_message" and "text" in item:
+                        on_status(item.get("text", ""))
 
         try:
             stdout, session_id, returncode, full_output = self._execute_cmd(
