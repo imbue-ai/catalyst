@@ -35,16 +35,16 @@ harnesses_cache: Dict[str, Dict[str, Any]] = {
         "help_message": "Checking framework availability...",
         "models": ["opus", "sonnet", "haiku"],
     },
-    "agy": {
-        "name": "agy",
-        "display_name": "Antigravity CLI (agy -p)",
+    "mngr-antigravity": {
+        "name": "mngr-antigravity",
+        "display_name": "Antigravity CLI (mngr)",
         "available": False,
         "help_message": "Checking framework availability...",
         "models": [],
     },
-    "mngr-antigravity": {
-        "name": "mngr-antigravity",
-        "display_name": "Antigravity CLI (mngr)",
+    "agy": {
+        "name": "agy",
+        "display_name": "Antigravity CLI (agy -p)",
         "available": False,
         "help_message": "Checking framework availability...",
         "models": [],
@@ -258,7 +258,9 @@ def _check_agy() -> tuple[bool, Optional[str], List[str]]:
 
 
 def _check_mngr_deps() -> tuple[bool, Optional[str]]:
-    code, stdout, stderr = run_cmd(["uv", "run", "mngr", "dependencies"])
+    code, stdout, stderr = run_cmd(
+        ["uv", "run", "mngr", "dependencies", "--scope", "core"]
+    )
     if code != 0:
         return False, (
             "Some mngr dependencies are missing. "

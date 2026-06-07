@@ -1,24 +1,42 @@
 import unittest
 from unittest.mock import patch
-from ..harness import parse_version, discover_frameworks_bg, get_harnesses_list, harnesses_cache, harnesses_lock
+from ..harness import (
+    parse_version,
+    discover_frameworks_bg,
+    get_harnesses_list,
+    harnesses_cache,
+    harnesses_lock,
+)
 
 
 class TestHarness(unittest.TestCase):
     def setUp(self):
         with harnesses_lock:
             harnesses_cache["codex"]["available"] = False
-            harnesses_cache["codex"]["help_message"] = "Checking framework availability..."
+            harnesses_cache["codex"]["help_message"] = (
+                "Checking framework availability..."
+            )
             harnesses_cache["claude"]["available"] = False
-            harnesses_cache["claude"]["help_message"] = "Checking framework availability..."
+            harnesses_cache["claude"]["help_message"] = (
+                "Checking framework availability..."
+            )
             harnesses_cache["gemini"]["available"] = False
-            harnesses_cache["gemini"]["help_message"] = "Checking framework availability..."
+            harnesses_cache["gemini"]["help_message"] = (
+                "Checking framework availability..."
+            )
             harnesses_cache["agy"]["available"] = False
-            harnesses_cache["agy"]["help_message"] = "Checking framework availability..."
+            harnesses_cache["agy"]["help_message"] = (
+                "Checking framework availability..."
+            )
             harnesses_cache["agy"]["models"] = []
             harnesses_cache["mngr-claude"]["available"] = False
-            harnesses_cache["mngr-claude"]["help_message"] = "Checking framework availability..."
+            harnesses_cache["mngr-claude"]["help_message"] = (
+                "Checking framework availability..."
+            )
             harnesses_cache["mngr-antigravity"]["available"] = False
-            harnesses_cache["mngr-antigravity"]["help_message"] = "Checking framework availability..."
+            harnesses_cache["mngr-antigravity"]["help_message"] = (
+                "Checking framework availability..."
+            )
             harnesses_cache["mngr-antigravity"]["models"] = []
 
     def test_parse_version(self):
@@ -75,7 +93,9 @@ class TestHarness(unittest.TestCase):
                 return 0, "2.0.0", ""
             return 0, "", ""
 
-        mock_which.side_effect = lambda cmd: "/usr/bin/" + cmd if cmd in ["claude"] else None
+        mock_which.side_effect = lambda cmd: (
+            "/usr/bin/" + cmd if cmd in ["claude"] else None
+        )
         mock_run_cmd.side_effect = side_effect
 
         discover_frameworks_bg(once=True)
@@ -102,7 +122,9 @@ class TestHarness(unittest.TestCase):
                 return 1, "", "Not logged in"
             return 0, "", ""
 
-        mock_which.side_effect = lambda cmd: "/usr/bin/" + cmd if cmd in ["claude"] else None
+        mock_which.side_effect = lambda cmd: (
+            "/usr/bin/" + cmd if cmd in ["claude"] else None
+        )
         mock_run_cmd.side_effect = side_effect
 
         discover_frameworks_bg(once=True)
@@ -114,7 +136,9 @@ class TestHarness(unittest.TestCase):
 
     @patch("shutil.which")
     @patch("orchestrator.harness.run_cmd")
-    def test_discover_frameworks_claude_json_not_logged_in(self, mock_run_cmd, mock_which):
+    def test_discover_frameworks_claude_json_not_logged_in(
+        self, mock_run_cmd, mock_which
+    ):
         # Setup initial cache state: all unavailable
         with harnesses_lock:
             harnesses_cache["claude"]["available"] = False
@@ -129,7 +153,9 @@ class TestHarness(unittest.TestCase):
                 return 0, '{"loggedIn": false}', ""
             return 0, "", ""
 
-        mock_which.side_effect = lambda cmd: "/usr/bin/" + cmd if cmd in ["claude"] else None
+        mock_which.side_effect = lambda cmd: (
+            "/usr/bin/" + cmd if cmd in ["claude"] else None
+        )
         mock_run_cmd.side_effect = side_effect
 
         discover_frameworks_bg(once=True)
@@ -202,7 +228,11 @@ class TestHarness(unittest.TestCase):
             if args == ["agy", "--version"]:
                 return 0, "1.0.5", ""
             if args == ["agy", "models"]:
-                return 0, "Error: Please sign in to view available models. Launch the CLI without arguments to sign in.", ""
+                return (
+                    0,
+                    "Error: Please sign in to view available models. Launch the CLI without arguments to sign in.",
+                    "",
+                )
             return 0, "", ""
 
         mock_which.return_value = "/usr/bin/cmd"
@@ -219,7 +249,9 @@ class TestHarness(unittest.TestCase):
 
     @patch("shutil.which")
     @patch("orchestrator.harness.run_cmd")
-    def test_discover_frameworks_only_unavailable_rechecked(self, mock_run_cmd, mock_which):
+    def test_discover_frameworks_only_unavailable_rechecked(
+        self, mock_run_cmd, mock_which
+    ):
         # Setup initial cache state: claude is available, gemini is unavailable, agy is unavailable
         with harnesses_lock:
             harnesses_cache["claude"]["available"] = True
@@ -232,7 +264,9 @@ class TestHarness(unittest.TestCase):
         # Mock mock_run_cmd and mock_which to only make Gemini/Agy available
         def side_effect(args):
             if "claude" in args:
-                self.fail("Claude should not have been checked since it was already available")
+                self.fail(
+                    "Claude should not have been checked since it was already available"
+                )
             if args == ["gemini", "--version"]:
                 return 0, "0.43.0", ""
             if args == ["agy", "--version"]:
@@ -241,7 +275,9 @@ class TestHarness(unittest.TestCase):
                 return 0, "model-x\n", ""
             return 0, "", ""
 
-        mock_which.side_effect = lambda cmd: "/usr/bin/" + cmd if cmd in ["gemini", "agy"] else None
+        mock_which.side_effect = lambda cmd: (
+            "/usr/bin/" + cmd if cmd in ["gemini", "agy"] else None
+        )
         mock_run_cmd.side_effect = side_effect
 
         discover_frameworks_bg(once=True)
@@ -261,7 +297,9 @@ class TestHarness(unittest.TestCase):
 
     @patch("shutil.which")
     @patch("orchestrator.harness.run_cmd")
-    def test_discover_frameworks_mngr_dependencies_missing(self, mock_run_cmd, mock_which):
+    def test_discover_frameworks_mngr_dependencies_missing(
+        self, mock_run_cmd, mock_which
+    ):
         # Base harnesses (claude and agy) are available, but mngr deps are missing
         def side_effect(args):
             if args == ["claude", "--version"]:
@@ -274,7 +312,7 @@ class TestHarness(unittest.TestCase):
                 return 0, "1.0.5", ""
             if args == ["agy", "models"]:
                 return 0, "model-a\n", ""
-            if args == ["uv", "run", "mngr", "dependencies"]:
+            if args == ["uv", "run", "mngr", "dependencies", "--scope", "core"]:
                 return 1, "", "tmux is missing"
             return 0, "", ""
 
@@ -356,7 +394,9 @@ class TestHarness(unittest.TestCase):
                 return 0, "", ""
             return 0, "", ""
 
-        mock_which.side_effect = lambda cmd: "/usr/bin/" + cmd if cmd in ["claude", "gemini", "agy"] else None
+        mock_which.side_effect = lambda cmd: (
+            "/usr/bin/" + cmd if cmd in ["claude", "gemini", "agy"] else None
+        )
         mock_run_cmd.side_effect = side_effect
 
         discover_frameworks_bg(once=True)
@@ -367,7 +407,9 @@ class TestHarness(unittest.TestCase):
 
         # claude is old -> mngr-claude should be unavailable and share the same version failure
         self.assertFalse(mngr_claude.available)
-        self.assertIn("older than the minimum required version", mngr_claude.help_message)
+        self.assertIn(
+            "older than the minimum required version", mngr_claude.help_message
+        )
 
         # agy is available and mngr deps are ok -> mngr-antigravity is available
         self.assertTrue(mngr_agy.available)
@@ -385,7 +427,9 @@ class TestHarness(unittest.TestCase):
                 return 0, "0.136.0", ""
             return 0, "", ""
 
-        mock_which.side_effect = lambda cmd: "/usr/bin/" + cmd if cmd in ["codex"] else None
+        mock_which.side_effect = lambda cmd: (
+            "/usr/bin/" + cmd if cmd in ["codex"] else None
+        )
         mock_run_cmd.side_effect = side_effect
 
         discover_frameworks_bg(once=True)
@@ -409,7 +453,9 @@ class TestHarness(unittest.TestCase):
                 return 0, "Not logged in", ""
             return 0, "", ""
 
-        mock_which.side_effect = lambda cmd: "/usr/bin/" + cmd if cmd in ["codex"] else None
+        mock_which.side_effect = lambda cmd: (
+            "/usr/bin/" + cmd if cmd in ["codex"] else None
+        )
         mock_run_cmd.side_effect = side_effect
 
         discover_frameworks_bg(once=True)
@@ -433,7 +479,9 @@ class TestHarness(unittest.TestCase):
                 return 0, "Logged in using ChatGPT", ""
             return 0, "", ""
 
-        mock_which.side_effect = lambda cmd: "/usr/bin/" + cmd if cmd in ["codex"] else None
+        mock_which.side_effect = lambda cmd: (
+            "/usr/bin/" + cmd if cmd in ["codex"] else None
+        )
         mock_run_cmd.side_effect = side_effect
 
         discover_frameworks_bg(once=True)
