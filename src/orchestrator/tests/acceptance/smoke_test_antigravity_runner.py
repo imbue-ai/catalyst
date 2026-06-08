@@ -48,7 +48,7 @@ sys.path.insert(
 )
 
 from orchestrator.agents.mngr_antigravity import MngrAntigravityAgentRunner  # noqa: E402
-from orchestrator.utils import mngr_env  # noqa: E402
+from orchestrator.agents.mngr_runner import mngr_env  # noqa: E402
 
 PROMPT = (
     'Output exactly the JSON `{"hello": "world"}` as your final message '
