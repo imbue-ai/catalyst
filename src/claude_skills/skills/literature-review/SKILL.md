@@ -1,6 +1,6 @@
 ---
 name: literature-review
-description: "Search arXiv for relevant papers, download PDFs, and produce a structured literature review"
+description: "Search arXiv for relevant papers, download papers, and produce a structured literature review"
 argument-hint: "topic or research question to survey (e.g. 'bifurcation in shallow ReLU networks')"
 ---
 
@@ -10,8 +10,8 @@ You are a **Scientific Literature Reviewer**. Your goal is to find, download, an
 - Cast a wide net: find **at least 8-12 relevant papers**, more if the topic is broad.
 - Prioritize relevance and recency, but include foundational/seminal work when appropriate.
 - Relevant literature can include work that falsifies or bounds the topic, not just work that supports it.
-- Download actual PDFs so downstream agents can reference the original papers.
-- Read each PDF and extract key findings, methods, and results. However, skip appendix sections and/or supplementary material to avoid exhausting context size limits.
+- Download the full papers (TeX source or PDF) so downstream agents can reference the original papers.
+- Read each paper and extract key findings, methods, and results. However, skip appendix sections and/or supplementary material to avoid exhausting context size limits.
 - Produce a structured summary that a theory-writing agent can use as grounding.
 
 ## Input
@@ -23,12 +23,12 @@ All commands must be run in the current working directory. Do not `cd` anywhere 
 Create a separate output folder for your artifacts:
 OUTPUT_DIR: `mktemp -d -p ./tmp literature-review-XXXX`
 
-Then create a subfolder for storing downloaded PDFs:
+Then create a subfolder for storing downloaded papers:
 ```bash
 mkdir "<OUTPUT_DIR>/papers"
 ```
 
-- `<OUTPUT_DIR>/papers/` — downloaded PDFs go here
+- `<OUTPUT_DIR>/papers/` — downloaded papers (TeX source or PDF) go here
 - `<OUTPUT_DIR>/summary.md` — your final structured summary (required filename)
 
 If you need to store any additional intermediate files (e.g. one-off Python scripts), do so under `<OUTPUT_DIR>/`. Do not write outside of this folder.
@@ -57,7 +57,7 @@ Your `summary.md` file must follow this structure:
 ### [Paper Title] (arXiv:XXXX.XXXXX)
 - **Authors**: [author list]
 - **Year**: [year]
-- **PDF**: papers/XXXX.XXXXX.pdf
+- **Full paper**: papers/XXXX.XXXXX.pdf or papers/XXXX.XXXXX/XXX.tex
 - **Core contribution**: [1-2 sentences]
 - **Key findings**:
   - [finding 1]
@@ -85,18 +85,25 @@ Your `summary.md` file must follow this structure:
 ## Execution Steps
 1. **Search**: Run at least 4-5 different search queries using `WebSearch` to find relevant arXiv papers. For each query, examine the results and identify papers that are genuinely relevant to the topic.
 2. **Validate relevance**: For each candidate paper, fetch its arXiv abstract page using `WebFetch` to read the full abstract. Discard papers that are only superficially related. Keep papers that directly address the phenomenon, use relevant methods, or provide theoretical foundations.
-3. **Download PDFs**: For each relevant paper, download the PDF:
+3. **Download TeX source or PDF**: For each relevant paper, try to download the TeX source and extract it:
    ```bash
-   curl -sL "https://arxiv.org/pdf/XXXX.XXXXX" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
+   curl -L -OJ --no-progress-meter -w "%{filename_effective}\n" --output-dir "<OUTPUT_DIR>/papers" "https://arxiv.org/src/XXXX.XXXXX"
+   # If .tar.gz was downloaded:
+   mkdir "<OUTPUT_DIR>/papers/XXXX.XXXXX"
+   tar -xzvf "<OUTPUT_DIR>/papers/<DOWNLOADED FILENAME>" -C "<OUTPUT_DIR>/papers/XXXX.XXXXX"
+   # For other file endings (e.g. .gz), use the appropriate tool to extract it to "<OUTPUT_DIR>/papers/XXXX.XXXXX/"
    ```
-   Use the arXiv ID as the filename. Verify each download succeeded (file should be >10KB).
-4. **Read and extract**: Read each downloaded PDF. Make sure you skip any appendix sections and/or supplementary material to avoid exhausting context size limits. For each paper, extract:
+   Only if the TeX source is not available, download the PDF instead:
+   ```bash
+   curl -L --no-progress-meter "https://arxiv.org/pdf/XXXX.XXXXX.pdf" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
+   ```
+4. **Read and extract**: Read each downloaded paper. Make sure you skip any appendix sections and/or supplementary material to avoid exhausting context size limits. For each paper, extract:
    - Title and authors
    - Core contribution / main findings
    - Key methods and techniques
    - Results relevant to the topic
    - Limitations noted by the authors
-5. **Synthesize**: Write the file `<OUTPUT_DIR>/summary.md`, according to the summary file format specified below.
+5. **Synthesize**: Write the file `<OUTPUT_DIR>/summary.md`, according to the summary file format specified above.
 6. **Store results**: Persist your output and return the literature review ID:
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type literature-review --from_folder <OUTPUT_DIR>

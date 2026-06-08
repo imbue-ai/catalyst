@@ -83,7 +83,7 @@ Your `review.md` file MUST be formatted as follows:
 3. **Implementation**: Support your suggestions with evidence.
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` under the corresponding expansion suggestion.
    - **Analysis**: If applicable, derive mathematical arguments motivating the expansion.
-4. **Reporting**: Write your expansion review to `<OUTPUT_DIR>/review.md` (this exact filename is required). See the output format below.
+4. **Reporting**: Write your expansion review to `<OUTPUT_DIR>/review.md` (this exact filename is required). See the output format above.
 5. **Store results**: Persist your output and return the review ID:
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type suggest-expansions --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>

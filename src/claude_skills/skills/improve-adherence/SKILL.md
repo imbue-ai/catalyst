@@ -37,7 +37,7 @@ cp -r "<CONTEXT_DIR>/theory/"* "<OUTPUT_DIR>/"
 
 - `<CONTEXT_DIR>/theory/` — the original theory (read-only input). Read `<CONTEXT_DIR>/theory/theory.md` and any artifacts.
 - `<CONTEXT_DIR>/reviews/<review_id>/` — each adherence review report (read-only input). Read each `review.md`.
-- `<CONTEXT_DIR>/literature/<literature_id>/` — (if any literature IDs provided, or added mid-run) each literature review, with `summary.md` and downloaded PDFs in `papers/`. Read the `summary.md` and consult individual PDFs when relevant.
+- `<CONTEXT_DIR>/literature/<literature_id>/` — (if any literature IDs provided, or added mid-run) each literature review, with `summary.md` and downloaded TeX sources or PDFs in `papers/`. Read the `summary.md` and consult individual papers when relevant.
 - `<OUTPUT_DIR>/` — write your updated theory, experiments, and any supporting notes here.
 
 ## Running experiments

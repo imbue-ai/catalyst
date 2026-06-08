@@ -62,7 +62,7 @@ Theory used: [The ID of the theory used]
     - The theory is ambiguous or non-committal about the expected outcome of the experiment
   - The prediction must be as specific as possible. Whenever the experiment measures quantitative variables, include the specific values that the theory predicts for those.
   - The experiment IS EXPECTED to come from a different theory than the one you're using to make predictions. If its description refers specific statement numbers, ignore those. Rather, only consider WHAT the experiment is actually measuring by inspecing its `script.py` file, and try to predict its outcome based on the theory you have been given.
-3. **Reporting**: Write the prediction for each experiment to `<OUTPUT_DIR>/predictions.md` (this exact filename is required). See the output format below.
+3. **Reporting**: Write the prediction for each experiment to `<OUTPUT_DIR>/predictions.md` (this exact filename is required). See the output format above.
 4. **Store results**: Persist your output and return the prediction ID:
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type predict-experiments --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>

@@ -10,8 +10,8 @@ You are working on finding literature as part of a broader research effort. Your
 - Stay narrowly scoped: **2–6 papers** that *precisely* bear on the query is the target. Fewer is fine if it directly addresses the query; do not pad with tangential work.
 - Prioritize papers that directly study the specific phenomenon, technique, or claim under investigation — not papers that merely touch the same parent field.
 - Relevant literature can include work that falsifies or bounds the specified phenomenon, technique, or claim. Not just work that supports it.
-- Download actual PDFs so downstream agents can reference the originals.
-- Read each PDF and extract the parts that speak to the query; skip unrelated material. Also skip appendix sections and/or supplementary material to avoid exhausting context size limits.
+- Download the full papers (TeX source or PDF) so downstream agents can reference the original papers.
+- Read each paper and extract the parts that speak to the query; skip unrelated material. Also skip appendix sections and/or supplementary material to avoid exhausting context size limits.
 - Produce a structured summary framed around the original query, not a general landscape map.
 
 ## Literature Search Input
@@ -27,7 +27,7 @@ OUTPUT_DIR: `mktemp -d -p ./tmp search-literature-output-XXXX`
 mkdir -p "<OUTPUT_DIR>/papers"
 ```
 
-- `<OUTPUT_DIR>/papers/` — downloaded PDFs go here
+- `<OUTPUT_DIR>/papers/` — downloaded papers (TeX source or PDF) go here
 - `<OUTPUT_DIR>/summary.md` — your final structured summary (required filename)
 
 ## Literature Search Strategy
@@ -57,7 +57,7 @@ Your `summary.md` file must follow this structure:
 ### [Paper Title] (arXiv:XXXX.XXXXX)
 - **Authors**: [author list]
 - **Year**: [year]
-- **PDF**: papers/XXXX.XXXXX.pdf
+- **Full paper**: papers/XXXX.XXXXX.pdf or papers/XXXX.XXXXX/XXX.tex
 - **Relevance to query**: [the one or two specific reasons this paper bears on the query]
 - **Key excerpted finding**: [the specific result, bound, or mechanism the paper contributes to this query — not a general summary of the paper]
 - **Methods/setup**: [only the parts relevant to the query]
@@ -74,13 +74,20 @@ Your `summary.md` file must follow this structure:
 1. **Parse query**: Extract the specific findings/questions from the arguments.
 2. **Search**: Run 2–4 focused `WebSearch` queries following the strategy above. Identify candidate papers.
 3. **Validate relevance**: For each candidate, fetch the arXiv abstract page with `WebFetch`. Keep only papers that directly address the query. Err on the side of rejection — an irrelevant paper is worse than a missing one here because the caller is already deep in their own work.
-4. **Download PDFs**: For each kept paper:
+4. **Download TeX source or PDF**: For each relevant paper, try to download the TeX source and extract it:
    ```bash
-   curl -sL "https://arxiv.org/pdf/XXXX.XXXXX" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
+   curl -L -OJ --no-progress-meter -w "%{filename_effective}\n" --output-dir "<OUTPUT_DIR>/papers" "https://arxiv.org/src/XXXX.XXXXX"
+   # If .tar.gz was downloaded:
+   mkdir "<OUTPUT_DIR>/papers/XXXX.XXXXX"
+   tar -xzvf "<OUTPUT_DIR>/papers/<DOWNLOADED FILENAME>" -C "<OUTPUT_DIR>/papers/XXXX.XXXXX"
+   # For other file endings (e.g. .gz), use the appropriate tool to extract it to "<OUTPUT_DIR>/papers/XXXX.XXXXX/"
    ```
-   Use the arXiv ID as filename. Verify each download succeeded (file >10KB).
-5. **Read and extract**: Read each PDF. Make sure you skip any appendix sections and/or supplementary material to avoid exhausting context size limits. For each paper, note only the content that speaks to the query — the specific finding, the relevant method, the directly applicable result or bound. Skip the rest.
-6. **Synthesize**: Write `<OUTPUT_DIR>/summary.md` per the format below. Frame the synthesis around the query, not as a general landscape survey.
+   Only if the TeX source is not available, download the PDF instead:
+   ```bash
+   curl -L --no-progress-meter "https://arxiv.org/pdf/XXXX.XXXXX.pdf" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
+   ```
+5. **Read and extract**: Read each downloaded paper. Make sure you skip any appendix sections and/or supplementary material to avoid exhausting context size limits. For each paper, note only the content that speaks to the query — the specific finding, the relevant method, the directly applicable result or bound. Skip the rest.
+6. **Synthesize**: Write `<OUTPUT_DIR>/summary.md` per the format above. Frame the synthesis around the query, not as a general landscape survey.
 7. **Store results**: Persist your output:
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type search-literature --from_folder <OUTPUT_DIR>
