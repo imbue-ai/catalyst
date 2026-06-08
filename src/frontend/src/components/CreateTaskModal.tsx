@@ -111,7 +111,13 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     numExtraScores,
     setNumExtraScores,
     applyExpansions,
-    setApplyExpansions
+    setApplyExpansions,
+    correctnessWeight,
+    setCorrectnessWeight,
+    powerWeight,
+    setPowerWeight,
+    adherenceWeight,
+    setAdherenceWeight
   } = useWorkflowParams()
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -174,6 +180,11 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         template_folder: inputs.templateFolder || undefined,
         framework: inputs.framework,
         model: inputs.model || undefined,
+        theory_scoring_weights: isEvolve ? {
+          correctness_weight: correctnessWeight,
+          power_weight: powerWeight,
+          adherence_weight: adherenceWeight
+        } : undefined,
         file: selectedFile || undefined
       })
       onCreated(task)
@@ -502,6 +513,13 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         setNumExtraScores={setNumExtraScores}
                         applyExpansions={applyExpansions}
                         setApplyExpansions={setApplyExpansions}
+                        showScoringWeights={isEvolve}
+                        correctnessWeight={correctnessWeight}
+                        setCorrectnessWeight={setCorrectnessWeight}
+                        powerWeight={powerWeight}
+                        setPowerWeight={setPowerWeight}
+                        adherenceWeight={adherenceWeight}
+                        setAdherenceWeight={setAdherenceWeight}
                       />
                     )}
                   </div>

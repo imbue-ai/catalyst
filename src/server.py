@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from contextlib import asynccontextmanager
 
-from orchestrator.models import Task, TaskStatus, TaskShallow
+from orchestrator.models import Task, TaskStatus, TaskShallow, TheoryScoringWeights
 from orchestrator.state import (
     get_tasks,
     get_task,
@@ -117,6 +117,7 @@ class CreateTaskRequest(BaseModel):
     template_folder: Optional[str] = None
     framework: str
     model: Optional[str] = None
+    theory_scoring_weights: Optional[TheoryScoringWeights] = None
 
 
 @app.get("/api/tasks", response_model=List[TaskShallow])
@@ -230,6 +231,7 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
         status=TaskStatus.PENDING,
         steps=[],
         workflow_name=req.workflow_name,
+        theory_scoring_weights=req.theory_scoring_weights,
     )
 
     add_task(task)
@@ -400,6 +402,7 @@ def resume_task(task_id: str):
 
 class UpdateGuidanceRequest(BaseModel):
     guidance: str
+    theory_scoring_weights: Optional[TheoryScoringWeights] = None
 
 
 @app.post("/api/tasks/{task_id}/guidance", response_model=Task)
@@ -409,6 +412,8 @@ def update_task_guidance(task_id: str, req: UpdateGuidanceRequest):
         raise HTTPException(status_code=404, detail="Task not found")
 
     task.guidance = req.guidance
+    if req.theory_scoring_weights is not None:
+        task.theory_scoring_weights = req.theory_scoring_weights
     update_task(task)
 
     guidance_file = os.path.join(task.env_folder, "GUIDANCE.txt")

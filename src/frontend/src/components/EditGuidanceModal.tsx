@@ -1,19 +1,28 @@
 import { useState } from 'react'
+import type { TheoryScoringWeights } from '../api'
 
 interface EditGuidanceModalProps {
   onClose: () => void;
-  onSave: (guidance: string) => Promise<void>;
+  onSave: (guidance: string, weights: TheoryScoringWeights) => Promise<void>;
   initialGuidance: string;
+  initialWeights?: TheoryScoringWeights;
 }
 
-export function EditGuidanceModal({ onClose, onSave, initialGuidance }: EditGuidanceModalProps) {
+export function EditGuidanceModal({ onClose, onSave, initialGuidance, initialWeights }: EditGuidanceModalProps) {
   const [guidance, setGuidance] = useState(initialGuidance)
+  const [correctnessWeight, setCorrectnessWeight] = useState(initialWeights?.correctness_weight ?? 0.9)
+  const [powerWeight, setPowerWeight] = useState(initialWeights?.power_weight ?? 0.7)
+  const [adherenceWeight, setAdherenceWeight] = useState(initialWeights?.adherence_weight ?? 0.5)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
-      await onSave(guidance)
+      await onSave(guidance, {
+        correctness_weight: correctnessWeight,
+        power_weight: powerWeight,
+        adherence_weight: adherenceWeight,
+      })
       onClose()
     } catch (e: any) {
       alert(e.message || "Failed to save guidance")
@@ -28,22 +37,67 @@ export function EditGuidanceModal({ onClose, onSave, initialGuidance }: EditGuid
         <h2 className="text-2xl font-black tracking-tighter text-black mb-2">Provide Guidance</h2>
         <p className="text-xs font-bold text-gray-700 mb-2 leading-relaxed">
           Provide additional guidance to the agents within this task. E.g. direction to focus on, type of desired theory, literature to consider, etc.
+          You can also adjust the component weights of the theory scores used in evolution-based workflows.
         </p>
         <p className="text-xs font-bold text-gray-400 mb-6 tracking-tight leading-relaxed">
           Any changes will only apply to future steps that are not yet running.
         </p>
 
-        <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">
+        <h4 className="text-xs font-black tracking-widest text-black mb-4">
           Research Guidance
-        </label>
+        </h4>
         <textarea 
           autoFocus
           value={guidance}
           onChange={e => setGuidance(e.target.value)}
           placeholder="No additional guidance."
-          rows={15}
-          className="w-full border-2 border-black p-3 outline-none bg-gray-50/50 text-sm font-bold mb-8 resize-y min-h-[320px]"
+          rows={10}
+          className="w-full border-2 border-black p-3 outline-none bg-gray-50/50 text-sm font-bold mb-6 resize-y min-h-[200px]"
         />
+
+        <div className="mb-8">
+          <h4 className="text-xs font-black tracking-widest text-black mb-4">Theory Scoring Weights</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-[10px] font-black tracking-widest text-gray-400">Correctness</label>
+                <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{correctnessWeight.toFixed(2)}</span>
+              </div>
+              <input
+                type="range" min="0" max="1" step="0.05"
+                value={correctnessWeight}
+                onChange={e => setCorrectnessWeight(parseFloat(e.target.value))}
+                className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+              />
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-[10px] font-black tracking-widest text-gray-400">Explanatory and Predictive Power</label>
+                <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{powerWeight.toFixed(2)}</span>
+              </div>
+              <input
+                type="range" min="0" max="1" step="0.05"
+                value={powerWeight}
+                onChange={e => setPowerWeight(parseFloat(e.target.value))}
+                className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+              />
+            </div>
+
+            <div>
+              <div className="flex justify-between items-center mb-2">
+                <label className="text-[10px] font-black tracking-widest text-gray-400">Instruction Adherence</label>
+                <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{adherenceWeight.toFixed(2)}</span>
+              </div>
+              <input
+                type="range" min="0" max="1" step="0.05"
+                value={adherenceWeight}
+                onChange={e => setAdherenceWeight(parseFloat(e.target.value))}
+                className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+              />
+            </div>
+          </div>
+        </div>
 
         <div className="flex gap-4">
           <button 

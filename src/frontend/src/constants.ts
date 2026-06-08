@@ -11,3 +11,8 @@ export const DEFAULT_NUM_EXTRA_SCORES = 5;
 
 // CreateTaskModal specific defaults
 export const DEFAULT_NUM_ROOT_THEORIES = 3;
+
+// Default scoring weights
+export const DEFAULT_CORRECTNESS_WEIGHT = 0.9;
+export const DEFAULT_POWER_WEIGHT = 0.7;
+export const DEFAULT_ADHERENCE_WEIGHT = 0.5;

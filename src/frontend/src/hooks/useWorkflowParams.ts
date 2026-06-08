@@ -6,7 +6,10 @@ import {
   DEFAULT_MAX_STREAMLINE_PROB,
   DEFAULT_WRITE_DIFFERENT_PROB,
   DEFAULT_NUM_EXTRA_SCORES,
-  DEFAULT_NUM_ROOT_THEORIES
+  DEFAULT_NUM_ROOT_THEORIES,
+  DEFAULT_CORRECTNESS_WEIGHT,
+  DEFAULT_POWER_WEIGHT,
+  DEFAULT_ADHERENCE_WEIGHT
 } from '../constants'
 
 export function useWorkflowParams() {
@@ -18,6 +21,10 @@ export function useWorkflowParams() {
   const [writeDifferentProb, setWriteDifferentProb] = useState(DEFAULT_WRITE_DIFFERENT_PROB)
   const [numExtraScores, setNumExtraScores] = useState(DEFAULT_NUM_EXTRA_SCORES)
   const [applyExpansions, setApplyExpansions] = useState('')
+
+  const [correctnessWeight, setCorrectnessWeight] = useState(DEFAULT_CORRECTNESS_WEIGHT)
+  const [powerWeight, setPowerWeight] = useState(DEFAULT_POWER_WEIGHT)
+  const [adherenceWeight, setAdherenceWeight] = useState(DEFAULT_ADHERENCE_WEIGHT)
 
   return {
     numRootTheories,
@@ -35,6 +42,12 @@ export function useWorkflowParams() {
     numExtraScores,
     setNumExtraScores,
     applyExpansions,
-    setApplyExpansions
+    setApplyExpansions,
+    correctnessWeight,
+    setCorrectnessWeight,
+    powerWeight,
+    setPowerWeight,
+    adherenceWeight,
+    setAdherenceWeight
   }
 }

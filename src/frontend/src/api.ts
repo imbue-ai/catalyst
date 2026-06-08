@@ -29,6 +29,12 @@ export interface Addon {
   lit_review_id?: string;
 }
 
+export interface TheoryScoringWeights {
+  correctness_weight: number;
+  power_weight: number;
+  adherence_weight: number;
+}
+
 export interface Task {
   id: string;
   title?: string;
@@ -44,6 +50,7 @@ export interface Task {
   workflow_structure: any[];
   created_at?: string;
   guidance?: string;
+  theory_scoring_weights?: TheoryScoringWeights;
 }
 
 export interface TheoryArtifact {
@@ -102,6 +109,7 @@ export async function createTask(data: {
   template_folder?: string;
   framework: string;
   model?: string;
+  theory_scoring_weights?: TheoryScoringWeights;
   file?: File;
 }): Promise<Task> {
   const formData = new FormData();
@@ -110,7 +118,8 @@ export async function createTask(data: {
     workflow_inputs: data.workflow_inputs,
     template_folder: data.template_folder,
     framework: data.framework,
-    model: data.model
+    model: data.model,
+    theory_scoring_weights: data.theory_scoring_weights
   };
   formData.append('request', JSON.stringify(requestData));
   if (data.file) {
@@ -226,11 +235,11 @@ export async function deleteTempFiles(taskId: string): Promise<void> {
   }
 }
 
-export async function updateGuidance(taskId: string, guidance: string): Promise<Task> {
+export async function updateGuidance(taskId: string, guidance: string, theory_scoring_weights?: TheoryScoringWeights): Promise<Task> {
   const res = await fetch(`${API_BASE}/tasks/${taskId}/guidance`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ guidance }),
+    body: JSON.stringify({ guidance, theory_scoring_weights }),
   });
   if (!res.ok) {
     const error = await res.json();

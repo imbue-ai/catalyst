@@ -5,6 +5,7 @@ interface AdditionalParamsSectionProps {
   showMaxRefinements?: boolean;
   showEvolveParams?: boolean;
   showApplyExpansions?: boolean;
+  showScoringWeights?: boolean;
 
   numRootTheories?: number;
   setNumRootTheories?: (v: number) => void;
@@ -30,6 +31,15 @@ interface AdditionalParamsSectionProps {
   applyExpansions?: string;
   setApplyExpansions?: (v: string) => void;
 
+  correctnessWeight?: number;
+  setCorrectnessWeight?: (v: number) => void;
+
+  powerWeight?: number;
+  setPowerWeight?: (v: number) => void;
+
+  adherenceWeight?: number;
+  setAdherenceWeight?: (v: number) => void;
+
   // Option to restrict widths like in CreateAddonModal (e.g., md:w-1/3)
   useRestrictedWidths?: boolean;
   children?: React.ReactNode;
@@ -40,6 +50,7 @@ export function AdditionalParamsSection({
   showMaxRefinements,
   showEvolveParams,
   showApplyExpansions,
+  showScoringWeights,
 
   numRootTheories,
   setNumRootTheories,
@@ -64,6 +75,15 @@ export function AdditionalParamsSection({
 
   applyExpansions,
   setApplyExpansions,
+
+  correctnessWeight,
+  setCorrectnessWeight,
+
+  powerWeight,
+  setPowerWeight,
+
+  adherenceWeight,
+  setAdherenceWeight,
 
   useRestrictedWidths = false,
   children,
@@ -169,6 +189,57 @@ export function AdditionalParamsSection({
             <option value="always">Always</option>
             <option value="never">Never</option>
           </select>
+        </div>
+      )}
+      {showScoringWeights && (
+        <div className="col-span-full border-t border-dashed border-gray-200 pt-6 mt-2">
+          <h4 className="text-xs font-black tracking-widest text-black mb-4">Theory Scoring Weights</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {setCorrectnessWeight && correctnessWeight !== undefined && (
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black tracking-widest text-gray-400">Correctness</label>
+                  <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{correctnessWeight.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range" min="0" max="1" step="0.05"
+                  value={correctnessWeight}
+                  onChange={e => setCorrectnessWeight(parseFloat(e.target.value))}
+                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                />
+              </div>
+            )}
+
+            {setPowerWeight && powerWeight !== undefined && (
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black tracking-widest text-gray-400">Explanatory and Predictive Power</label>
+                  <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{powerWeight.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range" min="0" max="1" step="0.05"
+                  value={powerWeight}
+                  onChange={e => setPowerWeight(parseFloat(e.target.value))}
+                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                />
+              </div>
+            )}
+
+            {setAdherenceWeight && adherenceWeight !== undefined && (
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black tracking-widest text-gray-400">Instruction Adherence</label>
+                  <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{adherenceWeight.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range" min="0" max="1" step="0.05"
+                  value={adherenceWeight}
+                  onChange={e => setAdherenceWeight(parseFloat(e.target.value))}
+                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                />
+              </div>
+            )}
+          </div>
         </div>
       )}
       {children}
