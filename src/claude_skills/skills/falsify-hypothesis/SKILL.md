@@ -94,7 +94,7 @@ Your `review.md` file MUST be formatted as follows:
 3. **Implementation**: Test your ideas using the available tools.
    - **Experiment**: Invoke `run-experiment`. Reference each experiment's `X_ID` under the corresponding falsification idea in your `review.md`.
    - **Proof**: If applicable, use mathematical derivations.
-4. **Reporting**: Write your falsification report to `<OUTPUT_DIR>/review.md` (this exact filename is required). See the output format below.
+4. **Reporting**: Write your falsification report to `<OUTPUT_DIR>/review.md` (this exact filename is required). See the output format above.
 5. **Store results**: Persist your output and return the review ID:
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type falsify-hypothesis --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>

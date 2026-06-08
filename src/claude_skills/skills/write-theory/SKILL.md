@@ -38,7 +38,7 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_a
 ```
 
 - `<CONTEXT_DIR>/exploration/` — (if exploration ID provided) prior exploration results. Read `<CONTEXT_DIR>/exploration/report.md` and any artifacts in the folder (images, plots, etc.).
-- `<CONTEXT_DIR>/literature/` — (if literature ID provided) literature review with paper summaries and downloaded PDFs. Always read `<CONTEXT_DIR>/literature/summary.md`, and read individual PDFs in `<CONTEXT_DIR>/literature/papers/` when relevant.
+- `<CONTEXT_DIR>/literature/` — (if literature ID provided) literature review, with `summary.md` and downloaded TeX sources or PDFs in `papers/`. Read each `summary.md` and consult individual papers when relevant.
 - `<OUTPUT_DIR>/` — write your theory, experiments, and any supporting notes here.
 
 Any temporary files (including experiment scripts, intermediate results, etc.) must be stored only under `<OUTPUT_DIR>`.

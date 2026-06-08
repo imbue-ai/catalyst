@@ -60,7 +60,7 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_literature \
     --target_folder <CONTEXT_DIR> \
     --from_literature <NEW_L_ID>
 ```
-Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and consult individual PDFs under `papers/` when needed.
+Then read `<CONTEXT_DIR>/literature/<NEW_L_ID>/summary.md` and consult individual papers under `papers/` when needed.
 
 ## Running experiments
 Every experiment, test, and validation must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `support-idea`.
