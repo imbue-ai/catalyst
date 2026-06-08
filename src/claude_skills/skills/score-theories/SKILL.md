@@ -15,6 +15,7 @@ The arguments contain multiple theory IDs (like `T_20260414_...`). Parse the the
 Follow the following steps carefully. Do not skip anything. Do not take shortcuts.
 
 1. **Obtain Ranked Experiment IDs**: Launch a subagent instructed to invoke the `rank-experiments` skill, passing to it the list of theory IDs. The subagent will return the highest-ranking experiment IDs (`X_...`), from highest rank to lowest rank. These are the experiment IDs that we will be using to evaluate the theories in the following steps. Wait for the subagent to finish and collect its response with the ranked experiment IDs.
+  - Edge case: If the rank-experiments subagent returns an empty list, that means that there are no experiments to evaluate the theories on. You should assign a prediction accuracy and prediction coverage score of 1 across all theories in that case.
 2. **Generate Theory Predictions**: For each of the theory IDs individually:
   - Spawn a subagent instructed to invoke the `predict-experiments` skill, passing to it the specific theory ID and the list of ranked experiment IDs. This subagent will return a prediction ID (e.g. `P_20260414_143052_a1b2c3`). All subagents can run in parallel.
 3. **Collect Predictions**: Wait for each subagent to finish and collect their final result messages containing the prediction IDs.

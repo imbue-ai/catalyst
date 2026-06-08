@@ -217,13 +217,19 @@ def _run_step_core(task: Task, stage: str, prompt: str) -> Any:
 
     tx_id = f"tx_{uuid.uuid4().hex}"
 
+    common_env = runner.build_common_environment_variables(
+        env_folder=task.env_folder,
+        tx_id=tx_id,
+        theory_scoring_weights=task.theory_scoring_weights,
+    )
+
     output, session_id, error = runner.run(
         task_id=task.id,
         prompt=prompt,
         env_folder=task.env_folder,
-        model=task.model,
-        tx_id=tx_id,
         stage=stage,
+        common_environment_variables=common_env,
+        model=task.model,
         on_session_id=on_sid,
         on_status=on_status,
     )

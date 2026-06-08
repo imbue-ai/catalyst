@@ -445,8 +445,9 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
         <EditGuidanceModal
           onClose={() => setShowGuidanceModal(false)}
           initialGuidance={task.guidance || "No additional guidance."}
-          onSave={async (newGuidance) => {
-            await api.updateGuidance(task.id, newGuidance)
+          initialWeights={task.theory_scoring_weights}
+          onSave={async (newGuidance, newWeights) => {
+            await api.updateGuidance(task.id, newGuidance, newWeights)
             onRefresh()
           }}
         />

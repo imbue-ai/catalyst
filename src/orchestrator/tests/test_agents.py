@@ -45,11 +45,16 @@ class TestAgents(unittest.TestCase):
         mock_popen.return_value = mock_process
 
         runner = GeminiAgentRunner()
+        common_env = runner.build_common_environment_variables(
+            env_folder="/tmp",
+            tx_id="tx_42",
+        )
         data, session_id, error = runner.run(
             task_id="t1",
             prompt="p1",
             env_folder="/tmp",
-            tx_id="tx_42", stage="t1-stage"
+            stage="t1-stage",
+            common_environment_variables=common_env,
         )
 
         self.assertIsNone(error)
@@ -76,11 +81,16 @@ class TestAgents(unittest.TestCase):
         mock_popen.return_value = mock_process
 
         runner = ClaudeAgentRunner()
+        common_env = runner.build_common_environment_variables(
+            env_folder="/tmp",
+            tx_id="tx_99",
+        )
         data, session_id, error = runner.run(
             task_id="t1",
             prompt="p1",
             env_folder="/tmp",
-            tx_id="tx_99", stage="t1-stage"
+            stage="t1-stage",
+            common_environment_variables=common_env,
         )
 
         self.assertIsNone(error)
@@ -107,12 +117,17 @@ class TestAgents(unittest.TestCase):
         mock_popen.return_value = mock_process
 
         runner = AgyAgentRunner()
+        common_env = runner.build_common_environment_variables(
+            env_folder="/tmp",
+            tx_id="tx_101",
+        )
         data, session_id, error = runner.run(
             task_id="t1",
             prompt="p1",
             env_folder="/tmp",
-            tx_id="tx_101",
-            model="Gemini 3.5 Flash (Low)", stage="t1-stage"
+            stage="t1-stage",
+            common_environment_variables=common_env,
+            model="Gemini 3.5 Flash (Low)",
         )
 
         self.assertIsNone(error)
@@ -250,4 +265,40 @@ class TestMngrAgentRunner(unittest.TestCase):
         saw_turn_end, assistant_text = runner._wait_for_turn_end("agent-123", None)
         self.assertTrue(saw_turn_end)
         self.assertEqual(assistant_text, '{"score": 0.8}')
+
+    def test_theory_scoring_weights_propagation(self):
+        from ..models import TheoryScoringWeights
+        from pydantic import ValidationError
+
+        runner = ClaudeAgentRunner()
+        weights = TheoryScoringWeights(
+            correctness_weight=0.1,
+            power_weight=0.5,
+            adherence_weight=0.9,
+        )
+        common_env = runner.build_common_environment_variables(
+            env_folder="/tmp",
+            tx_id="tx_123",
+            theory_scoring_weights=weights,
+        )
+        self.assertEqual(common_env["CONTEXT_TRANSACTION_ID"], "tx_123")
+        self.assertEqual(common_env["CATALYST_SCORING_CORRECTNESS_WEIGHT"], "0.1")
+        self.assertEqual(common_env["CATALYST_SCORING_POWER_WEIGHT"], "0.5")
+        self.assertEqual(common_env["CATALYST_SCORING_ADHERENCE_WEIGHT"], "0.9")
+
+        # Verify validation bounds ge=0.0, le=1.0
+        with self.assertRaises(ValidationError):
+            TheoryScoringWeights(
+                correctness_weight=1.5,
+                power_weight=0.5,
+                adherence_weight=0.9,
+            )
+
+        with self.assertRaises(ValidationError):
+            TheoryScoringWeights(
+                correctness_weight=-0.1,
+                power_weight=0.5,
+                adherence_weight=0.9,
+            )
+
 

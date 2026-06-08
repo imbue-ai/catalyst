@@ -175,10 +175,26 @@ class TestServerEndpoints(unittest.TestCase):
     @patch("builtins.open", new_callable=mock_open)
     def test_update_task_guidance(self, mock_file, mock_update_task, mock_get_task):
         mock_get_task.return_value = self.dummy_task
-        guidance_req = {"guidance": "New custom user guidance."}
+        guidance_req = {
+            "guidance": "New custom user guidance.",
+            "theory_scoring_weights": {
+                "correctness_weight": 0.85,
+                "power_weight": 0.65,
+                "adherence_weight": 0.45,
+            },
+        }
         response = client.post("/api/tasks/test_task_123/guidance", json=guidance_req)
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()["guidance"], "New custom user guidance.")
+        self.assertEqual(
+            response.json()["theory_scoring_weights"]["correctness_weight"], 0.85
+        )
+        self.assertEqual(
+            response.json()["theory_scoring_weights"]["power_weight"], 0.65
+        )
+        self.assertEqual(
+            response.json()["theory_scoring_weights"]["adherence_weight"], 0.45
+        )
         self.assertTrue(mock_update_task.called)
         mock_file.assert_called_once_with(
             "/fake/env/folder/GUIDANCE.txt", "w", encoding="utf-8"

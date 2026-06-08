@@ -45,13 +45,17 @@ def main() -> int:
     runner = ClaudeAgentRunner()
     with tempfile.TemporaryDirectory(prefix="catalyst-direct-smoke-") as env_folder:
         print(f"Running direct smoke task in {env_folder}", flush=True)
+        common_env = runner.build_common_environment_variables(
+            env_folder=env_folder,
+            tx_id="tx_direct_smoke",
+        )
         data, session_id, error = runner.run(
             task_id="task_direct_smoke",
             prompt=PROMPT,
             env_folder=env_folder,
-            model=MODEL,
-            tx_id="tx_direct_smoke",
             stage="direct-smoke",
+            common_environment_variables=common_env,
+            model=MODEL,
             on_session_id=on_session_id,
             on_status=on_status,
         )

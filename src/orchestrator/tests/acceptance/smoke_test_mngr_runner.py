@@ -89,12 +89,16 @@ def main() -> int:
         shutil.copy2(src_settings, os.path.join(dst_claude, "settings.json"))
 
         print(f"Running smoke task in {env_folder}")
+        common_env = runner.build_common_environment_variables(
+            env_folder=env_folder,
+            tx_id="tx_smoke",
+        )
         data, session_id, error = runner.run(
             task_id="task_smoketest",
             prompt=PROMPT,
             env_folder=env_folder,
             model=MODEL,
-            tx_id="tx_smoke",
+            common_environment_variables=common_env,
             stage="smoke",
             on_session_id=on_session_id,
             on_status=on_status,

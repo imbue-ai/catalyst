@@ -81,13 +81,17 @@ def main() -> int:
     runner = MngrAntigravityAgentRunner()
     with tempfile.TemporaryDirectory(prefix="cata-ag-smoke-") as env_folder:
         print(f"Running smoke task in {env_folder}")
+        common_env = runner.build_common_environment_variables(
+            env_folder=env_folder,
+            tx_id="tx_ag_smoke",
+        )
         data, session_id, error = runner.run(
             task_id="task_agsmoketest",
             prompt=PROMPT,
             env_folder=env_folder,
-            model=None,
-            tx_id="tx_ag_smoke",
             stage="smoke",
+            common_environment_variables=common_env,
+            model=None,
             on_session_id=on_session_id,
             on_status=on_status,
         )
