@@ -13,7 +13,6 @@ import time
 from dataclasses import dataclass, field
 from typing import Any, Callable, Dict, Generator, List, Optional, Tuple
 
-from context_manager import DEFAULT_DB_DIR
 from .base import AgentRunner, parse_json_result
 from ..state import Cancellable, register_cancellable, unregister_cancellable
 from ..utils import mngr_env
@@ -198,8 +197,8 @@ class MngrAgentRunner(AgentRunner):
         prompt: str,
         env_folder: str,
         stage: str,
+        common_environment_variables: Dict[str, str],
         model: Optional[str] = None,
-        tx_id: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
@@ -210,14 +209,8 @@ class MngrAgentRunner(AgentRunner):
         resolved_stage = stage or "step"
         agent_name = _generate_agent_name(task_id, resolved_stage)
 
-        env_vars = {
-            "UV_CACHE_DIR": os.path.join(abs_env_folder, "tmp/uv_cache"),
-            "CATALYST_DB_PATH": os.path.join(abs_env_folder, DEFAULT_DB_DIR),
-            "MPLCONFIGDIR": os.path.join(abs_env_folder, "tmp/matplotlib_cache"),
-        }
+        env_vars = common_environment_variables.copy()
         env_vars.update(self.extra_env)
-        if tx_id:
-            env_vars["CONTEXT_TRANSACTION_ID"] = tx_id
 
         labels = {
             "app": "catalyst",

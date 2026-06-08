@@ -3,7 +3,6 @@ import shlex
 import logging
 from typing import Dict, Any, Optional, Tuple, Callable
 
-from context_manager import DEFAULT_DB_DIR
 from .base import parse_json_result
 from .cli_base import BaseCliAgentRunner
 
@@ -17,19 +16,15 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
         prompt: str,
         env_folder: str,
         stage: str,  # ignored by the direct runner
+        common_environment_variables: Dict[str, str],
         model: Optional[str] = None,
-        tx_id: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
         env = os.environ.copy()
-        del env["VIRTUAL_ENV"]
-        if tx_id:
-            env["CONTEXT_TRANSACTION_ID"] = tx_id
+        env.pop("VIRTUAL_ENV", None)
+        env.update(common_environment_variables)
         abs_env_folder = os.path.abspath(env_folder)
-        env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
-        env["CATALYST_DB_PATH"] = os.path.join(abs_env_folder, DEFAULT_DB_DIR)
-        env["MPLCONFIGDIR"] = os.path.join(abs_env_folder, "tmp/matplotlib_cache")
         env["CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR"] = "1"
         env["CLAUDE_CODE_DISABLE_BACKGROUND_TASKS"] = "1"
         env["BASH_DEFAULT_TIMEOUT_MS"] = "4000000"  # > 1 hour

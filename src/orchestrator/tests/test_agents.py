@@ -45,11 +45,16 @@ class TestAgents(unittest.TestCase):
         mock_popen.return_value = mock_process
 
         runner = GeminiAgentRunner()
+        common_env = runner.build_common_environment_variables(
+            env_folder="/tmp",
+            tx_id="tx_42",
+        )
         data, session_id, error = runner.run(
             task_id="t1",
             prompt="p1",
             env_folder="/tmp",
-            tx_id="tx_42", stage="t1-stage"
+            stage="t1-stage",
+            common_environment_variables=common_env,
         )
 
         self.assertIsNone(error)
@@ -76,11 +81,16 @@ class TestAgents(unittest.TestCase):
         mock_popen.return_value = mock_process
 
         runner = ClaudeAgentRunner()
+        common_env = runner.build_common_environment_variables(
+            env_folder="/tmp",
+            tx_id="tx_99",
+        )
         data, session_id, error = runner.run(
             task_id="t1",
             prompt="p1",
             env_folder="/tmp",
-            tx_id="tx_99", stage="t1-stage"
+            stage="t1-stage",
+            common_environment_variables=common_env,
         )
 
         self.assertIsNone(error)
@@ -107,12 +117,17 @@ class TestAgents(unittest.TestCase):
         mock_popen.return_value = mock_process
 
         runner = AgyAgentRunner()
+        common_env = runner.build_common_environment_variables(
+            env_folder="/tmp",
+            tx_id="tx_101",
+        )
         data, session_id, error = runner.run(
             task_id="t1",
             prompt="p1",
             env_folder="/tmp",
-            tx_id="tx_101",
-            model="Gemini 3.5 Flash (Low)", stage="t1-stage"
+            stage="t1-stage",
+            common_environment_variables=common_env,
+            model="Gemini 3.5 Flash (Low)",
         )
 
         self.assertIsNone(error)

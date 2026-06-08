@@ -70,12 +70,16 @@ def main() -> int:
             print(f"  Agent name: {name}", flush=True)
 
         t0 = time.monotonic()
+        common_env = runner.build_common_environment_variables(
+            env_folder=env_folder,
+            tx_id="tx_parallel",
+        )
         data, session_id, error = runner.run(
             task_id="task_parallel_smoke",
             prompt=PROMPT,
             env_folder=env_folder,
             model=MODEL,
-            tx_id="tx_parallel",
+            common_environment_variables=common_env,
             stage="parallel-subagents",
             on_session_id=on_session_id,
             on_status=on_status,

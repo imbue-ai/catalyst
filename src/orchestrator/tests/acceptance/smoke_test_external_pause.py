@@ -91,13 +91,17 @@ def main() -> int:
             threading.Thread(target=stop_after_delay, daemon=True).start()
 
         t0 = time.monotonic()
+        common_env = runner.build_common_environment_variables(
+            env_folder=env_folder,
+            tx_id="tx_pause",
+        )
         data, session_id, error = runner.run(
             task_id="task_pause_smoke",
             prompt=PROMPT,
             env_folder=env_folder,
-            model=MODEL,
-            tx_id="tx_pause",
             stage="pause-smoke",
+            common_environment_variables=common_env,
+            model=MODEL,
             on_session_id=on_session_id,
             on_status=on_status,
         )

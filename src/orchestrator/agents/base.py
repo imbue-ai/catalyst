@@ -2,6 +2,8 @@ import json
 import re
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, Optional, Tuple
+import os
+from context_manager import DEFAULT_DB_DIR
 
 
 def parse_json_result(raw_result: Any) -> Optional[Dict[str, Any]]:
@@ -46,6 +48,21 @@ def parse_json_result(raw_result: Any) -> Optional[Dict[str, Any]]:
 
 
 class AgentRunner(ABC):
+    def build_common_environment_variables(
+        self,
+        env_folder: str,
+        tx_id: Optional[str] = None,
+    ) -> Dict[str, str]:
+        abs_env_folder = os.path.abspath(env_folder)
+        env = {
+            "UV_CACHE_DIR": os.path.join(abs_env_folder, "tmp/uv_cache"),
+            "CATALYST_DB_PATH": os.path.join(abs_env_folder, DEFAULT_DB_DIR),
+            "MPLCONFIGDIR": os.path.join(abs_env_folder, "tmp/matplotlib_cache"),
+        }
+        if tx_id:
+            env["CONTEXT_TRANSACTION_ID"] = tx_id
+        return env
+
     @abstractmethod
     def run(
         self,
@@ -53,8 +70,8 @@ class AgentRunner(ABC):
         prompt: str,
         env_folder: str,
         stage: str,
+        common_environment_variables: Dict[str, str],
         model: Optional[str] = None,
-        tx_id: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:

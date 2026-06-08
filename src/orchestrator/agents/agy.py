@@ -4,7 +4,6 @@ import logging
 import subprocess
 from typing import Dict, Any, Optional, Tuple, Callable
 
-from context_manager import DEFAULT_DB_DIR
 from .base import parse_json_result
 from .cli_base import BaseCliAgentRunner, make_subprocess_cancellable
 from ..state import register_cancellable, unregister_cancellable
@@ -21,8 +20,8 @@ class AgyAgentRunner(BaseCliAgentRunner):
         prompt: str,
         env_folder: str,
         stage: str,  # ignored by the direct runner
+        common_environment_variables: Dict[str, str],
         model: Optional[str] = None,
-        tx_id: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
@@ -38,11 +37,7 @@ class AgyAgentRunner(BaseCliAgentRunner):
 
         env = os.environ.copy()
         env.pop("VIRTUAL_ENV", None)
-        if tx_id:
-            env["CONTEXT_TRANSACTION_ID"] = tx_id
-        env["UV_CACHE_DIR"] = os.path.join(abs_env_folder, "tmp/uv_cache")
-        env["CATALYST_DB_PATH"] = os.path.join(abs_env_folder, DEFAULT_DB_DIR)
-        env["MPLCONFIGDIR"] = os.path.join(abs_env_folder, "tmp/matplotlib_cache")
+        env.update(common_environment_variables)
         env["AGY_CLI_DISABLE_AUTO_UPDATE"] = "true"
 
         cmd = [

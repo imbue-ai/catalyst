@@ -78,13 +78,17 @@ def main() -> int:
                 flush=True,
             )
 
+        common_env = runner.build_common_environment_variables(
+            env_folder=env_folder,
+            tx_id="tx_multiturn",
+        )
         data, session_id, error = runner.run(
             task_id="task_multiturn_smoke",
             prompt=PROMPT,
             env_folder=env_folder,
-            model=MODEL,
-            tx_id="tx_multiturn",
             stage="multi-turn",
+            common_environment_variables=common_env,
+            model=MODEL,
             on_session_id=on_session_id,
             on_status=on_status,
         )
