@@ -87,14 +87,15 @@ Your `summary.md` file must follow this structure:
 2. **Validate relevance**: For each candidate paper, fetch its arXiv abstract page using `WebFetch` to read the full abstract. Discard papers that are only superficially related. Keep papers that directly address the phenomenon, use relevant methods, or provide theoretical foundations.
 3. **Download TeX source or PDF**: For each relevant paper, try to download the TeX source and extract it:
    ```bash
-   mkdir -p "<OUTPUT_DIR>/papers/XXXX.XXXXX"
-   curl -sL "https://arxiv.org/src/XXXX.XXXXX" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX/source.tar.gz"
-   tar -xzvf "<OUTPUT_DIR>/papers/XXXX.XXXXX/source.tar.gz" -C "<OUTPUT_DIR>/papers/XXXX.XXXXX"
+   curl -L -OJ --no-progress-meter -w "%{filename_effective}\n" --output-dir "<OUTPUT_DIR>/papers" "https://arxiv.org/src/XXXX.XXXXX"
+   # If .tar.gz was downloaded:
+   mkdir "<OUTPUT_DIR>/papers/XXXX.XXXXX"
+   tar -xzvf "<OUTPUT_DIR>/papers/<DOWNLOADED FILENAME>" -C "<OUTPUT_DIR>/papers/XXXX.XXXXX"
+   # For other file endings (e.g. .gz), use the appropriate tool to extract it to "<OUTPUT_DIR>/papers/XXXX.XXXXX/"
    ```
-   Use the arXiv ID as the filename.
-   If the TeX source is not available, download the PDF instead:
+   Only if the TeX source is not available, download the PDF instead:
    ```bash
-   curl -sL "https://arxiv.org/pdf/XXXX.XXXXX.pdf" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
+   curl -L --no-progress-meter "https://arxiv.org/pdf/XXXX.XXXXX.pdf" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
    ```
 4. **Read and extract**: Read each downloaded paper. Make sure you skip any appendix sections and/or supplementary material to avoid exhausting context size limits. For each paper, extract:
    - Title and authors
