@@ -17,7 +17,7 @@
     },
     "filesystem": {
       "allowWrite": [
-        "~/.mngr-catalyst/events/mngr"
+        "~/.mngr-catalyst/agents"
       ]
     }
   },
