@@ -28,11 +28,16 @@ import tempfile
 import threading
 import time
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+sys.path.insert(
+    0,
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    ),
+)
 
 from orchestrator.agents.mngr_claude import MngrClaudeAgentRunner  # noqa: E402
 from orchestrator.agents.mngr_runner import _WAIT_TIMEOUT_SECONDS  # noqa: E402
-from orchestrator.utils import mngr_env  # noqa: E402
+from orchestrator.agents.mngr_runner import mngr_env  # noqa: E402
 
 MODEL = "claude-haiku-4-5-20251001"
 # A prompt that takes a while -- spawn 3 subagents that each report a
@@ -52,7 +57,11 @@ def main() -> int:
     runner = MngrClaudeAgentRunner()
     with tempfile.TemporaryDirectory(prefix="catalyst-pause-") as env_folder:
         src_settings = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
+            os.path.dirname(
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                )
+            ),
             "claude_skills",
             "settings.json",
         )
@@ -118,7 +127,10 @@ def main() -> int:
     WALL_TIME_CEILING = PAUSE_DELAY_S + 60.0  # generous upper bound
 
     checks = [
-        ("runner returned an error and no data after external stop", error is not None and data is None),
+        (
+            "runner returned an error and no data after external stop",
+            error is not None and data is None,
+        ),
         (
             f"runner exited within {WALL_TIME_CEILING:.0f}s of start "
             f"(not the {_WAIT_TIMEOUT_SECONDS}s wait deadline)",

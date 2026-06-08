@@ -15,7 +15,6 @@ from typing import Any, Callable, Dict, Generator, List, Optional, Tuple
 
 from .base import AgentRunner, parse_json_result
 from ..state import Cancellable, register_cancellable, unregister_cancellable
-from ..utils import mngr_env
 
 logger = logging.getLogger(__name__)
 
@@ -62,6 +61,20 @@ _TURN_END_EVENT_TYPE = "turn_end"
 # here, a fast turn could be detected as done before the conversion sees
 # the assistant_message and we'd return empty text.
 _POST_TURN_END_SECONDS = 10.0
+
+# Catalyst's isolated `mngr` host_dir, kept separate from the user's main
+# `~/.mngr` so Catalyst's agents don't mix in and the runner's `mngr` calls
+# aren't blocked by stale fields in the user's profile settings (e.g.
+# `plugins.kanpan.column_order`).
+# If you change this, also update claude_skills/settings.json to allow sandbox access to the
+# events dir under this path (used by the Claude stop hook).
+MNGR_HOST_DIR = os.path.expanduser("~/.mngr-catalyst")
+
+
+def mngr_env() -> dict[str, str]:
+    env = os.environ.copy()
+    env["MNGR_HOST_DIR"] = MNGR_HOST_DIR
+    return env
 
 
 def extract_assistant_text(event: Dict[str, Any]) -> Optional[str]:

@@ -28,10 +28,15 @@ import sys
 import tempfile
 import time
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))))
+sys.path.insert(
+    0,
+    os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    ),
+)
 
 from orchestrator.agents.mngr_claude import MngrClaudeAgentRunner  # noqa: E402
-from orchestrator.utils import mngr_env  # noqa: E402
+from orchestrator.agents.mngr_runner import mngr_env  # noqa: E402
 
 MODEL = "claude-haiku-4-5-20251001"
 NUM_SUBAGENTS = 3
@@ -49,7 +54,11 @@ def main() -> int:
     runner = MngrClaudeAgentRunner()
     with tempfile.TemporaryDirectory(prefix="catalyst-parallel-") as env_folder:
         src_settings = os.path.join(
-            os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))),
+            os.path.dirname(
+                os.path.dirname(
+                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                )
+            ),
             "claude_skills",
             "settings.json",
         )

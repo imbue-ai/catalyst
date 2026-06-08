@@ -38,7 +38,7 @@ sys.path.insert(
 )
 
 from orchestrator.agents.mngr_claude import MngrClaudeAgentRunner  # noqa: E402
-from orchestrator.utils import mngr_env  # noqa: E402
+from orchestrator.agents.mngr_runner import mngr_env  # noqa: E402
 
 MODEL = "claude-haiku-4-5-20251001"
 PROMPT = (
