@@ -220,6 +220,7 @@ def _run_step_core(task: Task, stage: str, prompt: str) -> Any:
     common_env = runner.build_common_environment_variables(
         env_folder=task.env_folder,
         tx_id=tx_id,
+        theory_scoring_weights=task.theory_scoring_weights,
     )
 
     output, session_id, error = runner.run(

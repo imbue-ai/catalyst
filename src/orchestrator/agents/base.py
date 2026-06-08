@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, Optional, Tuple
 import os
 from context_manager import DEFAULT_DB_DIR
+from ..models import TheoryScoringWeights
 
 
 def parse_json_result(raw_result: Any) -> Optional[Dict[str, Any]]:
@@ -52,6 +53,7 @@ class AgentRunner(ABC):
         self,
         env_folder: str,
         tx_id: Optional[str] = None,
+        theory_scoring_weights: Optional[TheoryScoringWeights] = None,
     ) -> Dict[str, str]:
         abs_env_folder = os.path.abspath(env_folder)
         env = {
@@ -61,6 +63,10 @@ class AgentRunner(ABC):
         }
         if tx_id:
             env["CONTEXT_TRANSACTION_ID"] = tx_id
+        if theory_scoring_weights is not None:
+            env["CATALYST_SCORING_CORRECTNESS_WEIGHT"] = str(theory_scoring_weights.correctness_weight)
+            env["CATALYST_SCORING_POWER_WEIGHT"] = str(theory_scoring_weights.power_weight)
+            env["CATALYST_SCORING_ADHERENCE_WEIGHT"] = str(theory_scoring_weights.adherence_weight)
         return env
 
     @abstractmethod
