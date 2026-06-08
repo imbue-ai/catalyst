@@ -42,9 +42,9 @@ Catalyst is *not* a good fit for:
 
 ### Why Choose Catalyst Over a Bare LLM Chat or Coding Agent?
 
-Catalyst does not replace LLM Chat interfaces or off-the-shelf coding agents. Those will remain a better fit for interactive, conversational exploration of a topic, and for any problems that don't fit the criteria mentioned above.
+Catalyst does not replace LLM Chat interfaces or off-the-shelf coding agents. Those remain a better fit for interactive, conversational exploration of a topic, and for any problems that don't fit the criteria mentioned above.
 
-While Catalyst is built on top of those same LLMs, it adds certain unique techniques that allow it to produce results beyond the capabilities of the raw model and harness:
+While Catalyst is built on top of those same LLMs, it adds unique techniques that allow it to produce results beyond the capabilities of the raw model and harness:
 
 * Catalyst implements adversarial review-refinement loops: One set of agents continuously improves the generated theory, while separate, independent agents are tasked with falsifying its statements and identifying its limits.
 * Catalyst deploys an evolution-inspired system to build a population of competing theories. The theories are repeatedly ranked against each other and checked against empirical data. The most promising theories are selected for further refinement.
