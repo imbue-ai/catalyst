@@ -4,16 +4,16 @@ import * as api from '../../api'
 
 export function StepIndicator({ status, isRunning }: { status: string | undefined, isRunning: boolean }) {
   return (
-    <div className={`absolute left-0 top-0 w-5 h-5 rounded-full border-2 bg-white z-10 transition-all ${status === 'completed' ? 'border-green-600' :
+    <div className={`absolute left-0 top-0 w-5 h-5 rounded-full border-2 bg-white z-10 transition-all flex items-center justify-center ${status === 'completed' ? 'border-green-600' :
       (isRunning || status === 'waiting') ? 'border-blue-600' :
         status === 'paused' ? 'border-yellow-500' :
           status === 'canceled' ? 'border-gray-500 bg-gray-500' :
             status === 'failed' ? 'border-red-600' : 'border-gray-200'
       } no-invert`}>
-      {status === 'canceled' && <div className="w-2 h-0.5 bg-white m-auto mt-2" />}
-      {isRunning && status !== 'waiting' && <div className="w-1 h-1 bg-blue-600 rounded-full m-auto mt-1.5 animate-ping" />}
-      {status === 'waiting' && <div className="w-1.5 h-1.5 bg-blue-600 rounded-full m-auto mt-1.5 opacity-50" />}
-      {status === 'paused' && <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full m-auto mt-1.5" />}
+      {status === 'canceled' && <div className="w-2 h-0.5 bg-white" />}
+      {isRunning && status !== 'waiting' && <div className="w-1 h-1 bg-blue-600 rounded-full animate-ping" />}
+      {status === 'waiting' && <div className="w-1.5 h-1.5 bg-blue-600 rounded-full opacity-50" />}
+      {status === 'paused' && <div className="w-1.5 h-1.5 bg-yellow-500 rounded-full" />}
     </div>
   )
 }
