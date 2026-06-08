@@ -1,5 +1,11 @@
 import argparse
 import json
+import os
+
+CORRECTNESS_WEIGHT = float(os.environ.get("CATALYST_SCORING_CORRECTNESS_WEIGHT", 0.9))
+# Weight of explanatory and predictive power score
+POWER_WEIGHT = float(os.environ.get("CATALYST_SCORING_POWER_WEIGHT", 0.7))
+ADHERENCE_WEIGHT = float(os.environ.get("CATALYST_SCORING_ADHERENCE_WEIGHT", 0.5))
 
 
 def score_type(x):
@@ -57,13 +63,19 @@ def main():
 
     args = parser.parse_args()
 
-    correctness_part = 0.1 + 0.6 * args.prediction_accuracy + 0.3 * args.soundness
-    power_part = (
-        0.3
-        + (0.4 * args.explanatory_power + 0.3 * args.prediction_coverage) * args.length
+    correctness_part = 0.6 * args.prediction_accuracy + 0.4 * args.soundness
+    weighted_correctness_part = correctness_part * CORRECTNESS_WEIGHT + (
+        1 - CORRECTNESS_WEIGHT
     )
-    adherence_part = 0.5 + 0.5 * args.adherence
-    overall_score = correctness_part * power_part * adherence_part
+    power_part = (
+        0.6 * args.explanatory_power + 0.4 * args.prediction_coverage
+    ) * args.length
+    weighted_power_part = power_part * POWER_WEIGHT + (1 - POWER_WEIGHT)
+    adherence_part = args.adherence
+    weighted_adherence_part = adherence_part * ADHERENCE_WEIGHT + (1 - ADHERENCE_WEIGHT)
+    overall_score = (
+        weighted_correctness_part * weighted_power_part * weighted_adherence_part
+    )
 
     output = {
         args.theory_id: {
