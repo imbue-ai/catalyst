@@ -26,14 +26,14 @@ harnesses_cache: Dict[str, Dict[str, Any]] = {
         "display_name": "Claude Code (mngr)",
         "available": False,
         "help_message": "Checking framework availability...",
-        "models": ["opus", "sonnet", "haiku"],
+        "models": ["fable", "opus", "sonnet", "haiku"],
     },
     "claude": {
         "name": "claude",
         "display_name": "Claude Code (claude -p)",
         "available": False,
         "help_message": "Checking framework availability...",
-        "models": ["opus", "sonnet", "haiku"],
+        "models": ["fable", "opus", "sonnet", "haiku"],
     },
     "mngr-antigravity": {
         "name": "mngr-antigravity",
