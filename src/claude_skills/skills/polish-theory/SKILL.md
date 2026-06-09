@@ -45,8 +45,8 @@ Your `theory.md` file must be a fully self-contained, updated version of the ori
 
 Follow these guidelines when writing the polished theory:
 - Start with a brief definition of the phenomenon and provide any necessary context, including a brief summary of the relevant literature.
-- Then, provide a short intuitive explanation of your theory and how it explains the phenomenon. In the sections afterwards, follow up with rigorous mathematical statements or empirical observations to substantiate the intuition.
-- Structure the rigorous part of your theory into a set of precise definitions, conjectures, observations, lemmas and theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally prove it! Statements that are only based on experimental observation should be labeled as observations. Later statements can build on earlier ones.
+- Then, provide a highly concise "key insights" summary of your theory. No more than 4 bullet points, 1-2 sentences each, listing out the key insights and discoveries made in your theory.
+- Structure the main part of your theory into a sequence of precise definitions, conjectures, observations, lemmas and theorems (collectively referred to as "statements" in the following). Only call something a lemma or theorem if you can formally prove it! Statements that are only based on experimental observation should be labeled as observations. Later statements can build on earlier ones.
 - Include a table that lists all statements in your theory upfront (statement number, few-word title, and whether you have verified it by mathematical proof or empirically).
 - Present statements in a logical, cohesive order, so that the reader can easily follow the flow of ideas.
 - Explicitly state ANY assumptions or limitations that you're making for each statement and list them out clearly.
