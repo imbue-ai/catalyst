@@ -4,13 +4,11 @@ import logging
 import subprocess
 from typing import Dict, Any, Optional, Tuple, Callable
 
-from .base import parse_json_result
+from .base import AGENT_TIMEOUT_SECS, parse_json_result
 from .cli_base import BaseCliAgentRunner, make_subprocess_cancellable
 from ..state import register_cancellable, unregister_cancellable
 
 logger = logging.getLogger(__name__)
-
-PRINT_TIMEOUT = "6h"
 
 
 class AgyAgentRunner(BaseCliAgentRunner):
@@ -44,7 +42,7 @@ class AgyAgentRunner(BaseCliAgentRunner):
             "agy",
             "--sandbox",
             "--print-timeout",
-            PRINT_TIMEOUT,
+            f"{AGENT_TIMEOUT_SECS}s",
             "--add-dir",
             abs_env_folder,
         ]

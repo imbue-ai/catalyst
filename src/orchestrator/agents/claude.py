@@ -3,7 +3,7 @@ import shlex
 import logging
 from typing import Dict, Any, Optional, Tuple, Callable
 
-from .base import parse_json_result
+from .base import EXPERIMENT_TIMEOUT_SECS, parse_json_result
 from .cli_base import BaseCliAgentRunner
 
 logger = logging.getLogger(__name__)
@@ -25,10 +25,13 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
         env.pop("VIRTUAL_ENV", None)
         env.update(common_environment_variables)
         abs_env_folder = os.path.abspath(env_folder)
+        bash_timeout_ms = (
+            EXPERIMENT_TIMEOUT_SECS * 1000 + 5 * 60 * 1000
+        )  # The experiment timeout in milliseconds plus a 5 minute safety buffer.
         env["CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR"] = "1"
         env["CLAUDE_CODE_DISABLE_BACKGROUND_TASKS"] = "1"
-        env["BASH_DEFAULT_TIMEOUT_MS"] = "4000000"  # > 1 hour
-        env["BASH_MAX_TIMEOUT_MS"] = "4000000"  # > 1 hour
+        env["BASH_DEFAULT_TIMEOUT_MS"] = str(bash_timeout_ms)
+        env["BASH_MAX_TIMEOUT_MS"] = str(bash_timeout_ms)
 
         cmd = [
             "claude",

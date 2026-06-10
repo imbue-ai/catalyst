@@ -3,7 +3,7 @@ import shlex
 import logging
 from typing import Dict, Any, Optional, Tuple, Callable
 
-from .base import parse_json_result
+from .base import AGENT_TIMEOUT_SECS, parse_json_result
 from .cli_base import BaseCliAgentRunner
 
 logger = logging.getLogger(__name__)
@@ -39,7 +39,7 @@ class CodexAgentRunner(BaseCliAgentRunner):
             "-c",
             "sandbox_workspace_write.network_access=true",
             "-c",
-            "agents.job_max_runtime_seconds=21600",
+            f"agents.job_max_runtime_seconds={AGENT_TIMEOUT_SECS}",
             "-c",
             "agents.max_threads=50",
         ]

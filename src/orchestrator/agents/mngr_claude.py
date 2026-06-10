@@ -1,14 +1,18 @@
+from orchestrator.agents.base import EXPERIMENT_TIMEOUT_SECS
+
 from .mngr_runner import MngrAgentRunner, TurnCompletion
 
 # Per-tool permission prompts are auto-allowed by the mngr_claude plugin's
 # `PermissionRequest` hook when `auto_allow_permissions = true` (see
-# `.mngr/settings.toml`). The friction-log instruction lives in
-# `BASE_CLAUDE_MD` (auto-loaded by Claude from the work_dir's `CLAUDE.md`),
-# so the runner contributes nothing more than `--model` and the model name.
+# `.mngr/settings.toml`).
 
 
 class MngrClaudeAgentRunner(MngrAgentRunner):
     def __init__(self) -> None:
+        bash_timeout_ms = (
+            EXPERIMENT_TIMEOUT_SECS * 1000 + 5 * 60 * 1000
+        )  # The experiment timeout in milliseconds plus a 5 minute safety buffer.
+
         super().__init__(
             agent_type="claude",
             framework="mngr-claude",
@@ -31,9 +35,8 @@ class MngrClaudeAgentRunner(MngrAgentRunner):
                 # the cwd for the next one. Matches the direct claude runner.
                 "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1",
                 # Bump bash timeouts well past Claude Code's defaults so a
-                # long-running research command (training script, benchmark,
-                # etc.) doesn't get killed mid-step. >1 hour each.
-                "BASH_DEFAULT_TIMEOUT_MS": "4000000",
-                "BASH_MAX_TIMEOUT_MS": "4000000",
+                # long-running experiment doesn't get killed mid-step.
+                "BASH_DEFAULT_TIMEOUT_MS": str(bash_timeout_ms),
+                "BASH_MAX_TIMEOUT_MS": str(bash_timeout_ms),
             },
         )

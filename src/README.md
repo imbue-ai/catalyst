@@ -40,6 +40,8 @@ The system can be configured using the following environment variables:
 
 - `CATALYST_PATH`: The base directory where state and research environments are stored. Defaults to `~/catalyst-research`.
 - `CATALYST_MAX_CONCURRENCY_PER_TASK`: The maximum number of concurrent agent steps per task. Defaults to `3`. Some steps (e.g. `review-theory`) will consume more than one unit, as they utilize subagents internally.
+- `CATALYST_EXPERIMENT_TIMEOUT_SECS`: Maximum duration for a single experiment run by a research agent, in seconds. Defaults to `1800` (30 minutes).
+- `CATALYST_EXPERIMENT_RLIMIT_AS`: Maximum virtual memory that a single experiment can allocate, in bytes. Defaults to `12884901888` (12 GiB).
 
 ## Usage
 

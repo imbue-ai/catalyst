@@ -7,6 +7,15 @@ from context_manager import DEFAULT_DB_DIR
 from ..models import TheoryScoringWeights
 
 
+EXPERIMENT_TIMEOUT_SECS = int(os.getenv("CATALYST_EXPERIMENT_TIMEOUT_SECS", 30 * 60))
+EXPERIMENT_RLIMIT_AS = int(
+    os.getenv("CATALYST_EXPERIMENT_RLIMIT_AS", 12 * 1024 * 1024 * 1024)
+)
+AGENT_TIMEOUT_SECS = (
+    16 * EXPERIMENT_TIMEOUT_SECS + 60 * 60
+)  # 16x the experiment timeout plus 1 hour
+
+
 def parse_json_result(raw_result: Any) -> Optional[Dict[str, Any]]:
     """Extract a JSON object out of an agent's freeform final assistant text.
 
@@ -64,9 +73,17 @@ class AgentRunner(ABC):
         if tx_id:
             env["CONTEXT_TRANSACTION_ID"] = tx_id
         if theory_scoring_weights is not None:
-            env["CATALYST_SCORING_CORRECTNESS_WEIGHT"] = str(theory_scoring_weights.correctness_weight)
-            env["CATALYST_SCORING_POWER_WEIGHT"] = str(theory_scoring_weights.power_weight)
-            env["CATALYST_SCORING_ADHERENCE_WEIGHT"] = str(theory_scoring_weights.adherence_weight)
+            env["CATALYST_SCORING_CORRECTNESS_WEIGHT"] = str(
+                theory_scoring_weights.correctness_weight
+            )
+            env["CATALYST_SCORING_POWER_WEIGHT"] = str(
+                theory_scoring_weights.power_weight
+            )
+            env["CATALYST_SCORING_ADHERENCE_WEIGHT"] = str(
+                theory_scoring_weights.adherence_weight
+            )
+            env["CATALYST_EXPERIMENT_TIMEOUT_SECS"] = str(EXPERIMENT_TIMEOUT_SECS)
+            env["CATALYST_EXPERIMENT_RLIMIT_AS"] = str(EXPERIMENT_RLIMIT_AS)
         return env
 
     @abstractmethod
