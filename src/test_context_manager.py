@@ -412,6 +412,146 @@ class TestContextManager(unittest.TestCase):
         self.assertIn("organisms", population)
         self.assertEqual(len(population["organisms"]), 1)
 
+    def test_summarize_research(self):
+        """Verify context population and storage for summarize-research."""
+        self.run_cmd("init")
+
+        # 1. Helper to store a theory
+        def store_t(name, parent=None):
+            d = self.test_dir / f"theory_{name}"
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "theory.md").write_text(f"Theory content for {name}")
+            args = [
+                "store_results",
+                "--from_agent_type",
+                "write-theory",
+                "--from_folder",
+                str(d),
+            ]
+            if parent:
+                args += ["--parent_theory", parent]
+            res = self.run_cmd(*args)
+            return res.stdout.strip().split()[-1]
+
+        # 2. Helper to store a review
+        def store_r(agent_type, t_id):
+            d = self.test_dir / f"review_{agent_type}_{t_id}"
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "review.md").write_text(f"Review by {agent_type} for {t_id}")
+            res = self.run_cmd(
+                "store_results",
+                "--from_agent_type",
+                agent_type,
+                "--from_folder",
+                str(d),
+                "--parent_theory",
+                t_id,
+            )
+            return res.stdout.strip().split()[-1]
+
+        # Seed theories
+        t1 = store_t("T1") # Will have score 0.9, is_leaf_node=True
+        t2 = store_t("T2") # Will have score 0.1, is_leaf_node=False
+        t3 = store_t("T3") # Will have score 0.0, is_leaf_node=True
+        t4 = store_t("T4") # Will have score 0.0, is_leaf_node=False (has child t7)
+        t5 = store_t("T5") # Will have score None, is_leaf_node=True
+        t6 = store_t("T6") # Will have score None, is_leaf_node=False (has child t8)
+
+        # Store children to make t4 and t6 non-leaf nodes
+        t7 = store_t("T7", parent=t4)
+        t8 = store_t("T8", parent=t6)
+
+        # Add reviews to create leaf node structure or just satisfy requirements
+        r1_falsify = store_r("falsify-hypothesis", t1)
+        r1_adherence = store_r("review-adherence", t1)
+        # Note: suggest-expansions reviews should NOT be copied under reviews/
+        r1_suggest = store_r("suggest-expansions", t1)
+
+        store_r("falsify-hypothesis", t3)
+        store_r("falsify-hypothesis", t5)
+
+        # Rescore theories to set explicit scores and leaf node statuses in the population
+        scores = {
+            t1: {"score": 0.9, "is_viable": True},
+            t2: {"score": 0.1, "is_viable": True},
+            t3: {"score": 0.0, "is_viable": True},
+            t4: {"score": 0.0, "is_viable": True},
+            t5: {"score": None, "is_viable": True},
+            t7: {"score": 0.0, "is_viable": True},
+            t8: {"score": None, "is_viable": True},
+        }
+        self.run_cmd("rescore_theories", json.dumps(scores))
+
+        # 3. Create context for summarize-research
+        target_folder = self.test_dir / "summarize_context"
+        self.run_cmd(
+            "create_context",
+            "--for_agent_type",
+            "summarize-research",
+            "--target_folder",
+            str(target_folder),
+        )
+
+        self.assertTrue(target_folder.is_dir())
+        theory_list_file = target_folder / "theory_list.json"
+        self.assertTrue(theory_list_file.is_file())
+
+        top_theories = json.loads(theory_list_file.read_text())
+        top_ids = [t["id"] for t in top_theories]
+
+        # Verify filtering and descending score order:
+        # Expected: T1 (0.9), T2 (0.1), and then leaf nodes T3 (0.0) and T5 (None)
+        # Excluded: T4 (0.0, not leaf) and T6 (None, not leaf)
+        self.assertIn(t1, top_ids)
+        self.assertIn(t2, top_ids)
+        self.assertIn(t3, top_ids)
+        self.assertIn(t5, top_ids)
+        self.assertNotIn(t4, top_ids)
+        self.assertNotIn(t6, top_ids)
+
+        # Verify sort order: T1 first, then T2
+        self.assertEqual(top_ids[0], t1)
+        self.assertEqual(top_ids[1], t2)
+
+        # Verify that directories for T1, T2, T3, T5 exist
+        for tid in [t1, t2, t3, t5]:
+            self.assertTrue((target_folder / "theories" / tid).is_dir())
+            self.assertTrue((target_folder / "theories" / tid / "theory.md").is_file())
+
+        # Verify T1 reviews subfolder contents
+        t1_reviews_dir = target_folder / "theories" / t1 / "reviews"
+        self.assertTrue(t1_reviews_dir.is_dir())
+        # Should copy falsify-hypothesis and review-adherence
+        self.assertTrue((t1_reviews_dir / r1_falsify / "review.md").is_file())
+        self.assertTrue((t1_reviews_dir / r1_adherence / "review.md").is_file())
+        # Should NOT copy suggest-expansions review
+        self.assertFalse((t1_reviews_dir / r1_suggest).exists())
+
+        # 4. Test storing summarize-research results (summary.md)
+        summary_src = self.test_dir / "summary_src"
+        summary_src.mkdir(parents=True, exist_ok=True)
+        (summary_src / "summary.md").write_text("# Research Summary Report\nThis is a summary.")
+
+        res_store = self.run_cmd(
+            "store_results",
+            "--from_agent_type",
+            "summarize-research",
+            "--from_folder",
+            str(summary_src),
+        )
+        s_id = res_store.stdout.strip().split()[-1]
+        self.assertTrue(s_id.startswith("S_"))
+
+        # Check metadata
+        meta_file = self.db_path / "summary" / s_id / "metadata.json"
+        self.assertTrue(meta_file.is_file())
+        meta = json.loads(meta_file.read_text())
+        self.assertEqual(meta["id"], s_id)
+        self.assertEqual(meta["category"], "summary")
+        self.assertEqual(meta["agent_type"], "summarize-research")
+        self.assertEqual(meta["headline"], "Research Summary Report")
+        self.assertIsNone(meta.get("parent_theory"))
+
 
 if __name__ == "__main__":
     unittest.main()

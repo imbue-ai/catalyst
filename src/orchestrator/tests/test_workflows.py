@@ -95,5 +95,6 @@ class TestDevelopTheoryLinearWorkflow(unittest.TestCase):
             "T1",
             "L1",
             apply_expansions=None,
-            max_refinements=3
+            max_refinements=3,
+            generate_intermediate_research_summaries=False
         )

@@ -4,6 +4,7 @@ from ..base import run_step_if_needed
 from orchestrator.prompts import (
     get_review_theory_prompt,
     get_refine_theory_prompt,
+    get_summarize_research_prompt,
 )
 
 def run_refinement_loop(
@@ -14,9 +15,18 @@ def run_refinement_loop(
     apply_expansions: Optional[str],
     max_refinements: int,
     stage_prefix: str = "",
+    generate_intermediate_research_summaries: bool = False,
 ) -> str:
     i = 1
     while i <= max_refinements:
+        if generate_intermediate_research_summaries:
+            run_step_if_needed(
+                task,
+                run_step_fn,
+                f"{stage_prefix}summarize-research-{i}",
+                get_summarize_research_prompt(),
+            )
+
         # Review
         review_data = run_step_if_needed(
             task,
@@ -25,6 +35,7 @@ def run_refinement_loop(
             get_review_theory_prompt(theory_id),
             cost=3,
         )
+
 
         if not review_data:
             raise Exception(f"Theory review for iteration {i} failed.")

@@ -18,7 +18,8 @@ Generates and evolves multiple theories in parallel for a given phenomenon.
     3.  `write-n-theories`: Generates the specified number of initial theories.
     4.  `review-theory`: Reviews each generated theory.
     5.  `score-theories`: Ranks and scores the theories.
-    6.  `evolve-loop`: Repeatedly samples, mutates, reviews, and re-scores theories.
+    6.  `evolve-loop`: Repeatedly samples, mutates, reviews, and re-scores theories (with optional intermediate `summarize-research` steps).
+    7.  `summarize-research`: Summarizes the current research status.
 
 ### `develop-theory-linear`
 Generates a single theory and refines it iteratively.
@@ -29,7 +30,8 @@ Generates a single theory and refines it iteratively.
     1.  `summarize-title`: Summarizes the phenomenon.
     2.  `literature-review` & `explore` (parallel): Gathers background and explores.
     3.  `write-theory`: Generates an initial theory.
-    4.  `refinement-loop`: Iteratively reviews and refines the theory.
+    4.  `refinement-loop`: Iteratively reviews and refines the theory (with optional intermediate `summarize-research` steps).
+    5.  `summarize-research`: Summarizes the current research status.
 
 ### `refine-theory-idea`
 Starts with a specific scientific idea and evolves it into a scored theory.
@@ -42,7 +44,8 @@ Starts with a specific scientific idea and evolves it into a scored theory.
     2.  `support-idea`: Develops the initial idea into a theory.
     3.  `review-theory`: Reviews the theory.
     4.  `score-theories`: Scores the theory.
-    5.  `evolve-loop`: Evolves the theory.
+    5.  `evolve-loop`: Evolves the theory (with optional intermediate `summarize-research` steps).
+    6.  `summarize-research`: Summarizes the current research status.
 
 ### `refine-theory-idea-linear`
 Starts with a specific idea and refines it iteratively.
@@ -53,7 +56,8 @@ Starts with a specific idea and refines it iteratively.
 - **Stages**:
     1.  `summarize-title`: Summarizes the idea.
     2.  `support-idea`: Develops the idea into a theory.
-    3.  `refinement-loop`: Iteratively reviews and refines the theory.
+    3.  `refinement-loop`: Iteratively reviews and refines the theory (with optional intermediate `summarize-research` steps).
+    4.  `summarize-research`: Summarizes the current research status.
 
 ### `import-theory`
 Imports an existing theory from a file into the system.
@@ -85,3 +89,4 @@ Add-ons are individual steps that can be added to a task or run as part of a loo
 | `edit-theory` | Directly edits a theory. | `theory_id` |
 | `score-theories` | Assigns scores and ranks to theories. | `theory_ids` |
 | `write-different-theory` | Writes a theory exploring a different approach than the provided previous theories. | `theory_ids`, `lit_review_id` (optional) |
+| `summarize-research` | Summarizes the current research status. | None |

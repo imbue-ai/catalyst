@@ -54,6 +54,7 @@ AGENT_TYPE_MAP: dict[str, str] = {
     "import-theory": "theory",
     "run-experiment": "experiment",
     "predict-experiments": "prediction",
+    "summarize-research": "summary",
 }
 
 CATEGORY_MD_MAP: dict[str, str] = {
@@ -63,6 +64,7 @@ CATEGORY_MD_MAP: dict[str, str] = {
     "review": "review.md",
     "experiment": "description.md",
     "prediction": "predictions.md",
+    "summary": "summary.md",
 }
 
 ID_PREFIXES: dict[str, str] = {
@@ -72,6 +74,7 @@ ID_PREFIXES: dict[str, str] = {
     "review": "R",
     "experiment": "X",
     "prediction": "P",
+    "summary": "S",
 }
 
 PREFIX_TO_CATEGORY: dict[str, str] = {v: k for k, v in ID_PREFIXES.items()}
@@ -83,6 +86,7 @@ VALID_CATEGORIES: tuple[str, ...] = (
     "review",
     "experiment",
     "prediction",
+    "summary",
 )
 
 DEFAULT_DB_DIR = ".ai-scientist-db"
@@ -679,6 +683,8 @@ def _validate_create_context_args(
             raise ValueError(
                 f"At least one --from_theory is required for {for_agent_type}"
             )
+    elif for_agent_type == "summarize-research":
+        pass
     else:
         raise ValueError(f"Unknown target agent type {for_agent_type!r}.")
 
@@ -835,6 +841,39 @@ def create_context(
                     copy_artifact(
                         db_root / "review" / data["id"], reviews_root / data["id"]
                     )
+        elif for_agent_type == "summarize-research":
+            all_theories = list_entries("theory", sort_by="score")
+            all_theories.reverse()
+
+            filtered_theories = []
+            for t in all_theories:
+                score = t.get("score")
+                is_leaf = t.get("is_leaf_node", False)
+                if (score is not None and score != 0.0) or is_leaf:
+                    filtered_theories.append(t)
+
+            top_10 = filtered_theories[:10]
+
+            theory_list_path = target_folder / "theory_list.json"
+            theory_list_path.write_text(json.dumps(top_10, indent=2) + "\n")
+
+            theories_root = target_folder / "theories"
+            theories_root.mkdir(parents=True, exist_ok=True)
+            for t in top_10:
+                tid = t["id"]
+                t_dir = theories_root / tid
+                copy_artifact(db_root / "theory" / tid, t_dir)
+
+                reviews_root = t_dir / "reviews"
+                reviews_root.mkdir(parents=True, exist_ok=True)
+
+                for _, r_data in session.iter_metadata("review"):
+                    if (
+                        r_data.get("parent_theory") == tid
+                        and r_data.get("agent_type") in ("falsify-hypothesis", "review-adherence")
+                    ):
+                        rid = r_data["id"]
+                        copy_artifact(db_root / "review" / rid, reviews_root / rid)
 
 
 def fetch_experiment(
@@ -1231,6 +1270,7 @@ def main(argv: list[str] | None = None) -> None:
             "streamline-theory",
             "search-literature",
             "write-different-theory",
+            "summarize-research",
         ],
         help="Type of agent to prepare context for",
     )

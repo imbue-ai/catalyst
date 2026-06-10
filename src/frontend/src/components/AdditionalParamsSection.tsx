@@ -40,6 +40,10 @@ interface AdditionalParamsSectionProps {
   adherenceWeight?: number;
   setAdherenceWeight?: (v: number) => void;
 
+  showGenerateIntermediateResearchSummaries?: boolean;
+  generateIntermediateResearchSummaries?: boolean;
+  setGenerateIntermediateResearchSummaries?: (v: boolean) => void;
+
   // Option to restrict widths like in CreateAddonModal (e.g., md:w-1/3)
   useRestrictedWidths?: boolean;
   children?: React.ReactNode;
@@ -84,6 +88,10 @@ export function AdditionalParamsSection({
 
   adherenceWeight,
   setAdherenceWeight,
+
+  showGenerateIntermediateResearchSummaries,
+  generateIntermediateResearchSummaries,
+  setGenerateIntermediateResearchSummaries,
 
   useRestrictedWidths = false,
   children,
@@ -191,6 +199,22 @@ export function AdditionalParamsSection({
           </select>
         </div>
       )}
+
+      {showGenerateIntermediateResearchSummaries && setGenerateIntermediateResearchSummaries && (
+        <div className={useRestrictedWidths ? "w-full md:w-2/3 flex items-center gap-2 pt-4" : "col-span-1 md:col-span-2 flex items-center gap-2 pt-4"}>
+          <input
+            id="generate-intermediate-summaries"
+            type="checkbox"
+            checked={generateIntermediateResearchSummaries}
+            onChange={e => setGenerateIntermediateResearchSummaries(e.target.checked)}
+            className="w-4 h-4 accent-black cursor-pointer border-2 border-black"
+          />
+          <label htmlFor="generate-intermediate-summaries" className="text-xs font-bold text-black cursor-pointer select-none">
+            Generate Intermediate Research Summaries
+          </label>
+        </div>
+      )}
+
       {showScoringWeights && (
         <div className="col-span-full border-t border-dashed border-gray-200 pt-6 mt-2">
           <h4 className="text-xs font-black tracking-widest text-black mb-4">Theory Scoring Weights</h4>

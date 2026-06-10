@@ -19,6 +19,8 @@ import { CreateAddonModal } from './CreateAddonModal'
 import { TheoriesList } from './TheoriesList'
 import { ExperimentsList } from './ExperimentsList'
 import { EditGuidanceModal } from './EditGuidanceModal'
+import { SummaryTab } from './SummaryTab'
+
 
 interface TaskDetailProps {
   task: api.Task;
@@ -30,12 +32,28 @@ interface TaskDetailProps {
 
 export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh, isBackendDown }: TaskDetailProps) {
   const [selectedStage, setSelectedStage] = useState<string | null>(null)
-  const [activeRightTab, setActiveRightTab] = useState<'stepDetails' | 'topTheories' | 'experiments'>('stepDetails')
+  const [activeRightTab, setActiveRightTab] = useState<'summary' | 'stepDetails' | 'topTheories' | 'experiments'>('summary')
   const [isProcessing, setIsProcessing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAddonModal, setShowAddonModal] = useState(false)
   const [showGuidanceModal, setShowGuidanceModal] = useState(false)
+  const [pendingGuidanceAppend, setPendingGuidanceAppend] = useState<string | null>(null)
   const copyTimeoutRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    const handleAddToGuidance = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const value = customEvent.detail?.value;
+      if (value) {
+        setPendingGuidanceAppend(value);
+        setShowGuidanceModal(true);
+      }
+    };
+    window.addEventListener('add-to-guidance', handleAddToGuidance);
+    return () => {
+      window.removeEventListener('add-to-guidance', handleAddToGuidance);
+    };
+  }, []);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -139,7 +157,10 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
 
               <button
                 disabled={isProcessing}
-                onClick={() => setShowGuidanceModal(true)}
+                onClick={() => {
+                  setPendingGuidanceAppend(null);
+                  setShowGuidanceModal(true);
+                }}
                 className="border-2 border-black text-black px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
                 <Compass size={12} /> Provide Guidance
@@ -260,6 +281,15 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
         <div className="w-1/2 flex flex-col h-full border-l border-black bg-gray-50/50">
           <div className="flex border-b-2 border-black bg-white">
             <button
+              onClick={() => setActiveRightTab('summary')}
+              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'summary'
+                ? 'bg-black text-white'
+                : 'text-black hover:bg-gray-100'
+                }`}
+            >
+              Summary
+            </button>
+            <button
               onClick={() => setActiveRightTab('stepDetails')}
               className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'stepDetails'
                 ? 'bg-black text-white'
@@ -289,7 +319,9 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
           </div>
 
           <div className="flex-1 overflow-hidden flex flex-col">
-            {activeRightTab === 'topTheories' ? (
+            {activeRightTab === 'summary' ? (
+              <SummaryTab taskId={task.id} />
+            ) : activeRightTab === 'topTheories' ? (
               <TheoriesList taskId={task.id} />
             ) : activeRightTab === 'experiments' ? (
               <ExperimentsList taskId={task.id} />
@@ -443,12 +475,24 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
 
       {showGuidanceModal && (
         <EditGuidanceModal
-          onClose={() => setShowGuidanceModal(false)}
-          initialGuidance={task.guidance || "No additional guidance."}
+          onClose={() => {
+            setShowGuidanceModal(false)
+            setPendingGuidanceAppend(null)
+          }}
+          initialGuidance={(() => {
+            const baseGuidance = task.guidance || "";
+            if (pendingGuidanceAppend) {
+              return baseGuidance ? `${baseGuidance}\n${pendingGuidanceAppend}` : pendingGuidanceAppend;
+            }
+            return task.guidance || "";
+          })() as string}
           initialWeights={task.theory_scoring_weights}
+          newlyAddedText={pendingGuidanceAppend}
           onSave={async (newGuidance, newWeights) => {
             await api.updateGuidance(task.id, newGuidance, newWeights)
             onRefresh()
+            setShowGuidanceModal(false)
+            setPendingGuidanceAppend(null)
           }}
         />
       )}

@@ -25,6 +25,7 @@ export function useWorkflowParams() {
   const [correctnessWeight, setCorrectnessWeight] = useState(DEFAULT_CORRECTNESS_WEIGHT)
   const [powerWeight, setPowerWeight] = useState(DEFAULT_POWER_WEIGHT)
   const [adherenceWeight, setAdherenceWeight] = useState(DEFAULT_ADHERENCE_WEIGHT)
+  const [generateIntermediateResearchSummaries, setGenerateIntermediateResearchSummaries] = useState(true)
 
   return {
     numRootTheories,
@@ -48,6 +49,8 @@ export function useWorkflowParams() {
     powerWeight,
     setPowerWeight,
     adherenceWeight,
-    setAdherenceWeight
+    setAdherenceWeight,
+    generateIntermediateResearchSummaries,
+    setGenerateIntermediateResearchSummaries
   }
 }

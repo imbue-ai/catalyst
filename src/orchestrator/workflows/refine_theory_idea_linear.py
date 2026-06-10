@@ -2,7 +2,7 @@ from typing import Any, Callable, List, Dict
 from ..models import Task
 from .base import Workflow, run_step_if_needed
 from .common import run_refinement_loop, run_summarize_title, get_active_max_iterations
-from orchestrator.prompts import get_support_idea_prompt
+from orchestrator.prompts import get_support_idea_prompt, get_summarize_research_prompt
 
 class RefineTheoryIdeaLinearWorkflow(Workflow):
     @property
@@ -19,16 +19,27 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
         ]
 
         if max_iters > 0:
+            base_stages = ["review-theory", "refine-theory"]
+            generate_summaries = task.workflow_inputs.get("generate_intermediate_research_summaries")
+            if generate_summaries is None:
+                generate_summaries = task.generate_summary
+            if generate_summaries:
+                base_stages.insert(0, "summarize-research")
+
             structure.append(
                 {
                     "type": "loop",
                     "name": "Refinement Loop",
-                    "base_stages": ["review-theory", "refine-theory"],
+                    "base_stages": base_stages,
                     "iterations": max_iters,
                 }
             )
 
+        if task.generate_summary:
+            structure.append({"type": "step", "stage": "summarize-research"})
+
         return structure
+
 
     def run(self, task: Task, run_step: Callable) -> None:
         self.init_db(task)
@@ -58,6 +69,10 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
         if theory_id:
             # Step 2: Iterative Review and Refinement
             max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
+            generate_summaries = task.workflow_inputs.get("generate_intermediate_research_summaries")
+            if generate_summaries is None:
+                generate_summaries = task.generate_summary
+
             run_refinement_loop(
                 task,
                 run_step,
@@ -65,4 +80,14 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
                 lit_review_id=None,
                 apply_expansions=apply_expansions,
                 max_refinements=max_refinements,
+                generate_intermediate_research_summaries=generate_summaries,
             )
+
+        if task.generate_summary:
+            run_step_if_needed(
+                task,
+                run_step,
+                "summarize-research",
+                get_summarize_research_prompt(),
+            )
+

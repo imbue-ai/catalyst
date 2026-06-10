@@ -7,7 +7,7 @@ interface DataSectionProps {
   taskId?: string;
 }
 
-const ARTIFACT_REGEX = /^[ELTRXP]_\d{8}_\d{6}_[a-f0-9]{6}$/;
+const ARTIFACT_REGEX = /^[ELTRXPS]_\d{8}_\d{6}_[a-f0-9]{6}$/;
 
 function renderJsonValue(val: any, taskId?: string): React.ReactNode {
   if (typeof val === 'string') {

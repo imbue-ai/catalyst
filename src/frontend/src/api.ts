@@ -27,6 +27,7 @@ export interface Addon {
   hypothesis_title?: string;
   instruction?: string;
   lit_review_id?: string;
+  generate_intermediate_research_summaries?: boolean;
 }
 
 export interface TheoryScoringWeights {
@@ -80,6 +81,13 @@ export interface ExperimentArtifact {
   created_at?: string;
   extra?: Record<string, string>;
 }
+
+export interface SummaryArtifact {
+  id: string;
+  headline?: string;
+  created_at?: string;
+}
+
 
 export interface TaskShallow {
   id: string;
@@ -176,6 +184,13 @@ export async function getExperiments(id: string): Promise<ExperimentArtifact[]> 
   if (!res.ok) throw new Error("Failed to get experiments");
   return res.json();
 }
+
+export async function getSummaries(id: string): Promise<SummaryArtifact[]> {
+  const res = await fetch(`${API_BASE}/tasks/${id}/summaries`);
+  if (!res.ok) throw new Error("Failed to get summaries");
+  return res.json();
+}
+
 
 export async function getTemplates(): Promise<string[]> {
   const res = await fetch(`${API_BASE}/templates`);
