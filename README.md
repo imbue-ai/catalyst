@@ -94,6 +94,7 @@ Additional information can be found in the following guides:
 
 - [Setup](src/README.md): Prerequisites, setup & troubleshooting instructions.
 - [Quickstart Guide](src/docs/quickstart.md): An overview of the system structure and how to run you research.
+- [Mid-Research Steering](src/docs/steering.md): How to steer the direction of an ongoing research task
 - [Workflows and Add-ons](src/docs/workflow.md): A reference for all primary workflows and individual add-on steps.
 - [CLI Agent Usage](src/docs/cli.md): Instructions for using AI Scientist skills directly within a CLI agent.
 
