@@ -61,7 +61,7 @@ Your `summary.md` file MUST be formatted exactly as follows:
 - ... (typically 2-4 bullet points in total, collected across all selected theories)
 
 ## Direction
-[Summarize current research task and guidance based on the phenomenon/guidance files]
+[Summarize the direction that has been taken so far, given the selected theories, in 2-3 sentences.]
 
 ### Suggested Steering Questions
 #### Q1: [Question title, e.g., Focus my research on A, B, or C?]
