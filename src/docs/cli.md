@@ -78,11 +78,11 @@ All Catalyst skills will internally utilize the context manager to retrieve cont
 All results are stored in the `.ai-scientist-db` directory:
 
 - `exploration/`: Reports from the `explore` skill.
-- `literature/`: Summaries from `literature-review`.
+- `literature/`: Literature summaries and papers from `literature-review`.
 - `theory/`: Markdown theory files (`theory.md`) and associated artifacts.
 - `review/`: Critical evaluations and falsification reports.
 - `experiment/`: Descriptions and results of experiments.
 - `prediction/`: Predicted outcomes of experiments.
-- `summaries/`: Summaries from the `summarize-research` skill.
+- `summary/`: Research summary reports from the `summarize-research` skill.
 
 Each entry is stored in a subdirectory named after its unique ID and contains a markdown file and a `metadata.json` file.
