@@ -68,19 +68,17 @@ For tasks created with the `mngr-claude` / `mngr-antigravity` frameworks, `mngr`
 
 ## Cleanup
 
-Deleting a task from the dashboard removes its env_folder and cancels any running step. **Per-session state outside the env_folder is preserved** for every framework — this is intentional so transcripts remain inspectable after a task is gone, and it matches the underlying CLI's own behavior:
+Deleting a task from the dashboard removes its env_folder and cancels any running step. However, agent transcripts are still preserved by the respective agent framework.
 
-- The direct `gemini` / `claude` runners leave their session JSONLs under `~/.gemini/` and `~/.claude/projects/<sanitized-env-folder>/<session_id>.jsonl` respectively. The direct `agy` runner leaves agy's per-conversation logs under `~/.gemini/antigravity-cli/`. Each CLI auto-prunes its session data on its own schedule (Claude Code defaults to a 30-day retention; Gemini CLI prunes similarly), so they're not committed-forever clutter.
+- The direct `gemini` / `claude` runners leave their session JSONLs under `~/.gemini/` and `~/.claude/projects/<sanitized-env-folder>/<session_id>.jsonl` respectively. The direct `agy` runner leaves agy's per-conversation logs under `~/.gemini/antigravity-cli/`. Each CLI auto-prunes its session data on its own schedule.
 - `mngr-claude` / `mngr-antigravity` leave the agent's transcript + work_dir under `~/.mngr-catalyst/agents/<agent-id>/` (mngr keeps the per-agent state even after `mngr destroy`). `mngr-antigravity` additionally leaves agy's per-conversation logs under `~/.gemini/antigravity-cli/`.
 
 To remove every mngr agent associated with a finished task:
 
 ```bash
 export MNGR_HOST_DIR=~/.mngr-catalyst
-mngr list --include 'labels["catalyst-task"] == "<full_task_id>"' --format '{name}' | mngr destroy --force -
+uv run mngr list --include 'labels["catalyst-task"] == "<full_task_id>"' --format '{name}' | uv run mngr destroy --force -
 ```
-
-The `--format '{name}'` strips the column header that `--fields name` adds (which would break the pipe), and `--force` skips the interactive confirmation prompt so the pipeline runs unattended.
 
 ## Data Persistence
 
