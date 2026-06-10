@@ -10,6 +10,7 @@ from orchestrator.prompts import (
     get_streamline_theory_prompt,
     get_score_theories_prompt,
     get_write_different_theory_prompt,
+    get_summarize_research_prompt,
 )
 from .constants import FORCE_EXPANSION_PROB
 
@@ -17,11 +18,14 @@ logger = logging.getLogger(__name__)
 
 
 def build_evolve_loop_structure(
-    task: Task, evolve_iterations: int, stage_prefix: str = ""
+    task: Task, evolve_iterations: int, stage_prefix: str = "", generate_intermediate_research_summaries: bool = False
 ) -> List[Dict[str, Any]]:
     iteration_structures = {}
     for i in range(1, evolve_iterations + 1):
         iter_struct = []
+
+        if generate_intermediate_research_summaries:
+            iter_struct.append({"type": "step", "stage": f"{stage_prefix}summarize-research-{i}"})
 
         # Sample Parents step
         iter_struct.append({"type": "step", "stage": f"{stage_prefix}sample-parents-{i}"})
@@ -77,14 +81,24 @@ def run_evolve_loop(
     apply_expansions: Optional[str] = None,
     lit_review_id: Optional[str] = None,
     stage_prefix: str = "",
+    generate_intermediate_research_summaries: bool = False,
 ) -> None:
     for i in range(1, iterations + 1):
         logger.debug(
             f"[ORCHESTRATOR] [{task.id[:8]}] Evolve Loop Iteration {i}/{iterations}"
         )
 
+        if generate_intermediate_research_summaries:
+            run_step_if_needed(
+                task,
+                run_step_fn,
+                f"{stage_prefix}summarize-research-{i}",
+                get_summarize_research_prompt(),
+            )
+
         # 1. Sample Parents
         def _sample_parents() -> Dict[str, Any]:
+
             out = run_context_manager(
                 task,
                 [

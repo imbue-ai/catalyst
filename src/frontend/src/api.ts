@@ -27,6 +27,7 @@ export interface Addon {
   hypothesis_title?: string;
   instruction?: string;
   lit_review_id?: string;
+  generate_intermediate_research_summaries?: boolean;
 }
 
 export interface TheoryScoringWeights {

@@ -8,6 +8,7 @@ from orchestrator.prompts import (
     get_write_n_theories_prompt,
     get_review_theory_prompt,
     get_score_theories_prompt,
+    get_summarize_research_prompt,
 )
 
 from .base import Workflow, run_step_if_needed, ParallelStepRunner
@@ -56,9 +57,16 @@ class DevelopTheoryWorkflow(Workflow):
 
         evolve_iterations = int(task.workflow_inputs.get("evolve_iterations", 0))
         if evolve_iterations > 0:
-            structure.extend(build_evolve_loop_structure(task, evolve_iterations))
+            generate_summaries = task.workflow_inputs.get("generate_intermediate_research_summaries")
+            if generate_summaries is None:
+                generate_summaries = task.generate_summary
+            structure.extend(build_evolve_loop_structure(task, evolve_iterations, generate_intermediate_research_summaries=generate_summaries))
+
+        if task.generate_summary:
+            structure.append({"type": "step", "stage": "summarize-research"})
 
         return structure
+
 
     def run(self, task: Task, run_step: Callable) -> None:
         self.init_db(task)
@@ -149,6 +157,10 @@ class DevelopTheoryWorkflow(Workflow):
                 )
                 apply_expansions = task.workflow_inputs.get("apply_expansions")
 
+                generate_summaries = task.workflow_inputs.get("generate_intermediate_research_summaries")
+                if generate_summaries is None:
+                    generate_summaries = task.generate_summary
+
                 run_evolve_loop(
                     task,
                     run_step,
@@ -159,4 +171,15 @@ class DevelopTheoryWorkflow(Workflow):
                     num_extra_scores=num_extra_scores,
                     apply_expansions=apply_expansions,
                     lit_review_id=lit_review_id,
+                    generate_intermediate_research_summaries=generate_summaries,
                 )
+
+            # Final step: stand-alone summarize-research step if enabled
+            if task.generate_summary:
+                run_step_if_needed(
+                    task,
+                    run_step,
+                    "summarize-research",
+                    get_summarize_research_prompt(),
+                )
+

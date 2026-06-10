@@ -117,7 +117,9 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     powerWeight,
     setPowerWeight,
     adherenceWeight,
-    setAdherenceWeight
+    setAdherenceWeight,
+    generateIntermediateResearchSummaries,
+    setGenerateIntermediateResearchSummaries
   } = useWorkflowParams()
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -152,10 +154,16 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         max_streamline_prob: maxStreamlineProb,
         write_different_prob: writeDifferentProb,
         num_extra_scores: numExtraScores,
-        apply_expansions: applyExpansions || undefined
+        apply_expansions: applyExpansions || undefined,
+        generate_intermediate_research_summaries: generateIntermediateResearchSummaries
       }
     } else if (activeTab === 'develop-theory-linear') {
-      workflow_inputs = { phenomenon: inputs.phenomenon, max_refinements: maxRefinements, apply_expansions: applyExpansions || undefined }
+      workflow_inputs = {
+        phenomenon: inputs.phenomenon,
+        max_refinements: maxRefinements,
+        apply_expansions: applyExpansions || undefined,
+        generate_intermediate_research_summaries: generateIntermediateResearchSummaries
+      }
     } else if (activeTab === 'refine-theory-idea') {
       workflow_inputs = {
         idea: inputs.idea,
@@ -165,10 +173,16 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         num_parents: numParents,
         max_streamline_prob: maxStreamlineProb,
         write_different_prob: writeDifferentProb,
-        num_extra_scores: numExtraScores
+        num_extra_scores: numExtraScores,
+        generate_intermediate_research_summaries: generateIntermediateResearchSummaries
       }
     } else if (activeTab === 'refine-theory-idea-linear') {
-      workflow_inputs = { idea: inputs.idea, apply_expansions: applyExpansions || undefined, max_refinements: maxRefinements }
+      workflow_inputs = {
+        idea: inputs.idea,
+        apply_expansions: applyExpansions || undefined,
+        max_refinements: maxRefinements,
+        generate_intermediate_research_summaries: generateIntermediateResearchSummaries
+      }
     } else if (activeTab === 'import-theory') {
       workflow_inputs = {}
     }
@@ -497,6 +511,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         showMaxRefinements={activeTab === 'develop-theory-linear' || activeTab === 'refine-theory-idea-linear'}
                         showEvolveParams={isEvolve}
                         showApplyExpansions={!isImport}
+                        showGenerateIntermediateResearchSummaries={!isImport}
                         numRootTheories={numRootTheories}
                         setNumRootTheories={setNumRootTheories}
                         maxRefinements={maxRefinements}
@@ -520,6 +535,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         setPowerWeight={setPowerWeight}
                         adherenceWeight={adherenceWeight}
                         setAdherenceWeight={setAdherenceWeight}
+                        generateIntermediateResearchSummaries={generateIntermediateResearchSummaries}
+                        setGenerateIntermediateResearchSummaries={setGenerateIntermediateResearchSummaries}
                       />
                     )}
                   </div>

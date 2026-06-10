@@ -28,6 +28,7 @@ const ADDON_DESCRIPTIONS: Record<string, string> = {
   'streamline-theory-variations': "Derive several different variations of a theory, each one focused on a different key aspect.",
   'suggest-expansions': "Suggest ways in which a theory can be expanded and/or generalized.",
   'score-theories': "Score the quality of the given theories relative to each other and update all population scores.",
+  'summarize-research': "Summarize the current research status",
   'write-different-theory': "Write a theory that explores a different approach from the provided theories."
 };
 
@@ -38,6 +39,7 @@ const getAvailableSkills = (cat: InputCategory, reviewed: boolean): { id: string
     return reviewed ? [
       { id: 'evolve-loop', label: 'Evolve Theory Loop' },
       { id: 'score-theories', label: 'Score Theories' },
+      { id: 'summarize-research', label: 'Summarize Research' },
       { id: 'write-different-theory', label: 'Write Different Theory' }
     ] : [
       { id: 'write-different-theory', label: 'Write Different Theory' }
@@ -135,7 +137,9 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     numExtraScores,
     setNumExtraScores,
     applyExpansions,
-    setApplyExpansions
+    setApplyExpansions,
+    generateIntermediateResearchSummaries,
+    setGenerateIntermediateResearchSummaries
   } = useWorkflowParams()
 
   const filteredReviews = availableReviews.filter(r => r.parent_theory === theoryId)
@@ -190,7 +194,8 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
         review_id: (addonType === 'refine-hypothesis' || addonType === 'expand-theory' || addonType === 'improve-adherence') ? reviewId : undefined,
         hypothesis_title: addonType === 'falsify-hypothesis' ? hypothesisTitle : undefined,
         instruction: addonType === 'edit-theory' ? instruction : undefined,
-        lit_review_id: (['edit-theory', 'expand-theory', 'improve-adherence', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop', 'write-different-theory'].includes(addonType)) ? (litReviewId || undefined) : undefined
+        lit_review_id: (['edit-theory', 'expand-theory', 'improve-adherence', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop', 'write-different-theory'].includes(addonType)) ? (litReviewId || undefined) : undefined,
+        generate_intermediate_research_summaries: (addonType === 'refinement-loop' || addonType === 'evolve-loop') ? generateIntermediateResearchSummaries : undefined
       })
       onCreated(updatedTask)
     } catch (e: any) {
@@ -439,6 +444,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                           showMaxRefinements={addonType === 'refinement-loop'}
                           showEvolveParams={addonType === 'evolve-loop'}
                           showApplyExpansions={addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory'}
+                          showGenerateIntermediateResearchSummaries={addonType === 'refinement-loop' || addonType === 'evolve-loop'}
                           maxRefinements={maxRefinements}
                           setMaxRefinements={setMaxRefinements}
                           evolveIterations={evolveIterations}
@@ -453,6 +459,8 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                           setNumExtraScores={setNumExtraScores}
                           applyExpansions={applyExpansions}
                           setApplyExpansions={setApplyExpansions}
+                          generateIntermediateResearchSummaries={generateIntermediateResearchSummaries}
+                          setGenerateIntermediateResearchSummaries={setGenerateIntermediateResearchSummaries}
                         >
                           {addonType === 'streamline-theory' && (
                             <div>

@@ -177,3 +177,11 @@ def get_import_theory_prompt(file_path: str) -> str:
         f"Please run the import-theory skill for the following file path: `{file_path}`. "
         "When you are done, return ONLY a JSON object with the key 'theory_id'."
     )
+
+
+def get_summarize_research_prompt() -> str:
+    return (
+        "Please run the summarize-research skill.\n"
+        "When you are done, return ONLY a JSON object with the key 'summary_id'."
+    )
+

@@ -232,6 +232,7 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
         steps=[],
         workflow_name=req.workflow_name,
         theory_scoring_weights=req.theory_scoring_weights,
+        generate_summary=True,
     )
 
     add_task(task)
@@ -255,6 +256,7 @@ class CreateAddonRequest(BaseModel):
     hypothesis_title: Optional[str] = None
     instruction: Optional[str] = None
     lit_review_id: Optional[str] = None
+    generate_intermediate_research_summaries: Optional[bool] = None
 
 
 @app.post("/api/tasks/{task_id}/addons", response_model=Task)
@@ -281,6 +283,7 @@ def create_addon(task_id: str, req: CreateAddonRequest):
         hypothesis_title=req.hypothesis_title,
         instruction=req.instruction,
         lit_review_id=req.lit_review_id,
+        generate_intermediate_research_summaries=req.generate_intermediate_research_summaries,
     )
     task.addons.append(addon)
 

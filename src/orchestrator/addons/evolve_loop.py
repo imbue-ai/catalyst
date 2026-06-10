@@ -17,10 +17,14 @@ class EvolveLoopAddon(AddonHandler):
 
     def get_structure(self, addon: Addon, index: int, task: Task) -> Dict[str, Any]:
         evolve_iterations = addon.evolve_iterations if hasattr(addon, 'evolve_iterations') and addon.evolve_iterations is not None else DEFAULT_EVOLVE_ITERATIONS
+        generate_summaries = addon.generate_intermediate_research_summaries if addon.generate_intermediate_research_summaries is not None else False
         
         iteration_structures = {}
         for i in range(1, evolve_iterations + 1):
             iter_struct = []
+            
+            if generate_summaries:
+                iter_struct.append({"type": "step", "stage": f"addon-{index}-summarize-research-{i}"})
             
             # Sample Parents step
             iter_struct.append({"type": "step", "stage": f"addon-{index}-sample-parents-{i}"})
@@ -56,8 +60,10 @@ class EvolveLoopAddon(AddonHandler):
         num_extra_scores = addon.num_extra_scores if hasattr(addon, 'num_extra_scores') and addon.num_extra_scores is not None else DEFAULT_NUM_EXTRA_SCORES
         apply_expansions = addon.apply_expansions if hasattr(addon, 'apply_expansions') and addon.apply_expansions is not None else None
         lit_review_id = addon.lit_review_id if hasattr(addon, 'lit_review_id') and addon.lit_review_id is not None else None
+        generate_summaries = addon.generate_intermediate_research_summaries if addon.generate_intermediate_research_summaries is not None else False
 
-        run_evolve_loop(            task=task,
+        run_evolve_loop(
+            task=task,
             run_step_fn=run_step,
             iterations=evolve_iterations,
             num_parents=num_parents,
@@ -67,7 +73,9 @@ class EvolveLoopAddon(AddonHandler):
             apply_expansions=apply_expansions,
             lit_review_id=lit_review_id,
             stage_prefix=f"addon-{index}-",
+            generate_intermediate_research_summaries=generate_summaries,
         )
+
 
     def get_prompt(self, addon: Addon) -> str:
         pass

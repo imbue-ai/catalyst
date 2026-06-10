@@ -12,7 +12,7 @@ from .common import (
     run_literature_review_and_exploration_parallel,
     get_active_max_iterations,
 )
-from orchestrator.prompts import get_write_theory_prompt
+from orchestrator.prompts import get_write_theory_prompt, get_summarize_research_prompt
 
 logger = logging.getLogger(__name__)
 
@@ -37,16 +37,27 @@ class DevelopTheoryLinearWorkflow(Workflow):
         ]
 
         if max_iters > 0:
+            base_stages = ["review-theory", "refine-theory"]
+            generate_summaries = task.workflow_inputs.get("generate_intermediate_research_summaries")
+            if generate_summaries is None:
+                generate_summaries = task.generate_summary
+            if generate_summaries:
+                base_stages.insert(0, "summarize-research")
+
             structure.append(
                 {
                     "type": "loop",
                     "name": "Refinement Loop",
-                    "base_stages": ["review-theory", "refine-theory"],
+                    "base_stages": base_stages,
                     "iterations": max_iters,
                 }
             )
 
+        if task.generate_summary:
+            structure.append({"type": "step", "stage": "summarize-research"})
+
         return structure
+
 
     def run(self, task: Task, run_step: Callable) -> None:
         self.init_db(task)
@@ -83,6 +94,10 @@ class DevelopTheoryLinearWorkflow(Workflow):
             # Step 4: Iterative Review and Refinement
             max_refinements = int(task.workflow_inputs.get("max_refinements", 3))
             apply_expansions = task.workflow_inputs.get("apply_expansions")
+            generate_summaries = task.workflow_inputs.get("generate_intermediate_research_summaries")
+            if generate_summaries is None:
+                generate_summaries = task.generate_summary
+
             run_refinement_loop(
                 task,
                 run_step,
@@ -90,4 +105,14 @@ class DevelopTheoryLinearWorkflow(Workflow):
                 lit_review_id,
                 apply_expansions=apply_expansions,
                 max_refinements=max_refinements,
+                generate_intermediate_research_summaries=generate_summaries,
             )
+
+        if task.generate_summary:
+            run_step_if_needed(
+                task,
+                run_step,
+                "summarize-research",
+                get_summarize_research_prompt(),
+            )
+
