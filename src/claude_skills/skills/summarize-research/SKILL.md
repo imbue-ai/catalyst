@@ -49,7 +49,7 @@ Your `summary.md` file MUST be formatted exactly as follows:
   - Statement 2: 🟡 Partially Falsified (Review ID: R_...)
   - Statement 3: 🟢 Not Falsified (Review ID: R_...)
   - ... (bullet list of all statements for which falsification reports exist, with a simple red/yellow/green label and the corresponding review report ID)
-- **Adherence Review**:
+- **Adherence Status**:
   - [Summarize key adherence issues in 1-2 sentences (🟡 or 🔴, depending on the severity), or state '🟢 No issues found.'] (Review ID: R_...)
 
 ### 2. [Theory ID]: [Theory Headline]
