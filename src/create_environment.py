@@ -3,7 +3,7 @@ import argparse
 from pathlib import Path
 
 BASE_GEMINI_MD = """GENERAL INSTRUCTIONS:
-* The user might have provided additional guidance in the file `GUIDANCE.txt`.  You MUST read this file before you start any work and treat its contents as user instructions.
+* The user might have provided additional guidance in the file `GUIDANCE.txt`. You MUST read this file before you start any work and treat its contents as user instructions.
 * Be very thorough! You will frequently need to run 10+ experiments to perform a single topic exploration or falsification. I expect that you'll be working many hours on each step of this task. Don't stop after the first successful experiment - keep going until you've explored ALL reasonable ideas.
 * Make sure to consider and rule out ALL plausible alternative explanations before drawing conclusions.
 * ALWAYS use the `scientist` subagent type instead of generalist for spawning subagents. If the scientist agent type is not available, stop and tell the user that they need to install it.
@@ -17,7 +17,7 @@ THEORY.MD INSTRUCTIONS:
 * Assume you're writing a high-quality scientific paper to be published in a leading journal in the field! Use language and rigour appropriate for that audience.
 * You might need to perform multiple edits and iterations before your theory.md file is in a good shape.
 * Use rigorous, objective language in all theories, reviews and reports. Be extremely precise, using specific objective observations, precise mathematical definitions, and mathematical proofs. NEVER present speculation as fact.
-* Completely avoid self-promoting language. Never call your own theories "profound", "elegant", etc. Use neutral, factual language at all times.
+* Completely avoid self-promoting language. Never call your own theories "profound", "elegant", "complete", etc. Use neutral, factual language at all times.
 
 
 If you find that the `uv` command is not installed:
@@ -28,15 +28,16 @@ You might encounter a broken Python `.venv`, e.g. with symlinks pointing to non-
 """
 
 BASE_AGENTS_MD = """GENERAL INSTRUCTIONS:
-* The user might have provided additional guidance in the file `GUIDANCE.txt`.  You MUST read this file before you start any work and treat its contents as user instructions.
+* The user might have provided additional guidance in the file `GUIDANCE.txt`. You MUST read this file before you start any work and treat its contents as user instructions.
 * If you encounter any issues with following the instructions in a skill, or run into issues with your execution environment (e.g. missing permission, error while running a pre-provided script, etc.), please take a second to append a short, one-line issue description to `./tmp/agent_friction_log.txt`.
 * ONLY spawn a subagent when the execution steps in a skill explicitly tell you to.
+* Always use precise, direct language. NEVER use metaphors to describe an idea, ever.
 
 THEORY.MD INSTRUCTIONS:
 * `theory.md` files are the main output of the research process that will be consumed by human researchers.
 * Assume you're writing a high-quality scientific paper to be published in a leading journal in the field! Use language and rigour appropriate for that audience.
 * Use rigorous, objective language in all theories, reviews and reports. Be extremely precise, using specific objective observations, precise mathematical definitions, and mathematical proofs. NEVER present speculation as fact.
-* Completely avoid self-promoting language. Never call your own theories "profound", "elegant", etc. Use neutral, factual language at all times.
+* Completely avoid self-promoting language. Never call your own theories "profound", "elegant", "complete", etc. Use neutral, factual language at all times.
 * Avoid *unnecessary* jargon. When you invoke a technical term, it should be for the purpose of adding clarity and/or precision.
 """
 
