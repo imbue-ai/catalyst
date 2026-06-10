@@ -37,7 +37,23 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
   const [copied, setCopied] = useState(false)
   const [showAddonModal, setShowAddonModal] = useState(false)
   const [showGuidanceModal, setShowGuidanceModal] = useState(false)
+  const [pendingGuidanceAppend, setPendingGuidanceAppend] = useState<string | null>(null)
   const copyTimeoutRef = useRef<number | null>(null)
+
+  useEffect(() => {
+    const handleAddToGuidance = (e: Event) => {
+      const customEvent = e as CustomEvent;
+      const value = customEvent.detail?.value;
+      if (value) {
+        setPendingGuidanceAppend(value);
+        setShowGuidanceModal(true);
+      }
+    };
+    window.addEventListener('add-to-guidance', handleAddToGuidance);
+    return () => {
+      window.removeEventListener('add-to-guidance', handleAddToGuidance);
+    };
+  }, []);
 
   const handleCopy = (text: string) => {
     navigator.clipboard.writeText(text)
@@ -141,7 +157,10 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
 
               <button
                 disabled={isProcessing}
-                onClick={() => setShowGuidanceModal(true)}
+                onClick={() => {
+                  setPendingGuidanceAppend(null);
+                  setShowGuidanceModal(true);
+                }}
                 className="border-2 border-black text-black px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
               >
                 <Compass size={12} /> Provide Guidance
@@ -456,12 +475,24 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
 
       {showGuidanceModal && (
         <EditGuidanceModal
-          onClose={() => setShowGuidanceModal(false)}
-          initialGuidance={task.guidance || "No additional guidance."}
+          onClose={() => {
+            setShowGuidanceModal(false)
+            setPendingGuidanceAppend(null)
+          }}
+          initialGuidance={(() => {
+            const baseGuidance = task.guidance || "";
+            if (pendingGuidanceAppend) {
+              return baseGuidance ? `${baseGuidance}\n${pendingGuidanceAppend}` : pendingGuidanceAppend;
+            }
+            return task.guidance || "";
+          })() as string}
           initialWeights={task.theory_scoring_weights}
+          newlyAddedText={pendingGuidanceAppend}
           onSave={async (newGuidance, newWeights) => {
             await api.updateGuidance(task.id, newGuidance, newWeights)
             onRefresh()
+            setShowGuidanceModal(false)
+            setPendingGuidanceAppend(null)
           }}
         />
       )}

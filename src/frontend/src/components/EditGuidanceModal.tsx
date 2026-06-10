@@ -6,9 +6,10 @@ interface EditGuidanceModalProps {
   onSave: (guidance: string, weights: TheoryScoringWeights) => Promise<void>;
   initialGuidance: string;
   initialWeights?: TheoryScoringWeights;
+  newlyAddedText?: string | null;
 }
 
-export function EditGuidanceModal({ onClose, onSave, initialGuidance, initialWeights }: EditGuidanceModalProps) {
+export function EditGuidanceModal({ onClose, onSave, initialGuidance, initialWeights, newlyAddedText }: EditGuidanceModalProps) {
   const [guidance, setGuidance] = useState(initialGuidance)
   const [correctnessWeight, setCorrectnessWeight] = useState(initialWeights?.correctness_weight ?? 0.9)
   const [powerWeight, setPowerWeight] = useState(initialWeights?.power_weight ?? 0.7)
@@ -42,6 +43,30 @@ export function EditGuidanceModal({ onClose, onSave, initialGuidance, initialWei
         <p className="text-xs font-bold text-gray-400 mb-6 tracking-tight leading-relaxed">
           Any changes will only apply to future steps that are not yet running.
         </p>
+        {newlyAddedText && (
+          <style>{`
+            @keyframes textarea-flash {
+              0% {
+                background-color: rgb(219, 234, 254);
+                border-color: rgb(37, 99, 235);
+                box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
+              }
+              30% {
+                background-color: rgb(219, 234, 254);
+                border-color: rgb(37, 99, 235);
+                box-shadow: 0 0 12px rgba(37, 99, 235, 0.4);
+              }
+              100% {
+                background-color: rgb(249, 250, 251);
+                border-color: rgb(0, 0, 0);
+                box-shadow: none;
+              }
+            }
+            .animate-textarea-flash {
+              animation: textarea-flash 2.5s ease-out forwards;
+            }
+          `}</style>
+        )}
 
         <h4 className="text-xs font-black tracking-widest text-black mb-4">
           Research Guidance
@@ -52,7 +77,11 @@ export function EditGuidanceModal({ onClose, onSave, initialGuidance, initialWei
           onChange={e => setGuidance(e.target.value)}
           placeholder="No additional guidance."
           rows={10}
-          className="w-full border-2 border-black p-3 outline-none bg-gray-50/50 text-sm font-bold mb-6 resize-y min-h-[200px]"
+          className={`w-full border-2 p-3 outline-none text-sm font-bold mb-6 resize-y min-h-[200px] ${
+            newlyAddedText 
+              ? 'animate-textarea-flash' 
+              : 'border-black bg-gray-50/50'
+          }`}
         />
 
         <div className="mb-8">

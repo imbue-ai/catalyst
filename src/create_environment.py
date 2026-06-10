@@ -120,7 +120,7 @@ def create_environment(target_path: str, template_path: str = None):
     # 4. Initialize GUIDANCE.txt
     guidance_path = target / "GUIDANCE.txt"
     with open(guidance_path, "w") as f:
-        f.write("No additional guidance.\n")
+        f.write("")
 
     print(f"Environment initialized at {target}")
 

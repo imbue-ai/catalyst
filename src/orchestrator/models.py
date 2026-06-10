@@ -59,7 +59,6 @@ class Addon(BaseModel):
     generate_intermediate_research_summaries: Optional[bool] = None
 
 
-
 class TheoryScoringWeights(BaseModel):
     correctness_weight: float = Field(..., ge=0.0, le=1.0)
     power_weight: float = Field(..., ge=0.0, le=1.0)
@@ -79,13 +78,12 @@ class Task(BaseModel):
     addons: List[Addon] = []
     workflow_name: str = "develop-theory"
     workflow_structure: List[Dict[str, Any]] = []
-    guidance: str = "No additional guidance."
+    guidance: str = ""
     theory_scoring_weights: Optional[TheoryScoringWeights] = None
     created_at: Optional[str] = Field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
     generate_summary: bool = False
-
 
 
 class TaskShallow(BaseModel):

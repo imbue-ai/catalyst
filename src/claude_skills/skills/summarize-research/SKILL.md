@@ -96,6 +96,7 @@ Your `summary.md` file MUST be formatted exactly as follows:
 4. **Research Direction & Guidance Suggestions**:
    - Check for `phenomenon.txt` and `GUIDANCE.txt` in the workspace to understand the current task and any guidance that already exists. You do not need to surface questions that are already addressed by the current versions of these files.
    - Formulate 2-5 useful multiple choice questions for the user with GUIDANCE.txt recommendations. Focus on questions that best constrain the scope of the remaining research, informed by the theories that have been developed and analyzed so far. Prefer high-level choices over one-off decisions.
+   - Make sure to use the text '- Add to Guidance: "..."' verbatim, as indicated in the summary report format above. This verbiage is used by the system to identify suggested guidance additions, which will then be offered up to the user in a special interface.
 5. **Reporting**: Write the synthesized research summary to `<OUTPUT_DIR>/summary.md`.
 6. **Store results**: Store the results back in context_manager and obtain a summary ID:
    ```bash

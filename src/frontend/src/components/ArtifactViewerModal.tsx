@@ -138,7 +138,11 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
     const parts = withNewlines.split(/(```[\s\S]*?```|`[^`]+`|\$\$[\s\S]*?\$\$)/g);
     return parts.map((part, i) => {
       if (i % 2 === 0) {
-        return part.replace(/\b([ELTRXPS]_\d{8}_\d{6}_[a-f0-9]{6})\b/g, `[$1](#/task/${taskId}/artifact/$1?from=artifact)`);
+        let processed = part.replace(/\b([ELTRXPS]_\d{8}_\d{6}_[a-f0-9]{6})\b/g, `[$1](#/task/${taskId}/artifact/$1?from=artifact)`);
+        processed = processed.replace(/^([ \t]*-\s*)(Add\s+to\s+Guidance):\s*"([^"]+)"/gim, (_match, prefix, btnText, value) => {
+          return `${prefix}[${btnText}](#add-to-guidance:${encodeURIComponent(value)}?from=artifact): "${value}"`;
+        });
+        return processed;
       } else {
         const match = part.match(/^`([ELTRXPS]_\d{8}_\d{6}_[a-f0-9]{6})`$/);
         if (match) {
@@ -216,6 +220,30 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
   const hasPreviousArtifact = window.location.hash.includes('from=artifact');
 
   const markdownComponents = useMemo(() => ({
+    a({ node, href, children, className, ...props }: any) {
+      if (href && (href.startsWith('#add-to-guidance:') || href.startsWith('add-to-guidance:'))) {
+        const isHash = href.startsWith('#add-to-guidance:');
+        const prefixLen = isHash ? '#add-to-guidance:'.length : 'add-to-guidance:'.length;
+        const queryIdx = href.indexOf('?');
+        const encodedValue = queryIdx !== -1 
+          ? href.slice(prefixLen, queryIdx)
+          : href.slice(prefixLen);
+        const value = decodeURIComponent(encodedValue);
+        return (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              window.dispatchEvent(new CustomEvent('add-to-guidance', { detail: { value } }));
+            }}
+            className="text-blue-600 font-bold hover:underline cursor-pointer bg-blue-50 px-1.5 py-0.5 rounded inline-flex items-center gap-1 align-baseline"
+          >
+            <span className="text-[10px]" aria-hidden="true">➕</span>
+            {children}
+          </button>
+        );
+      }
+      return <a href={href} className={className} {...props}>{children}</a>;
+    },
     img({ node, src, alt, className, ...props }: any) {
       const combinedClassName = className ? `${className} print:break-inside-avoid` : 'print:break-inside-avoid';
       const imgStyle = { pageBreakInside: 'avoid', breakInside: 'avoid' } as React.CSSProperties;
