@@ -40,6 +40,7 @@ These skills are typically used to start a new project or bring external data in
 - `/explore`: Performs preliminary exploration and experimentation on a phenomenon.
 - `/write-theory`: Generates a single theory from scratch. Accepts a phenomenon description, and optionally a literature review ID and exploration ID.
 - `/write-n-theories`: Generates multiple theories in parallel. Accepts a phenomenon description, and optionally a literature review ID and exploration ID.
+- `/summarize-research`: Summarizes the current research status.
 
 ### Operating on a Theory ID
 These skills modify or evaluate an existing theory stored in the database. Each invocation results in a new Theory ID.
@@ -82,5 +83,6 @@ All results are stored in the `.ai-scientist-db` directory:
 - `review/`: Critical evaluations and falsification reports.
 - `experiment/`: Descriptions and results of experiments.
 - `prediction/`: Predicted outcomes of experiments.
+- `summaries/`: Summaries from the `summarize-research` skill.
 
 Each entry is stored in a subdirectory named after its unique ID and contains a markdown file and a `metadata.json` file.
