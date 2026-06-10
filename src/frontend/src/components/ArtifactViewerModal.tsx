@@ -138,9 +138,9 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
     const parts = withNewlines.split(/(```[\s\S]*?```|`[^`]+`|\$\$[\s\S]*?\$\$)/g);
     return parts.map((part, i) => {
       if (i % 2 === 0) {
-        return part.replace(/\b([ELTRXP]_\d{8}_\d{6}_[a-f0-9]{6})\b/g, `[$1](#/task/${taskId}/artifact/$1?from=artifact)`);
+        return part.replace(/\b([ELTRXPS]_\d{8}_\d{6}_[a-f0-9]{6})\b/g, `[$1](#/task/${taskId}/artifact/$1?from=artifact)`);
       } else {
-        const match = part.match(/^`([ELTRXP]_\d{8}_\d{6}_[a-f0-9]{6})`$/);
+        const match = part.match(/^`([ELTRXPS]_\d{8}_\d{6}_[a-f0-9]{6})`$/);
         if (match) {
           return `[${part}](#/task/${taskId}/artifact/${match[1]}?from=artifact)`;
         }

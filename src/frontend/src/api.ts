@@ -82,6 +82,13 @@ export interface ExperimentArtifact {
   extra?: Record<string, string>;
 }
 
+export interface SummaryArtifact {
+  id: string;
+  headline?: string;
+  created_at?: string;
+}
+
+
 export interface TaskShallow {
   id: string;
   title?: string;
@@ -177,6 +184,13 @@ export async function getExperiments(id: string): Promise<ExperimentArtifact[]> 
   if (!res.ok) throw new Error("Failed to get experiments");
   return res.json();
 }
+
+export async function getSummaries(id: string): Promise<SummaryArtifact[]> {
+  const res = await fetch(`${API_BASE}/tasks/${id}/summaries`);
+  if (!res.ok) throw new Error("Failed to get summaries");
+  return res.json();
+}
+
 
 export async function getTemplates(): Promise<string[]> {
   const res = await fetch(`${API_BASE}/templates`);

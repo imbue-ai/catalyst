@@ -65,18 +65,18 @@ Your `summary.md` file MUST be formatted exactly as follows:
 
 ### Suggested Steering Questions
 #### Q1: [Question title, e.g., Focus my research on A, B, or C?]
-- [ ] Option A: [Option text]
-  - Add to GUIDANCE.txt: "- [Sentence to add]"
-- [ ] Option B: [Option text]
-  - Add to GUIDANCE.txt: "- [Sentence to add]"
-- [ ] Option C: [Option text]
-  - Add to GUIDANCE.txt: "- [Sentence to add]"
+- Option A: [Option text]
+  - Add to Guidance: "- [Sentence to add]"
+- Option B: [Option text]
+  - Add to Guidance: "- [Sentence to add]"
+- Option C: [Option text]
+  - Add to Guidance: "- [Sentence to add]"
 
 #### Q2: [Question title, e.g., Should I limit the scope to X?]
-- [ ] Option A: [Option text]
-  - Add to GUIDANCE.txt: "- [Sentence to add]"
-- [ ] Option B: [Option text]
-  - Add to GUIDANCE.txt: "- [Sentence to add]"
+- Option A: [Option text]
+  - Add to Guidance: "- [Sentence to add]"
+- Option B: [Option text]
+  - Add to Guidance: "- [Sentence to add]"
 
 ... (up to 5 questions in total)
 ```

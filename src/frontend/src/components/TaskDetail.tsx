@@ -19,6 +19,8 @@ import { CreateAddonModal } from './CreateAddonModal'
 import { TheoriesList } from './TheoriesList'
 import { ExperimentsList } from './ExperimentsList'
 import { EditGuidanceModal } from './EditGuidanceModal'
+import { SummaryTab } from './SummaryTab'
+
 
 interface TaskDetailProps {
   task: api.Task;
@@ -30,7 +32,7 @@ interface TaskDetailProps {
 
 export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh, isBackendDown }: TaskDetailProps) {
   const [selectedStage, setSelectedStage] = useState<string | null>(null)
-  const [activeRightTab, setActiveRightTab] = useState<'stepDetails' | 'topTheories' | 'experiments'>('stepDetails')
+  const [activeRightTab, setActiveRightTab] = useState<'summary' | 'stepDetails' | 'topTheories' | 'experiments'>('summary')
   const [isProcessing, setIsProcessing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAddonModal, setShowAddonModal] = useState(false)
@@ -260,6 +262,15 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
         <div className="w-1/2 flex flex-col h-full border-l border-black bg-gray-50/50">
           <div className="flex border-b-2 border-black bg-white">
             <button
+              onClick={() => setActiveRightTab('summary')}
+              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'summary'
+                ? 'bg-black text-white'
+                : 'text-black hover:bg-gray-100'
+                }`}
+            >
+              Summary
+            </button>
+            <button
               onClick={() => setActiveRightTab('stepDetails')}
               className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'stepDetails'
                 ? 'bg-black text-white'
@@ -289,7 +300,9 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
           </div>
 
           <div className="flex-1 overflow-hidden flex flex-col">
-            {activeRightTab === 'topTheories' ? (
+            {activeRightTab === 'summary' ? (
+              <SummaryTab taskId={task.id} />
+            ) : activeRightTab === 'topTheories' ? (
               <TheoriesList taskId={task.id} />
             ) : activeRightTab === 'experiments' ? (
               <ExperimentsList taskId={task.id} />
