@@ -24,7 +24,7 @@ class RefineTheoryIdeaLinearWorkflow(Workflow):
             if generate_summaries is None:
                 generate_summaries = task.generate_summary
             if generate_summaries:
-                base_stages.insert(0, "summarize-research")
+                base_stages.insert(1, "summarize-research")
 
             structure.append(
                 {

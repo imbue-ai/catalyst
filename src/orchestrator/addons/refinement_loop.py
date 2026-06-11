@@ -17,7 +17,7 @@ class RefinementLoopAddon(AddonHandler):
         base_stages = [f"addon-{index}-review-theory", f"addon-{index}-refine-theory"]
         generate_summaries = addon.generate_intermediate_research_summaries if addon.generate_intermediate_research_summaries is not None else False
         if generate_summaries:
-            base_stages.insert(0, f"addon-{index}-summarize-research")
+            base_stages.insert(1, f"addon-{index}-summarize-research")
         return {
             "type": "loop",
             "name": "Refinement Loop",
