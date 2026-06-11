@@ -123,6 +123,50 @@ class TestWorkflowRefinement(unittest.TestCase):
         self.assertEqual(final_tid, "T1")
         mock_run_if_needed.assert_called_once()
 
+    @patch("orchestrator.workflows.common.refinement.run_step_if_needed")
+    def test_run_refinement_loop_with_summaries(self, mock_run_if_needed):
+        task = Task(
+            id="task_refine_test",
+            workflow_name="develop-theory",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={}
+        )
+        mock_run_step = MagicMock()
+        
+        # Iteration 1:
+        # 1. Review (returns review ids)
+        # 2. Summarize Research (returns something)
+        # 3. Refine (returns theory_id and major_changes=True)
+        # Iteration 2:
+        # 4. Review (returns no review ids -> terminates)
+        mock_run_if_needed.side_effect = [
+            {"review_ids": ["R1", "R2"]}, # Iter 1 Review
+            {"summary": "Summary of research"}, # Iter 1 Summarize Research
+            {"theory_id": "T2", "major_changes": True}, # Iter 1 Refine
+            {"review_ids": []} # Iter 2 Review -> terminates
+        ]
+
+        final_tid = run_refinement_loop(
+            task=task,
+            run_step_fn=mock_run_step,
+            theory_id="T1",
+            lit_review_id=None,
+            apply_expansions=None,
+            max_refinements=3,
+            generate_intermediate_research_summaries=True
+        )
+
+        self.assertEqual(final_tid, "T2")
+        self.assertEqual(mock_run_if_needed.call_count, 4)
+        
+        # Verify the specific stages in order
+        calls = mock_run_if_needed.call_args_list
+        self.assertEqual(calls[0][0][2], "review-theory-1")
+        self.assertEqual(calls[1][0][2], "summarize-research-1")
+        self.assertEqual(calls[2][0][2], "refine-theory-1")
+        self.assertEqual(calls[3][0][2], "review-theory-2")
+
 
 class TestWorkflowExploration(unittest.TestCase):
     @patch("orchestrator.workflows.common.exploration.get_step_output")

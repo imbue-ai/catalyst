@@ -19,14 +19,6 @@ def run_refinement_loop(
 ) -> str:
     i = 1
     while i <= max_refinements:
-        if generate_intermediate_research_summaries:
-            run_step_if_needed(
-                task,
-                run_step_fn,
-                f"{stage_prefix}summarize-research-{i}",
-                get_summarize_research_prompt(),
-            )
-
         # Review
         review_data = run_step_if_needed(
             task,
@@ -47,6 +39,14 @@ def run_refinement_loop(
         review_ids = review_data.get("review_ids", [])
         if not review_ids:
             break
+
+        if generate_intermediate_research_summaries:
+            run_step_if_needed(
+                task,
+                run_step_fn,
+                f"{stage_prefix}summarize-research-{i}",
+                get_summarize_research_prompt(),
+            )
 
         # Refine
         refine_data = run_step_if_needed(
