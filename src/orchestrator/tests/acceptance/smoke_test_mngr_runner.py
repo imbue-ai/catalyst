@@ -72,9 +72,12 @@ def main() -> int:
     runner = MngrClaudeAgentRunner()
     with tempfile.TemporaryDirectory(prefix="cata-smoke-") as env_folder:
         # Mirror what `create_environment.py` does for real tasks: copy
-        # the `.claude/settings.json` from `claude_skills/` so the
-        # Stop hook that emits `mngr/turn_complete` is wired up. Without
-        # it the runner would wait its full 6-hour timeout.
+        # the `.claude/settings.json` from `claude_skills/` so the agent
+        # runs under the same sandbox config. Its `filesystem.allowWrite`
+        # for `~/.mngr-catalyst/agents` is what lets the mngr_claude plugin's
+        # readiness hooks write the per-agent `active` marker under sandbox --
+        # and that marker, cleared at turn end, is what `mngr wait --state
+        # WAITING` (the runner's turn-end signal) reads.
         src_settings = os.path.join(
             os.path.dirname(
                 os.path.dirname(

@@ -198,61 +198,31 @@ class TestSharedExtractors(unittest.TestCase):
 
 
 class TestMngrAgentRunner(unittest.TestCase):
-    @patch("subprocess.Popen")
-    def test_wait_for_turn_end_stop_hook_clean(self, mock_popen):
-        from ..agents.mngr_runner import MngrAgentRunner, TurnCompletion
-
-        # We instantiate a concrete subclass or directly use MngrAgentRunner
-        runner = MngrAgentRunner(
-            agent_type="claude",
-            framework="mngr-claude",
-            transcript_source="claude/common_transcript",
-            turn_completion=TurnCompletion.STOP_HOOK,
-        )
-
-        # Mock event_proc Popen
-        mock_event_proc = MagicMock()
-        mock_event_proc.stdout = [
-            '{"source": "claude/common_transcript", "type": "assistant_message", "text": "{\\"score\\": 0.9}"}\n',
-            '{"source": "mngr/turn_complete", "type": "turn_end"}\n',
-        ]
-
-        # Mock stop_proc Popen
-        mock_stop_proc = MagicMock()
-        mock_stop_proc.wait.return_value = 0
-
-        def popen_side_effect(cmd, *args, **kwargs):
-            if "event" in cmd:
-                return mock_event_proc
-            elif "wait" in cmd:
-                return mock_stop_proc
-            return MagicMock()
-
-        mock_popen.side_effect = popen_side_effect
-
-        saw_turn_end, assistant_text = runner._wait_for_turn_end("agent-123", None)
-        self.assertTrue(saw_turn_end)
-        self.assertEqual(assistant_text, '{"score": 0.9}')
-
-    @patch("subprocess.Popen")
-    def test_wait_for_turn_end_waiting_state_clean(self, mock_popen):
-        from ..agents.mngr_runner import MngrAgentRunner, TurnCompletion
+    def _assert_waiting_turn_end(
+        self, mock_popen, transcript_source: str, assistant_text: str
+    ) -> None:
+        """Drive `_wait_for_turn_end` through a clean turn end: the WAITING
+        watcher exits 0 (the active marker was cleared by the plugin's Stop
+        hook), and the last assistant_message on the agent's transcript
+        source is harvested from the event stream."""
+        from ..agents.mngr_runner import MngrAgentRunner
 
         runner = MngrAgentRunner(
-            agent_type="antigravity",
-            framework="mngr-antigravity",
-            transcript_source="antigravity/common_transcript",
-            turn_completion=TurnCompletion.WAITING_STATE,
+            agent_type="agent",
+            framework="mngr-agent",
+            transcript_source=transcript_source,
         )
 
         mock_event_proc = MagicMock()
         mock_event_proc.stdout = [
-            '{"source": "antigravity/common_transcript", "type": "assistant_message", "text": "{\\"score\\": 0.8}"}\n',
+            '{"source": "%s", "type": "assistant_message", "text": "%s"}\n'
+            % (transcript_source, assistant_text.replace('"', '\\"')),
         ]
 
+        # WAITING exits 0 (turn ended); STOPPED never fires (would-be external
+        # pause). Whichever `mngr wait` we get is keyed off the requested state.
         mock_wait_proc = MagicMock()
         mock_wait_proc.wait.return_value = 0
-
         mock_stop_proc = MagicMock()
         mock_stop_proc.wait.return_value = 1
 
@@ -260,17 +230,29 @@ class TestMngrAgentRunner(unittest.TestCase):
             if "event" in cmd:
                 return mock_event_proc
             elif "wait" in cmd:
-                if "WAITING" in cmd:
-                    return mock_wait_proc
-                else:
-                    return mock_stop_proc
+                return mock_wait_proc if "WAITING" in cmd else mock_stop_proc
             return MagicMock()
 
         mock_popen.side_effect = popen_side_effect
 
-        saw_turn_end, assistant_text = runner._wait_for_turn_end("agent-123", None)
+        saw_turn_end, harvested = runner._wait_for_turn_end("agent-123", None)
         self.assertTrue(saw_turn_end)
-        self.assertEqual(assistant_text, '{"score": 0.8}')
+        self.assertEqual(harvested, assistant_text)
+
+    # Patch out the post-turn-end grace sleep so the test doesn't block on it.
+    @patch("orchestrator.agents.mngr_runner.time.sleep")
+    @patch("subprocess.Popen")
+    def test_wait_for_turn_end_claude_waiting_state(self, mock_popen, _mock_sleep):
+        self._assert_waiting_turn_end(
+            mock_popen, "claude/common_transcript", '{"score": 0.9}'
+        )
+
+    @patch("orchestrator.agents.mngr_runner.time.sleep")
+    @patch("subprocess.Popen")
+    def test_wait_for_turn_end_antigravity_waiting_state(self, mock_popen, _mock_sleep):
+        self._assert_waiting_turn_end(
+            mock_popen, "antigravity/common_transcript", '{"score": 0.8}'
+        )
 
     def test_theory_scoring_weights_propagation(self):
         from ..models import TheoryScoringWeights
