@@ -72,6 +72,7 @@ class Task(BaseModel):
     env_folder: str
     framework: str  # "gemini", "claude", "agy", "mngr-claude", or "mngr-antigravity"
     model: Optional[str] = None
+    effort: Optional[str] = None
     status: TaskStatus = TaskStatus.PENDING
     current_stage: Optional[str] = None
     steps: List[Step] = []
@@ -92,6 +93,7 @@ class TaskShallow(BaseModel):
     env_folder: str
     framework: str
     model: Optional[str] = None
+    effort: Optional[str] = None
     status: TaskStatus = TaskStatus.PENDING
     current_stage: Optional[str] = None
     workflow_name: str = "develop-theory"

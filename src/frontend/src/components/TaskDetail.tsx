@@ -5,7 +5,7 @@
  * This avoids visual layout shift or flickering during transitions.
  */
 import { useState, useMemo, useRef, useEffect, useCallback, lazy, Suspense } from 'react'
-import { Activity, Folder, Cpu, Loader2, Square, Play, Trash2, Workflow, Plus, XCircle, Copy, Check, Compass, BrushCleaning } from 'lucide-react'
+import { Activity, Folder, Cpu, Loader2, Square, Play, Trash2, Workflow, Plus, XCircle, Copy, Check, Compass, BrushCleaning, ChevronDown } from 'lucide-react'
 import * as api from '../api'
 import { StatusBadge } from './StatusBadge'
 import { DataSection } from './DataSection'
@@ -19,7 +19,8 @@ import { CreateAddonModal } from './CreateAddonModal'
 import { TheoriesList } from './TheoriesList'
 import { ExperimentsList } from './ExperimentsList'
 import { EditGuidanceModal } from './EditGuidanceModal'
-import { SummaryTab } from './SummaryTab'
+const SummaryTab = lazy(() => import('./SummaryTab').then(m => ({ default: m.SummaryTab })))
+import { HarnessSettings } from './HarnessSettings'
 
 
 interface TaskDetailProps {
@@ -39,6 +40,62 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
   const [showGuidanceModal, setShowGuidanceModal] = useState(false)
   const [pendingGuidanceAppend, setPendingGuidanceAppend] = useState<string | null>(null)
   const copyTimeoutRef = useRef<number | null>(null)
+
+  // Edit Settings states & refs
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false)
+  const [editFramework, setEditFramework] = useState(task.framework)
+  const [editModel, setEditModel] = useState(task.model || '')
+  const [editEffort, setEditEffort] = useState(task.effort || '')
+  const [isUpdatingSettings, setIsUpdatingSettings] = useState(false)
+  const [harnesses, setHarnesses] = useState<api.HarnessInfo[]>([])
+
+  const settingsPanelRef = useRef<HTMLDivElement>(null)
+
+  // Reset/sync local edit state when task or showSettingsPanel changes
+  useEffect(() => {
+    setEditFramework(task.framework)
+    setEditModel(task.model || '')
+    setEditEffort(task.effort || '')
+  }, [task.framework, task.model, task.effort, showSettingsPanel])
+
+  // Fetch available harnesses once when the settings panel is opened
+  useEffect(() => {
+    if (showSettingsPanel) {
+      api.getHarnesses().then(data => {
+        setHarnesses(data)
+      }).catch(console.error)
+    }
+  }, [showSettingsPanel])
+
+  // Outside click handler for settings panel
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (settingsPanelRef.current && !settingsPanelRef.current.contains(event.target as Node)) {
+        setShowSettingsPanel(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  // Handler to save settings via backend API
+  const handleSaveSettings = async () => {
+    setIsUpdatingSettings(true)
+    try {
+      await api.updateSettings(
+        task.id,
+        editFramework,
+        editModel || undefined,
+        editEffort || undefined
+      )
+      onRefresh()
+      setShowSettingsPanel(false)
+    } catch (e: any) {
+      alert(e.message || "Failed to update settings")
+    } finally {
+      setIsUpdatingSettings(false)
+    }
+  }
 
   useEffect(() => {
     const handleAddToGuidance = (e: Event) => {
@@ -137,8 +194,51 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             <div className="bg-gray-100 p-3 flex items-center gap-2 text-[10px] font-bold">
               <Folder size={14} /> {task.env_folder}
             </div>
-            <div className="bg-gray-100 p-3 flex items-center gap-2 text-[10px] font-bold">
-              <Cpu size={14} /> {task.framework} {task.model && `[${task.model}]`}
+            <div className="relative" ref={settingsPanelRef}>
+              <button
+                onClick={() => setShowSettingsPanel(!showSettingsPanel)}
+                className="bg-gray-100 p-3 flex items-center gap-2 text-[10px] font-bold hover:bg-gray-200 transition-colors cursor-pointer select-none border-0"
+              >
+                <Cpu size={14} /> {task.framework} {task.model ? `[${task.model}${task.effort ? ` (${task.effort})` : ''}]` : (task.effort && `[(${task.effort})]`)}
+                <ChevronDown size={12} className={`ml-1 transition-transform ${showSettingsPanel ? 'rotate-180' : ''}`} />
+              </button>
+              
+              {showSettingsPanel && (
+                <div className="absolute right-0 top-full mt-2 w-80 bg-white border-2 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 text-left">
+                  <h4 className="font-black text-xs tracking-widest text-black mb-3">Update Settings</h4>
+                  
+                  <HarnessSettings
+                    framework={editFramework}
+                    model={editModel}
+                    effort={editEffort}
+                    harnesses={harnesses}
+                    onChange={(updates) => {
+                      if (updates.framework !== undefined) setEditFramework(updates.framework)
+                      if (updates.model !== undefined) setEditModel(updates.model)
+                      if (updates.effort !== undefined) setEditEffort(updates.effort)
+                    }}
+                    isCompact={true}
+                  />
+                  
+                  {/* Action buttons */}
+                  <div className="flex gap-2 pt-4">
+                    <button
+                      onClick={handleSaveSettings}
+                      disabled={isUpdatingSettings}
+                      className="flex-1 bg-black text-white py-2 text-[10px] font-black tracking-widest hover:bg-gray-800 transition-colors disabled:opacity-50"
+                    >
+                      {isUpdatingSettings ? 'Saving...' : 'Save'}
+                    </button>
+                    <button
+                      onClick={() => setShowSettingsPanel(false)}
+                      disabled={isUpdatingSettings}
+                      className="flex-1 border border-black text-black py-2 text-[10px] font-black tracking-widest hover:bg-gray-50 transition-colors disabled:opacity-50"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -321,7 +421,14 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
 
           <div className="flex-1 overflow-hidden flex flex-col">
             {activeRightTab === 'summary' ? (
-              <SummaryTab taskId={task.id} />
+              <Suspense fallback={
+                <div className="flex-1 flex flex-col items-center justify-center p-12 text-black opacity-50">
+                  <Loader2 size={36} className="animate-spin mb-3" strokeWidth={1.5} />
+                  <span className="text-[10px] font-black tracking-widest">Loading Summary...</span>
+                </div>
+              }>
+                <SummaryTab taskId={task.id} />
+              </Suspense>
             ) : activeRightTab === 'topTheories' ? (
               <TheoriesList taskId={task.id} />
             ) : activeRightTab === 'experiments' ? (

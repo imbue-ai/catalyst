@@ -230,6 +230,7 @@ def _run_step_core(task: Task, stage: str, prompt: str) -> Any:
         stage=stage,
         common_environment_variables=common_env,
         model=task.model,
+        effort=task.effort,
         on_session_id=on_sid,
         on_status=on_status,
     )

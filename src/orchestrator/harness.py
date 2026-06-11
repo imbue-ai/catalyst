@@ -17,6 +17,7 @@ class HarnessInfo(BaseModel):
     available: bool
     help_message: Optional[str] = None
     models: List[str]
+    effort_options: Optional[List[str]] = None
 
 
 harnesses_lock = threading.Lock()
@@ -27,6 +28,7 @@ harnesses_cache: Dict[str, Dict[str, Any]] = {
         "available": False,
         "help_message": "Checking framework availability...",
         "models": ["fable", "opus", "sonnet", "haiku"],
+        "effort_options": ["low", "medium", "high", "xhigh", "max"],
     },
     "claude": {
         "name": "claude",
@@ -34,6 +36,7 @@ harnesses_cache: Dict[str, Dict[str, Any]] = {
         "available": False,
         "help_message": "Checking framework availability...",
         "models": ["fable", "opus", "sonnet", "haiku"],
+        "effort_options": ["low", "medium", "high", "xhigh", "max"],
     },
     "mngr-antigravity": {
         "name": "mngr-antigravity",
@@ -62,6 +65,7 @@ harnesses_cache: Dict[str, Dict[str, Any]] = {
         "available": False,
         "help_message": "Checking framework availability...",
         "models": ["gpt-5.5", "gpt-5.4-mini"],
+        "effort_options": ["minimal", "low", "medium", "high", "xhigh"],
     },
 }
 
@@ -382,6 +386,7 @@ def get_harnesses_list() -> List[HarnessInfo]:
                 available=h["available"],
                 help_message=h["help_message"],
                 models=h["models"],
+                effort_options=h.get("effort_options"),
             )
             for h in harnesses_cache.values()
         ]

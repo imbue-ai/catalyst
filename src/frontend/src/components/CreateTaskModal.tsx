@@ -1,8 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react'
-import { XCircle, Folder, Cpu, ChevronRight, ChevronDown, Settings2, FileText, Lightbulb, Sparkles, GitMerge, GitCommit, UploadCloud, HelpCircle } from 'lucide-react'
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { XCircle, FileText, Lightbulb, Sparkles, GitMerge, GitCommit, UploadCloud, Folder, HelpCircle, Settings2, ChevronRight, ChevronDown } from 'lucide-react'
 import * as api from '../api'
 import { useWorkflowParams } from '../hooks/useWorkflowParams'
 import { AdditionalParamsSection } from './AdditionalParamsSection'
+import { HarnessSettings } from './HarnessSettings'
 
 interface CreateTaskModalProps {
   onClose: () => void;
@@ -33,16 +34,28 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
 
   const [showAdditional, setShowAdditional] = useState(false)
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false)
-  const [showModelDropdown, setShowModelDropdown] = useState(false)
-  const [showFrameworkDropdown, setShowFrameworkDropdown] = useState(false)
   const templateDropdownRef = useRef<HTMLDivElement>(null)
-  const modelDropdownRef = useRef<HTMLDivElement>(null)
-  const frameworkDropdownRef = useRef<HTMLDivElement>(null)
+  const templateMenuRef = useRef<HTMLDivElement>(null)
+  const [openTemplateUpward, setOpenTemplateUpward] = useState(false)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   // Templates
   const [templates, setTemplates] = useState<string[]>([])
   // Harnesses
   const [harnesses, setHarnesses] = useState<api.HarnessInfo[]>([])
+
+  useLayoutEffect(() => {
+    if (showTemplateDropdown && templateDropdownRef.current && templateMenuRef.current) {
+      const triggerRect = templateDropdownRef.current.getBoundingClientRect()
+      const menuRect = templateMenuRef.current.getBoundingClientRect()
+      let spaceBelow = window.innerHeight - triggerRect.bottom
+      if (scrollContainerRef.current) {
+        const containerRect = scrollContainerRef.current.getBoundingClientRect()
+        spaceBelow = containerRect.bottom - triggerRect.bottom
+      }
+      setOpenTemplateUpward(spaceBelow < menuRect.height)
+    }
+  }, [showTemplateDropdown, templates.length])
 
   useEffect(() => {
     api.getTemplates().then(setTemplates).catch(console.error)
@@ -50,31 +63,17 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
 
   useEffect(() => {
     let active = true
-    let hasAutoSelected = false
-
-    const fetchHarnesses = () => {
-      api.getHarnesses().then(data => {
-        if (!active) return
+    api.getHarnesses().then(data => {
+      if (active) {
         setHarnesses(data)
-        if (!hasAutoSelected && data.length > 0) {
+        if (data.length > 0) {
           const firstAvailable = data.find(h => h.available)
-          if (firstAvailable) {
-            updateInput('framework', firstAvailable.name)
-          } else {
-            updateInput('framework', data[0].name)
-          }
-          hasAutoSelected = true
+          const defaultHarness = firstAvailable ? firstAvailable.name : data[0].name
+          setInputs(prev => ({ ...prev, framework: defaultHarness }))
         }
-      }).catch(console.error)
-    }
-
-    fetchHarnesses()
-    const interval = setInterval(fetchHarnesses, 10000)
-
-    return () => {
-      active = false
-      clearInterval(interval)
-    }
+      }
+    }).catch(console.error)
+    return () => { active = false }
   }, [])
 
   // Close dropdown on click outside
@@ -82,12 +81,6 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     function handleClickOutside(event: MouseEvent) {
       if (templateDropdownRef.current && !templateDropdownRef.current.contains(event.target as Node)) {
         setShowTemplateDropdown(false)
-      }
-      if (modelDropdownRef.current && !modelDropdownRef.current.contains(event.target as Node)) {
-        setShowModelDropdown(false)
-      }
-      if (frameworkDropdownRef.current && !frameworkDropdownRef.current.contains(event.target as Node)) {
-        setShowFrameworkDropdown(false)
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
@@ -128,8 +121,13 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     idea: '',
     templateFolder: '',
     framework: '',
-    model: ''
+    model: '',
+    effort: ''
   })
+
+  const selectedHarness = harnesses.find(h => h.name === inputs.framework)
+  const effortOptions = selectedHarness?.effort_options
+  const hasEffort = !!(effortOptions && effortOptions.length > 0)
 
   const updateInput = (key: keyof typeof inputs, value: any) => {
     setInputs(prev => ({ ...prev, [key]: value }))
@@ -194,6 +192,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         template_folder: inputs.templateFolder || undefined,
         framework: inputs.framework,
         model: inputs.model || undefined,
+        effort: hasEffort ? (inputs.effort || undefined) : undefined,
         theory_scoring_weights: isEvolve ? {
           correctness_weight: correctnessWeight,
           power_weight: powerWeight,
@@ -221,7 +220,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         </div>
 
         <form onSubmit={handleCreate} className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto custom-scrollbar pr-4 flex flex-col gap-10 pb-4">
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar pr-4 flex flex-col gap-10 pb-4">
 
             {/* STEP 1: Input Type */}
             <div>
@@ -338,8 +337,9 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                 </div>
 
                 {/* Global Settings (Always Visible) */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div className="md:col-span-1">
+                <div className="space-y-6">
+                  {/* Template Row */}
+                  <div>
                     <label className="flex items-center gap-1.5 text-[10px] font-black mb-3 tracking-widest text-gray-400">
                       Optional: Template
                       <div className="relative group/tooltip flex items-center justify-center">
@@ -367,7 +367,11 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       </button>
 
                       {showTemplateDropdown && (
-                        <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 max-h-60 overflow-y-auto custom-scrollbar">
+                        <div ref={templateMenuRef} className={`absolute left-0 right-0 z-50 max-h-60 overflow-y-auto custom-scrollbar bg-white border-2 border-black ${
+                          openTemplateUpward 
+                            ? 'bottom-full mb-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]' 
+                            : 'top-full mt-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
+                        }`}>
                           <button
                             type="button"
                             onClick={() => { updateInput('templateFolder', ''); setShowTemplateDropdown(false); }}
@@ -393,103 +397,24 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Agent Framework</label>
-                    <div className="flex items-center gap-3 border-2 border-black p-3 focus-within:bg-gray-50 transition-colors relative" ref={frameworkDropdownRef}>
-                      <Cpu size={18} className="text-black shrink-0" />
-                      <div className="w-full text-sm font-bold bg-transparent select-none cursor-pointer" onClick={() => setShowFrameworkDropdown(!showFrameworkDropdown)}>
-                        {harnesses.find(h => h.name === inputs.framework)?.display_name || inputs.framework}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => setShowFrameworkDropdown(!showFrameworkDropdown)}
-                        className="hover:text-gray-500 transition-colors shrink-0"
-                      >
-                        <ChevronDown size={14} className={`transition-transform ${showFrameworkDropdown ? 'rotate-180' : ''}`} />
-                      </button>
-
-                      {showFrameworkDropdown && (
-                        <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50">
-                          {harnesses.map(h => (
-                            <div
-                              key={h.name}
-                              className={`w-full flex justify-between items-center px-4 py-3 text-xs font-bold border-b border-gray-100 last:border-0 relative group/item transition-colors ${
-                                h.available
-                                  ? 'hover:bg-black hover:text-white cursor-pointer text-black bg-white'
-                                  : 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                              }`}
-                              onClick={() => {
-                                if (h.available) {
-                                  updateInput('framework', h.name)
-                                  updateInput('model', '')
-                                  setShowFrameworkDropdown(false)
-                                }
-                              }}
-                            >
-                              <span>{h.display_name}</span>
-                              {!h.available && (
-                                <div className="flex items-center gap-1.5 shrink-0">
-                                  <HelpCircle size={14} className="text-gray-400 group-hover/item:text-gray-600" />
-                                  {h.help_message && (
-                                    <div className="absolute left-full top-0 ml-2 w-64 p-3 bg-black text-white text-[10px] leading-relaxed hidden group-hover/item:block z-50 normal-case font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">
-                                      {h.help_message}
-                                      <div className="absolute top-3 right-full border-4 border-transparent border-r-black"></div>
-                                    </div>
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Model Identifier</label>
-                    <div className="flex items-center gap-3 border-2 border-black p-3 transition-colors relative focus-within:bg-gray-50" ref={modelDropdownRef}>
-                      <Cpu size={18} className="text-black shrink-0" />
-                      <input
-                        value={inputs.model}
-                        onChange={e => {
-                          updateInput('model', e.target.value)
-                        }}
-                        placeholder="Default"
-                        className="w-full outline-none text-sm font-bold bg-transparent"
-                      />
-                      {(harnesses.find(h => h.name === inputs.framework)?.models || []).length > 0 && (
-                        <button
-                          type="button"
-                          onClick={() => setShowModelDropdown(!showModelDropdown)}
-                          className="hover:text-gray-500 transition-colors shrink-0"
-                        >
-                          <ChevronDown size={14} className={`transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
-                        </button>
-                      )}
-
-                      {showModelDropdown && (harnesses.find(h => h.name === inputs.framework)?.models || []).length > 0 && (
-                        <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 max-h-60 overflow-y-auto custom-scrollbar">
-                          <button
-                            type="button"
-                            onClick={() => { updateInput('model', ''); setShowModelDropdown(false); }}
-                            className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-black hover:text-white transition-colors border-b border-gray-100 uppercase tracking-widest"
-                          >
-                            Default
-                          </button>
-                          {(harnesses.find(h => h.name === inputs.framework)?.models || []).map(m => (
-                            <button
-                              key={m}
-                              type="button"
-                              onClick={() => { updateInput('model', m); setShowModelDropdown(false); }}
-                              className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-black hover:text-white transition-colors border-b border-gray-100 last:border-0"
-                            >
-                              {m}
-                            </button>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                  {/* Framework, Model, and Effort Row */}
+                  <HarnessSettings
+                    framework={inputs.framework}
+                    model={inputs.model}
+                    effort={inputs.effort}
+                    harnesses={harnesses}
+                    onChange={(updates) => {
+                      if (updates.framework !== undefined) {
+                        updateInput('framework', updates.framework)
+                        updateInput('model', '')
+                        updateInput('effort', '')
+                      }
+                      if (updates.model !== undefined) updateInput('model', updates.model)
+                      if (updates.effort !== undefined) updateInput('effort', updates.effort)
+                    }}
+                    isCompact={false}
+                    scrollContainerRef={scrollContainerRef}
+                  />
                 </div>
 
                 {/* Collapsible Additional Parameters */}

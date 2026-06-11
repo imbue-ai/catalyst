@@ -95,6 +95,7 @@ class AgentRunner(ABC):
         stage: str,
         common_environment_variables: Dict[str, str],
         model: Optional[str] = None,
+        effort: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:

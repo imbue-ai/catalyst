@@ -117,6 +117,7 @@ class CreateTaskRequest(BaseModel):
     template_folder: Optional[str] = None
     framework: str
     model: Optional[str] = None
+    effort: Optional[str] = None
     theory_scoring_weights: Optional[TheoryScoringWeights] = None
 
 
@@ -130,6 +131,7 @@ def list_tasks():
             env_folder=task.env_folder,
             framework=task.framework,
             model=task.model,
+            effort=task.effort,
             status=task.status,
             current_stage=task.current_stage,
             workflow_name=task.workflow_name,
@@ -228,6 +230,7 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
         env_folder=target_path,
         framework=req.framework,
         model=req.model,
+        effort=req.effort,
         status=TaskStatus.PENDING,
         steps=[],
         workflow_name=req.workflow_name,
@@ -436,6 +439,25 @@ def update_task_guidance(task_id: str, req: UpdateGuidanceRequest):
             status_code=500, detail=f"Failed to write guidance file: {e}"
         )
 
+    return task
+
+
+class UpdateSettingsRequest(BaseModel):
+    framework: str
+    model: Optional[str] = None
+    effort: Optional[str] = None
+
+
+@app.post("/api/tasks/{task_id}/settings", response_model=Task)
+def update_task_settings(task_id: str, req: UpdateSettingsRequest):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task.framework = req.framework
+    task.model = req.model
+    task.effort = req.effort
+    update_task(task)
     return task
 
 
