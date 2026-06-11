@@ -36,6 +36,14 @@ function App() {
   }, [isDarkMode]);
 
   useEffect(() => {
+    const root = document.documentElement;
+    const timeout = setTimeout(() => {
+      root.classList.add('theme-loaded');
+    }, 150);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (e: MediaQueryListEvent) => {
       const saved = localStorage.getItem('theme');

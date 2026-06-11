@@ -44,13 +44,13 @@ body {
 }
 
 /* Smooth transition when switching between dark and light mode */
-html {
+html.theme-loaded {
   transition: filter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Double-invert and other custom dark mode elements also need to transition in sync */
-.no-invert,
-.status-indicator {
+html.theme-loaded .no-invert,
+html.theme-loaded .status-indicator {
   transition: filter 0.5s cubic-bezier(0.4, 0, 0.2, 1),
               background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
               color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
