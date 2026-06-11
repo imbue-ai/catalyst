@@ -1,6 +1,6 @@
 from orchestrator.agents.base import EXPERIMENT_TIMEOUT_SECS
 
-from .mngr_runner import MngrAgentRunner, TurnCompletion
+from .mngr_runner import MngrAgentRunner
 
 # Per-tool permission prompts are auto-allowed by the mngr_claude plugin's
 # `PermissionRequest` hook when `auto_allow_permissions = true` (see
@@ -17,7 +17,6 @@ class MngrClaudeAgentRunner(MngrAgentRunner):
             agent_type="claude",
             framework="mngr-claude",
             transcript_source="claude/common_transcript",
-            turn_completion=TurnCompletion.STOP_HOOK,
             model_flag="--model",
             effort_flag="--effort",
             extra_env={

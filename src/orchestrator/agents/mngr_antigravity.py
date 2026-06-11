@@ -1,4 +1,4 @@
-from .mngr_runner import MngrAgentRunner, TurnCompletion
+from .mngr_runner import MngrAgentRunner
 
 
 class MngrAntigravityAgentRunner(MngrAgentRunner):
@@ -7,7 +7,6 @@ class MngrAntigravityAgentRunner(MngrAgentRunner):
             agent_type="antigravity",
             framework="mngr-antigravity",
             transcript_source="antigravity/common_transcript",
-            turn_completion=TurnCompletion.WAITING_STATE,
             # `--sandbox` is *intentionally* omitted here even though the
             # direct `agy` runner sets it. agy bug #36 (combining
             # `--dangerously-skip-permissions` with `--sandbox` is broken)

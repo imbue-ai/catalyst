@@ -1,5 +1,4 @@
 import contextlib
-import enum
 import json
 import logging
 import os
@@ -25,34 +24,6 @@ logger = logging.getLogger(__name__)
 # direct Antigravity CLI runner uses. The agent's tmux session is the
 # source of cost, not this timeout.
 _WAIT_TIMEOUT_SECONDS = 6 * 60 * 60
-
-
-class TurnCompletion(enum.Enum):
-    """How a runner decides an agent's turn is finished.
-
-    STOP_HOOK -- the agent type emits a `mngr/turn_complete` / `turn_end`
-        event exactly once per turn (mngr_claude, via the Stop hook in
-        `.claude/settings.json`). The most precise signal: it fires
-        after the final assistant_message is flushed and never trips on
-        intermediate idle.
-
-    WAITING_STATE -- the agent type's plugin provisions an active-marker
-        hook (mngr_antigravity 0.1.1+: PreInvocation touches the marker,
-        Stop removes it) so `BaseAgent.get_lifecycle_state` reports RUNNING
-        while the agent works and WAITING when idle. We use `mngr wait
-        --state WAITING` as the turn-end signal.
-    """
-
-    STOP_HOOK = "stop_hook"
-    WAITING_STATE = "waiting_state"
-
-
-# Source + event-type written by the Stop hook in
-# `src/claude_skills/settings.json`. Fires exactly once per agent
-# turn, *after* the final assistant_message has been flushed to the
-# transcript. Used by the STOP_HOOK strategy.
-_TURN_COMPLETE_SOURCE = "mngr/turn_complete"
-_TURN_END_EVENT_TYPE = "turn_end"
 
 # How long to wait, after the turn-end signal fires, for the
 # assistant_message event to show up in the common transcript. The
@@ -128,10 +99,8 @@ class MngrAgentRunner(AgentRunner):
 
     Lifecycle per `run()` call:
         1. mngr create --no-connect ...    (returns once agent is spawned)
-        2. mngr event --follow             (background, status + STOP_HOOK
-                                            turn-end detection)
-        3. mngr wait --state WAITING       (only for WAITING_STATE strategy)
-           or wait for turn_end event      (STOP_HOOK strategy)
+        2. mngr event --follow             (background, status updates)
+        3. mngr wait --state WAITING       (waiting for turn-end)
         4. mngr stop                       (halts cleanly; transcript preserved)
 
     Stopped agents stay visible in `mngr list` for `mngr connect` /
@@ -150,8 +119,6 @@ class MngrAgentRunner(AgentRunner):
     # source (mngr_claude -> "claude/common_transcript",
     # mngr_antigravity -> "antigravity/common_transcript").
     transcript_source: str
-    # Strategy for detecting "this turn finished" -- see TurnCompletion.
-    turn_completion: TurnCompletion
     # Static CLI args appended after `--` on every `mngr create`. Use this
     # for flags the agent always wants (e.g. agy's "--sandbox").
     agent_args: Tuple[str, ...] = ()
@@ -371,27 +338,17 @@ class MngrAgentRunner(AgentRunner):
         )
 
     def _no_completion_error(self) -> str:
-        """Error string when the turn never completed. Phrased per the
-        turn-completion strategy so the message points at the actual
-        failure mode rather than a generic one. `_wait_for_turn_end`
+        """Error string when the turn never completed. `_wait_for_turn_end`
         returns False both on actual deadline expiry AND on an external
         `mngr stop` arriving (server.py pause), so the wording must not
         present the deadline as the *only* explanation."""
-        if self.turn_completion is TurnCompletion.WAITING_STATE:
-            return (
-                f"Agent stopped without reaching the WAITING lifecycle state. "
-                f"{self.framework} completion is signalled when the agent's "
-                "per-task active marker is cleared; this can happen if the "
-                "agent was paused / stopped externally, the plugin's hooks "
-                "didn't fire, or the wait cap "
-                f"({_WAIT_TIMEOUT_SECONDS}s) elapsed before completion."
-            )
         return (
-            "Agent stopped without signaling turn_end. If this wasn't a "
-            "manual pause, the env_folder may pre-date the change that "
-            "added the Stop hook to .claude/settings.json -- delete the "
-            "task and recreate it to pick up the new env_folder template. "
-            f"(wait cap was {_WAIT_TIMEOUT_SECONDS}s.)"
+            f"Agent stopped without reaching the WAITING lifecycle state. "
+            f"{self.framework} completion is signalled when the agent's "
+            "per-task active marker is cleared; this can happen if the "
+            "agent was paused / stopped externally, the plugin's hooks "
+            "didn't fire, or the wait cap "
+            f"({_WAIT_TIMEOUT_SECONDS}s) elapsed before completion."
         )
 
     def _wait_for_turn_end(
@@ -405,13 +362,11 @@ class MngrAgentRunner(AgentRunner):
         fires first wins:
 
         * `mngr event --follow` -- streams transcript events. Always
-          consumed for `on_status` updates; for STOP_HOOK it also sets
-          `saw_turn_end` on a `mngr/turn_complete` `turn_end` event.
+          consumed for `on_status` updates.
         * `mngr wait --state STOPPED` -- catches external pause / cancel
           (server.py calls `mngr stop` via `cancel_task_process`).
-        * `mngr wait --state WAITING` -- only spawned for WAITING_STATE;
-          sets `saw_turn_end` when the agent's per-task active marker is
-          cleared by the plugin's Stop hook.
+        * `mngr wait --state WAITING` -- sets `saw_turn_end` when the
+          agent's per-task active marker is cleared by the plugin's Stop hook.
 
         Returns (saw_turn_end, last_assistant_text).
         """
@@ -441,8 +396,7 @@ class MngrAgentRunner(AgentRunner):
                 env=mngr_env(),
             )
             stop_proc = self._spawn_wait_for_state(agent_name, "STOPPED")
-            if self.turn_completion is TurnCompletion.WAITING_STATE:
-                wait_proc = self._spawn_wait_for_state(agent_name, "WAITING")
+            wait_proc = self._spawn_wait_for_state(agent_name, "WAITING")
 
             threads.append(
                 threading.Thread(
@@ -458,14 +412,13 @@ class MngrAgentRunner(AgentRunner):
                     daemon=True,
                 )
             )
-            if wait_proc is not None:
-                threads.append(
-                    threading.Thread(
-                        target=self._watch_proc,
-                        args=(wait_proc, watch_done, saw_turn_end),
-                        daemon=True,
-                    )
+            threads.append(
+                threading.Thread(
+                    target=self._watch_proc,
+                    args=(wait_proc, watch_done, saw_turn_end),
+                    daemon=True,
                 )
+            )
 
             for t in threads:
                 t.start()
@@ -474,7 +427,7 @@ class MngrAgentRunner(AgentRunner):
             watch_done.wait(timeout=remaining)
 
             # Allow some extra time before terminating, since assistant messages can sometimes be delievered after
-            # the stop condition. _consume_events will keep running until we terminate it or the agent process exits.
+            # the stop condition. _consume_events will keep running until we terminate us or the agent process exits.
             time.sleep(_POST_TURN_END_SECONDS)
         finally:
             for proc in (event_proc, stop_proc, wait_proc):
@@ -525,8 +478,7 @@ class MngrAgentRunner(AgentRunner):
         state: Dict[str, Any],
     ) -> None:
         """Read `event_proc`'s stdout line-by-line, dispatching events to
-        the status callback and (for STOP_HOOK) checking for the turn_end
-        signal."""
+        the status callback."""
         assert event_proc.stdout is not None
         for line in event_proc.stdout:
             if not line.strip():
@@ -547,17 +499,6 @@ class MngrAgentRunner(AgentRunner):
                 text = extract_assistant_text(event)
                 if text is not None:
                     state["last_assistant_text"] = text
-
-            if (
-                self.turn_completion is TurnCompletion.STOP_HOOK
-                and event.get("source") == _TURN_COMPLETE_SOURCE
-                and event.get("type") == _TURN_END_EVENT_TYPE
-            ):
-                saw_turn_end.set()
-                watch_done.set()
-                # Keep running for a little longer, since the final assistant message might
-                # arrive out-of-order after the stop hook fires.
-                # _wait_for_turn_end will eventually terminate us.
 
     @staticmethod
     def _terminate_proc(proc: subprocess.Popen) -> None:
