@@ -159,6 +159,10 @@ class MngrAgentRunner(AgentRunner):
     # caller passes a model. Agents that have no model selection (agy)
     # leave this None.
     model_flag: Optional[str] = None
+    # If set, `[effort_flag, effort]` is appended to agent_args whenever the
+    # caller passes an effort. Agents that have no effort selection
+    # leave this None.
+    effort_flag: Optional[str] = None
     # Per-agent-type env vars layered on top of the shared set built in
     # `run()` (UV_CACHE_DIR, CATALYST_DB_PATH, MPLCONFIGDIR).
     extra_env: Dict[str, str] = field(default_factory=dict)
@@ -202,8 +206,8 @@ class MngrAgentRunner(AgentRunner):
         args = list(self.agent_args)
         if model and self.model_flag:
             args.extend([self.model_flag, model])
-        if effort and self.framework == "mngr-claude":
-            args.extend(["--effort", effort])
+        if effort and self.effort_flag:
+            args.extend([self.effort_flag, effort])
         return args
 
     def run(

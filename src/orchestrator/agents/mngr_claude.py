@@ -19,6 +19,7 @@ class MngrClaudeAgentRunner(MngrAgentRunner):
             transcript_source="claude/common_transcript",
             turn_completion=TurnCompletion.STOP_HOOK,
             model_flag="--model",
+            effort_flag="--effort",
             extra_env={
                 # Force synchronous subagent execution. Claude Code (v2.1.4+)
                 # may otherwise run subagents asynchronously, letting the
