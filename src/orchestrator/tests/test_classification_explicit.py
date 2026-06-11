@@ -117,3 +117,89 @@ class TestExplicitClassification(unittest.TestCase):
             unittest.mock.ANY,
             StepCategory.THEORY_WRITING,
         )
+
+    @patch("orchestrator.orchestrator.get_agent_runner")
+    @patch("orchestrator.orchestrator.get_task_lock")
+    @patch("orchestrator.orchestrator.update_task")
+    @patch("orchestrator.orchestrator.get_task")
+    @patch("orchestrator.orchestrator.run_context_manager")
+    def test_per_category_routing_resolution(self, mock_run_context_manager, mock_get_task, mock_update_task, mock_get_task_lock, mock_get_agent_runner):
+        from ..models import AgentSettings, Step, StepStatus
+        from ..orchestrator import _run_step_core
+
+        # Set up runner mock
+        mock_runner = MagicMock()
+        mock_get_agent_runner.return_value = mock_runner
+        mock_runner.build_common_environment_variables.return_value = {}
+        mock_runner.run.return_value = ("output", "session_123", None)
+
+        # Set up a task with defaults and overrides
+        task = Task(
+            id="test_task_routing",
+            framework="gemini",
+            model="gemini-1.5-pro",
+            effort="medium",
+            env_folder="/tmp/env",
+            steps=[Step(stage="test-stage", status=StepStatus.RUNNING)],
+            category_overrides={
+                StepCategory.THEORY_WRITING: AgentSettings(
+                    framework="claude",
+                    model="claude-3-opus",
+                    effort="high",
+                ),
+                StepCategory.REVIEW: AgentSettings(
+                    model="claude-3-sonnet", # overrides model only, framework and effort fall back
+                )
+            }
+        )
+
+        mock_get_task.return_value = task
+
+        # Case 1: Active override for StepCategory.THEORY_WRITING (complete override)
+        _run_step_core(task, stage="test-stage", prompt="Write something", category=StepCategory.THEORY_WRITING)
+        mock_get_agent_runner.assert_called_with("claude")
+        mock_runner.run.assert_called_with(
+            task_id=task.id,
+            prompt="Write something",
+            env_folder=task.env_folder,
+            stage="test-stage",
+            common_environment_variables={},
+            model="claude-3-opus",
+            effort="high",
+            on_session_id=unittest.mock.ANY,
+            on_status=unittest.mock.ANY,
+        )
+
+        # Case 2: Partial override for StepCategory.REVIEW (only model is overridden, framework & effort fall back)
+        mock_get_agent_runner.reset_mock()
+        mock_runner.run.reset_mock()
+        _run_step_core(task, stage="test-stage", prompt="Review this", category=StepCategory.REVIEW)
+        mock_get_agent_runner.assert_called_with("gemini") # falls back to task framework
+        mock_runner.run.assert_called_with(
+            task_id=task.id,
+            prompt="Review this",
+            env_folder=task.env_folder,
+            stage="test-stage",
+            common_environment_variables={},
+            model="claude-3-sonnet", # overridden
+            effort="medium", # falls back to task effort
+            on_session_id=unittest.mock.ANY,
+            on_status=unittest.mock.ANY,
+        )
+
+        # Case 3: No override for StepCategory.MISC (everything falls back)
+        mock_get_agent_runner.reset_mock()
+        mock_runner.run.reset_mock()
+        _run_step_core(task, stage="test-stage", prompt="Misc work", category=StepCategory.MISC)
+        mock_get_agent_runner.assert_called_with("gemini") # falls back
+        mock_runner.run.assert_called_with(
+            task_id=task.id,
+            prompt="Misc work",
+            env_folder=task.env_folder,
+            stage="test-stage",
+            common_environment_variables={},
+            model="gemini-1.5-pro", # falls back
+            effort="medium", # falls back
+            on_session_id=unittest.mock.ANY,
+            on_status=unittest.mock.ANY,
+        )

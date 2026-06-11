@@ -206,9 +206,22 @@ def _run_step_core(task: Task, stage: str, prompt: str, category: StepCategory) 
             step.last_status = status
             update_task(task)
 
-    runner = get_agent_runner(task.framework)
+    framework = task.framework
+    model = task.model
+    effort = task.effort
+
+    if task.category_overrides and category in task.category_overrides:
+        override = task.category_overrides[category]
+        if override.framework is not None:
+            framework = override.framework
+        if override.model is not None:
+            model = override.model
+        if override.effort is not None:
+            effort = override.effort
+
+    runner = get_agent_runner(framework)
     if not runner:
-        error = f"No agent runner found for framework: {task.framework}"
+        error = f"No agent runner found for framework: {framework}"
         with lock:
             step.status = StepStatus.FAILED
             step.error = error
@@ -229,8 +242,8 @@ def _run_step_core(task: Task, stage: str, prompt: str, category: StepCategory) 
         env_folder=task.env_folder,
         stage=stage,
         common_environment_variables=common_env,
-        model=task.model,
-        effort=task.effort,
+        model=model,
+        effort=effort,
         on_session_id=on_sid,
         on_status=on_status,
     )
