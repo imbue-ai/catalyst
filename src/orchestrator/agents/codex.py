@@ -18,6 +18,7 @@ class CodexAgentRunner(BaseCliAgentRunner):
         stage: str,  # ignored by the direct runner
         common_environment_variables: Dict[str, str],
         model: Optional[str] = None,
+        effort: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
@@ -45,6 +46,8 @@ class CodexAgentRunner(BaseCliAgentRunner):
         ]
         if model:
             cmd.extend(["--model", model])
+        if effort:
+            cmd.extend(["-c", f"model_reasoning_effort={effort}"])
         cmd.append(prompt)
 
         logger.debug(f"[AGENT] Starting Codex for task {task_id[:8]}")

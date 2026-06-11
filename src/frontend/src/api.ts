@@ -51,6 +51,7 @@ export interface Task {
   workflow_structure: any[];
   created_at?: string;
   guidance?: string;
+  effort?: string;
   theory_scoring_weights?: TheoryScoringWeights;
 }
 
@@ -98,6 +99,7 @@ export interface TaskShallow {
   status: "pending" | "running" | "completed" | "failed" | "paused";
   current_stage?: string;
   workflow_name: string;
+  effort?: string;
   created_at?: string;
 }
 
@@ -117,6 +119,7 @@ export async function createTask(data: {
   template_folder?: string;
   framework: string;
   model?: string;
+  effort?: string;
   theory_scoring_weights?: TheoryScoringWeights;
   file?: File;
 }): Promise<Task> {
@@ -127,6 +130,7 @@ export async function createTask(data: {
     template_folder: data.template_folder,
     framework: data.framework,
     model: data.model,
+    effort: data.effort,
     theory_scoring_weights: data.theory_scoring_weights
   };
   formData.append('request', JSON.stringify(requestData));
@@ -269,6 +273,7 @@ export interface HarnessInfo {
   available: boolean;
   help_message?: string;
   models: string[];
+  effort_options?: string[];
 }
 
 export async function getHarnesses(): Promise<HarnessInfo[]> {

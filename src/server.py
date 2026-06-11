@@ -117,6 +117,7 @@ class CreateTaskRequest(BaseModel):
     template_folder: Optional[str] = None
     framework: str
     model: Optional[str] = None
+    effort: Optional[str] = None
     theory_scoring_weights: Optional[TheoryScoringWeights] = None
 
 
@@ -130,6 +131,7 @@ def list_tasks():
             env_folder=task.env_folder,
             framework=task.framework,
             model=task.model,
+            effort=task.effort,
             status=task.status,
             current_stage=task.current_stage,
             workflow_name=task.workflow_name,
@@ -228,6 +230,7 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
         env_folder=target_path,
         framework=req.framework,
         model=req.model,
+        effort=req.effort,
         status=TaskStatus.PENDING,
         steps=[],
         workflow_name=req.workflow_name,

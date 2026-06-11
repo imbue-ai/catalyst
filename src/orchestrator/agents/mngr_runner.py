@@ -198,10 +198,12 @@ class MngrAgentRunner(AgentRunner):
                 )
             unregister_cancellable(task_id, cancellable)
 
-    def _build_agent_args(self, model: Optional[str]) -> List[str]:
+    def _build_agent_args(self, model: Optional[str], effort: Optional[str] = None) -> List[str]:
         args = list(self.agent_args)
         if model and self.model_flag:
             args.extend([self.model_flag, model])
+        if effort and self.framework == "mngr-claude":
+            args.extend(["--effort", effort])
         return args
 
     def run(
@@ -212,6 +214,7 @@ class MngrAgentRunner(AgentRunner):
         stage: str,
         common_environment_variables: Dict[str, str],
         model: Optional[str] = None,
+        effort: Optional[str] = None,
         on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
@@ -265,7 +268,7 @@ class MngrAgentRunner(AgentRunner):
             for key, value in env_vars.items():
                 create_cmd.extend(["--env", f"{key}={value}"])
 
-            agent_args = self._build_agent_args(model)
+            agent_args = self._build_agent_args(model, effort)
             if agent_args:
                 create_cmd.append("--")
                 create_cmd.extend(agent_args)

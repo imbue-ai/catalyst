@@ -192,7 +192,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               <Folder size={14} /> {task.env_folder}
             </div>
             <div className="bg-gray-100 p-3 flex items-center gap-2 text-[10px] font-bold">
-              <Cpu size={14} /> {task.framework} {task.model && `[${task.model}]`}
+              <Cpu size={14} /> {task.framework} {task.model && `[${task.model}]`}{task.effort && ` (${task.effort} effort)`}
             </div>
           </div>
         </div>
