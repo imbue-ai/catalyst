@@ -1,12 +1,9 @@
 from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Dict, Optional
-import os
 import logging
 
-from context_manager import DEFAULT_DB_DIR
 from ..models import Task, StepStatus, Step
 from ..state import update_task, get_task_lock
-from ..utils import run_context_manager
 
 logger = logging.getLogger(__name__)
 
