@@ -268,9 +268,6 @@ function App() {
             <GameOfLife />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-20 text-center">
-              <div className="w-24 h-24 border border-black rounded-full flex items-center justify-center mb-6 animate-pulse">
-                <Activity size={40} strokeWidth={1} className="text-gray-300" />
-              </div>
               <h2 className="text-2xl font-black tracking-tighter mb-2">Ready for Discovery</h2>
               <p className="text-gray-400 max-w-sm text-sm">
                 Select a research thread from the sidebar or start a new inquiry.
