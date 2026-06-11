@@ -43,6 +43,21 @@ body {
   box-sizing: border-box;
 }
 
+/* Smooth transition when switching between dark and light mode */
+html {
+  transition: filter 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Double-invert and other custom dark mode elements also need to transition in sync */
+.no-invert,
+.status-indicator {
+  transition: filter 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              background-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              border-color 0.5s cubic-bezier(0.4, 0, 0.2, 1),
+              box-shadow 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
 /* Dark mode styles using an elegant, high-fidelity CSS inversion strategy */
 html.dark {
   filter: invert(1) hue-rotate(180deg) contrast(0.85) brightness(1.15);
