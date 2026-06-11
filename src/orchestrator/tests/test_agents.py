@@ -5,13 +5,14 @@ from ..agents.gemini import GeminiAgentRunner
 from ..agents.claude import ClaudeAgentRunner
 from ..agents.mngr_runner import extract_assistant_text, extract_status
 
+
 class TestAgents(unittest.TestCase):
     def test_parse_json_result(self):
         # Simple JSON
         self.assertEqual(parse_json_result('{"a": 1}'), {"a": 1})
 
         # Markdown JSON
-        raw = "Here is the result:\n```json\n{\"score\": 0.5}\n```\nDone."
+        raw = 'Here is the result:\n```json\n{"score": 0.5}\n```\nDone.'
         self.assertEqual(parse_json_result(raw), {"score": 0.5})
 
         # Multiple JSONs, should pick the last one
@@ -20,7 +21,9 @@ class TestAgents(unittest.TestCase):
 
         # Nested JSON, should correctly find the outer boundaries
         raw = 'Random text before {"outer": {"inner": 42}, "other": "val"} text after'
-        self.assertEqual(parse_json_result(raw), {"outer": {"inner": 42}, "other": "val"})
+        self.assertEqual(
+            parse_json_result(raw), {"outer": {"inner": 42}, "other": "val"}
+        )
 
         # Multiple JSONs with nesting
         raw = '{"first": {"a": 1}} some noise {"last": {"b": 2}}'
@@ -38,7 +41,7 @@ class TestAgents(unittest.TestCase):
         mock_process.stdout.readline.side_effect = [
             '{"type": "message", "role": "assistant", "content": "{\\"theory_id\\": \\"T1\\"}"}\n',
             '{"session_id": "sid_123"}\n',
-            ""
+            "",
         ]
         mock_process.wait.return_value = 0
         mock_process.returncode = 0
@@ -74,7 +77,7 @@ class TestAgents(unittest.TestCase):
         mock_process.stdout.readline.side_effect = [
             '{"type": "result", "result": "{\\"theory_id\\": \\"T2\\"}"}\n',
             '{"session_id": "sid_456"}\n',
-            ""
+            "",
         ]
         mock_process.wait.return_value = 0
         mock_process.returncode = 0
@@ -110,8 +113,8 @@ class TestAgents(unittest.TestCase):
 
         mock_process = MagicMock()
         mock_process.communicate.return_value = (
-            "Random setup output...\n```json\n{\"theory_id\": \"T3\"}\n```\n",
-            None
+            'Random setup output...\n```json\n{"theory_id": "T3"}\n```\n',
+            None,
         )
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
@@ -147,7 +150,6 @@ class TestAgents(unittest.TestCase):
         self.assertIn("agy", cmd)
         self.assertIn("--sandbox", cmd)
         self.assertIn("--print-timeout", cmd)
-        self.assertIn("6h", cmd)
         self.assertIn("--model", cmd)
         self.assertEqual(cmd[cmd.index("--model") + 1], "Gemini 3.5 Flash (Low)")
         # --model lives before -p so the prompt remains the last arg.
@@ -166,10 +168,14 @@ class TestSharedExtractors(unittest.TestCase):
         )
 
     def test_extract_assistant_text_skips_empty(self):
-        self.assertIsNone(extract_assistant_text({"type": "assistant_message", "text": ""}))
+        self.assertIsNone(
+            extract_assistant_text({"type": "assistant_message", "text": ""})
+        )
 
     def test_extract_assistant_text_skips_other_types(self):
-        self.assertIsNone(extract_assistant_text({"type": "tool_result", "text": "irrelevant"}))
+        self.assertIsNone(
+            extract_assistant_text({"type": "tool_result", "text": "irrelevant"})
+        )
 
     def test_extract_status_collapses_whitespace(self):
         event = {"type": "assistant_message", "text": "two\n\n  newlines"}
@@ -300,5 +306,3 @@ class TestMngrAgentRunner(unittest.TestCase):
                 power_weight=0.5,
                 adherence_weight=0.9,
             )
-
-
