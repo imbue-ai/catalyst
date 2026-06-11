@@ -19,7 +19,7 @@ import { CreateAddonModal } from './CreateAddonModal'
 import { TheoriesList } from './TheoriesList'
 import { ExperimentsList } from './ExperimentsList'
 import { EditGuidanceModal } from './EditGuidanceModal'
-import { SummaryTab } from './SummaryTab'
+const SummaryTab = lazy(() => import('./SummaryTab').then(m => ({ default: m.SummaryTab })))
 import { HarnessSettings } from './HarnessSettings'
 
 
@@ -420,7 +420,14 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
 
           <div className="flex-1 overflow-hidden flex flex-col">
             {activeRightTab === 'summary' ? (
-              <SummaryTab taskId={task.id} />
+              <Suspense fallback={
+                <div className="flex-1 flex flex-col items-center justify-center p-12 text-black opacity-50">
+                  <Loader2 size={36} className="animate-spin mb-3" strokeWidth={1.5} />
+                  <span className="text-[10px] font-black tracking-widest">Loading Summary...</span>
+                </div>
+              }>
+                <SummaryTab taskId={task.id} />
+              </Suspense>
             ) : activeRightTab === 'topTheories' ? (
               <TheoriesList taskId={task.id} />
             ) : activeRightTab === 'experiments' ? (

@@ -369,8 +369,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       {showTemplateDropdown && (
                         <div ref={templateMenuRef} className={`absolute left-0 right-0 z-50 max-h-60 overflow-y-auto custom-scrollbar bg-white border-2 border-black ${
                           openTemplateUpward 
-                            ? 'bottom-full mb-2 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]' 
-                            : 'top-full mt-2 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]'
+                            ? 'bottom-full mb-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]' 
+                            : 'top-full mt-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
                         }`}>
                           <button
                             type="button"
