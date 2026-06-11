@@ -17,4 +17,16 @@ auto_allow_permissions = true
 # message keystrokes; this silently appends the work_dir to agy's
 # trustedWorkspaces during provisioning.
 auto_dismiss_dialogs = true
-auto_allow_permissions = true
+# Catalyst steps run unattended, but we want agy *sandboxed* (the runner
+# passes `--sandbox`). We deliberately do NOT use `auto_allow_permissions`
+# here: that adds `--dangerously-skip-permissions`, which silently disables
+# the sandbox (agy bug #36) and makes the permissions policy moot. Instead
+# we auto-approve via agy's native permissions policy, which keeps the
+# sandbox enforced:
+#   - `toolPermission = "proceed-in-sandbox"` auto-proceeds every tool call
+#     as long as it runs *inside* the sandbox -- no per-tool dialog.
+#   - `deny = ["unsandboxed"]` refuses any attempt to run *outside* the
+#     sandbox (the one thing we never auto-allow), so the agent can't
+#     escalate out of isolation. Deny outranks everything (Deny > Ask > Allow).
+auto_allow_permissions = false
+settings_overrides = { toolPermission = "proceed-in-sandbox", permissions = { deny = ["unsandboxed"] } }
