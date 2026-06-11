@@ -4,6 +4,7 @@ import * as api from '../api'
 import { useWorkflowParams } from '../hooks/useWorkflowParams'
 import { AdditionalParamsSection } from './AdditionalParamsSection'
 import { HarnessSettings } from './HarnessSettings'
+import { CategoryOverridesSettings } from './CategoryOverridesSettings'
 
 interface CreateTaskModalProps {
   onClose: () => void;
@@ -125,6 +126,30 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     effort: ''
   })
 
+  const [categoryOverrides, setCategoryOverrides] = useState<Record<api.StepCategory, api.AgentSettings>>({
+    THEORY_WRITING: {},
+    REVIEW: {},
+    MISC: {}
+  })
+
+  const cleanOverridesForApi = (overrides: Record<api.StepCategory, api.AgentSettings>): Record<api.StepCategory, api.AgentSettings> => {
+    const cleaned: any = {};
+    for (const key of Object.keys(overrides) as api.StepCategory[]) {
+      const ov = overrides[key];
+      if (ov) {
+        const hasValue = ov.framework || ov.model || ov.effort;
+        if (hasValue) {
+          cleaned[key] = {
+            framework: ov.framework || null,
+            model: ov.model || null,
+            effort: ov.effort || null
+          };
+        }
+      }
+    }
+    return cleaned;
+  };
+
   const selectedHarness = harnesses.find(h => h.name === inputs.framework)
   const effortOptions = selectedHarness?.effort_options
   const hasEffort = !!(effortOptions && effortOptions.length > 0)
@@ -198,6 +223,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
           power_weight: powerWeight,
           adherence_weight: adherenceWeight
         } : undefined,
+        category_overrides: cleanOverridesForApi(categoryOverrides),
         file: selectedFile || undefined
       })
       onCreated(task)
@@ -462,7 +488,15 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         setAdherenceWeight={setAdherenceWeight}
                         generateIntermediateResearchSummaries={generateIntermediateResearchSummaries}
                         setGenerateIntermediateResearchSummaries={setGenerateIntermediateResearchSummaries}
-                      />
+                      >
+                        <CategoryOverridesSettings
+                          overrides={categoryOverrides}
+                          onChange={setCategoryOverrides}
+                          harnesses={harnesses}
+                          scrollContainerRef={scrollContainerRef}
+                          collapsible={false}
+                        />
+                      </AdditionalParamsSection>
                     )}
                   </div>
                 )}

@@ -10,6 +10,8 @@ interface HarnessSettingsProps {
   onChange: (updates: { framework?: string; model?: string; effort?: string }) => void;
   isCompact?: boolean;
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
+  allowDefaultFramework?: boolean;
+  forceVertical?: boolean;
 }
 
 export function HarnessSettings({
@@ -20,6 +22,8 @@ export function HarnessSettings({
   onChange,
   isCompact = false,
   scrollContainerRef,
+  allowDefaultFramework = false,
+  forceVertical = false,
 }: HarnessSettingsProps) {
   const [showFrameworkDropdown, setShowFrameworkDropdown] = useState(false)
   const [showModelDropdown, setShowModelDropdown] = useState(false)
@@ -143,8 +147,21 @@ export function HarnessSettings({
     ? 'absolute top-3 left-full border-4 border-transparent border-l-black'
     : 'absolute top-3 right-full border-4 border-transparent border-r-black'
 
+  const showModelField = !allowDefaultFramework || framework !== ''
+  const showEffortField = hasEffort && showModelField
+
+  let visibleCols = 1
+  if (showModelField) visibleCols++
+  if (showEffortField) visibleCols++
+
+  const gridClass = forceVertical
+    ? (isCompact ? 'grid grid-cols-1 gap-3' : 'grid grid-cols-1 gap-6')
+    : (isCompact
+        ? `grid grid-cols-1 md:grid-cols-${visibleCols} gap-3`
+        : `grid grid-cols-1 md:grid-cols-${visibleCols} gap-6`)
+
   return (
-    <div className={isCompact ? 'space-y-4' : `grid grid-cols-1 md:grid-cols-${hasEffort ? '3' : '2'} gap-6`}>
+    <div className={gridClass}>
       {/* Agent Framework Dropdown */}
       <div>
         <label className={labelClass}>Agent Framework</label>
@@ -154,7 +171,7 @@ export function HarnessSettings({
             className={`w-full bg-transparent select-none cursor-pointer ${textClass}`}
             onClick={() => setShowFrameworkDropdown(!showFrameworkDropdown)}
           >
-            {selectedHarness?.display_name || framework}
+            {selectedHarness?.display_name || (framework === '' ? 'Use Task Default' : framework)}
           </div>
           <button
             type="button"
@@ -166,6 +183,17 @@ export function HarnessSettings({
 
           {showFrameworkDropdown && (
             <div ref={frameworkMenuRef} className={getDropdownMenuClass(openFrameworkUpward)}>
+              {allowDefaultFramework && (
+                <div
+                  className={`${dropdownItemClass} hover:bg-black hover:text-white cursor-pointer text-black bg-white border-b border-gray-100`}
+                  onClick={() => {
+                    onChange({ framework: '', model: '', effort: '' })
+                    setShowFrameworkDropdown(false)
+                  }}
+                >
+                  <span>Use Task Default</span>
+                </div>
+              )}
               {harnesses.map(h => (
                 <div
                   key={h.name}
@@ -200,57 +228,59 @@ export function HarnessSettings({
       </div>
 
       {/* Model Identifier input & optional dropdown */}
-      <div>
-        <label className={labelClass}>Model Identifier</label>
-        <div className={containerClass} ref={modelDropdownRef}>
-          <input
-            value={model}
-            onChange={e => onChange({ model: e.target.value })}
-            placeholder="Default"
-            className={`w-full outline-none bg-transparent ${textClass}`}
-          />
-          {harnessModels.length > 0 && (
-            <button
-              type="button"
-              onClick={() => setShowModelDropdown(!showModelDropdown)}
-              className="hover:text-gray-500 transition-colors shrink-0"
-            >
-              <ChevronDown size={chevronSize} className={`transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
-            </button>
-          )}
-
-          {showModelDropdown && harnessModels.length > 0 && (
-            <div ref={modelMenuRef} className={getDropdownMenuClass(openModelUpward)}>
+      {showModelField && (
+        <div>
+          <label className={labelClass}>Model Identifier</label>
+          <div className={containerClass} ref={modelDropdownRef}>
+            <input
+              value={model}
+              onChange={e => onChange({ model: e.target.value })}
+              placeholder="Default"
+              className={`w-full outline-none bg-transparent ${textClass}`}
+            />
+            {harnessModels.length > 0 && (
               <button
                 type="button"
-                onClick={() => {
-                  onChange({ model: '' })
-                  setShowModelDropdown(false)
-                }}
-                className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-black hover:text-white transition-colors border-b border-gray-100 uppercase tracking-widest bg-white"
+                onClick={() => setShowModelDropdown(!showModelDropdown)}
+                className="hover:text-gray-500 transition-colors shrink-0"
               >
-                Default
+                <ChevronDown size={chevronSize} className={`transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
               </button>
-              {harnessModels.map(m => (
+            )}
+
+            {showModelDropdown && harnessModels.length > 0 && (
+              <div ref={modelMenuRef} className={getDropdownMenuClass(openModelUpward)}>
                 <button
-                  key={m}
                   type="button"
                   onClick={() => {
-                    onChange({ model: m })
+                    onChange({ model: '' })
                     setShowModelDropdown(false)
                   }}
-                  className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-black hover:text-white transition-colors border-b border-gray-100 last:border-0 bg-white"
+                  className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-black hover:text-white transition-colors border-b border-gray-100 uppercase tracking-widest bg-white"
                 >
-                  {m}
+                  Default
                 </button>
-              ))}
-            </div>
-          )}
+                {harnessModels.map(m => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => {
+                      onChange({ model: m })
+                      setShowModelDropdown(false)
+                    }}
+                    className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-black hover:text-white transition-colors border-b border-gray-100 last:border-0 bg-white"
+                  >
+                    {m}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Reasoning Effort Dropdown */}
-      {hasEffort && effortOptions && (
+      {showEffortField && effortOptions && (
         <div>
           <label className={labelClass}>Reasoning Effort</label>
           <div className={containerClass} ref={effortDropdownRef}>
@@ -301,3 +331,4 @@ export function HarnessSettings({
     </div>
   )
 }
+
