@@ -8,20 +8,21 @@ class MngrAntigravityAgentRunner(MngrAgentRunner):
             framework="mngr-antigravity",
             transcript_source="antigravity/common_transcript",
             turn_completion=TurnCompletion.WAITING_STATE,
-            # `--sandbox` is *intentionally* omitted here even though the
-            # direct `agy` runner sets it. agy bug #36 (combining
-            # `--dangerously-skip-permissions` with `--sandbox` is broken)
-            # means our `auto_allow_permissions = true` setting -- which
-            # the mngr_antigravity plugin implements by adding
-            # `--dangerously-skip-permissions` -- silently bypasses
-            # sandboxing if we also set `--sandbox`. Dropping `--sandbox`
-            # here makes the lack-of-isolation explicit rather than fake.
+            # Run agy under its terminal sandbox. We pair this with a
+            # permissions policy (NOT `--dangerously-skip-permissions`) in
+            # `.mngr/settings.toml`'s `[agent_types.antigravity]`:
+            # `toolPermission = "proceed-in-sandbox"` auto-proceeds every tool
+            # call inside the sandbox, and `deny = ["unsandboxed"]` refuses
+            # any escape. This is what avoids agy bug #36 -- combining
+            # `--dangerously-skip-permissions` with `--sandbox` silently
+            # disables the sandbox -- so we keep `auto_allow_permissions =
+            # false` and let the policy do the auto-approval while `--sandbox`
+            # stays enforced.
             # https://github.com/google-antigravity/antigravity-cli/issues/36
             #
-            # `--dangerously-skip-permissions` is added by the plugin via
-            # `auto_allow_permissions = true` in `.mngr/settings.toml`.
-            # `--print-timeout` only matters in `-p` mode, which mngr
-            # doesn't use, so we don't pass it.
+            # `--print-timeout` only matters in `-p` mode, which mngr doesn't
+            # use, so we don't pass it.
+            agent_args=("--sandbox",),
             #
             # `--model` accepts the name as shown in agy's in-session
             # `/model` menu (run `agy models` for the list), e.g.
