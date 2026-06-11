@@ -235,6 +235,13 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
         generate_summary=True,
     )
 
+    try:
+        run_context_manager(task, ["init"])
+    except Exception as e:
+        raise HTTPException(
+            status_code=500, detail=f"Failed to initialize database: {e}"
+        )
+
     add_task(task)
     start_task(task)
     return task
@@ -469,9 +476,7 @@ def delete_task_temp_files(task_id: str):
             shutil.rmtree(venv_path)
         except Exception as e:
             logger.error(f"Error deleting .venv for task {task_id}: {e}")
-            raise HTTPException(
-                status_code=500, detail=f"Failed to delete .venv: {e}"
-            )
+            raise HTTPException(status_code=500, detail=f"Failed to delete .venv: {e}")
 
     return {"status": "success"}
 
@@ -582,7 +587,6 @@ def get_task_summaries(task_id: str):
     except json.JSONDecodeError as e:
         logger.error(f"Error decoding context_manager output for task {task_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to parse summaries")
-
 
 
 def inject_disclaimer(content: str) -> str:

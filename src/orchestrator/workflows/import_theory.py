@@ -16,8 +16,6 @@ class ImportTheoryWorkflow(Workflow):
         ]
 
     def run(self, task: Task, run_step: Callable) -> None:
-        self.init_db(task)
-
         file_path = task.workflow_inputs.get("file_path", "")
 
         # Step 0: Summarize Title

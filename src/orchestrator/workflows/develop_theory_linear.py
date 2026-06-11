@@ -60,8 +60,6 @@ class DevelopTheoryLinearWorkflow(Workflow):
 
 
     def run(self, task: Task, run_step: Callable) -> None:
-        self.init_db(task)
-
         phenomenon = task.workflow_inputs.get("phenomenon")
         assert phenomenon
         with open(os.path.join(task.env_folder, "phenomenon.txt"), "w") as f:

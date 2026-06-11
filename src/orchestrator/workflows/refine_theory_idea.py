@@ -46,8 +46,6 @@ class RefineTheoryIdeaWorkflow(Workflow):
 
 
     def run(self, task: Task, run_step: Callable) -> None:
-        self.init_db(task)
-
         idea = task.workflow_inputs.get("idea", "")
         file_path = task.workflow_inputs.get("file_path")
 

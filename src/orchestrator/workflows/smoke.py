@@ -22,11 +22,6 @@ class SmokeWorkflow(Workflow):
         return [{"type": "step", "stage": "smoke"}]
 
     def run(self, task: Task, run_step: Callable) -> None:
-        # init_db is required by the orchestrator's per-step
-        # context_manager commit; without it the smoke step succeeds but
-        # the post-step commit raises.
-        self.init_db(task)
-
         prompt = (
             "Run the `/smoke` skill. Follow its instructions exactly: "
             'output `{"skill_ran": true}` as your final message and stop.'

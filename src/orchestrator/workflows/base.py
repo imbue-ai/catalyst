@@ -6,6 +6,7 @@ import logging
 from context_manager import DEFAULT_DB_DIR
 from ..models import Task, StepStatus, Step
 from ..state import update_task, get_task_lock
+from ..utils import run_context_manager
 
 logger = logging.getLogger(__name__)
 
@@ -95,14 +96,6 @@ class Workflow(ABC):
         """Executes the workflow."""
         pass
 
-    def init_db(self, task: Task) -> None:
-        from ..utils import run_context_manager
-
-        db_path = os.path.join(task.env_folder, DEFAULT_DB_DIR)
-        if not os.path.exists(db_path):
-            logger.debug(f"[ORCHESTRATOR] [{task.id[:8]}] Initializing DB folder...")
-            run_context_manager(task, ["init"])
-
 
 class ParallelStepRunner:
     """A context manager to handle parallel execution of workflow steps.
@@ -115,6 +108,7 @@ class ParallelStepRunner:
 
     def __init__(self) -> None:
         import threading
+
         self.threads: List[threading.Thread] = []
         self.errors: List[Exception] = []
         self._lock = threading.Lock()
@@ -124,6 +118,7 @@ class ParallelStepRunner:
 
     def add(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
         import threading
+
         def target() -> None:
             try:
                 fn(*args, **kwargs)
@@ -142,4 +137,3 @@ class ParallelStepRunner:
         if exc_type is None and self.errors:
             raise self.errors[0]
         return False
-
