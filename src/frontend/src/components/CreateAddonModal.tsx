@@ -42,6 +42,7 @@ const getAvailableSkills = (cat: InputCategory, reviewed: boolean): { id: string
       { id: 'summarize-research', label: 'Summarize Research' },
       { id: 'write-different-theory', label: 'Write Different Theory' }
     ] : [
+      { id: 'summarize-research', label: 'Summarize Research' },
       { id: 'write-different-theory', label: 'Write Different Theory' }
     ];
   }
