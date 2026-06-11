@@ -1,6 +1,6 @@
 import logging
 from typing import Callable, Tuple, Optional
-from ...models import Task
+from ...models import Task, StepCategory
 from ..base import get_step_output, ParallelStepRunner
 
 logger = logging.getLogger(__name__)
@@ -23,7 +23,7 @@ def run_literature_review_and_exploration_parallel(
         results = {}
 
         def run_and_store(stage, prompt, key):
-            results[key] = run_step_fn(task, stage, prompt)
+            results[key] = run_step_fn(task, stage, prompt, StepCategory.MISC)
 
         with ParallelStepRunner() as runner:
             if not lit_review_id:

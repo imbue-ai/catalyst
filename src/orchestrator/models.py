@@ -12,6 +12,13 @@ class TaskStatus(str, Enum):
     PAUSED = "paused"
 
 
+class StepCategory(str, Enum):
+    THEORY_WRITING = "THEORY_WRITING"
+    REVIEW = "REVIEW"
+    MISC = "MISC"
+
+
+
 class StepStatus(str, Enum):
     PENDING = "pending"
     WAITING = "waiting"

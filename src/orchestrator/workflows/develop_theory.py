@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Callable, List, Dict
 import os
-from ..models import Task
+from ..models import Task, StepCategory
 
 
 from orchestrator.prompts import (
@@ -94,6 +94,7 @@ class DevelopTheoryWorkflow(Workflow):
                 exploration_id,
                 lit_review_id,
             ),
+            StepCategory.THEORY_WRITING,
         )
 
         theory_ids = theories_data.get("theory_ids") if theories_data else None
@@ -114,6 +115,7 @@ class DevelopTheoryWorkflow(Workflow):
                     run_step,
                     review_stage,
                     get_review_theory_prompt(tid),
+                    StepCategory.REVIEW,
                     cost=3,
                 )
                 review_results[tid] = res
@@ -128,6 +130,7 @@ class DevelopTheoryWorkflow(Workflow):
                 run_step,
                 "score-theories",
                 get_score_theories_prompt(theory_ids),
+                StepCategory.REVIEW,
             )
 
             # Step 6: Evolve Loop
@@ -179,5 +182,6 @@ class DevelopTheoryWorkflow(Workflow):
                     run_step,
                     "summarize-research",
                     get_summarize_research_prompt(),
+                    StepCategory.MISC,
                 )
 

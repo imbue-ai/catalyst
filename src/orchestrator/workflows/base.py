@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Dict, Optional
 import logging
 
-from ..models import Task, StepStatus, Step
+from ..models import Task, StepStatus, Step, StepCategory
 from ..state import update_task, get_task_lock
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ def run_local_step_if_needed(
 
 
 def run_step_if_needed(
-    task: Task, run_step_fn: Callable, stage: str, prompt: str, cost: int = 1
+    task: Task, run_step_fn: Callable, stage: str, prompt: str, category: StepCategory, cost: int = 1
 ) -> Optional[Dict[str, Any]]:
     out = get_step_output(task, stage)
     if not out:
@@ -73,7 +73,7 @@ def run_step_if_needed(
                 return {"_canceled": True}
 
         logger.debug(f"[ORCHESTRATOR] [{task.id[:8]}] Running {stage} (cost {cost})...")
-        out = run_step_fn(task, stage, prompt, cost=cost)
+        out = run_step_fn(task, stage, prompt, category, cost=cost)
     return out
 
 
