@@ -1,20 +1,17 @@
 """Stage B2 smoke test: multi-turn / subagent regression coverage.
 
-Exercises the failure mode that once broke `/swarm` and `/explore`: the
-parent agent kicks off a subagent via the Agent tool, and the runner
-must keep waiting until the parent emits its FINAL assistant_message
-after the subagent returns -- not the intermediate text it produces
-before the subagent reports back.
+Covers the `/swarm` and `/explore` pattern: the parent agent kicks off a
+subagent via the Agent tool, and the runner must keep waiting until the
+parent emits its FINAL assistant_message after the subagent returns --
+not the intermediate text it produces before the subagent reports back.
 
-The runner detects turn end via `mngr wait --state WAITING`. The reason
-that is safe here is `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` (set by
-MngrClaudeAgentRunner): with synchronous subagents the parent never goes
+The runner detects turn end via `mngr wait --state WAITING`. That is safe
+because `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` (set by
+MngrClaudeAgentRunner) makes subagents synchronous: the parent never goes
 idle mid-turn while the subagent runs, so the mngr_claude plugin clears
 the `active` marker -- and WAITING fires -- only once, at the true end of
-the turn. (An earlier design used a Catalyst-specific `turn_end` Stop
-hook to bridge intermediate idle; with synchronous subagents that is no
-longer needed and the hook has been removed.) This test guards against a
-regression where the runner returns the pre-subagent text.
+the turn. This test guards against a regression where the runner returns
+the pre-subagent text.
 
 Cost: ~few cents on Haiku (one parent + one trivial subagent).
 Wall time: ~30s typical.

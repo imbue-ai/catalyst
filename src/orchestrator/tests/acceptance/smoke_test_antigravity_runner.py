@@ -15,12 +15,12 @@ Verifies that:
 5. `parse_json_result` returns the expected dict (proving the
    WAITING-state turn-end detection fired correctly).
 
-Both runners now detect turn end via `mngr wait --state WAITING`, but
-unlike the Claude smoke test there is no `.claude/settings.json` to
-provision here: the `mngr_antigravity` plugin provisions its own
-`hooks.json` (per-agent, under the agent state dir) that maintains the
-lifecycle `active` marker, and -- since agy runs unsandboxed -- there is
-no sandbox `filesystem.allowWrite` to wire up for those marker writes.
+The runner detects turn end via `mngr wait --state WAITING`. Unlike the
+Claude smoke test there is no `.claude/settings.json` to provision here:
+the `mngr_antigravity` plugin provisions its own `hooks.json` (per-agent,
+under the agent state dir) that maintains the lifecycle `active` marker,
+and -- since agy runs unsandboxed -- there is no sandbox
+`filesystem.allowWrite` to wire up for those marker writes.
 The `[agent_types.antigravity]` settings in `.mngr/settings.toml`
 (auto_dismiss_dialogs / auto_allow_permissions) handle the trust dialog and
 auto-approval, so a bare temp env_folder is enough.

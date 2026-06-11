@@ -35,9 +35,7 @@ class MngrClaudeAgentRunner(MngrAgentRunner):
                 # parent never goes idle mid-turn (e.g. while `/swarm` Task
                 # subagents run), so the mngr_claude plugin's Stop hook clears
                 # the `active` marker -- and `mngr wait --state WAITING`
-                # returns -- only once, at the true end of the turn. (A
-                # Catalyst-specific Stop hook that emitted a `turn_end` event
-                # was previously needed for this; it has been removed.)
+                # returns -- only once, at the true end of the turn.
                 "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": "1",
                 # Keep bash invocations rooted at the work_dir (the env_folder)
                 # rather than letting `cd` calls in one tool invocation drift
