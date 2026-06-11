@@ -114,17 +114,15 @@ export function HarnessSettings({
 
   const getDropdownMenuClass = (openUpward: boolean) => {
     if (isCompact) {
-      return `absolute left-0 right-0 z-50 overflow-visible bg-white border border-black ${
-        openUpward 
-          ? 'bottom-full mb-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]' 
+      return `absolute left-0 right-0 z-50 overflow-visible bg-white border border-black ${openUpward
+          ? 'bottom-full mb-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
           : 'top-full mt-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
-      }`
+        }`
     } else {
-      return `absolute left-0 right-0 z-50 overflow-visible bg-white border-2 border-black ${
-        openUpward 
-          ? 'bottom-full mb-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]' 
+      return `absolute left-0 right-0 z-50 overflow-visible bg-white border-2 border-black ${openUpward
+          ? 'bottom-full mb-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
           : 'top-full mt-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
-      }`
+        }`
     }
   }
 
@@ -205,7 +203,6 @@ export function HarnessSettings({
       <div>
         <label className={labelClass}>Model Identifier</label>
         <div className={containerClass} ref={modelDropdownRef}>
-          <Cpu size={iconSize} className="text-black shrink-0" />
           <input
             value={model}
             onChange={e => onChange({ model: e.target.value })}
@@ -257,7 +254,6 @@ export function HarnessSettings({
         <div>
           <label className={labelClass}>Reasoning Effort</label>
           <div className={containerClass} ref={effortDropdownRef}>
-            <Cpu size={iconSize} className="text-black shrink-0" />
             <div
               className={`w-full bg-transparent select-none cursor-pointer ${textClass}`}
               onClick={() => setShowEffortDropdown(!showEffortDropdown)}
