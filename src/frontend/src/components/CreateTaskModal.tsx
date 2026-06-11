@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { XCircle, Folder, Cpu, ChevronRight, ChevronDown, Settings2, FileText, Lightbulb, Sparkles, GitMerge, GitCommit, UploadCloud, HelpCircle } from 'lucide-react'
+import { XCircle, FileText, Lightbulb, Sparkles, GitMerge, GitCommit, UploadCloud, Folder, HelpCircle, Settings2, ChevronRight, ChevronDown } from 'lucide-react'
 import * as api from '../api'
 import { useWorkflowParams } from '../hooks/useWorkflowParams'
 import { AdditionalParamsSection } from './AdditionalParamsSection'
+import { HarnessSettings } from './HarnessSettings'
 
 interface CreateTaskModalProps {
   onClose: () => void;
@@ -27,23 +28,13 @@ const CATEGORY_WORKFLOWS: Record<InputCategory, { id: WorkflowType, label: strin
   ]
 };
 
-const formatEffortLabel = (effort: string) => {
-  return effort.charAt(0).toUpperCase() + effort.slice(1);
-};
-
 export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTaskModalProps) {
   const [inputCategory, setInputCategory] = useState<InputCategory>('phenomenon')
   const [activeTab, setActiveTab] = useState<WorkflowType>('develop-theory')
 
   const [showAdditional, setShowAdditional] = useState(false)
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false)
-  const [showModelDropdown, setShowModelDropdown] = useState(false)
-  const [showFrameworkDropdown, setShowFrameworkDropdown] = useState(false)
-  const [showEffortDropdown, setShowEffortDropdown] = useState(false)
   const templateDropdownRef = useRef<HTMLDivElement>(null)
-  const modelDropdownRef = useRef<HTMLDivElement>(null)
-  const frameworkDropdownRef = useRef<HTMLDivElement>(null)
-  const effortDropdownRef = useRef<HTMLDivElement>(null)
 
   // Templates
   const [templates, setTemplates] = useState<string[]>([])
@@ -56,31 +47,17 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
 
   useEffect(() => {
     let active = true
-    let hasAutoSelected = false
-
-    const fetchHarnesses = () => {
-      api.getHarnesses().then(data => {
-        if (!active) return
+    api.getHarnesses().then(data => {
+      if (active) {
         setHarnesses(data)
-        if (!hasAutoSelected && data.length > 0) {
+        if (data.length > 0) {
           const firstAvailable = data.find(h => h.available)
-          if (firstAvailable) {
-            updateInput('framework', firstAvailable.name)
-          } else {
-            updateInput('framework', data[0].name)
-          }
-          hasAutoSelected = true
+          const defaultHarness = firstAvailable ? firstAvailable.name : data[0].name
+          setInputs(prev => ({ ...prev, framework: defaultHarness }))
         }
-      }).catch(console.error)
-    }
-
-    fetchHarnesses()
-    const interval = setInterval(fetchHarnesses, 10000)
-
-    return () => {
-      active = false
-      clearInterval(interval)
-    }
+      }
+    }).catch(console.error)
+    return () => { active = false }
   }, [])
 
   // Close dropdown on click outside
@@ -88,15 +65,6 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     function handleClickOutside(event: MouseEvent) {
       if (templateDropdownRef.current && !templateDropdownRef.current.contains(event.target as Node)) {
         setShowTemplateDropdown(false)
-      }
-      if (modelDropdownRef.current && !modelDropdownRef.current.contains(event.target as Node)) {
-        setShowModelDropdown(false)
-      }
-      if (frameworkDropdownRef.current && !frameworkDropdownRef.current.contains(event.target as Node)) {
-        setShowFrameworkDropdown(false)
-      }
-      if (effortDropdownRef.current && !effortDropdownRef.current.contains(event.target as Node)) {
-        setShowEffortDropdown(false)
       }
     }
     document.addEventListener("mousedown", handleClickOutside)
@@ -410,149 +378,22 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                   </div>
 
                   {/* Framework, Model, and Effort Row */}
-                  <div className={`grid grid-cols-1 gap-6 ${hasEffort ? 'md:grid-cols-3' : 'md:grid-cols-2'}`}>
-                    <div>
-                      <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Agent Framework</label>
-                      <div className="flex items-center gap-3 border-2 border-black p-3 focus-within:bg-gray-50 transition-colors relative" ref={frameworkDropdownRef}>
-                        <Cpu size={18} className="text-black shrink-0" />
-                        <div className="w-full text-sm font-bold bg-transparent select-none cursor-pointer" onClick={() => setShowFrameworkDropdown(!showFrameworkDropdown)}>
-                          {harnesses.find(h => h.name === inputs.framework)?.display_name || inputs.framework}
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() => setShowFrameworkDropdown(!showFrameworkDropdown)}
-                          className="hover:text-gray-500 transition-colors shrink-0"
-                        >
-                          <ChevronDown size={14} className={`transition-transform ${showFrameworkDropdown ? 'rotate-180' : ''}`} />
-                        </button>
-
-                        {showFrameworkDropdown && (
-                          <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 max-h-40 overflow-y-auto custom-scrollbar">
-                            {harnesses.map(h => (
-                              <div
-                                key={h.name}
-                                className={`w-full flex justify-between items-center px-4 py-3 text-xs font-bold border-b border-gray-100 last:border-0 relative group/item transition-colors ${h.available
-                                  ? 'hover:bg-black hover:text-white cursor-pointer text-black bg-white'
-                                  : 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                                  }`}
-                                onClick={() => {
-                                  if (h.available) {
-                                    updateInput('framework', h.name)
-                                    updateInput('model', '')
-                                    updateInput('effort', '')
-                                    setShowFrameworkDropdown(false)
-                                  }
-                                }}
-                              >
-                                <span>{h.display_name}</span>
-                                {!h.available && (
-                                  <div className="flex items-center gap-1.5 shrink-0">
-                                    <HelpCircle size={14} className="text-gray-400 group-hover/item:text-gray-600" />
-                                    {h.help_message && (
-                                      <div className="absolute left-full top-0 ml-2 w-64 p-3 bg-black text-white text-[10px] leading-relaxed hidden group-hover/item:block z-50 normal-case font-bold shadow-[4px_4px_0px_0px_rgba(0,0,0,0.2)]">
-                                        {h.help_message}
-                                        <div className="absolute top-3 right-full border-4 border-transparent border-r-black"></div>
-                                      </div>
-                                    )}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Model Identifier</label>
-                      <div className="flex items-center gap-3 border-2 border-black p-3 transition-colors relative focus-within:bg-gray-50" ref={modelDropdownRef}>
-                        <Cpu size={18} className="text-black shrink-0" />
-                        <input
-                          value={inputs.model}
-                          onChange={e => {
-                            updateInput('model', e.target.value)
-                          }}
-                          placeholder="Default"
-                          className="w-full outline-none text-sm font-bold bg-transparent"
-                        />
-                        {(harnesses.find(h => h.name === inputs.framework)?.models || []).length > 0 && (
-                          <button
-                            type="button"
-                            onClick={() => setShowModelDropdown(!showModelDropdown)}
-                            className="hover:text-gray-500 transition-colors shrink-0"
-                          >
-                            <ChevronDown size={14} className={`transition-transform ${showModelDropdown ? 'rotate-180' : ''}`} />
-                          </button>
-                        )}
-
-                        {showModelDropdown && (harnesses.find(h => h.name === inputs.framework)?.models || []).length > 0 && (
-                          <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 max-h-40 overflow-y-auto custom-scrollbar">
-                            <button
-                              type="button"
-                              onClick={() => { updateInput('model', ''); setShowModelDropdown(false); }}
-                              className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-black hover:text-white transition-colors border-b border-gray-100 uppercase tracking-widest"
-                            >
-                              Default
-                            </button>
-                            {(harnesses.find(h => h.name === inputs.framework)?.models || []).map(m => (
-                              <button
-                                key={m}
-                                type="button"
-                                onClick={() => { updateInput('model', m); setShowModelDropdown(false); }}
-                                className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-black hover:text-white transition-colors border-b border-gray-100 last:border-0"
-                              >
-                                {m}
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {hasEffort && effortOptions && (
-                      <div>
-                        <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Reasoning Effort</label>
-                        <div className="flex items-center gap-3 border-2 border-black p-3 transition-colors relative focus-within:bg-gray-50 cursor-pointer" ref={effortDropdownRef}>
-                          <Cpu size={18} className="text-black shrink-0" />
-                          <div
-                            className="w-full text-sm font-bold bg-transparent select-none cursor-pointer"
-                            onClick={() => setShowEffortDropdown(!showEffortDropdown)}
-                          >
-                            {inputs.effort ? formatEffortLabel(inputs.effort) : 'Default'}
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setShowEffortDropdown(!showEffortDropdown)}
-                            className="hover:text-gray-500 transition-colors shrink-0"
-                          >
-                            <ChevronDown size={14} className={`transition-transform ${showEffortDropdown ? 'rotate-180' : ''}`} />
-                          </button>
-
-                          {showEffortDropdown && (
-                            <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 max-h-40 overflow-y-auto custom-scrollbar">
-                              <button
-                                type="button"
-                                onClick={() => { updateInput('effort', ''); setShowEffortDropdown(false); }}
-                                className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-black hover:text-white transition-colors border-b border-gray-100 uppercase tracking-widest"
-                              >
-                                Default
-                              </button>
-                              {effortOptions.map(opt => (
-                                <button
-                                  key={opt}
-                                  type="button"
-                                  onClick={() => { updateInput('effort', opt); setShowEffortDropdown(false); }}
-                                  className="w-full text-left px-4 py-3 text-xs font-bold hover:bg-black hover:text-white transition-colors border-b border-gray-100 last:border-0"
-                                >
-                                  {formatEffortLabel(opt)}
-                                </button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                  <HarnessSettings
+                    framework={inputs.framework}
+                    model={inputs.model}
+                    effort={inputs.effort}
+                    harnesses={harnesses}
+                    onChange={(updates) => {
+                      if (updates.framework !== undefined) {
+                        updateInput('framework', updates.framework)
+                        updateInput('model', '')
+                        updateInput('effort', '')
+                      }
+                      if (updates.model !== undefined) updateInput('model', updates.model)
+                      if (updates.effort !== undefined) updateInput('effort', updates.effort)
+                    }}
+                    isCompact={false}
+                  />
                 </div>
 
                 {/* Collapsible Additional Parameters */}

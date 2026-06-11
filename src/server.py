@@ -442,6 +442,25 @@ def update_task_guidance(task_id: str, req: UpdateGuidanceRequest):
     return task
 
 
+class UpdateSettingsRequest(BaseModel):
+    framework: str
+    model: Optional[str] = None
+    effort: Optional[str] = None
+
+
+@app.post("/api/tasks/{task_id}/settings", response_model=Task)
+def update_task_settings(task_id: str, req: UpdateSettingsRequest):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    task.framework = req.framework
+    task.model = req.model
+    task.effort = req.effort
+    update_task(task)
+    return task
+
+
 @app.delete("/api/tasks/{task_id}/temp-files")
 def delete_task_temp_files(task_id: str):
     task = get_task(task_id)

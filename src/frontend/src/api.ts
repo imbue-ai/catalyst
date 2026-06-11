@@ -267,6 +267,24 @@ export async function updateGuidance(taskId: string, guidance: string, theory_sc
   return res.json();
 }
 
+export async function updateSettings(
+  taskId: string,
+  framework: string,
+  model?: string,
+  effort?: string
+): Promise<Task> {
+  const res = await fetch(`${API_BASE}/tasks/${taskId}/settings`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ framework, model, effort }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.detail || "Failed to update settings");
+  }
+  return res.json();
+}
+
 export interface HarnessInfo {
   name: string;
   display_name: string;

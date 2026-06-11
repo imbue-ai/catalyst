@@ -201,6 +201,22 @@ class TestServerEndpoints(unittest.TestCase):
         )
 
     @patch("server.get_task")
+    @patch("server.update_task")
+    def test_update_task_settings(self, mock_update_task, mock_get_task):
+        mock_get_task.return_value = self.dummy_task
+        settings_req = {
+            "framework": "new_framework",
+            "model": "new_model",
+            "effort": "low",
+        }
+        response = client.post("/api/tasks/test_task_123/settings", json=settings_req)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["framework"], "new_framework")
+        self.assertEqual(response.json()["model"], "new_model")
+        self.assertEqual(response.json()["effort"], "low")
+        self.assertTrue(mock_update_task.called)
+
+    @patch("server.get_task")
     @patch("server.cancel_task_process")
     @patch("server.os.path.exists")
     @patch("server.shutil.rmtree")
