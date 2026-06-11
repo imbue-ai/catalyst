@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { Cpu, ChevronDown, HelpCircle } from 'lucide-react'
 import * as api from '../api'
 
@@ -9,6 +9,7 @@ interface HarnessSettingsProps {
   harnesses: api.HarnessInfo[];
   onChange: (updates: { framework?: string; model?: string; effort?: string }) => void;
   isCompact?: boolean;
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
 }
 
 export function HarnessSettings({
@@ -18,14 +19,66 @@ export function HarnessSettings({
   harnesses,
   onChange,
   isCompact = false,
+  scrollContainerRef,
 }: HarnessSettingsProps) {
   const [showFrameworkDropdown, setShowFrameworkDropdown] = useState(false)
   const [showModelDropdown, setShowModelDropdown] = useState(false)
   const [showEffortDropdown, setShowEffortDropdown] = useState(false)
 
+  const [openFrameworkUpward, setOpenFrameworkUpward] = useState(false)
+  const [openModelUpward, setOpenModelUpward] = useState(false)
+  const [openEffortUpward, setOpenEffortUpward] = useState(false)
+
   const frameworkDropdownRef = useRef<HTMLDivElement>(null)
   const modelDropdownRef = useRef<HTMLDivElement>(null)
   const effortDropdownRef = useRef<HTMLDivElement>(null)
+
+  const frameworkMenuRef = useRef<HTMLDivElement>(null)
+  const modelMenuRef = useRef<HTMLDivElement>(null)
+  const effortMenuRef = useRef<HTMLDivElement>(null)
+
+  const selectedHarness = harnesses.find(h => h.name === framework)
+  const effortOptions = selectedHarness?.effort_options
+  const harnessModels = selectedHarness?.models || []
+
+  useLayoutEffect(() => {
+    if (showFrameworkDropdown && frameworkDropdownRef.current && frameworkMenuRef.current) {
+      const triggerRect = frameworkDropdownRef.current.getBoundingClientRect()
+      const menuRect = frameworkMenuRef.current.getBoundingClientRect()
+      let spaceBelow = window.innerHeight - triggerRect.bottom
+      if (scrollContainerRef?.current) {
+        const containerRect = scrollContainerRef.current.getBoundingClientRect()
+        spaceBelow = containerRect.bottom - triggerRect.bottom
+      }
+      setOpenFrameworkUpward(spaceBelow < menuRect.height)
+    }
+  }, [showFrameworkDropdown, harnesses.length, scrollContainerRef])
+
+  useLayoutEffect(() => {
+    if (showModelDropdown && modelDropdownRef.current && modelMenuRef.current) {
+      const triggerRect = modelDropdownRef.current.getBoundingClientRect()
+      const menuRect = modelMenuRef.current.getBoundingClientRect()
+      let spaceBelow = window.innerHeight - triggerRect.bottom
+      if (scrollContainerRef?.current) {
+        const containerRect = scrollContainerRef.current.getBoundingClientRect()
+        spaceBelow = containerRect.bottom - triggerRect.bottom
+      }
+      setOpenModelUpward(spaceBelow < menuRect.height)
+    }
+  }, [showModelDropdown, harnessModels.length, scrollContainerRef])
+
+  useLayoutEffect(() => {
+    if (showEffortDropdown && effortDropdownRef.current && effortMenuRef.current) {
+      const triggerRect = effortDropdownRef.current.getBoundingClientRect()
+      const menuRect = effortMenuRef.current.getBoundingClientRect()
+      let spaceBelow = window.innerHeight - triggerRect.bottom
+      if (scrollContainerRef?.current) {
+        const containerRect = scrollContainerRef.current.getBoundingClientRect()
+        spaceBelow = containerRect.bottom - triggerRect.bottom
+      }
+      setOpenEffortUpward(spaceBelow < menuRect.height)
+    }
+  }, [showEffortDropdown, effortOptions?.length, scrollContainerRef])
 
   // Click outside listener for self-contained dropdown controls
   useEffect(() => {
@@ -48,10 +101,7 @@ export function HarnessSettings({
     return effortVal.charAt(0).toUpperCase() + effortVal.slice(1)
   }
 
-  const selectedHarness = harnesses.find(h => h.name === framework)
-  const effortOptions = selectedHarness?.effort_options
   const hasEffort = !!(effortOptions && effortOptions.length > 0)
-  const harnessModels = selectedHarness?.models || []
 
   // Define dynamic CSS classes based on the isCompact layout mode
   const labelClass = isCompact
@@ -62,9 +112,21 @@ export function HarnessSettings({
     ? 'flex items-center gap-2 border border-black p-2 bg-white relative'
     : 'flex items-center gap-3 border-2 border-black p-3 focus-within:bg-gray-50 transition-colors relative'
 
-  const dropdownMenuClass = isCompact
-    ? 'absolute left-0 right-0 top-full mt-1 bg-white border border-black z-50 overflow-visible shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
-    : 'absolute left-0 right-0 top-full mt-2 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 overflow-visible'
+  const getDropdownMenuClass = (openUpward: boolean) => {
+    if (isCompact) {
+      return `absolute left-0 right-0 z-50 overflow-visible bg-white border border-black ${
+        openUpward 
+          ? 'bottom-full mb-1 shadow-[4px_-4px_0px_0px_rgba(0,0,0,0.1)]' 
+          : 'top-full mt-1 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
+      }`
+    } else {
+      return `absolute left-0 right-0 z-50 overflow-visible bg-white border-2 border-black ${
+        openUpward 
+          ? 'bottom-full mb-2 shadow-[8px_-8px_0px_0px_rgba(0,0,0,1)]' 
+          : 'top-full mt-2 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]'
+      }`
+    }
+  }
 
   const dropdownItemClass = isCompact
     ? 'w-full flex justify-between items-center px-3 py-2 text-xs font-bold border-b border-gray-100 last:border-0 relative group/item transition-colors bg-white'
@@ -105,7 +167,7 @@ export function HarnessSettings({
           </button>
 
           {showFrameworkDropdown && (
-            <div className={dropdownMenuClass}>
+            <div ref={frameworkMenuRef} className={getDropdownMenuClass(openFrameworkUpward)}>
               {harnesses.map(h => (
                 <div
                   key={h.name}
@@ -161,7 +223,7 @@ export function HarnessSettings({
           )}
 
           {showModelDropdown && harnessModels.length > 0 && (
-            <div className={dropdownMenuClass}>
+            <div ref={modelMenuRef} className={getDropdownMenuClass(openModelUpward)}>
               <button
                 type="button"
                 onClick={() => {
@@ -211,7 +273,7 @@ export function HarnessSettings({
             </button>
 
             {showEffortDropdown && (
-              <div className={dropdownMenuClass}>
+              <div ref={effortMenuRef} className={getDropdownMenuClass(openEffortUpward)}>
                 <button
                   type="button"
                   onClick={() => {

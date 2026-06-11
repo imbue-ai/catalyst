@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { XCircle, FileText, Lightbulb, Sparkles, GitMerge, GitCommit, UploadCloud, Folder, HelpCircle, Settings2, ChevronRight, ChevronDown } from 'lucide-react'
 import * as api from '../api'
 import { useWorkflowParams } from '../hooks/useWorkflowParams'
@@ -35,11 +35,27 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
   const [showAdditional, setShowAdditional] = useState(false)
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false)
   const templateDropdownRef = useRef<HTMLDivElement>(null)
+  const templateMenuRef = useRef<HTMLDivElement>(null)
+  const [openTemplateUpward, setOpenTemplateUpward] = useState(false)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   // Templates
   const [templates, setTemplates] = useState<string[]>([])
   // Harnesses
   const [harnesses, setHarnesses] = useState<api.HarnessInfo[]>([])
+
+  useLayoutEffect(() => {
+    if (showTemplateDropdown && templateDropdownRef.current && templateMenuRef.current) {
+      const triggerRect = templateDropdownRef.current.getBoundingClientRect()
+      const menuRect = templateMenuRef.current.getBoundingClientRect()
+      let spaceBelow = window.innerHeight - triggerRect.bottom
+      if (scrollContainerRef.current) {
+        const containerRect = scrollContainerRef.current.getBoundingClientRect()
+        spaceBelow = containerRect.bottom - triggerRect.bottom
+      }
+      setOpenTemplateUpward(spaceBelow < menuRect.height)
+    }
+  }, [showTemplateDropdown, templates.length])
 
   useEffect(() => {
     api.getTemplates().then(setTemplates).catch(console.error)
@@ -204,7 +220,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         </div>
 
         <form onSubmit={handleCreate} className="flex-1 flex flex-col min-h-0">
-          <div className="flex-1 overflow-y-auto custom-scrollbar pr-4 flex flex-col gap-10 pb-4">
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar pr-4 flex flex-col gap-10 pb-4">
 
             {/* STEP 1: Input Type */}
             <div>
@@ -351,7 +367,11 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       </button>
 
                       {showTemplateDropdown && (
-                        <div className="absolute left-0 right-0 top-full mt-2 bg-white border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 max-h-60 overflow-y-auto custom-scrollbar">
+                        <div ref={templateMenuRef} className={`absolute left-0 right-0 z-50 max-h-60 overflow-y-auto custom-scrollbar bg-white border-2 border-black ${
+                          openTemplateUpward 
+                            ? 'bottom-full mb-2 shadow-[8px_-8px_0px_0px_rgba(0,0,0,1)]' 
+                            : 'top-full mt-2 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)]'
+                        }`}>
                           <button
                             type="button"
                             onClick={() => { updateInput('templateFolder', ''); setShowTemplateDropdown(false); }}
@@ -393,6 +413,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       if (updates.effort !== undefined) updateInput('effort', updates.effort)
                     }}
                     isCompact={false}
+                    scrollContainerRef={scrollContainerRef}
                   />
                 </div>
 
