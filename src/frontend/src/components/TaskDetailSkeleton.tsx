@@ -11,33 +11,42 @@ export function TaskDetailSkeleton() {
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-white animate-pulse">
       {/* Header Skeleton */}
-      <div className="p-8 border-b-2 border-black">
-        <div className="flex justify-between items-start mb-4">
-          <div className="space-y-2 flex-1">
+      <div className="p-8 border-b-2 border-black bg-white">
+        <div className="flex justify-between items-start gap-8">
+          <div className="flex-1">
+            <div className="flex items-center gap-3 mb-2">
+              {/* StatusBadge skeleton */}
+              <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
+              {/* Research Session text skeleton */}
+              <div className="h-3 w-36 bg-gray-100 rounded animate-pulse" />
+            </div>
             {/* Title Skeleton */}
-            <div className="h-6 w-64 bg-gray-200 rounded" />
-            {/* Folder / model skeleton */}
-            <div className="flex gap-2">
-              <div className="h-4 w-32 bg-gray-100 rounded" />
+            <div className="h-10 w-96 bg-gray-200 rounded animate-pulse" />
+          </div>
+          {/* Metadata labels skeleton */}
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="bg-gray-100 p-3 flex items-center gap-2">
+              <Folder size={14} className="text-gray-300" />
+              <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
+            </div>
+            <div className="bg-gray-100 p-3 flex items-center gap-2">
+              <Cpu size={14} className="text-gray-300" />
+              <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
             </div>
           </div>
-          {/* Action buttons skeleton */}
-          <div className="flex gap-2">
-            <div className="h-8 w-28 bg-gray-200 rounded" />
-            <div className="h-8 w-32 bg-gray-200 rounded" />
-          </div>
         </div>
-        
-        {/* Badges row skeleton */}
-        <div className="flex items-center gap-2 mt-4">
-          <div className="h-8 w-40 bg-gray-100 rounded flex items-center px-3 gap-2">
-            <Folder size={14} className="text-gray-300" />
-            <div className="h-3 w-24 bg-gray-200 rounded" />
-          </div>
-          <div className="h-8 w-48 bg-gray-100 rounded flex items-center px-3 gap-2">
-            <Cpu size={14} className="text-gray-300" />
-            <div className="h-3 w-32 bg-gray-200 rounded" />
-          </div>
+
+        {/* Summary Description Skeleton */}
+        <div className="mt-4 space-y-2 max-w-2xl">
+          <div className="h-3 w-full bg-gray-100 rounded animate-pulse" />
+          <div className="h-3 w-11/12 bg-gray-100 rounded animate-pulse" />
+          <div className="h-3 w-4/5 bg-gray-100 rounded animate-pulse" />
+        </div>
+
+        {/* Buttons Skeleton */}
+        <div className="mt-6 flex gap-3 items-center">
+          <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
+          <div className="h-8 w-36 bg-gray-200 rounded animate-pulse" />
         </div>
       </div>
 

@@ -132,62 +132,8 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               <span className="text-[10px] text-gray-400 font-bold tracking-widest">Research Session: {task.id.split('-')[0]}</span>
             </div>
             <h2 className="text-4xl font-black tracking-tighter leading-tight">{task.title || "Initializing..."}</h2>
-            <p className="mt-4 text-xs text-gray-500 font-bold leading-relaxed whitespace-pre-wrap line-clamp-6 overflow-hidden">{task.workflow_inputs.summary}</p>
-
-            <div className="mt-6 flex gap-3 items-center">
-              {task.status === 'running' ? (
-                <button
-                  disabled={isProcessing}
-                  onClick={handleCancel}
-                  className="bg-gray-500 text-white px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-600 transition-colors disabled:opacity-50"
-                >
-                  {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Square size={12} fill="white" />}
-                  Pause Research
-                </button>
-              ) : (task.status === 'paused' || task.status === 'failed') ? (
-                <button
-                  disabled={isProcessing}
-                  onClick={handleResume}
-                  className="bg-black text-white px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-800 transition-colors disabled:opacity-50"
-                >
-                  {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="white" />}
-                  Resume Research
-                </button>
-              ) : null}
-
-              <button
-                disabled={isProcessing}
-                onClick={() => {
-                  setPendingGuidanceAppend(null);
-                  setShowGuidanceModal(true);
-                }}
-                className="border-2 border-black text-black px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
-              >
-                <Compass size={12} /> Provide Guidance
-              </button>
-
-              {(task.status === 'paused' || task.status === 'failed' || task.status === 'completed') && (
-                <button
-                  disabled={isProcessing}
-                  onClick={handleDeleteTempFiles}
-                  className="border-2 border-black text-black px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
-                >
-                  <BrushCleaning size={12} /> Clean Temp Files
-                </button>
-              )}
-
-              {(task.status === 'paused' || task.status === 'failed' || task.status === 'completed') && (
-                <button
-                  disabled={isProcessing}
-                  onClick={() => onDeleteRequest(task.id)}
-                  className="border-2 border-red-600 text-red-600 px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-red-50 transition-colors disabled:opacity-50"
-                >
-                  <Trash2 size={12} /> Delete Research
-                </button>
-              )}
-            </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 shrink-0">
             <div className="bg-gray-100 p-3 flex items-center gap-2 text-[10px] font-bold">
               <Folder size={14} /> {task.env_folder}
             </div>
@@ -195,6 +141,61 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               <Cpu size={14} /> {task.framework} {task.model && `[${task.model}]`}
             </div>
           </div>
+        </div>
+
+        <p className="mt-4 text-xs text-gray-500 font-bold leading-relaxed whitespace-pre-wrap line-clamp-6 overflow-hidden">{task.workflow_inputs.summary}</p>
+
+        <div className="mt-6 flex gap-3 items-center">
+          {task.status === 'running' ? (
+            <button
+              disabled={isProcessing}
+              onClick={handleCancel}
+              className="bg-gray-500 text-white px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-600 transition-colors disabled:opacity-50"
+            >
+              {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Square size={12} fill="white" />}
+              Pause Research
+            </button>
+          ) : (task.status === 'paused' || task.status === 'failed') ? (
+            <button
+              disabled={isProcessing}
+              onClick={handleResume}
+              className="bg-black text-white px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-800 transition-colors disabled:opacity-50"
+            >
+              {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="white" />}
+              Resume Research
+            </button>
+          ) : null}
+
+          <button
+            disabled={isProcessing}
+            onClick={() => {
+              setPendingGuidanceAppend(null);
+              setShowGuidanceModal(true);
+            }}
+            className="border-2 border-black text-black px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+          >
+            <Compass size={12} /> Provide Guidance
+          </button>
+
+          {(task.status === 'paused' || task.status === 'failed' || task.status === 'completed') && (
+            <button
+              disabled={isProcessing}
+              onClick={handleDeleteTempFiles}
+              className="border-2 border-black text-black px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            >
+              <BrushCleaning size={12} /> Clean Temp Files
+            </button>
+          )}
+
+          {(task.status === 'paused' || task.status === 'failed' || task.status === 'completed') && (
+            <button
+              disabled={isProcessing}
+              onClick={() => onDeleteRequest(task.id)}
+              className="border-2 border-red-600 text-red-600 px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-red-50 transition-colors disabled:opacity-50"
+            >
+              <Trash2 size={12} /> Delete Research
+            </button>
+          )}
         </div>
       </div>
 
