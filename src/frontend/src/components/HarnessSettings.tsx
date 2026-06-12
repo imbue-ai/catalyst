@@ -2,6 +2,25 @@ import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { Cpu, ChevronDown, HelpCircle } from 'lucide-react'
 import * as api from '../api'
 
+function adjustDropdownPosition(
+  isOpen: boolean,
+  trigger: HTMLDivElement | null,
+  menu: HTMLDivElement | null,
+  scrollContainer: HTMLDivElement | null,
+  setOpenUpward: (val: boolean) => void
+) {
+  if (isOpen && trigger && menu) {
+    const triggerRect = trigger.getBoundingClientRect()
+    const menuRect = menu.getBoundingClientRect()
+    let spaceBelow = window.innerHeight - triggerRect.bottom
+    if (scrollContainer) {
+      const containerRect = scrollContainer.getBoundingClientRect()
+      spaceBelow = containerRect.bottom - triggerRect.bottom
+    }
+    setOpenUpward(spaceBelow < menuRect.height)
+  }
+}
+
 interface HarnessSettingsProps {
   framework: string;
   model: string;
@@ -46,42 +65,33 @@ export function HarnessSettings({
   const harnessModels = selectedHarness?.models || []
 
   useLayoutEffect(() => {
-    if (showFrameworkDropdown && frameworkDropdownRef.current && frameworkMenuRef.current) {
-      const triggerRect = frameworkDropdownRef.current.getBoundingClientRect()
-      const menuRect = frameworkMenuRef.current.getBoundingClientRect()
-      let spaceBelow = window.innerHeight - triggerRect.bottom
-      if (scrollContainerRef?.current) {
-        const containerRect = scrollContainerRef.current.getBoundingClientRect()
-        spaceBelow = containerRect.bottom - triggerRect.bottom
-      }
-      setOpenFrameworkUpward(spaceBelow < menuRect.height)
-    }
+    adjustDropdownPosition(
+      showFrameworkDropdown,
+      frameworkDropdownRef.current,
+      frameworkMenuRef.current,
+      scrollContainerRef?.current || null,
+      setOpenFrameworkUpward
+    )
   }, [showFrameworkDropdown, harnesses.length, scrollContainerRef])
 
   useLayoutEffect(() => {
-    if (showModelDropdown && modelDropdownRef.current && modelMenuRef.current) {
-      const triggerRect = modelDropdownRef.current.getBoundingClientRect()
-      const menuRect = modelMenuRef.current.getBoundingClientRect()
-      let spaceBelow = window.innerHeight - triggerRect.bottom
-      if (scrollContainerRef?.current) {
-        const containerRect = scrollContainerRef.current.getBoundingClientRect()
-        spaceBelow = containerRect.bottom - triggerRect.bottom
-      }
-      setOpenModelUpward(spaceBelow < menuRect.height)
-    }
+    adjustDropdownPosition(
+      showModelDropdown,
+      modelDropdownRef.current,
+      modelMenuRef.current,
+      scrollContainerRef?.current || null,
+      setOpenModelUpward
+    )
   }, [showModelDropdown, harnessModels.length, scrollContainerRef])
 
   useLayoutEffect(() => {
-    if (showEffortDropdown && effortDropdownRef.current && effortMenuRef.current) {
-      const triggerRect = effortDropdownRef.current.getBoundingClientRect()
-      const menuRect = effortMenuRef.current.getBoundingClientRect()
-      let spaceBelow = window.innerHeight - triggerRect.bottom
-      if (scrollContainerRef?.current) {
-        const containerRect = scrollContainerRef.current.getBoundingClientRect()
-        spaceBelow = containerRect.bottom - triggerRect.bottom
-      }
-      setOpenEffortUpward(spaceBelow < menuRect.height)
-    }
+    adjustDropdownPosition(
+      showEffortDropdown,
+      effortDropdownRef.current,
+      effortMenuRef.current,
+      scrollContainerRef?.current || null,
+      setOpenEffortUpward
+    )
   }, [showEffortDropdown, effortOptions?.length, scrollContainerRef])
 
   // Click outside listener for self-contained dropdown controls
