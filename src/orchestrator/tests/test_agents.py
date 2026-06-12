@@ -247,6 +247,50 @@ class TestMngrAgentRunner(unittest.TestCase):
             mock_popen, "claude/common_transcript", '{"score": 0.9}'
         )
 
+    # Shrink the JSON grace budget so the timeout path runs fast in tests.
+    @patch("orchestrator.agents.mngr_runner._POST_TURN_END_JSON_GRACE_SECONDS", 0.1)
+    @patch("orchestrator.agents.mngr_runner.time.sleep")
+    @patch("subprocess.Popen")
+    def test_wait_for_turn_end_json_grace_times_out_on_non_json(
+        self, mock_popen, _mock_sleep
+    ):
+        """When the turn ends but the harvested text never parses as JSON (and
+        no further message arrives), the JSON grace loop runs to its deadline
+        and returns the unparseable text -- it must not hang. This is the H1
+        ('genuinely ended early') path of the turn-end-grace band-aid."""
+        from ..agents.mngr_runner import MngrAgentRunner
+
+        runner = MngrAgentRunner(
+            agent_type="agent",
+            framework="mngr-agent",
+            transcript_source="claude/common_transcript",
+        )
+        preamble = "I'll spawn 5 agents and wait for them to report back."
+        mock_event_proc = MagicMock()
+        mock_event_proc.stdout = [
+            '{"source": "claude/common_transcript", "type": "assistant_message", "text": "%s"}\n'
+            % preamble,
+        ]
+        mock_wait_proc = MagicMock()
+        mock_wait_proc.wait.return_value = 0
+        mock_stop_proc = MagicMock()
+        mock_stop_proc.wait.return_value = 1
+
+        def popen_side_effect(cmd, *args, **kwargs):
+            if "event" in cmd:
+                return mock_event_proc
+            elif "wait" in cmd:
+                return mock_wait_proc if "WAITING" in cmd else mock_stop_proc
+            return MagicMock()
+
+        mock_popen.side_effect = popen_side_effect
+
+        saw_turn_end, harvested = runner._wait_for_turn_end("agent-123", None)
+        self.assertTrue(saw_turn_end)
+        # Non-JSON text is still returned (so _wait_and_harvest can surface the
+        # "could not parse" error); the grace loop just didn't recover a better one.
+        self.assertEqual(harvested, preamble)
+
     @patch("orchestrator.agents.mngr_runner.time.sleep")
     @patch("subprocess.Popen")
     def test_wait_for_turn_end_antigravity_waiting_state(self, mock_popen, _mock_sleep):

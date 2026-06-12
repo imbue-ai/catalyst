@@ -34,6 +34,35 @@ _WAIT_TIMEOUT_SECONDS = 6 * 60 * 60
 # the assistant_message and we'd return empty text.
 _POST_TURN_END_SECONDS = 10.0
 
+# FIXME(turn-end-grace): band-aid for premature turn-end detection.
+#
+# mngr signals "turn ended" off a single Claude Code `Stop`/`end_turn`, but a
+# single Catalyst step (notably the `/swarm` cascade) can emit more than one
+# `end_turn` -- e.g. the model announces "I'll spawn N agents and wait" as its
+# own response before producing the real final message. When that happens the
+# runner harvests the intermediate text (not the step's final JSON) and would
+# otherwise fail the step. This is intermittent (~3% on `/swarm`) and is NOT
+# specific to the WAITING strategy: the STOP_HOOK strategy keys off the same
+# `Stop`, so it is affected too (analytically more so -- it reacts to the
+# `turn_complete` event immediately, while WAITING waits out
+# `wait_for_stop_hook.sh`'s grace).
+#
+# As a mitigation, when a turn-end is detected but the harvested text does NOT
+# parse as the expected JSON, keep consuming events for up to this budget to
+# see whether the agent emits a *parseable* final message (the real end). We
+# break as soon as one appears.
+#
+# Caveat / why this isn't a clean fix: it only helps if the agent actually
+# continues after the premature turn-end (i.e. the spurious signal happened
+# mid-turn and more output is coming). If the model genuinely ended its turn
+# early and emits nothing further, the full budget elapses and the step still
+# fails -- just later. It also adds up to this much latency to any step that
+# legitimately ends on non-JSON output (rare for Catalyst, whose steps are
+# contracted to emit final JSON). A real fix needs mngr to distinguish an
+# intermediate `end_turn` from the true turn end.
+_POST_TURN_END_JSON_GRACE_SECONDS = 30.0
+_POST_TURN_END_JSON_POLL_INTERVAL = 0.5
+
 # Catalyst's isolated `mngr` host_dir, kept separate from the user's main
 # `~/.mngr` so Catalyst's agents don't mix in and the runner's `mngr` calls
 # aren't blocked by stale fields in the user's profile settings (e.g.
@@ -432,8 +461,27 @@ class MngrAgentRunner(AgentRunner):
             watch_done.wait(timeout=remaining)
 
             # Allow some extra time before terminating, since assistant messages can sometimes be delievered after
-            # the stop condition. _consume_events will keep running until we terminate it or the agent process exits.
+            # the stop condition. _consume_events keeps running (updating
+            # state["last_assistant_text"]) until we terminate it or the agent exits.
+            #
+            # Two phases:
+            #   1. A short unconditional wait so the common-transcript converter
+            #      (which writes on a ~5s timer) catches up with whatever the
+            #      turn-end signal raced ahead of.
+            #   2. If by then the harvested text still does NOT parse as the
+            #      step's expected JSON, extend the wait (see the
+            #      `_POST_TURN_END_JSON_GRACE_SECONDS` FIXME): the turn-end may
+            #      have been a premature/intermediate `end_turn`, so give the
+            #      agent a chance to emit a parseable final message. Break as
+            #      soon as one appears so we don't pay the full budget on the
+            #      common case.
             time.sleep(_POST_TURN_END_SECONDS)
+            if saw_turn_end.is_set() and parse_json_result(state["last_assistant_text"]) is None:
+                grace_deadline = time.monotonic() + _POST_TURN_END_JSON_GRACE_SECONDS
+                while time.monotonic() < grace_deadline:
+                    if parse_json_result(state["last_assistant_text"]) is not None:
+                        break
+                    time.sleep(_POST_TURN_END_JSON_POLL_INTERVAL)
         finally:
             for proc in (event_proc, stop_proc, wait_proc):
                 if proc is not None:
