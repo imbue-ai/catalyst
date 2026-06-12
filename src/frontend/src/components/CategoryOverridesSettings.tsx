@@ -20,7 +20,10 @@ export function CategoryOverridesSettings({
   collapsible = true,
   forceVertical = false,
 }: CategoryOverridesSettingsProps) {
-  const [isOpen, setIsOpen] = useState(false)
+  const hasAnyOverride = Object.values(overrides).some(
+    override => override && (override.framework || override.model || override.effort)
+  )
+  const [isOpen, setIsOpen] = useState(hasAnyOverride)
   const [expandedCategories, setExpandedCategories] = useState<Record<api.StepCategory, boolean>>({} as any)
 
   const toggleCategory = (category: api.StepCategory) => {
