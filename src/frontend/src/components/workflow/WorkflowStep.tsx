@@ -24,7 +24,7 @@ export const WorkflowStep = React.memo(({ stage, task, onSelect, isSelected, onR
     >
       {/* Connector line */}
       {showConnector && (
-        <div className="absolute left-[9px] top-5 w-[2px] h-full bg-gray-100 group-hover:bg-black transition-colors" />
+        <div className={`absolute left-[9px] top-5 w-[2px] h-full transition-colors ${step?.status === 'completed' ? 'bg-black' : 'bg-gray-100'}`} />
       )}
       
       <StepIndicator status={step?.status} isRunning={isRunning} />
