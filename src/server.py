@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from contextlib import asynccontextmanager
 
-from orchestrator.models import Task, TaskStatus, TaskShallow, TheoryScoringWeights
+from orchestrator.models import Task, TaskStatus, TaskShallow, TheoryScoringWeights, StepCategory, AgentSettings
 from orchestrator.state import (
     get_tasks,
     get_task,
@@ -119,6 +119,7 @@ class CreateTaskRequest(BaseModel):
     model: Optional[str] = None
     effort: Optional[str] = None
     theory_scoring_weights: Optional[TheoryScoringWeights] = None
+    category_overrides: Optional[Dict[StepCategory, AgentSettings]] = None
 
 
 @app.get("/api/tasks", response_model=List[TaskShallow])
@@ -136,6 +137,7 @@ def list_tasks():
             current_stage=task.current_stage,
             workflow_name=task.workflow_name,
             created_at=task.created_at,
+            category_overrides=task.category_overrides,
         )
         for task in tasks
     ]
@@ -236,6 +238,7 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
         workflow_name=req.workflow_name,
         theory_scoring_weights=req.theory_scoring_weights,
         generate_summary=True,
+        category_overrides=req.category_overrides or {},
     )
 
     try:
@@ -446,6 +449,7 @@ class UpdateSettingsRequest(BaseModel):
     framework: str
     model: Optional[str] = None
     effort: Optional[str] = None
+    category_overrides: Optional[Dict[StepCategory, AgentSettings]] = None
 
 
 @app.post("/api/tasks/{task_id}/settings", response_model=Task)
@@ -457,6 +461,8 @@ def update_task_settings(task_id: str, req: UpdateSettingsRequest):
     task.framework = req.framework
     task.model = req.model
     task.effort = req.effort
+    if req.category_overrides is not None:
+        task.category_overrides = req.category_overrides
     update_task(task)
     return task
 

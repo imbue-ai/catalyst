@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import logging
 from typing import Dict, Any, Callable
-from ..models import Addon, Task, StepStatus
+from ..models import Addon, Task, StepStatus, StepCategory
 from ..state import get_task_lock
 
 logger = logging.getLogger(__name__)
@@ -11,6 +11,11 @@ class AddonHandler(ABC):
     @property
     @abstractmethod
     def name(self) -> str:
+        pass
+
+    @property
+    @abstractmethod
+    def category(self) -> StepCategory:
         pass
 
     @property
@@ -37,7 +42,7 @@ class AddonHandler(ABC):
         if not completed_or_canceled:
             logger.debug(f"[ORCHESTRATOR] [{task.id[:8]}] Running addon {stage}...")
             prompt = self.get_prompt(addon)
-            run_step(task, stage, prompt, cost=self.cost)
+            run_step(task, stage, prompt, cost=self.cost, category=self.category)
 
     def get_prompt(self, addon: Addon) -> str:
         raise NotImplementedError()

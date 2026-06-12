@@ -1,6 +1,6 @@
 from typing import Any, Callable, Dict, List
 
-from ..models import Task
+from ..models import Task, StepCategory
 from .base import Workflow, run_step_if_needed
 
 
@@ -26,4 +26,4 @@ class SmokeWorkflow(Workflow):
             "Run the `/smoke` skill. Follow its instructions exactly: "
             'output `{"skill_ran": true}` as your final message and stop.'
         )
-        run_step_if_needed(task, run_step, "smoke", prompt)
+        run_step_if_needed(task, run_step, "smoke", prompt, StepCategory.MISC)

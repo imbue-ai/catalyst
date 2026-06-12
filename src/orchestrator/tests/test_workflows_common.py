@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from ..models import Task, Step, StepStatus
+from ..models import Task, Step, StepStatus, StepCategory
 from ..workflows.common.title import run_summarize_title
 from ..workflows.common.refinement import run_refinement_loop, get_active_max_iterations
 from ..workflows.common.exploration import run_literature_review_and_exploration_parallel
@@ -39,7 +39,8 @@ class TestWorkflowTitle(unittest.TestCase):
             task,
             mock_run_step,
             "summarize-title",
-            unittest.mock.ANY
+            unittest.mock.ANY,
+            StepCategory.MISC,
         )
 
 

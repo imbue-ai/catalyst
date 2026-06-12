@@ -12,6 +12,13 @@ class TaskStatus(str, Enum):
     PAUSED = "paused"
 
 
+class StepCategory(str, Enum):
+    THEORY_WRITING = "THEORY_WRITING"
+    REVIEW = "REVIEW"
+    MISC = "MISC"
+
+
+
 class StepStatus(str, Enum):
     PENDING = "pending"
     WAITING = "waiting"
@@ -65,6 +72,12 @@ class TheoryScoringWeights(BaseModel):
     adherence_weight: float = Field(..., ge=0.0, le=1.0)
 
 
+class AgentSettings(BaseModel):
+    framework: Optional[str] = None
+    model: Optional[str] = None
+    effort: Optional[str] = None
+
+
 class Task(BaseModel):
     id: str
     title: Optional[str] = None
@@ -85,6 +98,7 @@ class Task(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
     generate_summary: bool = False
+    category_overrides: Dict[StepCategory, AgentSettings] = Field(default_factory=dict)
 
 
 class TaskShallow(BaseModel):
@@ -98,6 +112,7 @@ class TaskShallow(BaseModel):
     current_stage: Optional[str] = None
     workflow_name: str = "develop-theory"
     created_at: Optional[str] = None
+    category_overrides: Dict[StepCategory, AgentSettings] = Field(default_factory=dict)
 
 
 class TasksState(BaseModel):

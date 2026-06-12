@@ -3,7 +3,7 @@ import logging
 import uuid
 import os
 from typing import List, Any, Dict
-from .models import Task, Step, TaskStatus, StepStatus
+from .models import Task, Step, TaskStatus, StepStatus, StepCategory
 from .state import update_task, get_task, get_task_lock
 from .agents import get_agent_runner
 from .workflows import get_workflow
@@ -99,7 +99,7 @@ def _orchestrate_task(task_id: str):
         # Global per-task concurrency limit
         semaphore = WeightedSemaphore(MAX_CONCURRENCY_PER_TASK)
 
-        def run_step_wrapper(t, stage, prompt, cost=1):
+        def run_step_wrapper(t, stage, prompt, category: StepCategory, cost=1):
             lock = get_task_lock(t.id)
             with lock:
                 current_task = get_task(t.id)
@@ -147,7 +147,7 @@ def _orchestrate_task(task_id: str):
                         step.status = StepStatus.RUNNING
                     update_task(current_task)
 
-                res = _run_step_core(t, stage, prompt)
+                res = _run_step_core(t, stage, prompt, category)
                 # Update structure after each step to reflect progress
                 t.workflow_structure = get_full_structure(workflow, t)
                 update_task(t)
@@ -183,7 +183,7 @@ def _orchestrate_task(task_id: str):
         update_task(task)
 
 
-def _run_step_core(task: Task, stage: str, prompt: str) -> Any:
+def _run_step_core(task: Task, stage: str, prompt: str, category: StepCategory) -> Any:
     # This core function assumes the step is already created and in RUNNING state
     lock = get_task_lock(task.id)
     step = None
@@ -206,9 +206,22 @@ def _run_step_core(task: Task, stage: str, prompt: str) -> Any:
             step.last_status = status
             update_task(task)
 
-    runner = get_agent_runner(task.framework)
+    framework = task.framework
+    model = task.model
+    effort = task.effort
+
+    if task.category_overrides and category in task.category_overrides:
+        override = task.category_overrides[category]
+        if override.framework is not None:
+            framework = override.framework
+        if override.model is not None:
+            model = override.model
+        if override.effort is not None:
+            effort = override.effort
+
+    runner = get_agent_runner(framework)
     if not runner:
-        error = f"No agent runner found for framework: {task.framework}"
+        error = f"No agent runner found for framework: {framework}"
         with lock:
             step.status = StepStatus.FAILED
             step.error = error
@@ -229,8 +242,8 @@ def _run_step_core(task: Task, stage: str, prompt: str) -> Any:
         env_folder=task.env_folder,
         stage=stage,
         common_environment_variables=common_env,
-        model=task.model,
-        effort=task.effort,
+        model=model,
+        effort=effort,
         on_session_id=on_sid,
         on_status=on_status,
     )

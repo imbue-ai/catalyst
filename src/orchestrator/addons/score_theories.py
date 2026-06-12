@@ -1,4 +1,4 @@
-from ..models import Addon
+from ..models import Addon, StepCategory
 from .base import AddonHandler
 from orchestrator.prompts import get_score_theories_prompt
 
@@ -7,6 +7,10 @@ class ScoreTheoriesAddon(AddonHandler):
     @property
     def name(self) -> str:
         return "score-theories"
+
+    @property
+    def category(self) -> StepCategory:
+        return StepCategory.REVIEW
 
     def get_prompt(self, addon: Addon) -> str:
         if not addon.theory_ids:

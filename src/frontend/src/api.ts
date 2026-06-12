@@ -1,6 +1,22 @@
 export const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8139";
 const API_BASE = `${API_BASE_URL}/api`;
 
+export interface AgentSettings {
+  framework?: string | null;
+  model?: string | null;
+  effort?: string | null;
+}
+
+export type StepCategory = "THEORY_WRITING" | "REVIEW" | "MISC";
+
+export const STEP_CATEGORIES: StepCategory[] = ["THEORY_WRITING", "REVIEW", "MISC"];
+
+export const STEP_CATEGORY_LABELS: Record<StepCategory, string> = {
+  THEORY_WRITING: "Theory Development",
+  REVIEW: "Review & Scoring",
+  MISC: "Miscellaneous Steps",
+};
+
 export interface Step {
   stage: string;
   status: "pending" | "waiting" | "running" | "completed" | "failed" | "paused" | "canceled";
@@ -53,6 +69,7 @@ export interface Task {
   guidance?: string;
   effort?: string;
   theory_scoring_weights?: TheoryScoringWeights;
+  category_overrides?: Record<StepCategory, AgentSettings>;
 }
 
 export interface TheoryArtifact {
@@ -101,6 +118,7 @@ export interface TaskShallow {
   workflow_name: string;
   effort?: string;
   created_at?: string;
+  category_overrides?: Record<StepCategory, AgentSettings>;
 }
 
 export const listTasks = async (): Promise<TaskShallow[]> => {
@@ -121,6 +139,7 @@ export async function createTask(data: {
   model?: string;
   effort?: string;
   theory_scoring_weights?: TheoryScoringWeights;
+  category_overrides?: Record<StepCategory, AgentSettings>;
   file?: File;
 }): Promise<Task> {
   const formData = new FormData();
@@ -131,7 +150,8 @@ export async function createTask(data: {
     framework: data.framework,
     model: data.model,
     effort: data.effort,
-    theory_scoring_weights: data.theory_scoring_weights
+    theory_scoring_weights: data.theory_scoring_weights,
+    category_overrides: data.category_overrides
   };
   formData.append('request', JSON.stringify(requestData));
   if (data.file) {
@@ -271,12 +291,13 @@ export async function updateSettings(
   taskId: string,
   framework: string,
   model?: string,
-  effort?: string
+  effort?: string,
+  category_overrides?: Record<StepCategory, AgentSettings>
 ): Promise<Task> {
   const res = await fetch(`${API_BASE}/tasks/${taskId}/settings`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ framework, model, effort }),
+    body: JSON.stringify({ framework, model, effort, category_overrides }),
   });
   if (!res.ok) {
     const error = await res.json();

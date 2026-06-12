@@ -1,4 +1,4 @@
-from ..models import Addon
+from ..models import Addon, StepCategory
 from .base import AddonHandler
 from orchestrator.prompts import get_write_different_theory_prompt
 
@@ -7,6 +7,10 @@ class WriteDifferentTheoryAddon(AddonHandler):
     @property
     def name(self) -> str:
         return "write-different-theory"
+
+    @property
+    def category(self) -> StepCategory:
+        return StepCategory.THEORY_WRITING
 
     def get_prompt(self, addon: Addon) -> str:
         if not addon.theory_ids:

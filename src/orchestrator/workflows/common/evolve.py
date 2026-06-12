@@ -1,7 +1,7 @@
 import random
 import logging
 from typing import Any, Callable, Dict, List, Optional, Set
-from ...models import Task
+from ...models import Task, StepCategory
 from ...utils import run_context_manager
 from ..base import run_step_if_needed, run_local_step_if_needed, ParallelStepRunner
 from orchestrator.prompts import (
@@ -94,6 +94,7 @@ def run_evolve_loop(
                 run_step_fn,
                 f"{stage_prefix}summarize-research-{i}",
                 get_summarize_research_prompt(),
+                StepCategory.MISC,
             )
 
         # 1. Sample Parents
@@ -153,6 +154,7 @@ def run_evolve_loop(
                     run_step_fn,
                     stage_name,
                     get_streamline_theory_prompt(tid),
+                    StepCategory.THEORY_WRITING,
                 )
                 mutation_results[stage_name] = res
             elif rng_val < streamline_prob + write_different_prob:
@@ -165,6 +167,7 @@ def run_evolve_loop(
                     get_write_different_theory_prompt(
                         parent_ids, lit_review_id=lit_review_id
                     ),
+                    StepCategory.THEORY_WRITING,
                 )
                 mutation_results[stage_name] = res
             else:
@@ -187,6 +190,7 @@ def run_evolve_loop(
                         apply_expansions=apply_expansions_for_mutation,
                         lit_review_id=lit_review_id,
                     ),
+                    StepCategory.THEORY_WRITING,
                 )
                 mutation_results[stage_name] = res
 
@@ -219,6 +223,7 @@ def run_evolve_loop(
                 run_step_fn,
                 f"{stage_prefix}review-theory-{i}-{idx}",
                 get_review_theory_prompt(tid),
+                StepCategory.REVIEW,
                 cost=3,
             )
 
@@ -267,4 +272,5 @@ def run_evolve_loop(
             run_step_fn,
             f"{stage_prefix}score-theories-{i}",
             get_score_theories_prompt(union_ids),
+            StepCategory.REVIEW,
         )

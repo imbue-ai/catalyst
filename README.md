@@ -67,26 +67,30 @@ Catalyst utilizes an existing agentic harness installed on your system. It curre
 * Antigravity CLI (via `agy -p`)
 * Codex CLI (via `codex exec`)
 
-Token usage will be billed directly by the provider (currently Anthropic or Google), based on the harness' existing authentication.
+Token usage will be billed directly by the provider (Anthropic, Google, or OpenAI), based on the harness' existing authentication.
 
 Before using Catalyst, please familiarize yourself with the expected costs listed below. **The evolution-based workflows in particular are frequently composed of >100 subagents, and can incur significant token usage.**
+
+> [!TIP]
+> About 65% of tokens in a typical Develop Theory workflow are used for review & scoring steps, 25% for theory development, and 10% for miscellaneous. **You can reduce your cost by configuring "Step Type Model Overrides"**, and using the strongest model only for theory development steps. Review & scoring and miscellaneous steps can often work with a slightly weaker model without significantly impacting the quality of your results.
 
 The costs shown below are rough estimates (order of magnitude), and will vary **significantly** depending on your research task. Even when using a subscription, extra charges may apply after you exhaust your plan's rate limits depending on your configuration (Anthropic Usage Credits, Gemini AI Credits etc.). **Please monitor your provider's spend dashboard to avoid unwanted surprises.**
 
 | Harness | Can use subscription plan? | Runs in sandbox | Model | Cost per "Develop Theory (Evolution)" | Cost per "Develop Theory (Linear)" | Cost per manual step |
 | -- | -- | -- | -- | -- | -- | -- |
-| **Claude Code** | No, only API-pricing after 06/15/2026 | Yes | Opus 4.8 | ~$1,000 USD | ~$200 USD | ~$20 USD |
+| **Claude Code** | No | Yes | Opus 4.8 | ~$1,000 USD | ~$200 USD | ~$20 USD |
 | | | | Sonnet 4.6 | ~$500 USD | ~$100 USD | ~$10 USD |
 | | | | Haiku 4.5 | ~$150 USD | ~$30 USD | ~$3 USD |
-| **Claude Code (via mngr)**  | Yes, Max 20x recommended | Yes | Opus 4.8 | included in plan (1-2 per week with Max 20x), see above when using API auth | included in plan (~5 per week with Max 20x), see above when using API auth | included in plan, see above when using API auth |
-| | | | Sonnet 4.6 | included in plan, see above when using API auth | included in plan, see above when using API auth | included in plan, see above when using API auth |
-| | | | Haiku 4.5 | included in plan, see above when using API auth | included in plan, see above when using API auth | included in plan, see above when using API auth |
-| **Gemini CLI** | No, only API-pricing after 06/18/2026 | Yes | 3.5 Flash | ~$200 USD | ~$40 USD | ~$4 USD |
+| **Claude Code (via mngr)**  | Yes, Max 20x recommended | Yes | Opus 4.8 | included in subscription (1-2 per week with Max 20x); ~$1,000 USD when using API billing | included in subscription (~5 per week with Max 20x); ~$200 USD when using API billing | included in subscription; ~$20 USD when using API billing |
+| | | | Sonnet 4.6 | included in subscription; ~$500 USD when using API billing | included in subscription; ~$100 USD when using API billing | included in subscription; ~$10 when using API billing |
+| | | | Haiku 4.5 | included in subscription; ~$150 when using API billing | included in subscription; ~$30 USD when using API billing | included in subscription; ~$3 USD when using API billing |
+| **Gemini CLI** | No | Yes | 3.5 Flash | ~$200 USD | ~$40 USD | ~$4 USD |
 | | | | 3.1 Pro | ~$300 USD | ~$60 USD | ~$6 USD |
 | | | | 3 Flash | ~$100 USD | ~$20 USD | ~$2 USD |
-| **Antigravity CLI** | Yes, AI Ultra recommended | [No](https://github.com/google-antigravity/antigravity-cli/issues/286) | 3.5 Flash | included in plan, same as Gemini CLI when using API auth | included in plan, same as Gemini CLI when using API auth | included in plan, same as Gemini CLI when using API auth |
-| | | | 3.1 Pro | included in plan, same as Gemini CLI when using API auth | included in plan, same as Gemini CLI when using API auth | included in plan, same as Gemini CLI when using API auth |
-| **Codex CLI** | Yes, Pro 20x recommended | Yes | GPT 5.5 | included in plan, ~$500 USD with API auth | included in plan, ~$100 USD with API auth | included in plan, ~$10 USD with API auth |
+| **Antigravity CLI** | Yes, AI Ultra recommended | [No](https://github.com/google-antigravity/antigravity-cli/issues/286) | 3.5 Flash | included in subscription; ~$200 USD when using API billing | included in subscription; ~$40 USD when using API billing | included in subscription; ~$4 USD when using API billing |
+| | | | 3.1 Pro | included in subscription; ~$300 USD when using API billing | included in subscription; ~$60 USD when using API billing | included in subscription; ~$6 USD when using API billing |
+| **Codex CLI** | Yes, Pro 20x recommended | Yes | GPT 5.5 | included in subscription; ~$500 USD when using API billing | included in subscription; ~$100 USD when using API billing | included in subscription; ~$10 USD when using API billing |
+
 
 ## Further Documentation
 
