@@ -40,6 +40,14 @@ cp -r "<CONTEXT_DIR>/theory/"* "<OUTPUT_DIR>/"
 - `<CONTEXT_DIR>/literature/<literature_id>/` — (if any literature IDs provided, or added mid-run) each literature review, with `summary.md` and downloaded TeX sources or PDFs in `papers/`. Read the `summary.md` and consult individual papers when relevant.
 - `<OUTPUT_DIR>/` — write your updated theory, experiments, and any supporting notes here.
 
+## Obtaining cited experiment IDs
+Your inputs may cite specific experiment IDs (`X_...`). You can retrieve these experiments and their results by running:
+```bash
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
+```
+
+This command will place the experiment description (`description.md`), Python script (`script.py`), and results into the `<CONTEXT_DIR>/experiments/<EXPERIMENT_ID>` folder.
+
 ## Running experiments
 Every experiment, test, and validation must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `improve-adherence`.
 Cite each experiment by its `X_...` ID in your improved `theory.md` so reviewers can audit the evidence.
