@@ -782,4 +782,5 @@ def export_artifact(task_id: str, artifact_id: str):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="localhost", port=8139)
+    port = int(os.environ.get("CATALYST_BACKEND_PORT", 8139))
+    uvicorn.run(app, host="localhost", port=port)

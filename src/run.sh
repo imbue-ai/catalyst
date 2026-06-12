@@ -107,14 +107,15 @@ echo ""
 # Wait briefly to let servers bind their ports, then open browser
 (
     sleep 2
-    echo "Frontend URL: http://localhost:8939"
+    FRONTEND_PORT=${CATALYST_FRONTEND_PORT:-8939}
+    echo "Frontend URL: http://localhost:${FRONTEND_PORT}"
     echo "Opening browser..."
     if command -v xdg-open &> /dev/null; then
-        xdg-open http://localhost:8939 &> /dev/null
+        xdg-open http://localhost:${FRONTEND_PORT} &> /dev/null
     elif command -v open &> /dev/null; then
-        open http://localhost:8939 &> /dev/null
+        open http://localhost:${FRONTEND_PORT} &> /dev/null
     elif command -v python3 &> /dev/null; then
-        python3 -m webbrowser http://localhost:8939 &> /dev/null
+        python3 -m webbrowser http://localhost:${FRONTEND_PORT} &> /dev/null
     fi
 ) &
 
