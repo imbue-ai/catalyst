@@ -91,6 +91,7 @@ Your `summary.md` file must follow this structure:
    # If .tar.gz was downloaded:
    mkdir "<OUTPUT_DIR>/papers/XXXX.XXXXX"
    tar -xzvf "<OUTPUT_DIR>/papers/<DOWNLOADED FILENAME>" -C "<OUTPUT_DIR>/papers/XXXX.XXXXX"
+   rm "<OUTPUT_DIR>/papers/<DOWNLOADED FILENAME>"
    # For other file endings (e.g. .gz), use the appropriate tool to extract it to "<OUTPUT_DIR>/papers/XXXX.XXXXX/"
    ```
    Look for the main `.tex` filename in the tar output to reference it in your summary.
