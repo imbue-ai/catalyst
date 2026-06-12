@@ -12,9 +12,7 @@ from .utils import run_context_manager
 
 logger = logging.getLogger(__name__)
 
-MAX_CONCURRENCY_PER_TASK = int(
-    os.environ.get("CATALYST_MAX_CONCURRENCY_PER_TASK", 3)
-)
+MAX_CONCURRENCY_PER_TASK = int(os.environ.get("CATALYST_MAX_CONCURRENCY_PER_TASK", 3))
 
 
 class WeightedSemaphore:
@@ -117,8 +115,8 @@ def _orchestrate_task(task_id: str):
                     if existing_step.status == StepStatus.CANCELED:
                         return {"_canceled": True}
                     step = existing_step
+                    step.reset()
                     step.status = StepStatus.WAITING
-                    step.error = None
                 else:
                     step = Step(
                         stage=stage,
@@ -128,7 +126,9 @@ def _orchestrate_task(task_id: str):
                     current_task.steps.append(step)
 
                 current_task.current_stage = stage
-                current_task.workflow_structure = get_full_structure(workflow, current_task)
+                current_task.workflow_structure = get_full_structure(
+                    workflow, current_task
+                )
                 update_task(current_task)
 
             with semaphore(cost):
@@ -142,7 +142,9 @@ def _orchestrate_task(task_id: str):
 
                 with lock:
                     # Transition to RUNNING
-                    step = next((s for s in current_task.steps if s.stage == stage), None)
+                    step = next(
+                        (s for s in current_task.steps if s.stage == stage), None
+                    )
                     if step and step.status != StepStatus.CANCELED:
                         step.status = StepStatus.RUNNING
                     update_task(current_task)
@@ -192,7 +194,7 @@ def _run_step_core(task: Task, stage: str, prompt: str, category: StepCategory) 
             if s.stage == stage:
                 step = s
                 break
-    
+
     if not step:
         raise Exception(f"Step {stage} not found in task {task.id}")
 

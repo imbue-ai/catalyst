@@ -18,7 +18,6 @@ class StepCategory(str, Enum):
     MISC = "MISC"
 
 
-
 class StepStatus(str, Enum):
     PENDING = "pending"
     WAITING = "waiting"
@@ -45,6 +44,14 @@ class Step(BaseModel):
     session_id: Optional[str] = None
     last_status: Optional[str] = None
     error: Optional[str] = None
+
+    def reset(self) -> None:
+        """Reset a step to prepare for a re-run (such as after a failure or pause)."""
+        self.status = StepStatus.PENDING
+        self.outputs = None
+        self.session_id = None
+        self.last_status = None
+        self.error = None
 
 
 class Addon(BaseModel):
