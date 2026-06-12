@@ -72,7 +72,7 @@ uv sync
 echo ""
 
 echo "Running 'npm install' in frontend directory..."
-(cd frontend && npm install)
+(cd frontend && npm install --no-audit --no-fund)
 echo ""
 
 echo "Populating template blobs: 'uv run --project \"$(pwd)\" --directory ../templates python download_blobs.py'..."
