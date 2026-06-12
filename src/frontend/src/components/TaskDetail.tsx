@@ -71,13 +71,15 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
     return cleaned;
   };
 
+  const categoryOverridesStr = JSON.stringify(task.category_overrides || {})
+
   // Reset/sync local edit state when task or showSettingsPanel changes
   useEffect(() => {
     setEditFramework(task.framework)
     setEditModel(task.model || '')
     setEditEffort(task.effort || '')
     setEditCategoryOverrides((task.category_overrides || {}) as Record<api.StepCategory, api.AgentSettings>)
-  }, [task.framework, task.model, task.effort, task.category_overrides, showSettingsPanel])
+  }, [task.framework, task.model, task.effort, categoryOverridesStr, showSettingsPanel])
 
   // Fetch available harnesses once when the settings panel is opened
   useEffect(() => {
@@ -226,7 +228,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               </button>
 
               {showSettingsPanel && (
-                <div className="absolute right-0 top-full mt-2 w-[400px] bg-white border-2 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 text-left max-h-[80vh] overflow-y-auto custom-scrollbar">
+                <div className="absolute right-0 top-full mt-2 w-[400px] bg-white border-2 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 text-left">
                   <h4 className="font-black text-xs tracking-widest text-black mb-3">Update Settings</h4>
 
                   <HarnessSettings
