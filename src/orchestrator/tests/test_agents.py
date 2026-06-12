@@ -148,7 +148,8 @@ class TestAgents(unittest.TestCase):
         # concerns.
         cmd = args[0]
         self.assertIn("agy", cmd)
-        self.assertIn("--sandbox", cmd)
+        # Sandboxing is currently disabled for Antigravity CLI. Re-enable eventually.
+        self.assertNotIn("--sandbox", cmd)
         self.assertIn("--print-timeout", cmd)
         self.assertIn("--model", cmd)
         self.assertEqual(cmd[cmd.index("--model") + 1], "Gemini 3.5 Flash (Low)")
