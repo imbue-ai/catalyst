@@ -47,16 +47,16 @@ echo "Dependencies met!"
 echo " - uv: $(uv --version)"
 echo " - npm: $(npm --version)"
 if [ "$HAS_GEMINI" = true ]; then
-    echo " - gemini: $(gemini --version)"
+    echo " - gemini"
 fi
 if [ "$HAS_CLAUDE" = true ]; then
-    echo " - claude: $(claude --version)"
+    echo " - claude"
 fi
 if [ "$HAS_AGY" = true ]; then
-    echo " - agy: $(agy --version)"
+    echo " - agy"
 fi
 if [ "$HAS_CODEX" = true ]; then
-    echo " - codex: $(codex --version)"
+    echo " - codex"
 fi
 echo ""
 
