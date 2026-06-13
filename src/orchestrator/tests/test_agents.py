@@ -247,8 +247,8 @@ class TestMngrAgentRunner(unittest.TestCase):
             mock_popen, "claude/common_transcript", '{"score": 0.9}'
         )
 
-    # Shrink the JSON grace budget so the timeout path runs fast in tests.
-    @patch("orchestrator.agents.mngr_runner._POST_TURN_END_JSON_GRACE_SECONDS", 0.1)
+    # Shrink the post-turn-end grace budget so the timeout path runs fast in tests.
+    @patch("orchestrator.agents.mngr_runner._POST_TURN_END_GRACE_SECONDS", 0.1)
     @patch("orchestrator.agents.mngr_runner.time.sleep")
     @patch("subprocess.Popen")
     def test_wait_for_turn_end_json_grace_times_out_on_non_json(

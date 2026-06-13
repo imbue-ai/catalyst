@@ -26,13 +26,31 @@ logger = logging.getLogger(__name__)
 _WAIT_TIMEOUT_SECONDS = 6 * 60 * 60
 
 
-# How long to wait, after the turn-end signal fires, for the
-# assistant_message event to show up in the common transcript. The
-# converters write `events/<source>/common_transcript/events.jsonl` on a
-# ~5s timer, while our turn-end signal can fire sooner. Without a wait
-# here, a fast turn could be detected as done before the conversion sees
-# the assistant_message and we'd return empty text.
-_POST_TURN_END_SECONDS = 10.0
+# After the turn-end (WAITING) signal fires, wait for the step's expected
+# JSON to appear in the harvested assistant text, polling up to this budget
+# and breaking as soon as it parses.
+#
+# Two cases share this one loop:
+#
+#   1. Converter lag. The transcript converters write
+#      `events/<source>/common_transcript/events.jsonl`, and historically did
+#      so on a ~5s timer that our turn-end signal could outrun, so a fast turn
+#      was detectable as done before the conversion saw the assistant_message.
+#      Current mngr closes this race at the source: the agent's turn-end hook
+#      (`wait_for_stop_hook.sh` for claude, `statusline.sh` for agy) runs a
+#      synchronous `--single-pass` of the converters *before* clearing the
+#      `active` marker that signals WAITING, so by the time we observe the
+#      signal the common transcript already reflects the final message. The
+#      poll then parses on its first iteration (modulo the brief in-flight lag
+#      of `mngr event --follow` delivering the line to us). The budget remains
+#      as a fallback for an mngr build without that flush.
+#
+#   2. Premature turn-end (the FIXME below).
+#
+# We break as soon as a parseable message appears, so the common case pays
+# only the follow-pipe lag, not the full budget.
+_POST_TURN_END_GRACE_SECONDS = 30.0
+_POST_TURN_END_POLL_INTERVAL = 0.5
 
 # FIXME(turn-end-grace): band-aid for premature turn-end detection.
 #
@@ -47,10 +65,10 @@ _POST_TURN_END_SECONDS = 10.0
 # `turn_complete` event immediately, while WAITING waits out
 # `wait_for_stop_hook.sh`'s grace).
 #
-# As a mitigation, when a turn-end is detected but the harvested text does NOT
-# parse as the expected JSON, keep consuming events for up to this budget to
-# see whether the agent emits a *parseable* final message (the real end). We
-# break as soon as one appears.
+# As a mitigation, the post-turn-end poll above (bounded by
+# `_POST_TURN_END_GRACE_SECONDS`) keeps consuming events while the harvested
+# text does NOT parse as the expected JSON, to see whether the agent emits a
+# *parseable* final message (the real end). We break as soon as one appears.
 #
 # Caveat / why this isn't a clean fix: it only helps if the agent actually
 # continues after the premature turn-end (i.e. the spurious signal happened
@@ -60,8 +78,6 @@ _POST_TURN_END_SECONDS = 10.0
 # legitimately ends on non-JSON output (rare for Catalyst, whose steps are
 # contracted to emit final JSON). A real fix needs mngr to distinguish an
 # intermediate `end_turn` from the true turn end.
-_POST_TURN_END_JSON_GRACE_SECONDS = 30.0
-_POST_TURN_END_JSON_POLL_INTERVAL = 0.5
 
 # Catalyst's isolated `mngr` host_dir, kept separate from the user's main
 # `~/.mngr` so Catalyst's agents don't mix in and the runner's `mngr` calls
@@ -460,28 +476,20 @@ class MngrAgentRunner(AgentRunner):
             remaining = max(0.0, deadline - time.monotonic())
             watch_done.wait(timeout=remaining)
 
-            # Allow some extra time before terminating, since assistant messages can sometimes be delievered after
-            # the stop condition. _consume_events keeps running (updating
-            # state["last_assistant_text"]) until we terminate it or the agent exits.
-            #
-            # Two phases:
-            #   1. A short unconditional wait so the common-transcript converter
-            #      (which writes on a ~5s timer) catches up with whatever the
-            #      turn-end signal raced ahead of.
-            #   2. If by then the harvested text still does NOT parse as the
-            #      step's expected JSON, extend the wait (see the
-            #      `_POST_TURN_END_JSON_GRACE_SECONDS` FIXME): the turn-end may
-            #      have been a premature/intermediate `end_turn`, so give the
-            #      agent a chance to emit a parseable final message. Break as
-            #      soon as one appears so we don't pay the full budget on the
-            #      common case.
-            time.sleep(_POST_TURN_END_SECONDS)
-            if saw_turn_end.is_set() and parse_json_result(state["last_assistant_text"]) is None:
-                grace_deadline = time.monotonic() + _POST_TURN_END_JSON_GRACE_SECONDS
-                while time.monotonic() < grace_deadline:
-                    if parse_json_result(state["last_assistant_text"]) is not None:
+            # After the turn-end signal, give assistant messages a chance to be
+            # delivered: `_consume_events` keeps running (updating
+            # state["last_assistant_text"]) until we terminate it in the finally
+            # below. Poll for the step's expected JSON, breaking as soon as it
+            # parses. This covers both converter lag and a premature/intermediate
+            # `end_turn` with a single early-exit loop (see
+            # `_POST_TURN_END_GRACE_SECONDS`). Only meaningful once a turn-end
+            # was actually observed; an external stop leaves saw_turn_end unset.
+            if saw_turn_end.is_set():
+                grace_deadline = time.monotonic() + _POST_TURN_END_GRACE_SECONDS
+                while parse_json_result(state["last_assistant_text"]) is None:
+                    if time.monotonic() >= grace_deadline:
                         break
-                    time.sleep(_POST_TURN_END_JSON_POLL_INTERVAL)
+                    time.sleep(_POST_TURN_END_POLL_INTERVAL)
         finally:
             for proc in (event_proc, stop_proc, wait_proc):
                 if proc is not None:
