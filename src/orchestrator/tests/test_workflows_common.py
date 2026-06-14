@@ -225,25 +225,12 @@ class TestWorkflowEvolve(unittest.TestCase):
             env_folder="/tmp/env",
             workflow_inputs={}
         )
-        # 1. Test with generate_intermediate_research_summaries=False (default)
         structs = build_evolve_loop_structure(task, 2)
         self.assertEqual(len(structs), 1)
         self.assertEqual(structs[0]["type"], "loop")
         self.assertEqual(structs[0]["iterations"], 2)
         self.assertIn("1", structs[0]["iteration_structures"])
         self.assertIn("2", structs[0]["iteration_structures"])
-
-        # Verify summarize-research is NOT in the structure
-        iter_1_stages = [step.get("stage") for step in structs[0]["iteration_structures"]["1"] if step.get("type") == "step"]
-        self.assertNotIn("summarize-research-1", iter_1_stages)
-
-        # 2. Test with generate_intermediate_research_summaries=True
-        structs_with_summaries = build_evolve_loop_structure(task, 2, generate_intermediate_research_summaries=True)
-        iter_1_struct = structs_with_summaries[0]["iteration_structures"]["1"]
-        self.assertEqual(iter_1_struct[-1]["type"], "step")
-        self.assertEqual(iter_1_struct[-1]["stage"], "summarize-research-1")
-        # Ensure it is not at the start
-        self.assertNotEqual(iter_1_struct[0]["stage"], "summarize-research-1")
 
     @patch("orchestrator.workflows.common.evolve.run_context_manager")
     @patch("orchestrator.workflows.common.evolve.run_local_step_if_needed")

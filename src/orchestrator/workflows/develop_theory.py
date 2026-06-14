@@ -55,15 +55,15 @@ class DevelopTheoryWorkflow(Workflow):
 
         structure.append({"type": "step", "stage": "score-theories"})
 
-        if task.generate_summary:
-            structure.append({"type": "step", "stage": "summarize-research"})
-
         evolve_iterations = int(task.workflow_inputs.get("evolve_iterations", 0))
         if evolve_iterations > 0:
             generate_summaries = task.workflow_inputs.get("generate_intermediate_research_summaries")
             if generate_summaries is None:
                 generate_summaries = task.generate_summary
             structure.extend(build_evolve_loop_structure(task, evolve_iterations, generate_intermediate_research_summaries=generate_summaries))
+
+        if task.generate_summary:
+            structure.append({"type": "step", "stage": "summarize-research"})
 
         return structure
 
@@ -133,16 +133,6 @@ class DevelopTheoryWorkflow(Workflow):
                 StepCategory.REVIEW,
             )
 
-            # Stand-alone summarize-research step if enabled
-            if task.generate_summary:
-                run_step_if_needed(
-                    task,
-                    run_step,
-                    "summarize-research",
-                    get_summarize_research_prompt(),
-                    StepCategory.MISC,
-                )
-
             # Step 6: Evolve Loop
             evolve_iterations = int(
                 task.workflow_inputs.get("evolve_iterations", DEFAULT_EVOLVE_ITERATIONS)
@@ -183,5 +173,15 @@ class DevelopTheoryWorkflow(Workflow):
                     apply_expansions=apply_expansions,
                     lit_review_id=lit_review_id,
                     generate_intermediate_research_summaries=generate_summaries,
+                )
+
+            # Final step: stand-alone summarize-research step if enabled
+            if task.generate_summary:
+                run_step_if_needed(
+                    task,
+                    run_step,
+                    "summarize-research",
+                    get_summarize_research_prompt(),
+                    StepCategory.MISC,
                 )
 

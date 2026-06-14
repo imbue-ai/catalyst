@@ -24,6 +24,9 @@ def build_evolve_loop_structure(
     for i in range(1, evolve_iterations + 1):
         iter_struct = []
 
+        if generate_intermediate_research_summaries:
+            iter_struct.append({"type": "step", "stage": f"{stage_prefix}summarize-research-{i}"})
+
         # Sample Parents step
         iter_struct.append({"type": "step", "stage": f"{stage_prefix}sample-parents-{i}"})
 
@@ -55,9 +58,6 @@ def build_evolve_loop_structure(
         # Score step
         iter_struct.append({"type": "step", "stage": f"{stage_prefix}score-theories-{i}"})
 
-        if generate_intermediate_research_summaries:
-            iter_struct.append({"type": "step", "stage": f"{stage_prefix}summarize-research-{i}"})
-
         iteration_structures[str(i)] = iter_struct
 
     return [
@@ -87,6 +87,15 @@ def run_evolve_loop(
         logger.debug(
             f"[ORCHESTRATOR] [{task.id[:8]}] Evolve Loop Iteration {i}/{iterations}"
         )
+
+        if generate_intermediate_research_summaries:
+            run_step_if_needed(
+                task,
+                run_step_fn,
+                f"{stage_prefix}summarize-research-{i}",
+                get_summarize_research_prompt(),
+                StepCategory.MISC,
+            )
 
         # 1. Sample Parents
         def _sample_parents() -> Dict[str, Any]:
@@ -265,12 +274,3 @@ def run_evolve_loop(
             get_score_theories_prompt(union_ids),
             StepCategory.REVIEW,
         )
-
-        if generate_intermediate_research_summaries:
-            run_step_if_needed(
-                task,
-                run_step_fn,
-                f"{stage_prefix}summarize-research-{i}",
-                get_summarize_research_prompt(),
-                StepCategory.MISC,
-            )
