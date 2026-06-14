@@ -1,6 +1,6 @@
 from orchestrator.agents.base import EXPERIMENT_TIMEOUT_SECS
 
-from .mngr_runner import MngrAgentRunner, TurnCompletion
+from .mngr_runner import MngrAgentRunner
 
 # Per-tool permission prompts are auto-allowed by the mngr_claude plugin's
 # `PermissionRequest` hook when `auto_allow_permissions = true` (see
@@ -17,7 +17,6 @@ class MngrClaudeAgentRunner(MngrAgentRunner):
             agent_type="claude",
             framework="mngr-claude",
             transcript_source="claude/common_transcript",
-            turn_completion=TurnCompletion.STOP_HOOK,
             model_flag="--model",
             effort_flag="--effort",
             extra_env={
@@ -30,6 +29,13 @@ class MngrClaudeAgentRunner(MngrAgentRunner):
                 # parent has the subagent results before composing its final
                 # message. See
                 # https://claudelog.com/faqs/what-is-disable-background-tasks-in-claude-code/
+                #
+                # This is also what makes the WAITING lifecycle state a
+                # reliable turn-end signal: with synchronous subagents the
+                # parent never goes idle mid-turn (e.g. while `/swarm` Task
+                # subagents run), so the mngr_claude plugin's Stop hook clears
+                # the `active` marker -- and `mngr wait --state WAITING`
+                # returns -- only once, at the true end of the turn.
                 "CLAUDE_CODE_DISABLE_BACKGROUND_TASKS": "1",
                 # Keep bash invocations rooted at the work_dir (the env_folder)
                 # rather than letting `cd` calls in one tool invocation drift

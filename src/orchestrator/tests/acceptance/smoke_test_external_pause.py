@@ -1,15 +1,15 @@
 """Stage B-Pause smoke test: external `mngr stop` interrupts the runner.
 
 Reproduces the dashboard's pause behavior: while the runner is in
-`_wait_for_turn_end` (parent agent mid-turn, no Stop hook fired yet),
-something external calls `mngr stop <agent>` -- which is exactly what
+`_wait_for_turn_end` (parent agent mid-turn, still RUNNING), something
+external calls `mngr stop <agent>` -- which is exactly what
 `cancel_task_process` does when the user clicks Pause. The runner
 should exit promptly, NOT block for the full 6-hour wait deadline.
 
 How: spawn a thread that sleeps ~10s after the agent name is captured,
 then issues `mngr stop`. The main thread's `runner.run()` should return
 within seconds of that, with `saw_turn_end == False` (the agent never
-emitted turn_end, it was killed). Wall time should be roughly the
+reached WAITING -- it was killed mid-turn). Wall time should be roughly the
 duration of the agent's first work + 10s pause delay + a few seconds
 of teardown -- much less than `_WAIT_TIMEOUT_SECONDS`.
 

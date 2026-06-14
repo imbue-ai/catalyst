@@ -1,16 +1,17 @@
 """Stage B2 smoke test: multi-turn / subagent regression coverage.
 
-Reproduces the failure mode that broke `/swarm` and `/explore`: the
-parent agent kicks off a subagent via the Agent tool, mngr_claude
-transitions the parent to WAITING while the subagent runs, and the
-runner needs to keep waiting until the parent emits its FINAL
-assistant_message after the subagent returns.
+Covers the `/swarm` and `/explore` pattern: the parent agent kicks off a
+subagent via the Agent tool, and the runner must keep waiting until the
+parent emits its FINAL assistant_message after the subagent returns --
+not the intermediate text it produces before the subagent reports back.
 
-Before the turn_end Stop-hook fix landed, `mngr wait --state WAITING`
-returned at the intermediate idle and the runner parsed the wrong
-assistant text. The new mechanism (`_wait_for_turn_end` watching for
-the Stop-hook-emitted event) waits through the intermediate idle and
-returns only after the parent's final assistant_message.
+The runner detects turn end via `mngr wait --state WAITING`. That is safe
+because `CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1` (set by
+MngrClaudeAgentRunner) makes subagents synchronous: the parent never goes
+idle mid-turn while the subagent runs, so the mngr_claude plugin clears
+the `active` marker -- and WAITING fires -- only once, at the true end of
+the turn. This test guards against a regression where the runner returns
+the pre-subagent text.
 
 Cost: ~few cents on Haiku (one parent + one trivial subagent).
 Wall time: ~30s typical.
