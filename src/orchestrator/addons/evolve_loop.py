@@ -27,9 +27,6 @@ class EvolveLoopAddon(AddonHandler):
         for i in range(1, evolve_iterations + 1):
             iter_struct = []
             
-            if generate_summaries:
-                iter_struct.append({"type": "step", "stage": f"addon-{index}-summarize-research-{i}"})
-            
             # Sample Parents step
             iter_struct.append({"type": "step", "stage": f"addon-{index}-sample-parents-{i}"})
 
@@ -46,6 +43,9 @@ class EvolveLoopAddon(AddonHandler):
 
             # Score step
             iter_struct.append({"type": "step", "stage": f"addon-{index}-score-theories-{i}"})
+            
+            if generate_summaries:
+                iter_struct.append({"type": "step", "stage": f"addon-{index}-summarize-research-{i}"})
             
             iteration_structures[str(i)] = iter_struct
 

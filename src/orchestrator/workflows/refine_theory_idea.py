@@ -32,15 +32,15 @@ class RefineTheoryIdeaWorkflow(Workflow):
             {"type": "step", "stage": "score-theories"},
         ]
 
+        if task.generate_summary:
+            structure.append({"type": "step", "stage": "summarize-research"})
+
         evolve_iterations = int(task.workflow_inputs.get("evolve_iterations", 0))
         if evolve_iterations > 0:
             generate_summaries = task.workflow_inputs.get("generate_intermediate_research_summaries")
             if generate_summaries is None:
                 generate_summaries = task.generate_summary
             structure.extend(build_evolve_loop_structure(task, evolve_iterations, generate_intermediate_research_summaries=generate_summaries))
-
-        if task.generate_summary:
-            structure.append({"type": "step", "stage": "summarize-research"})
 
         return structure
 
@@ -88,6 +88,16 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 StepCategory.REVIEW,
             )
 
+            # One-off Summarize Research (before evolve loop)
+            if task.generate_summary:
+                run_step_if_needed(
+                    task,
+                    run_step,
+                    "summarize-research",
+                    get_summarize_research_prompt(),
+                    StepCategory.MISC,
+                )
+
             # Step 4: Evolve Loop
             evolve_iterations = int(
                 task.workflow_inputs.get("evolve_iterations", DEFAULT_EVOLVE_ITERATIONS)
@@ -126,13 +136,4 @@ class RefineTheoryIdeaWorkflow(Workflow):
                     apply_expansions=apply_expansions,
                     generate_intermediate_research_summaries=generate_summaries,
                 )
-
-        if task.generate_summary:
-            run_step_if_needed(
-                task,
-                run_step,
-                "summarize-research",
-                get_summarize_research_prompt(),
-                StepCategory.MISC,
-            )
 
