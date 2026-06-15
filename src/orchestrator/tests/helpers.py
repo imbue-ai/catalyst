@@ -2,6 +2,7 @@ import os
 import unittest
 from unittest.mock import patch
 import tempfile
+import shutil
 import orchestrator.state
 
 class OrchestratorTestCase(unittest.TestCase):
@@ -29,7 +30,6 @@ class OrchestratorTestCase(unittest.TestCase):
     def tearDown(self):
         self.patcher.stop()
         self.patcher_cat.stop()
-        import shutil
         if os.path.exists(self.catalyst_dir):
             shutil.rmtree(self.catalyst_dir)
         if os.path.exists(self.state_path):

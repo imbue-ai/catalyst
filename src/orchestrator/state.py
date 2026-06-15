@@ -216,13 +216,12 @@ def update_task(task: Task):
 
 
 def initialize_state():
+    from .workflows import get_workflow  # noqa: PLC0415
+    from .orchestrator import get_full_structure  # noqa: PLC0415
+
     with _lock:
         state = _load_state()
         modified = False
-
-        # Local import to avoid circular dependency
-        from .workflows import get_workflow
-        from .orchestrator import get_full_structure
 
         for task in state.tasks:
             # Always ensure structure is up-to-date with current steps

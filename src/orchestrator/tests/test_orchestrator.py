@@ -2,6 +2,7 @@ from unittest.mock import patch, MagicMock
 from .helpers import OrchestratorTestCase
 from ..orchestrator import _run_step_core, _orchestrate_task
 from ..models import Task, StepStatus, TaskStatus, Step, StepCategory
+from ..state import add_task
 
 class TestOrchestrator(OrchestratorTestCase):
     def setUp(self):
@@ -14,7 +15,6 @@ class TestOrchestrator(OrchestratorTestCase):
             workflow_inputs={}
         )
         # We need to add the task to the state so get_task works
-        from ..state import add_task
         add_task(self.task)
 
     @patch("orchestrator.orchestrator.get_agent_runner")

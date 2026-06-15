@@ -1,7 +1,8 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
-from ..models import Task, StepCategory
+from ..models import Task, StepCategory, AgentSettings, Step, StepStatus
+from ..orchestrator import _run_step_core
 from ..addons import get_addon_handler
 from ..workflows.import_theory import ImportTheoryWorkflow
 from ..workflows.smoke import SmokeWorkflow
@@ -124,8 +125,7 @@ class TestExplicitClassification(unittest.TestCase):
     @patch("orchestrator.orchestrator.get_task")
     @patch("orchestrator.orchestrator.run_context_manager")
     def test_per_category_routing_resolution(self, mock_run_context_manager, mock_get_task, mock_update_task, mock_get_task_lock, mock_get_agent_runner):
-        from ..models import AgentSettings, Step, StepStatus
-        from ..orchestrator import _run_step_core
+
 
         # Set up runner mock
         mock_runner = MagicMock()
