@@ -108,6 +108,16 @@ def _load_state() -> TasksState:
             content = f.read()
             _last_written_json = content
             data = json.loads(content)
+            
+            # Resolve relative paths in loaded data using CATALYST_PATH
+            catalyst_path = get_catalyst_path()
+            for task in data.get("tasks", []):
+                env_folder = task.get("env_folder")
+                if env_folder and not os.path.isabs(env_folder):
+                    task["env_folder"] = os.path.abspath(
+                        os.path.join(catalyst_path, env_folder)
+                    )
+
             _state_cache = TasksState.model_validate(data)
             return _state_cache
     except Exception:
@@ -125,10 +135,23 @@ def _save_state(state: TasksState, disk_save: bool = True):
 
     # Strip transient fields like last_status before saving to disk
     data = state.model_dump()
+    catalyst_path = get_catalyst_path()
     for task in data.get("tasks", []):
         for step in task.get("steps", []):
             if "last_status" in step:
                 step["last_status"] = None
+        
+        env_folder = task.get("env_folder")
+        if env_folder:
+            abs_env = os.path.abspath(env_folder)
+            abs_cat = os.path.abspath(catalyst_path)
+            try:
+                # We check if env_folder is inside or equal to get_catalyst_path()
+                if os.path.commonpath([abs_env, abs_cat]) == abs_cat:
+                    task["env_folder"] = os.path.relpath(abs_env, abs_cat)
+            except ValueError:
+                # E.g. different drives on Windows, fallback to absolute path
+                pass
 
     json_str = json.dumps(data, indent=2)
 
