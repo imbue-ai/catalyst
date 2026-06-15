@@ -32,3 +32,7 @@ exclude-newer-package = { imbue-mngr = "2026-06-09", imbue-mngr-claude = "2026-0
 
 [tool.uv.sources]
 darwinian-evolver = { path = "../darwinian_evolver", editable = true }
+
+[tool.ruff.lint]
+extend-select = ["PLC0415"]
+
