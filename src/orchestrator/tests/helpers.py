@@ -6,6 +6,11 @@ import orchestrator.state
 
 class OrchestratorTestCase(unittest.TestCase):
     def setUp(self):
+        # Create a temp directory for catalyst research path
+        self.catalyst_dir = tempfile.mkdtemp()
+        self.patcher_cat = patch("orchestrator.state.get_catalyst_path", return_value=self.catalyst_dir)
+        self.patcher_cat.start()
+
         # Create a temp file for state
         self.state_fd, self.state_path = tempfile.mkstemp(suffix=".json")
         os.close(self.state_fd)
@@ -23,6 +28,10 @@ class OrchestratorTestCase(unittest.TestCase):
 
     def tearDown(self):
         self.patcher.stop()
+        self.patcher_cat.stop()
+        import shutil
+        if os.path.exists(self.catalyst_dir):
+            shutil.rmtree(self.catalyst_dir)
         if os.path.exists(self.state_path):
             os.remove(self.state_path)
         if os.path.exists(f"{self.state_path}.bak"):
