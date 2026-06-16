@@ -21,6 +21,7 @@ import { ExperimentsList } from './ExperimentsList'
 import { EditGuidanceModal } from './EditGuidanceModal'
 const SummaryTab = lazy(() => import('./SummaryTab').then(m => ({ default: m.SummaryTab })))
 import { HarnessSettings } from './HarnessSettings'
+import { CategoryOverridesSettings } from './CategoryOverridesSettings'
 
 
 interface TaskDetailProps {
@@ -46,17 +47,39 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
   const [editFramework, setEditFramework] = useState(task.framework)
   const [editModel, setEditModel] = useState(task.model || '')
   const [editEffort, setEditEffort] = useState(task.effort || '')
+  const [editCategoryOverrides, setEditCategoryOverrides] = useState<Record<api.StepCategory, api.AgentSettings>>((task.category_overrides || {}) as Record<api.StepCategory, api.AgentSettings>)
   const [isUpdatingSettings, setIsUpdatingSettings] = useState(false)
   const [harnesses, setHarnesses] = useState<api.HarnessInfo[]>([])
 
   const settingsPanelRef = useRef<HTMLDivElement>(null)
+
+  const cleanOverridesForApi = (overrides: Record<api.StepCategory, api.AgentSettings>): Record<api.StepCategory, api.AgentSettings> => {
+    const cleaned: any = {};
+    for (const key of Object.keys(overrides) as api.StepCategory[]) {
+      const ov = overrides[key];
+      if (ov) {
+        const hasValue = ov.framework || ov.model || ov.effort;
+        if (hasValue) {
+          cleaned[key] = {
+            framework: ov.framework || null,
+            model: ov.model || null,
+            effort: ov.effort || null
+          };
+        }
+      }
+    }
+    return cleaned;
+  };
+
+  const categoryOverridesStr = JSON.stringify(task.category_overrides || {})
 
   // Reset/sync local edit state when task or showSettingsPanel changes
   useEffect(() => {
     setEditFramework(task.framework)
     setEditModel(task.model || '')
     setEditEffort(task.effort || '')
-  }, [task.framework, task.model, task.effort, showSettingsPanel])
+    setEditCategoryOverrides((task.category_overrides || {}) as Record<api.StepCategory, api.AgentSettings>)
+  }, [task.framework, task.model, task.effort, categoryOverridesStr, showSettingsPanel])
 
   // Fetch available harnesses once when the settings panel is opened
   useEffect(() => {
@@ -86,7 +109,8 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
         task.id,
         editFramework,
         editModel || undefined,
-        editEffort || undefined
+        editEffort || undefined,
+        cleanOverridesForApi(editCategoryOverrides)
       )
       onRefresh()
       setShowSettingsPanel(false)
@@ -202,11 +226,11 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                 <Cpu size={14} /> {task.framework} {task.model ? `[${task.model}${task.effort ? ` (${task.effort})` : ''}]` : (task.effort && `[(${task.effort})]`)}
                 <ChevronDown size={12} className={`ml-1 transition-transform ${showSettingsPanel ? 'rotate-180' : ''}`} />
               </button>
-              
+
               {showSettingsPanel && (
-                <div className="absolute right-0 top-full mt-2 w-80 bg-white border-2 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 text-left">
+                <div className="absolute right-0 top-full mt-2 w-[400px] bg-white border-2 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 text-left">
                   <h4 className="font-black text-xs tracking-widest text-black mb-3">Update Settings</h4>
-                  
+
                   <HarnessSettings
                     framework={editFramework}
                     model={editModel}
@@ -218,8 +242,16 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                       if (updates.effort !== undefined) setEditEffort(updates.effort)
                     }}
                     isCompact={true}
+                    forceVertical={true}
                   />
-                  
+
+                  <CategoryOverridesSettings
+                    overrides={editCategoryOverrides}
+                    onChange={setEditCategoryOverrides}
+                    harnesses={harnesses}
+                    forceVertical={true}
+                  />
+
                   {/* Action buttons */}
                   <div className="flex gap-2 pt-4">
                     <button

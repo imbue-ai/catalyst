@@ -80,12 +80,15 @@ Your `summary.md` file must follow this structure:
    # If .tar.gz was downloaded:
    mkdir "<OUTPUT_DIR>/papers/XXXX.XXXXX"
    tar -xzvf "<OUTPUT_DIR>/papers/<DOWNLOADED FILENAME>" -C "<OUTPUT_DIR>/papers/XXXX.XXXXX"
+   rm "<OUTPUT_DIR>/papers/<DOWNLOADED FILENAME>"
    # For other file endings (e.g. .gz), use the appropriate tool to extract it to "<OUTPUT_DIR>/papers/XXXX.XXXXX/"
    ```
-   Only if the TeX source is not available, download the PDF instead:
+   Look for the main `.tex` filename in the tar output to reference it in your summary.
+   ONLY IF the TeX source is not available for a particular paper, download the PDF instead:
    ```bash
    curl -L --no-progress-meter "https://arxiv.org/pdf/XXXX.XXXXX.pdf" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
    ```
+   ALWAYS TRY to obtain a TeX source first for each paper. TeX is easier for downstream agents to process than PDF files.
 5. **Read and extract**: Read each downloaded paper. Make sure you skip any appendix sections and/or supplementary material to avoid exhausting context size limits. For each paper, note only the content that speaks to the query — the specific finding, the relevant method, the directly applicable result or bound. Skip the rest.
 6. **Synthesize**: Write `<OUTPUT_DIR>/summary.md` per the format above. Frame the synthesis around the query, not as a general landscape survey.
 7. **Store results**: Persist your output:

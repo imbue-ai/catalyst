@@ -47,16 +47,16 @@ echo "Dependencies met!"
 echo " - uv: $(uv --version)"
 echo " - npm: $(npm --version)"
 if [ "$HAS_GEMINI" = true ]; then
-    echo " - gemini: $(gemini --version)"
+    echo " - gemini"
 fi
 if [ "$HAS_CLAUDE" = true ]; then
-    echo " - claude: $(claude --version)"
+    echo " - claude"
 fi
 if [ "$HAS_AGY" = true ]; then
-    echo " - agy: $(agy --version)"
+    echo " - agy"
 fi
 if [ "$HAS_CODEX" = true ]; then
-    echo " - codex: $(codex --version)"
+    echo " - codex"
 fi
 echo ""
 
@@ -72,7 +72,7 @@ uv sync
 echo ""
 
 echo "Running 'npm install' in frontend directory..."
-(cd frontend && npm install)
+(cd frontend && npm install --no-audit --no-fund)
 echo ""
 
 echo "Populating template blobs: 'uv run --project \"$(pwd)\" --directory ../templates python download_blobs.py'..."
@@ -107,14 +107,15 @@ echo ""
 # Wait briefly to let servers bind their ports, then open browser
 (
     sleep 2
-    echo "Frontend URL: http://localhost:8939"
+    FRONTEND_PORT=${CATALYST_FRONTEND_PORT:-8939}
+    echo "Frontend URL: http://localhost:${FRONTEND_PORT}"
     echo "Opening browser..."
     if command -v xdg-open &> /dev/null; then
-        xdg-open http://localhost:8939 &> /dev/null
+        xdg-open http://localhost:${FRONTEND_PORT} &> /dev/null
     elif command -v open &> /dev/null; then
-        open http://localhost:8939 &> /dev/null
+        open http://localhost:${FRONTEND_PORT} &> /dev/null
     elif command -v python3 &> /dev/null; then
-        python3 -m webbrowser http://localhost:8939 &> /dev/null
+        python3 -m webbrowser http://localhost:${FRONTEND_PORT} &> /dev/null
     fi
 ) &
 

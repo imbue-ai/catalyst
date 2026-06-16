@@ -1,5 +1,5 @@
 from typing import Any, Callable, List, Dict
-from ..models import Task
+from ..models import Task, StepCategory
 from .base import Workflow, run_step_if_needed
 from .common import (
     DEFAULT_EVOLVE_ITERATIONS,
@@ -62,6 +62,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
             run_step,
             "support-idea",
             get_support_idea_prompt(idea, file_path),
+            StepCategory.THEORY_WRITING,
         )
         theory_id = support_data.get("theory_id") if support_data else None
         if not theory_id and not (support_data and support_data.get("_canceled")):
@@ -74,6 +75,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 run_step,
                 "review-theory",
                 get_review_theory_prompt(theory_id),
+                StepCategory.REVIEW,
                 cost=3,
             )
 
@@ -83,6 +85,7 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 run_step,
                 "score-theories",
                 get_score_theories_prompt([theory_id]),
+                StepCategory.REVIEW,
             )
 
             # Step 4: Evolve Loop
@@ -130,5 +133,6 @@ class RefineTheoryIdeaWorkflow(Workflow):
                 run_step,
                 "summarize-research",
                 get_summarize_research_prompt(),
+                StepCategory.MISC,
             )
 

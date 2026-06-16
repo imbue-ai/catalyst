@@ -1,5 +1,5 @@
 from typing import Dict, Any, Callable
-from ..models import Addon, Task
+from ..models import Addon, Task, StepCategory
 from .base import AddonHandler
 from ..workflows.common import (
     run_evolve_loop, 
@@ -14,6 +14,10 @@ class EvolveLoopAddon(AddonHandler):
     @property
     def name(self) -> str:
         return "evolve-loop"
+
+    @property
+    def category(self) -> StepCategory:
+        return StepCategory.MISC
 
     def get_structure(self, addon: Addon, index: int, task: Task) -> Dict[str, Any]:
         evolve_iterations = addon.evolve_iterations if hasattr(addon, 'evolve_iterations') and addon.evolve_iterations is not None else DEFAULT_EVOLVE_ITERATIONS

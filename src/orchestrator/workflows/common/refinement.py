@@ -1,11 +1,12 @@
 from typing import Callable, Optional
-from ...models import Task
+from ...models import Task, StepCategory
 from ..base import run_step_if_needed
 from orchestrator.prompts import (
     get_review_theory_prompt,
     get_refine_theory_prompt,
     get_summarize_research_prompt,
 )
+
 
 def run_refinement_loop(
     task: Task,
@@ -19,23 +20,15 @@ def run_refinement_loop(
 ) -> str:
     i = 1
     while i <= max_refinements:
-        if generate_intermediate_research_summaries:
-            run_step_if_needed(
-                task,
-                run_step_fn,
-                f"{stage_prefix}summarize-research-{i}",
-                get_summarize_research_prompt(),
-            )
-
         # Review
         review_data = run_step_if_needed(
             task,
             run_step_fn,
             f"{stage_prefix}review-theory-{i}",
             get_review_theory_prompt(theory_id),
+            StepCategory.REVIEW,
             cost=3,
         )
-
 
         if not review_data:
             raise Exception(f"Theory review for iteration {i} failed.")
@@ -48,12 +41,22 @@ def run_refinement_loop(
         if not review_ids:
             break
 
+        if generate_intermediate_research_summaries:
+            run_step_if_needed(
+                task,
+                run_step_fn,
+                f"{stage_prefix}summarize-research-{i}",
+                get_summarize_research_prompt(),
+                StepCategory.MISC,
+            )
+
         # Refine
         refine_data = run_step_if_needed(
             task,
             run_step_fn,
             f"{stage_prefix}refine-theory-{i}",
             get_refine_theory_prompt(theory_id, apply_expansions, lit_review_id),
+            StepCategory.THEORY_WRITING,
         )
 
         if not refine_data:

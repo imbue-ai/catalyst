@@ -16,7 +16,17 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 from contextlib import asynccontextmanager
 
-from orchestrator.models import Task, TaskStatus, TaskShallow, TheoryScoringWeights
+from orchestrator.models import (
+    Task,
+    TaskStatus,
+    TaskShallow,
+    TheoryScoringWeights,
+    StepCategory,
+    AgentSettings,
+    Addon,
+    Step,
+    StepStatus,
+)
 from orchestrator.state import (
     get_tasks,
     get_task,
@@ -27,7 +37,8 @@ from orchestrator.state import (
     initialize_state,
     shutdown_all,
 )
-from orchestrator.orchestrator import start_task
+from orchestrator.orchestrator import start_task, get_full_structure
+from orchestrator.workflows import get_workflow
 from orchestrator.utils import get_catalyst_path, run_context_manager
 from orchestrator.harness import (
     HarnessInfo,
@@ -119,6 +130,7 @@ class CreateTaskRequest(BaseModel):
     model: Optional[str] = None
     effort: Optional[str] = None
     theory_scoring_weights: Optional[TheoryScoringWeights] = None
+    category_overrides: Optional[Dict[StepCategory, AgentSettings]] = None
 
 
 @app.get("/api/tasks", response_model=List[TaskShallow])
@@ -136,6 +148,7 @@ def list_tasks():
             current_stage=task.current_stage,
             workflow_name=task.workflow_name,
             created_at=task.created_at,
+            category_overrides=task.category_overrides,
         )
         for task in tasks
     ]
@@ -236,6 +249,7 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
         workflow_name=req.workflow_name,
         theory_scoring_weights=req.theory_scoring_weights,
         generate_summary=True,
+        category_overrides=req.category_overrides or {},
     )
 
     try:
@@ -275,8 +289,6 @@ def create_addon(task_id: str, req: CreateAddonRequest):
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    from orchestrator.models import Addon
-
     addon = Addon(
         type=req.type,
         theory_id=req.theory_id,
@@ -297,9 +309,6 @@ def create_addon(task_id: str, req: CreateAddonRequest):
     )
     task.addons.append(addon)
 
-    from orchestrator.orchestrator import get_full_structure
-    from orchestrator.workflows import get_workflow
-
     workflow = get_workflow(task.workflow_name)
     task.workflow_structure = get_full_structure(workflow, task)
 
@@ -316,8 +325,6 @@ def cancel_step(task_id: str, stage: str):
     task = get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-
-    from orchestrator.models import StepStatus
 
     # If the step is currently running, we might need to cancel the process
     # but the simplest way is to just cancel the task and restart it, or just let it fail.
@@ -340,8 +347,6 @@ def cancel_step(task_id: str, stage: str):
             )
     else:
         # Step not in task.steps yet (so it's pending in the structure)
-        from orchestrator.models import Step
-
         task.steps.append(Step(stage=stage, status=StepStatus.CANCELED))
         update_task(task)
         return {"status": "canceled"}
@@ -356,8 +361,6 @@ def bulk_cancel_steps(task_id: str, req: BulkCancelRequest):
     task = get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-
-    from orchestrator.models import StepStatus, Step
 
     modified = False
     existing_stages = {s.stage: s for s in task.steps}
@@ -390,7 +393,6 @@ def cancel_task(task_id: str):
         raise HTTPException(status_code=404, detail="Task not found")
 
     task.status = TaskStatus.PAUSED
-    from orchestrator.models import StepStatus
 
     for step in task.steps:
         if step.status in (StepStatus.RUNNING, StepStatus.WAITING):
@@ -446,6 +448,7 @@ class UpdateSettingsRequest(BaseModel):
     framework: str
     model: Optional[str] = None
     effort: Optional[str] = None
+    category_overrides: Optional[Dict[StepCategory, AgentSettings]] = None
 
 
 @app.post("/api/tasks/{task_id}/settings", response_model=Task)
@@ -457,6 +460,8 @@ def update_task_settings(task_id: str, req: UpdateSettingsRequest):
     task.framework = req.framework
     task.model = req.model
     task.effort = req.effort
+    if req.category_overrides is not None:
+        task.category_overrides = req.category_overrides
     update_task(task)
     return task
 
@@ -466,8 +471,6 @@ def delete_task_temp_files(task_id: str):
     task = get_task(task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
-
-    from orchestrator.models import TaskStatus
 
     if task.status not in (TaskStatus.FAILED, TaskStatus.PAUSED, TaskStatus.COMPLETED):
         raise HTTPException(
@@ -776,4 +779,5 @@ def export_artifact(task_id: str, artifact_id: str):
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run(app, host="localhost", port=8139)
+    port = int(os.environ.get("CATALYST_BACKEND_PORT", 8139))
+    uvicorn.run(app, host="localhost", port=port)

@@ -3,7 +3,10 @@ from unittest.mock import patch, MagicMock
 from ..agents.base import parse_json_result
 from ..agents.gemini import GeminiAgentRunner
 from ..agents.claude import ClaudeAgentRunner
-from ..agents.mngr_runner import extract_assistant_text, extract_status
+from ..agents.agy import AgyAgentRunner
+from ..agents.mngr_runner import extract_assistant_text, extract_status, MngrAgentRunner
+from ..models import TheoryScoringWeights
+from pydantic import ValidationError
 
 
 class TestAgents(unittest.TestCase):
@@ -109,7 +112,7 @@ class TestAgents(unittest.TestCase):
     @patch("orchestrator.agents.cli_base.unregister_cancellable")
     @patch("subprocess.Popen")
     def test_agy_runner(self, mock_popen, mock_unreg, mock_reg):
-        from ..agents.agy import AgyAgentRunner
+
 
         mock_process = MagicMock()
         mock_process.communicate.return_value = (
@@ -148,7 +151,8 @@ class TestAgents(unittest.TestCase):
         # concerns.
         cmd = args[0]
         self.assertIn("agy", cmd)
-        self.assertIn("--sandbox", cmd)
+        # Sandboxing is currently disabled for Antigravity CLI. Re-enable eventually.
+        self.assertNotIn("--sandbox", cmd)
         self.assertIn("--print-timeout", cmd)
         self.assertIn("--model", cmd)
         self.assertEqual(cmd[cmd.index("--model") + 1], "Gemini 3.5 Flash (Low)")
@@ -205,8 +209,6 @@ class TestMngrAgentRunner(unittest.TestCase):
         watcher exits 0 (the active marker was cleared by the plugin's Stop
         hook), and the last assistant_message on the agent's transcript
         source is harvested from the event stream."""
-        from ..agents.mngr_runner import MngrAgentRunner
-
         runner = MngrAgentRunner(
             agent_type="agent",
             framework="mngr-agent",
@@ -258,8 +260,6 @@ class TestMngrAgentRunner(unittest.TestCase):
         no further message arrives), the JSON grace loop runs to its deadline
         and returns the unparseable text -- it must not hang. This is the H1
         ('genuinely ended early') path of the turn-end-grace band-aid."""
-        from ..agents.mngr_runner import MngrAgentRunner
-
         runner = MngrAgentRunner(
             agent_type="agent",
             framework="mngr-agent",
@@ -299,8 +299,7 @@ class TestMngrAgentRunner(unittest.TestCase):
         )
 
     def test_theory_scoring_weights_propagation(self):
-        from ..models import TheoryScoringWeights
-        from pydantic import ValidationError
+
 
         runner = ClaudeAgentRunner()
         weights = TheoryScoringWeights(

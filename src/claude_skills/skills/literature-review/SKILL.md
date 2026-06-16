@@ -91,12 +91,15 @@ Your `summary.md` file must follow this structure:
    # If .tar.gz was downloaded:
    mkdir "<OUTPUT_DIR>/papers/XXXX.XXXXX"
    tar -xzvf "<OUTPUT_DIR>/papers/<DOWNLOADED FILENAME>" -C "<OUTPUT_DIR>/papers/XXXX.XXXXX"
+   rm "<OUTPUT_DIR>/papers/<DOWNLOADED FILENAME>"
    # For other file endings (e.g. .gz), use the appropriate tool to extract it to "<OUTPUT_DIR>/papers/XXXX.XXXXX/"
    ```
-   Only if the TeX source is not available, download the PDF instead:
+   Look for the main `.tex` filename in the tar output to reference it in your summary.
+   ONLY IF the TeX source is not available for a particular paper, download the PDF instead:
    ```bash
    curl -L --no-progress-meter "https://arxiv.org/pdf/XXXX.XXXXX.pdf" -o "<OUTPUT_DIR>/papers/XXXX.XXXXX.pdf"
    ```
+   ALWAYS TRY to obtain a TeX source first for each paper. TeX is easier for downstream agents to process than PDF files.
 4. **Read and extract**: Read each downloaded paper. Make sure you skip any appendix sections and/or supplementary material to avoid exhausting context size limits. For each paper, extract:
    - Title and authors
    - Core contribution / main findings

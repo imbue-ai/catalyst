@@ -41,17 +41,17 @@ class AgyAgentRunner(BaseCliAgentRunner):
 
         cmd = [
             "agy",
-            "--sandbox",
+            # Antigravity sandboxing is currently unreliable:
+            # With `-p`, bypassSandbox requests appear to be auto-approved. At the same time, we're unable to allow-list network access upfront.
+            # Hence, we run without sandboxing for the time being until agy has more mature sandbox configuration options.
+            # "--sandbox",
             "--print-timeout",
             f"{AGENT_TIMEOUT_SECS}s",
             "--add-dir",
             abs_env_folder,
         ]
         if model:
-            # Model name is the same string shown in agy's in-session
-            # `/model` menu (e.g. "Gemini 3.5 Flash (Low)",
-            # "Claude Sonnet 4.6 (Thinking)"). Run `agy models` to list
-            # them.
+            # Model name is the same string as returned by `agy models` (NOT the API model name).
             cmd.extend(["--model", model])
         cmd.extend(["-p", prompt])
 

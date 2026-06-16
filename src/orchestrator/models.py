@@ -12,6 +12,12 @@ class TaskStatus(str, Enum):
     PAUSED = "paused"
 
 
+class StepCategory(str, Enum):
+    THEORY_WRITING = "THEORY_WRITING"
+    REVIEW = "REVIEW"
+    MISC = "MISC"
+
+
 class StepStatus(str, Enum):
     PENDING = "pending"
     WAITING = "waiting"
@@ -39,6 +45,14 @@ class Step(BaseModel):
     last_status: Optional[str] = None
     error: Optional[str] = None
 
+    def reset(self) -> None:
+        """Reset a step to prepare for a re-run (such as after a failure or pause)."""
+        self.status = StepStatus.PENDING
+        self.outputs = None
+        self.session_id = None
+        self.last_status = None
+        self.error = None
+
 
 class Addon(BaseModel):
     type: str  # "streamline-theory", "review-theory", "refine-theory", "refinement-loop", "evolve-loop", "write-different-theory"
@@ -65,6 +79,12 @@ class TheoryScoringWeights(BaseModel):
     adherence_weight: float = Field(..., ge=0.0, le=1.0)
 
 
+class AgentSettings(BaseModel):
+    framework: Optional[str] = None
+    model: Optional[str] = None
+    effort: Optional[str] = None
+
+
 class Task(BaseModel):
     id: str
     title: Optional[str] = None
@@ -85,6 +105,7 @@ class Task(BaseModel):
         default_factory=lambda: datetime.now(timezone.utc).isoformat()
     )
     generate_summary: bool = False
+    category_overrides: Dict[StepCategory, AgentSettings] = Field(default_factory=dict)
 
 
 class TaskShallow(BaseModel):
@@ -98,6 +119,7 @@ class TaskShallow(BaseModel):
     current_stage: Optional[str] = None
     workflow_name: str = "develop-theory"
     created_at: Optional[str] = None
+    category_overrides: Dict[StepCategory, AgentSettings] = Field(default_factory=dict)
 
 
 class TasksState(BaseModel):

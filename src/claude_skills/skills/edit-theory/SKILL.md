@@ -30,6 +30,14 @@ cp -r "<CONTEXT_DIR>/theory/"* "<OUTPUT_DIR>/"
 
 Any temporary files must be stored only under `<OUTPUT_DIR>`.
 
+## Obtaining cited experiment IDs
+Your inputs may cite specific experiment IDs (`X_...`). You can retrieve these experiments and their results by running:
+```bash
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
+```
+
+This command will place the experiment description (`description.md`), Python script (`script.py`), and results into the `<CONTEXT_DIR>/experiments/<EXPERIMENT_ID>` folder.
+
 ## Running experiments
 Every experiment, test, and validation must be set up and run through the `run-experiment` skill, using the AGENT_TYPE `edit-theory`.
 Cite experiments by their `X_ID` in your final `theory.md` so reviewers can audit the supporting evidence.

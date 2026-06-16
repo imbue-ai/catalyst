@@ -1,7 +1,13 @@
 import json
+import os
 from unittest.mock import patch, MagicMock
 from .helpers import OrchestratorTestCase
-from ..state import add_task, get_task, update_task, get_tasks, delete_task
+from ..state import (
+    add_task, get_task, update_task, get_tasks, delete_task,
+    Cancellable, cancel_task_process, register_cancellable, unregister_cancellable, _running
+)
+from ..agents.cli_base import make_subprocess_cancellable
+from .. import state
 from ..models import Task, TaskStatus
 
 class TestState(OrchestratorTestCase):
@@ -10,7 +16,7 @@ class TestState(OrchestratorTestCase):
             id="t1",
             workflow_name="w1",
             framework="f1",
-            env_folder="e1",
+            env_folder=os.path.join(self.catalyst_dir, "e1"),
             workflow_inputs={}
         )
         add_task(task)
@@ -30,7 +36,7 @@ class TestState(OrchestratorTestCase):
             id="t1",
             workflow_name="w1",
             framework="f1",
-            env_folder="e1",
+            env_folder=os.path.join(self.catalyst_dir, "e1"),
             workflow_inputs={}
         )
         add_task(task)
@@ -46,7 +52,7 @@ class TestState(OrchestratorTestCase):
             id="t1",
             workflow_name="w1",
             framework="f1",
-            env_folder="e1",
+            env_folder=os.path.join(self.catalyst_dir, "e1"),
             workflow_inputs={}
         )
         add_task(task)
@@ -62,7 +68,7 @@ class TestState(OrchestratorTestCase):
             id="t1",
             workflow_name="w1",
             framework="f1",
-            env_folder="e1",
+            env_folder=os.path.join(self.catalyst_dir, "e1"),
             workflow_inputs={}
         )
         add_task(task)
@@ -75,12 +81,7 @@ class TestState(OrchestratorTestCase):
         """state.cancel_task_process must invoke every registered
         Cancellable's cancel callback with the configured timeout, then
         drop the entries from the registry."""
-        from ..state import (
-            Cancellable,
-            cancel_task_process,
-            register_cancellable,
-            _running,
-        )
+
 
         called_a, called_b = [], []
         a = Cancellable("a", lambda t: called_a.append(t))
@@ -95,17 +96,11 @@ class TestState(OrchestratorTestCase):
         self.assertNotIn("t1", _running)
 
     def test_cancel_task_process_no_entries(self):
-        from ..state import cancel_task_process
         # Cancelling a task with nothing registered must be a no-op.
         cancel_task_process("never-registered")
 
     def test_unregister_cancellable(self):
-        from ..state import (
-            Cancellable,
-            cancel_task_process,
-            register_cancellable,
-            unregister_cancellable,
-        )
+
 
         called_a, called_b = [], []
         a = Cancellable("a", lambda t: called_a.append(t))
@@ -122,12 +117,7 @@ class TestState(OrchestratorTestCase):
     def test_cancel_task_process_isolates_callback_errors(self):
         """A raising callback must not block subsequent callbacks; the
         registry should still be cleared on exit."""
-        from ..state import (
-            Cancellable,
-            cancel_task_process,
-            register_cancellable,
-            _running,
-        )
+
 
         called = []
         boom = Cancellable("boom", lambda t: (_ for _ in ()).throw(RuntimeError("boom")))
@@ -146,8 +136,7 @@ class TestState(OrchestratorTestCase):
         """The cli_base helper wires SIGTERM-on-the-process-group into a
         Cancellable. End-to-end via the registry: registering the
         wrapper + cancelling the task must signal the group."""
-        from ..agents.cli_base import make_subprocess_cancellable
-        from ..state import cancel_task_process, register_cancellable
+
 
         mock_process = MagicMock()
         mock_process.pid = 123
@@ -159,3 +148,65 @@ class TestState(OrchestratorTestCase):
 
         mock_killpg.assert_called_with(456, 15)  # signal.SIGTERM is 15
         mock_process.wait.assert_called()
+
+    def test_env_folder_relative_path_persistence(self):
+        # 1. Create a task with an absolute env_folder under catalyst_dir
+        task_id = "t_rel"
+        abs_env_folder = os.path.join(self.catalyst_dir, "tasks", "task_t_rel")
+        task = Task(
+            id=task_id,
+            workflow_name="w_rel",
+            framework="f_rel",
+            env_folder=abs_env_folder,
+            workflow_inputs={}
+        )
+        add_task(task)
+
+        # 2. In memory, it must remain absolute!
+        retrieved = get_task(task_id)
+        self.assertIsNotNone(retrieved)
+        self.assertEqual(retrieved.env_folder, abs_env_folder)
+
+        # 3. On disk (in tasks_state.json), it must be persisted relative to CATALYST_PATH (which is catalyst_dir)
+        with open(self.state_path, "r") as f:
+            disk_data = json.load(f)
+            disk_task = next(t for t in disk_data["tasks"] if t["id"] == task_id)
+            # It should be relative: "tasks/task_t_rel"
+            self.assertEqual(disk_task["env_folder"], "tasks/task_t_rel")
+
+        # 4. Clear the in-memory cache to force a reload from disk, and load it again
+        state._state_cache = None
+        state._last_written_json = None
+
+        reloaded = get_task(task_id)
+        self.assertIsNotNone(reloaded)
+        # It must be resolved back to the absolute path!
+        self.assertEqual(reloaded.env_folder, abs_env_folder)
+
+    def test_env_folder_outside_catalyst_path_remains_absolute(self):
+        # 1. Create a task with an absolute env_folder OUTSIDE catalyst_dir
+        task_id = "t_out"
+        outside_folder = "/home/daniel/some_other_folder/task_t_out"
+        task = Task(
+            id=task_id,
+            workflow_name="w_out",
+            framework="f_out",
+            env_folder=outside_folder,
+            workflow_inputs={}
+        )
+        add_task(task)
+
+        # 2. On disk, it must remain absolute!
+        with open(self.state_path, "r") as f:
+            disk_data = json.load(f)
+            disk_task = next(t for t in disk_data["tasks"] if t["id"] == task_id)
+            self.assertEqual(disk_task["env_folder"], outside_folder)
+
+        # 3. Reload it and check it is still absolute
+        state._state_cache = None
+        state._last_written_json = None
+
+        reloaded = get_task(task_id)
+        self.assertIsNotNone(reloaded)
+        self.assertEqual(reloaded.env_folder, outside_folder)
+

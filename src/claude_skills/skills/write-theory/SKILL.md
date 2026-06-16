@@ -44,7 +44,7 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_a
 Any temporary files (including experiment scripts, intermediate results, etc.) must be stored only under `<OUTPUT_DIR>`.
 
 ## Obtaining cited experiment IDs
-The exploration report may cite specific experiment IDs (`X_...`). You can retrieve these experiments and their results by running:
+Your inputs may cite specific experiment IDs (`X_...`). You can retrieve these experiments and their results by running:
 ```bash
 uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
 ```

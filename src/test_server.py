@@ -1,11 +1,13 @@
 import unittest
 import json
 import logging
+import asyncio
+import fcntl
 from unittest.mock import patch, MagicMock, mock_open
 from fastapi.testclient import TestClient
 from fastapi import Response
 
-from server import app
+from server import app, inject_disclaimer, lifespan
 from orchestrator.models import Task, TaskStatus, Step, StepStatus
 
 # Silence logs during tests
@@ -321,7 +323,6 @@ class TestServerEndpoints(unittest.TestCase):
 
         response = client.get("/api/tasks/test_task_123/artifacts/T_123/primary")
         self.assertEqual(response.status_code, 200)
-        from server import inject_disclaimer
 
         self.assertEqual(response.json()["content"], inject_disclaimer("content"))
 
@@ -389,9 +390,6 @@ More text."""
         mock_open_file,
         mock_get_path,
     ):
-        import asyncio
-        from server import lifespan
-
         # Mock the opened lock file
         mock_file = MagicMock()
         mock_file.fileno.return_value = 123
@@ -408,8 +406,6 @@ More text."""
         mock_open_file.assert_called_with("/tmp/test_catalyst/server.lock", "w")
 
         # Check that we acquired and released the lock
-        import fcntl
-
         mock_flock.assert_any_call(123, fcntl.LOCK_EX | fcntl.LOCK_NB)
         mock_flock.assert_any_call(123, fcntl.LOCK_UN)
         mock_file.close.assert_called()
@@ -421,9 +417,6 @@ More text."""
     def test_lifespan_lock_already_locked(
         self, mock_makedirs, mock_flock, mock_open_file, mock_get_path
     ):
-        import asyncio
-        from server import lifespan
-
         # Mock lock failure
         mock_file = MagicMock()
         mock_file.fileno.return_value = 123

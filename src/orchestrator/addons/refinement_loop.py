@@ -1,5 +1,5 @@
 from typing import Dict, Any, Callable
-from ..models import Addon, Task
+from ..models import Addon, Task, StepCategory
 from .base import AddonHandler
 from ..workflows.common import run_refinement_loop
 
@@ -8,12 +8,16 @@ class RefinementLoopAddon(AddonHandler):
     def name(self) -> str:
         return "refinement-loop"
 
+    @property
+    def category(self) -> StepCategory:
+        return StepCategory.MISC
+
     def get_structure(self, addon: Addon, index: int, task: Task) -> Dict[str, Any]:
         max_iters = addon.max_refinements if addon.max_refinements is not None else 3
         base_stages = [f"addon-{index}-review-theory", f"addon-{index}-refine-theory"]
         generate_summaries = addon.generate_intermediate_research_summaries if addon.generate_intermediate_research_summaries is not None else False
         if generate_summaries:
-            base_stages.insert(0, f"addon-{index}-summarize-research")
+            base_stages.insert(1, f"addon-{index}-summarize-research")
         return {
             "type": "loop",
             "name": "Refinement Loop",

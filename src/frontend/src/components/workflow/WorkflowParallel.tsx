@@ -34,7 +34,7 @@ export function WorkflowParallel({ name, stages, task, onSelect, selectedStage, 
     <div className={`relative pl-8 group transition-all mb-6`}>
       {/* Connector line */}
       {showConnector && (
-        <div className="absolute left-[9px] top-5 w-[2px] h-full bg-gray-100 group-hover:bg-black transition-colors" />
+        <div className={`absolute left-[9px] top-5 w-[2px] h-full transition-colors ${overallStatus === 'completed' ? 'bg-black' : 'bg-gray-100'}`} />
       )}
 
       <StepIndicator status={overallStatus} isRunning={overallStatus === 'running'} />

@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Callable, List, Dict
 import os
-from ..models import Task
+from ..models import Task, StepCategory
 from .base import (
     Workflow,
     run_step_if_needed,
@@ -42,7 +42,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
             if generate_summaries is None:
                 generate_summaries = task.generate_summary
             if generate_summaries:
-                base_stages.insert(0, "summarize-research")
+                base_stages.insert(1, "summarize-research")
 
             structure.append(
                 {
@@ -83,6 +83,7 @@ class DevelopTheoryLinearWorkflow(Workflow):
                 exploration_id,
                 lit_review_id,
             ),
+            StepCategory.THEORY_WRITING,
         )
         theory_id = theory_data.get("theory_id") if theory_data else None
         if not theory_id and not (theory_data and theory_data.get("_canceled")):
@@ -112,5 +113,6 @@ class DevelopTheoryLinearWorkflow(Workflow):
                 run_step,
                 "summarize-research",
                 get_summarize_research_prompt(),
+                StepCategory.MISC,
             )
 

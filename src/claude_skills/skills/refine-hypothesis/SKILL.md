@@ -44,8 +44,8 @@ cp -r "<CONTEXT_DIR>/theory/"* "<OUTPUT_DIR>/"
 
 Any temporary files (including experiment scripts, intermediate results, etc.) must be stored only under `<OUTPUT_DIR>`.
 
-## Reviewing cited experiment IDs
-The falsification report(s) may cite specific experiment IDs (`X_...`) as evidence. You can review these experiments by running:
+## Obtaining cited experiment IDs
+Your inputs may cite specific experiment IDs (`X_...`). You can retrieve these experiments and their results by running:
 ```bash
 uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
 ```
