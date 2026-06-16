@@ -3,7 +3,10 @@ from unittest.mock import patch, MagicMock
 from ..agents.base import parse_json_result
 from ..agents.gemini import GeminiAgentRunner
 from ..agents.claude import ClaudeAgentRunner
-from ..agents.mngr_runner import extract_assistant_text, extract_status
+from ..agents.agy import AgyAgentRunner
+from ..agents.mngr_runner import extract_assistant_text, extract_status, MngrAgentRunner, TurnCompletion
+from ..models import TheoryScoringWeights
+from pydantic import ValidationError
 
 
 class TestAgents(unittest.TestCase):
@@ -109,7 +112,7 @@ class TestAgents(unittest.TestCase):
     @patch("orchestrator.agents.cli_base.unregister_cancellable")
     @patch("subprocess.Popen")
     def test_agy_runner(self, mock_popen, mock_unreg, mock_reg):
-        from ..agents.agy import AgyAgentRunner
+
 
         mock_process = MagicMock()
         mock_process.communicate.return_value = (
@@ -201,7 +204,7 @@ class TestSharedExtractors(unittest.TestCase):
 class TestMngrAgentRunner(unittest.TestCase):
     @patch("subprocess.Popen")
     def test_wait_for_turn_end_stop_hook_clean(self, mock_popen):
-        from ..agents.mngr_runner import MngrAgentRunner, TurnCompletion
+
 
         # We instantiate a concrete subclass or directly use MngrAgentRunner
         runner = MngrAgentRunner(
@@ -237,7 +240,7 @@ class TestMngrAgentRunner(unittest.TestCase):
 
     @patch("subprocess.Popen")
     def test_wait_for_turn_end_waiting_state_clean(self, mock_popen):
-        from ..agents.mngr_runner import MngrAgentRunner, TurnCompletion
+
 
         runner = MngrAgentRunner(
             agent_type="antigravity",
@@ -274,8 +277,7 @@ class TestMngrAgentRunner(unittest.TestCase):
         self.assertEqual(assistant_text, '{"score": 0.8}')
 
     def test_theory_scoring_weights_propagation(self):
-        from ..models import TheoryScoringWeights
-        from pydantic import ValidationError
+
 
         runner = ClaudeAgentRunner()
         weights = TheoryScoringWeights(

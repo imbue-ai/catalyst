@@ -1,4 +1,5 @@
 import random
+import json
 import logging
 from typing import Any, Callable, Dict, List, Optional, Set
 from ...models import Task, StepCategory
@@ -111,7 +112,6 @@ def run_evolve_loop(
                     "--json",
                 ],
             )
-            import json
 
             try:
                 samples = json.loads(out)
@@ -244,7 +244,6 @@ def run_evolve_loop(
                     "--json",
                 ],
             )
-            import json
 
             try:
                 samples = json.loads(out)

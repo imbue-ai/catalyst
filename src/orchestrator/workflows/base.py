@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Callable, List, Dict, Optional
 import logging
+import threading
+
 
 from ..models import Task, StepStatus, Step, StepCategory
 from ..state import update_task, get_task_lock
@@ -104,8 +106,6 @@ class ParallelStepRunner:
     """
 
     def __init__(self) -> None:
-        import threading
-
         self.threads: List[threading.Thread] = []
         self.errors: List[Exception] = []
         self._lock = threading.Lock()
@@ -114,8 +114,6 @@ class ParallelStepRunner:
         return self
 
     def add(self, fn: Callable[..., Any], *args: Any, **kwargs: Any) -> None:
-        import threading
-
         def target() -> None:
             try:
                 fn(*args, **kwargs)

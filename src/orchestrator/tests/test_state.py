@@ -2,7 +2,12 @@ import json
 import os
 from unittest.mock import patch, MagicMock
 from .helpers import OrchestratorTestCase
-from ..state import add_task, get_task, update_task, get_tasks, delete_task
+from ..state import (
+    add_task, get_task, update_task, get_tasks, delete_task,
+    Cancellable, cancel_task_process, register_cancellable, unregister_cancellable, _running
+)
+from ..agents.cli_base import make_subprocess_cancellable
+from .. import state
 from ..models import Task, TaskStatus
 
 class TestState(OrchestratorTestCase):
@@ -76,12 +81,7 @@ class TestState(OrchestratorTestCase):
         """state.cancel_task_process must invoke every registered
         Cancellable's cancel callback with the configured timeout, then
         drop the entries from the registry."""
-        from ..state import (
-            Cancellable,
-            cancel_task_process,
-            register_cancellable,
-            _running,
-        )
+
 
         called_a, called_b = [], []
         a = Cancellable("a", lambda t: called_a.append(t))
@@ -96,17 +96,11 @@ class TestState(OrchestratorTestCase):
         self.assertNotIn("t1", _running)
 
     def test_cancel_task_process_no_entries(self):
-        from ..state import cancel_task_process
         # Cancelling a task with nothing registered must be a no-op.
         cancel_task_process("never-registered")
 
     def test_unregister_cancellable(self):
-        from ..state import (
-            Cancellable,
-            cancel_task_process,
-            register_cancellable,
-            unregister_cancellable,
-        )
+
 
         called_a, called_b = [], []
         a = Cancellable("a", lambda t: called_a.append(t))
@@ -123,12 +117,7 @@ class TestState(OrchestratorTestCase):
     def test_cancel_task_process_isolates_callback_errors(self):
         """A raising callback must not block subsequent callbacks; the
         registry should still be cleared on exit."""
-        from ..state import (
-            Cancellable,
-            cancel_task_process,
-            register_cancellable,
-            _running,
-        )
+
 
         called = []
         boom = Cancellable("boom", lambda t: (_ for _ in ()).throw(RuntimeError("boom")))
@@ -147,8 +136,7 @@ class TestState(OrchestratorTestCase):
         """The cli_base helper wires SIGTERM-on-the-process-group into a
         Cancellable. End-to-end via the registry: registering the
         wrapper + cancelling the task must signal the group."""
-        from ..agents.cli_base import make_subprocess_cancellable
-        from ..state import cancel_task_process, register_cancellable
+
 
         mock_process = MagicMock()
         mock_process.pid = 123
@@ -187,9 +175,8 @@ class TestState(OrchestratorTestCase):
             self.assertEqual(disk_task["env_folder"], "tasks/task_t_rel")
 
         # 4. Clear the in-memory cache to force a reload from disk, and load it again
-        import orchestrator.state
-        orchestrator.state._state_cache = None
-        orchestrator.state._last_written_json = None
+        state._state_cache = None
+        state._last_written_json = None
 
         reloaded = get_task(task_id)
         self.assertIsNotNone(reloaded)
@@ -216,9 +203,8 @@ class TestState(OrchestratorTestCase):
             self.assertEqual(disk_task["env_folder"], outside_folder)
 
         # 3. Reload it and check it is still absolute
-        import orchestrator.state
-        orchestrator.state._state_cache = None
-        orchestrator.state._last_written_json = None
+        state._state_cache = None
+        state._last_written_json = None
 
         reloaded = get_task(task_id)
         self.assertIsNotNone(reloaded)
