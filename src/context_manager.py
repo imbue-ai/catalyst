@@ -55,6 +55,12 @@ AGENT_TYPE_MAP: dict[str, str] = {
     "run-experiment": "experiment",
     "predict-experiments": "prediction",
     "summarize-research": "summary",
+    "interpret-experiment": "interpretations",
+    "review-interpretations": "review",
+    "refine-interpretations": "interpretations",
+    "propose-experiment": "proposal",
+    "generate-solution": "solution",
+    "execute-proposal": "experiment",
 }
 
 CATEGORY_MD_MAP: dict[str, str] = {
@@ -65,6 +71,9 @@ CATEGORY_MD_MAP: dict[str, str] = {
     "experiment": "description.md",
     "prediction": "predictions.md",
     "summary": "summary.md",
+    "interpretations": "interpretations.md",
+    "proposal": "proposal.md",
+    "solution": "solution.md",
 }
 
 ID_PREFIXES: dict[str, str] = {
@@ -75,6 +84,9 @@ ID_PREFIXES: dict[str, str] = {
     "experiment": "X",
     "prediction": "P",
     "summary": "S",
+    "interpretations": "I",
+    "proposal": "O",
+    "solution": "U",
 }
 
 PREFIX_TO_CATEGORY: dict[str, str] = {v: k for k, v in ID_PREFIXES.items()}
@@ -87,6 +99,9 @@ VALID_CATEGORIES: tuple[str, ...] = (
     "experiment",
     "prediction",
     "summary",
+    "interpretations",
+    "proposal",
+    "solution",
 )
 
 DEFAULT_DB_DIR = ".ai-scientist-db"
@@ -190,6 +205,8 @@ class StoredMetadata(BaseModel):
     created_at: str
     headline: str = ""
     parent_theory: str | None = None
+    parent_interpretations: str | None = None
+    parent_solution: str | None = None
     extra: dict[str, str] = Field(default_factory=dict)
     staged_for_transaction: str | None = None
 
@@ -474,6 +491,8 @@ def store_results(
     from_agent_type: str,
     from_folder: Path,
     parent_theory: str | None = None,
+    parent_interpretations: str | None = None,
+    parent_solution: str | None = None,
     metadata_extra: dict[str, str] | None = None,
 ) -> str:
     """Persist agent output into the immutable database. Returns the new ID."""
@@ -526,6 +545,22 @@ def store_results(
                 f"in the database (expected {theory_dir})"
             )
 
+    if parent_interpretations:
+        interpretations_dir = db_root / "interpretations" / parent_interpretations
+        if not interpretations_dir.is_dir():
+            raise ValueError(
+                f"Referenced parent interpretations log {parent_interpretations!r} does not exist "
+                f"in the database (expected {interpretations_dir})"
+            )
+
+    if parent_solution:
+        solution_dir = db_root / "solution" / parent_solution
+        if not solution_dir.is_dir():
+            raise ValueError(
+                f"Referenced parent solution {parent_solution!r} does not exist "
+                f"in the database (expected {solution_dir})"
+            )
+
     with DatabaseSession(db_root) as session:
         new_id = generate_id(category)
 
@@ -568,6 +603,8 @@ def store_results(
             parent_theory=parent_theory
             if from_agent_type in parent_theory_allowed_agents
             else None,
+            parent_interpretations=parent_interpretations,
+            parent_solution=parent_solution,
             extra=metadata_extra or {},
             staged_for_transaction=session.tx_id,
         )
@@ -585,7 +622,7 @@ def store_results(
                     theory_id=new_id,
                     parent_theory_id=parent_theory,
                 )
-            elif category == "review":
+            elif category == "review" and from_agent_type != "review-interpretations":
                 session.record_review(
                     theory_id=parent_theory,
                     review_id=new_id,
@@ -619,6 +656,9 @@ def _validate_create_context_args(
     from_reviews: list[str] | None,
     from_experiments: list[str] | None,
     from_predictions: list[str] | None,
+    from_interpretations: str | None,
+    from_proposals: list[str] | None,
+    from_solution: str | None,
 ) -> None:
     if for_agent_type == "write-theory":
         if from_literatures and len(from_literatures) > 1:
@@ -685,6 +725,31 @@ def _validate_create_context_args(
             )
     elif for_agent_type == "summarize-research":
         pass
+    elif for_agent_type == "interpret-experiment":
+        if not from_interpretations:
+            raise ValueError("Exactly one --from_interpretations is required for interpret-experiment")
+        if not from_experiments or len(from_experiments) != 1:
+            raise ValueError("Exactly one --from_experiment is required for interpret-experiment")
+    elif for_agent_type == "review-interpretations":
+        if not from_interpretations:
+            raise ValueError("Exactly one --from_interpretations is required for review-interpretations")
+    elif for_agent_type == "refine-interpretations":
+        if not from_interpretations:
+            raise ValueError("Exactly one --from_interpretations is required for refine-interpretations")
+        if not from_reviews:
+            raise ValueError("At least one --from_review is required for refine-interpretations")
+    elif for_agent_type == "propose-experiment":
+        if not from_interpretations:
+            raise ValueError("Exactly one --from_interpretations is required for propose-experiment")
+    elif for_agent_type == "generate-solution":
+        if not from_interpretations:
+            raise ValueError("Exactly one --from_interpretations is required for generate-solution")
+    elif for_agent_type == "rank-experiment-proposals":
+        if not from_proposals:
+            raise ValueError("At least one --from_proposal is required for rank-experiment-proposals")
+    elif for_agent_type == "execute-proposal":
+        if not from_proposals or len(from_proposals) != 1:
+            raise ValueError("Exactly one --from_proposal is required for execute-proposal")
     else:
         raise ValueError(f"Unknown target agent type {for_agent_type!r}.")
 
@@ -698,6 +763,9 @@ def create_context(
     from_reviews: list[str] | None = None,
     from_experiments: list[str] | None = None,
     from_predictions: list[str] | None = None,
+    from_interpretations: str | None = None,
+    from_proposals: list[str] | None = None,
+    from_solution: str | None = None,
 ) -> None:
     """Assemble upstream artifacts into *target_folder* for the next agent."""
     db_root = get_db_path()
@@ -710,6 +778,9 @@ def create_context(
         from_reviews=from_reviews,
         from_experiments=from_experiments,
         from_predictions=from_predictions,
+        from_interpretations=from_interpretations,
+        from_proposals=from_proposals,
+        from_solution=from_solution,
     )
 
     with DatabaseSession(db_root) as session:
@@ -774,7 +845,7 @@ def create_context(
             if for_agent_type == "predict-experiments":
                 for exp_id in from_experiments:
                     fetch_experiment(target_folder, exp_id, exclude_results=True)
-            elif for_agent_type == "rank-predictions":
+            elif for_agent_type in ("rank-predictions", "interpret-experiment"):
                 copy_artifact(
                     db_root / "experiment" / from_experiments[0],
                     target_folder / "experiment",
@@ -786,6 +857,68 @@ def create_context(
             preds_root.mkdir(exist_ok=True)
             for pid in from_predictions:
                 copy_artifact(db_root / "prediction" / pid, preds_root / pid)
+
+        # 7. Interpretations
+        if from_interpretations:
+            if session.get_metadata("interpretations", from_interpretations):
+                copy_artifact(
+                    db_root / "interpretations" / from_interpretations,
+                    target_folder / "interpretations",
+                )
+            else:
+                raise ValueError(
+                    f"Interpretations log {from_interpretations!r} not found or invisible"
+                )
+
+        # 8. Proposals
+        if from_proposals:
+            if for_agent_type == "execute-proposal":
+                pid = from_proposals[0]
+                if session.get_metadata("proposal", pid):
+                    copy_artifact(
+                        db_root / "proposal" / pid,
+                        target_folder / "proposal",
+                    )
+                else:
+                    raise ValueError(f"Proposal {pid!r} not found or invisible")
+            else:
+                proposals_root = target_folder / "proposals"
+                proposals_root.mkdir(exist_ok=True)
+                for pid in from_proposals:
+                    if session.get_metadata("proposal", pid):
+                        copy_artifact(
+                            db_root / "proposal" / pid,
+                            proposals_root / pid,
+                        )
+                    else:
+                        raise ValueError(f"Proposal {pid!r} not found or invisible")
+
+        # 9. Solution
+        if from_solution:
+            if session.get_metadata("solution", from_solution):
+                # Copy solution flatly to <target_folder>/previous_solution
+                copy_artifact(
+                    db_root / "solution" / from_solution,
+                    target_folder / "previous_solution",
+                )
+                # Look up parent_interpretations from its metadata
+                sol_meta = session.get_metadata("solution", from_solution)
+                if sol_meta:
+                    parent_i = sol_meta.get("parent_interpretations")
+                    if parent_i:
+                        if session.get_metadata("interpretations", parent_i):
+                            copy_artifact(
+                                db_root / "interpretations" / parent_i,
+                                target_folder / "previous_interpretations",
+                            )
+                        else:
+                            raise ValueError(
+                                f"Parent interpretations log {parent_i!r} for solution {from_solution!r} not found or invisible"
+                            )
+            else:
+                raise ValueError(
+                    f"Solution {from_solution!r} not found or invisible"
+                )
 
         # --- Post-processing: Advanced Data Gathering ---
 
@@ -1237,6 +1370,16 @@ def main(argv: list[str] | None = None) -> None:
         help="Parent theory ID (required for falsify-hypothesis)",
     )
     sp_store.add_argument(
+        "--parent_interpretations",
+        default=None,
+        help="Parent interpretations ID",
+    )
+    sp_store.add_argument(
+        "--parent_solution",
+        default=None,
+        help="Parent solution ID",
+    )
+    sp_store.add_argument(
         "--metadata",
         action="append",
         default=[],
@@ -1271,6 +1414,13 @@ def main(argv: list[str] | None = None) -> None:
             "search-literature",
             "write-different-theory",
             "summarize-research",
+            "interpret-experiment",
+            "review-interpretations",
+            "refine-interpretations",
+            "propose-experiment",
+            "generate-solution",
+            "rank-experiment-proposals",
+            "execute-proposal",
         ],
         help="Type of agent to prepare context for",
     )
@@ -1319,6 +1469,23 @@ def main(argv: list[str] | None = None) -> None:
         default=[],
         dest="from_predictions",
         help="Prediction ID (repeatable, used by rank-predictions)",
+    )
+    sp_ctx.add_argument(
+        "--from_interpretations",
+        default=None,
+        help="Interpretations log ID",
+    )
+    sp_ctx.add_argument(
+        "--from_proposal",
+        action="append",
+        default=[],
+        dest="from_proposals",
+        help="Proposal ID (repeatable)",
+    )
+    sp_ctx.add_argument(
+        "--from_solution",
+        default=None,
+        help="Solution ID",
     )
 
     # -- fetch_literature ----------------------------------------------------
@@ -1510,6 +1677,8 @@ def main(argv: list[str] | None = None) -> None:
                 from_agent_type=args.from_agent_type,
                 from_folder=args.from_folder.resolve(),
                 parent_theory=args.parent_theory,
+                parent_interpretations=args.parent_interpretations,
+                parent_solution=args.parent_solution,
                 metadata_extra=extra,
             )
             print(f"Result stored with ID: {new_id}")
@@ -1524,6 +1693,9 @@ def main(argv: list[str] | None = None) -> None:
                 from_reviews=args.from_reviews or None,
                 from_experiments=args.from_experiments or None,
                 from_predictions=args.from_predictions or None,
+                from_interpretations=args.from_interpretations,
+                from_proposals=args.from_proposals or None,
+                from_solution=args.from_solution,
             )
             print("Created context in folder:", args.target_folder.resolve())
 

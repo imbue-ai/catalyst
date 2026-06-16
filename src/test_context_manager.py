@@ -156,6 +156,24 @@ class TestContextManager(unittest.TestCase):
         p_id = store_simple(
             "predict-experiments", "prediction", "predictions.md", parent=t_id
         )
+        i_id = store_simple(
+            "interpret-experiment", "interpretations", "interpretations.md"
+        )
+        prop_id = store_simple(
+            "propose-experiment", "proposal", "proposal.md"
+        )
+
+        # Store a solution with parent_interpretations
+        d_sol = self.test_dir / "seed_solution"
+        d_sol.mkdir(parents=True, exist_ok=True)
+        (d_sol / "solution.md").write_text("Seed solution")
+        res_sol = self.run_cmd(
+            "store_results",
+            "--from_agent_type", "generate-solution",
+            "--from_folder", str(d_sol),
+            "--parent_interpretations", i_id,
+        )
+        sol_id = res_sol.stdout.strip().split()[-1]
 
         target_agents = [
             ("write-theory", {"--from_exploration": e_id, "--from_literature": l_id}),
@@ -178,6 +196,13 @@ class TestContextManager(unittest.TestCase):
             ("streamline-theory", {"--from_theory": t_id}),
             ("edit-theory", {"--from_theory": t_id}),
             ("write-different-theory", {"--from_theory": t_id}),
+            ("interpret-experiment", {"--from_interpretations": i_id, "--from_experiment": x_id}),
+            ("review-interpretations", {"--from_interpretations": i_id}),
+            ("refine-interpretations", {"--from_interpretations": i_id, "--from_review": r_id}),
+            ("propose-experiment", {"--from_interpretations": i_id}),
+            ("generate-solution", {"--from_interpretations": i_id, "--from_solution": sol_id}),
+            ("rank-experiment-proposals", {"--from_proposal": prop_id}),
+            ("execute-proposal", {"--from_proposal": prop_id}),
         ]
 
         for agent, flags in target_agents:
