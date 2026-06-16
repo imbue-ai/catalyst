@@ -26,58 +26,64 @@ logger = logging.getLogger(__name__)
 _WAIT_TIMEOUT_SECONDS = 6 * 60 * 60
 
 
-# After the turn-end (WAITING) signal fires, wait for the step's expected
-# JSON to appear in the harvested assistant text, polling up to this budget
-# and breaking as soon as it parses.
+# After the turn-end (WAITING) signal fires, wait for the step's expected JSON
+# to appear in the harvested assistant text. The wait is *state-aware* (see
+# `_await_final_message`): the WAITING grace clock below bounds how long we sit
+# in a *single, continuous* WAITING stretch without parseable text before
+# giving up. If the agent leaves WAITING (resumes RUNNING) the clock resets and
+# we wait for the next WAITING, so a genuinely long continuation is never
+# truncated. The poll interval is how often we re-check the agent's lifecycle
+# state and the harvested text.
 #
-# Two cases share this one loop:
-#
+# Why a grace at all, given the agent reaches WAITING? Two reasons it can be
+# WAITING with no parseable text yet:
 #   1. Converter lag. The transcript converters write
 #      `events/<source>/common_transcript/events.jsonl`, and historically did
-#      so on a ~5s timer that our turn-end signal could outrun, so a fast turn
-#      was detectable as done before the conversion saw the assistant_message.
-#      Current mngr closes this race at the source: the agent's turn-end hook
+#      so on a ~5s timer that our turn-end signal could outrun. Current mngr
+#      closes this at the source: the agent's turn-end hook
 #      (`wait_for_stop_hook.sh` for claude, `statusline.sh` for agy) runs a
 #      synchronous `--single-pass` of the converters *before* clearing the
-#      `active` marker that signals WAITING, so by the time we observe the
-#      signal the common transcript already reflects the final message. The
-#      poll then parses on its first iteration (modulo the brief in-flight lag
-#      of `mngr event --follow` delivering the line to us). The budget remains
-#      as a fallback for an mngr build without that flush.
-#
-#   2. Premature turn-end (the FIXME below).
-#
-# We break as soon as a parseable message appears, so the common case pays
-# only the follow-pipe lag, not the full budget.
+#      `active` marker that signals WAITING, so the common transcript already
+#      reflects the final message by the time we observe WAITING (modulo the
+#      brief in-flight lag of `mngr event --follow` delivering the line to us).
+#      The grace is the fallback for an mngr build without that flush.
+#   2. The agent genuinely ended its turn on non-JSON output. Rare for Catalyst
+#      (steps are contracted to emit final JSON); the grace elapses and the
+#      step then fails on the parse, as it should.
 _POST_TURN_END_GRACE_SECONDS = 30.0
-_POST_TURN_END_POLL_INTERVAL = 0.5
+_POST_TURN_END_POLL_INTERVAL = 2.0
 
-# FIXME(turn-end-grace): band-aid for premature turn-end detection.
+# mngr `AgentLifecycleState` values we key on while harvesting the final
+# message. WAITING is the turn-end signal; the RUNNING-ish states mean the turn
+# is still in progress (so keep waiting); anything else is terminal.
+_AGENT_STATE_WAITING = "WAITING"
+_RESUMABLE_RUNNING_STATES = frozenset({"RUNNING", "RUNNING_UNKNOWN_AGENT_TYPE"})
+
+# FIXME(turn-end-grace): incomplete fix for premature turn-end detection.
 #
 # mngr signals "turn ended" off a single Claude Code `Stop`/`end_turn`, but a
 # single Catalyst step (notably the `/swarm` cascade) can emit more than one
 # `end_turn` -- e.g. the model announces "I'll spawn N agents and wait" as its
 # own response before producing the real final message. When that happens the
-# runner harvests the intermediate text (not the step's final JSON) and would
-# otherwise fail the step. This is intermittent (~3% on `/swarm`) and is not
-# unique to detecting turn end via WAITING: the Stop-hook `turn_complete` event
-# approach this replaced keyed off the same `Stop`, so it was affected too
-# (analytically more so -- it reacted to the emitted event immediately, while
-# WAITING waits out `wait_for_stop_hook.sh`'s grace).
+# parent briefly goes WAITING, then resumes. This is intermittent (~3% on
+# `/swarm`) and is not unique to detecting turn end via WAITING: the Stop-hook
+# `turn_complete` event approach this replaced keyed off the same `Stop`, so it
+# was affected too (analytically more so -- it reacted to the emitted event
+# immediately, while WAITING waits out `wait_for_stop_hook.sh`'s grace).
 #
-# As a mitigation, the post-turn-end poll above (bounded by
-# `_POST_TURN_END_GRACE_SECONDS`) keeps consuming events while the harvested
-# text does NOT parse as the expected JSON, to see whether the agent emits a
-# *parseable* final message (the real end). We break as soon as one appears.
+# `_await_final_message` handles the *common* shape of this: it watches the
+# lifecycle state, so a premature WAITING that resumes to RUNNING is waited
+# through (we re-arm on the next WAITING) and only a parseable message while
+# WAITING -- or a continuous-WAITING timeout / terminal state -- ends the wait.
 #
-# Caveat / why this isn't a clean fix: it only helps if the agent actually
-# continues after the premature turn-end (i.e. the spurious signal happened
-# mid-turn and more output is coming). If the model genuinely ended its turn
-# early and emits nothing further, the full budget elapses and the step still
-# fails -- just later. It also adds up to this much latency to any step that
-# legitimately ends on non-JSON output (rare for Catalyst, whose steps are
-# contracted to emit final JSON). A real fix needs mngr to distinguish an
-# intermediate `end_turn` from the true turn end.
+# Why it is still not a clean fix: if the model genuinely ends its turn early
+# on non-JSON output and emits nothing further, the agent stays WAITING, the
+# grace elapses, and the step still fails (just later). And if a RUNNING blip
+# between two intermediate WAITINGs is shorter than one poll interval we can
+# miss it -- we then don't reset the continuous-WAITING grace clock, so a turn
+# that is in fact still progressing could be cut off once the grace elapses. A
+# real fix needs mngr to distinguish an intermediate `end_turn` from the true
+# turn end (e.g. a turn-aware marker).
 
 # Catalyst's isolated `mngr` host_dir, kept separate from the user's main
 # `~/.mngr` so Catalyst's agents don't mix in and the runner's `mngr` calls
@@ -476,20 +482,13 @@ class MngrAgentRunner(AgentRunner):
             remaining = max(0.0, deadline - time.monotonic())
             watch_done.wait(timeout=remaining)
 
-            # After the turn-end signal, give assistant messages a chance to be
-            # delivered: `_consume_events` keeps running (updating
-            # state["last_assistant_text"]) until we terminate it in the finally
-            # below. Poll for the step's expected JSON, breaking as soon as it
-            # parses. This covers both converter lag and a premature/intermediate
-            # `end_turn` with a single early-exit loop (see
-            # `_POST_TURN_END_GRACE_SECONDS`). Only meaningful once a turn-end
-            # was actually observed; an external stop leaves saw_turn_end unset.
+            # After the turn-end signal, wait (state-aware) for the step's final
+            # parseable message: `_consume_events` keeps updating
+            # state["last_assistant_text"] until we terminate it in the finally
+            # below. Only meaningful once a turn-end was actually observed; an
+            # external stop leaves saw_turn_end unset and needs no grace.
             if saw_turn_end.is_set():
-                grace_deadline = time.monotonic() + _POST_TURN_END_GRACE_SECONDS
-                while parse_json_result(state["last_assistant_text"]) is None:
-                    if time.monotonic() >= grace_deadline:
-                        break
-                    time.sleep(_POST_TURN_END_POLL_INTERVAL)
+                self._await_final_message(agent_name, state, deadline)
         finally:
             for proc in (event_proc, stop_proc, wait_proc):
                 if proc is not None:
@@ -515,6 +514,120 @@ class MngrAgentRunner(AgentRunner):
             stderr=subprocess.DEVNULL,
             env=mngr_env(),
         )
+
+    @staticmethod
+    def _poll_lifecycle_state(agent_name: str) -> Optional[str]:
+        """Return the agent's current mngr lifecycle state (e.g. "WAITING",
+        "RUNNING", "STOPPED"), or None if it can't be determined. A single-shot
+        `mngr list` read against Catalyst's isolated host dir; mngr's own state
+        rules decide the value, so we don't re-derive it here."""
+        result = subprocess.run(
+            ["mngr", "list", "--include", f'name == "{agent_name}"', "--format", "jsonl"],
+            check=False,
+            capture_output=True,
+            text=True,
+            env=mngr_env(),
+        )
+        for line in result.stdout.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                entry = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if entry.get("name") == agent_name:
+                value = entry.get("state")
+                return value if isinstance(value, str) else None
+        return None
+
+    def _await_final_message(
+        self,
+        agent_name: str,
+        state: Dict[str, Any],
+        deadline: float,
+    ) -> None:
+        """Wait, state-awarely, for the step's parseable final message after the
+        turn-end (WAITING) signal. Returns (leaving the harvested text in
+        `state["last_assistant_text"]`) once any of these holds, or the outer
+        `deadline` passes:
+
+          * the harvested text parses as JSON while the agent is WAITING -- the
+            real end of the turn (the common case, after the first poll);
+          * the agent has been *continuously* WAITING for
+            `_POST_TURN_END_GRACE_SECONDS` with no parseable text -- converter-lag
+            fallback, or it genuinely ended on non-JSON output;
+          * the agent reaches a terminal state (e.g. STOPPED via external pause).
+
+        While the agent is RUNNING -- e.g. it emitted a premature/intermediate
+        `end_turn`, briefly went WAITING, then resumed (`/swarm`) -- we keep
+        waiting and re-arm on the next WAITING. An outer loop blocks on the next
+        WAITING (cheap while RUNNING); an inner loop polls during each WAITING
+        stretch. See the `_POST_TURN_END_GRACE_SECONDS` FIXME."""
+        while time.monotonic() < deadline:
+            if self._poll_waiting_window(agent_name, state, deadline) != "resumed":
+                return
+            # Resumed to RUNNING: block until the next WAITING (the possibly-real
+            # turn end) or a terminal state, then re-enter the inner poll.
+            if not self._block_until_waiting(agent_name, deadline):
+                return
+
+    def _poll_waiting_window(
+        self,
+        agent_name: str,
+        state: Dict[str, Any],
+        deadline: float,
+    ) -> str:
+        """Poll a single continuous WAITING stretch. Returns "resumed" if the
+        agent left WAITING for a RUNNING state (caller should re-arm on the next
+        WAITING), or "done" if the wait is over for any other reason (parsed,
+        grace elapsed, terminal state, or `deadline`)."""
+        grace_deadline = min(deadline, time.monotonic() + _POST_TURN_END_GRACE_SECONDS)
+        while time.monotonic() < deadline:
+            lifecycle = self._poll_lifecycle_state(agent_name)
+            if lifecycle in _RESUMABLE_RUNNING_STATES:
+                return "resumed"
+            if lifecycle != _AGENT_STATE_WAITING:
+                return "done"  # terminal (stopped/done/unknown) -- nothing more is coming
+            if parse_json_result(state["last_assistant_text"]) is not None:
+                return "done"  # WAITING && parses -- the real end
+            if time.monotonic() >= grace_deadline:
+                return "done"  # continuously WAITING past the grace without parseable text
+            time.sleep(_POST_TURN_END_POLL_INTERVAL)
+        return "done"
+
+    def _block_until_waiting(self, agent_name: str, deadline: float) -> bool:
+        """Block until the agent returns to WAITING (the next turn end), bounded
+        by `deadline`. Also targets STOPPED so an external pause mid-continuation
+        can't strand us blocking for the full deadline. Returns True iff the
+        agent is WAITING when the wait resolves."""
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            return False
+        proc = subprocess.Popen(
+            [
+                "mngr",
+                "wait",
+                agent_name,
+                "--state",
+                _AGENT_STATE_WAITING,
+                "--state",
+                "STOPPED",
+                "--timeout",
+                f"{int(remaining)}s",
+            ],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            env=mngr_env(),
+        )
+        try:
+            rc = proc.wait()
+        finally:
+            self._terminate_proc(proc)
+        if rc != 0:
+            return False  # timed out / errored before reaching either state
+        return self._poll_lifecycle_state(agent_name) == _AGENT_STATE_WAITING
 
     @staticmethod
     def _watch_proc(

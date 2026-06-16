@@ -1,3 +1,4 @@
+import time
 import unittest
 from unittest.mock import patch, MagicMock
 from ..agents.base import parse_json_result
@@ -237,7 +238,10 @@ class TestMngrAgentRunner(unittest.TestCase):
 
         mock_popen.side_effect = popen_side_effect
 
-        saw_turn_end, harvested = runner._wait_for_turn_end("agent-123", None)
+        # The agent is WAITING throughout the harvest; the parseable text is
+        # picked up on the first poll.
+        with patch.object(runner, "_poll_lifecycle_state", return_value="WAITING"):
+            saw_turn_end, harvested = runner._wait_for_turn_end("agent-123", None)
         self.assertTrue(saw_turn_end)
         self.assertEqual(harvested, assistant_text)
 
@@ -256,10 +260,10 @@ class TestMngrAgentRunner(unittest.TestCase):
     def test_wait_for_turn_end_json_grace_times_out_on_non_json(
         self, mock_popen, _mock_sleep
     ):
-        """When the turn ends but the harvested text never parses as JSON (and
-        no further message arrives), the JSON grace loop runs to its deadline
-        and returns the unparseable text -- it must not hang. This is the H1
-        ('genuinely ended early') path of the turn-end-grace band-aid."""
+        """When the agent stays WAITING but the harvested text never parses as
+        JSON (and it never resumes), the continuous-WAITING grace runs to its
+        deadline and returns the unparseable text -- it must not hang. This is
+        the 'genuinely ended early on non-JSON' path of the turn-end-grace."""
         runner = MngrAgentRunner(
             agent_type="agent",
             framework="mngr-agent",
@@ -285,11 +289,106 @@ class TestMngrAgentRunner(unittest.TestCase):
 
         mock_popen.side_effect = popen_side_effect
 
-        saw_turn_end, harvested = runner._wait_for_turn_end("agent-123", None)
+        # Agent stays continuously WAITING -> the grace times out.
+        with patch.object(runner, "_poll_lifecycle_state", return_value="WAITING"):
+            saw_turn_end, harvested = runner._wait_for_turn_end("agent-123", None)
         self.assertTrue(saw_turn_end)
         # Non-JSON text is still returned (so _wait_and_harvest can surface the
         # "could not parse" error); the grace loop just didn't recover a better one.
         self.assertEqual(harvested, preamble)
+
+    @patch("orchestrator.agents.mngr_runner.time.sleep")
+    def test_await_final_message_waits_through_resume(self, _mock_sleep):
+        """A premature/intermediate WAITING that resumes to RUNNING must NOT end
+        the harvest on the preamble: we re-arm on the next WAITING and return the
+        real (parseable) message, however long the continuation takes."""
+        runner = MngrAgentRunner(
+            agent_type="agent",
+            framework="mngr-agent",
+            transcript_source="claude/common_transcript",
+        )
+        state = {"last_assistant_text": "I'll spawn 5 agents and wait."}
+        json_text = '{"score": 0.9}'
+
+        def block_side_effect(agent_name, deadline):
+            # By the time the agent returns to WAITING, its real final message
+            # (JSON) has landed in the transcript.
+            state["last_assistant_text"] = json_text
+            return True
+
+        with patch.object(
+            runner, "_poll_lifecycle_state", side_effect=["WAITING", "RUNNING", "WAITING"]
+        ), patch.object(
+            runner, "_block_until_waiting", side_effect=block_side_effect
+        ) as mock_block:
+            runner._await_final_message("agent-123", state, time.monotonic() + 100)
+
+        mock_block.assert_called_once()  # detected the resume and re-armed
+        self.assertEqual(state["last_assistant_text"], json_text)
+
+    @patch("orchestrator.agents.mngr_runner.time.sleep")
+    def test_await_final_message_stops_on_terminal_state(self, _mock_sleep):
+        """A terminal state (e.g. STOPPED from an external pause) ends the wait
+        immediately -- we do not sit out the grace or try to re-arm."""
+        runner = MngrAgentRunner(
+            agent_type="agent",
+            framework="mngr-agent",
+            transcript_source="claude/common_transcript",
+        )
+        state = {"last_assistant_text": "I'll spawn 5 agents and wait."}
+        with patch.object(
+            runner, "_poll_lifecycle_state", return_value="STOPPED"
+        ), patch.object(runner, "_block_until_waiting") as mock_block:
+            runner._await_final_message("agent-123", state, time.monotonic() + 100)
+        mock_block.assert_not_called()
+        self.assertEqual(state["last_assistant_text"], "I'll spawn 5 agents and wait.")
+
+    @patch("orchestrator.agents.mngr_runner.time.sleep")
+    def test_await_final_message_returns_on_parse_while_waiting(self, _mock_sleep):
+        """The common case: WAITING with parseable text returns on the first
+        poll, without re-arming."""
+        runner = MngrAgentRunner(
+            agent_type="agent",
+            framework="mngr-agent",
+            transcript_source="claude/common_transcript",
+        )
+        state = {"last_assistant_text": '{"score": 0.9}'}
+        with patch.object(
+            runner, "_poll_lifecycle_state", return_value="WAITING"
+        ) as mock_poll, patch.object(runner, "_block_until_waiting") as mock_block:
+            runner._await_final_message("agent-123", state, time.monotonic() + 100)
+        mock_block.assert_not_called()
+        mock_poll.assert_called_once()
+
+    def test_block_until_waiting_true_when_waiting(self):
+        """`_block_until_waiting` reports True iff the agent is WAITING once the
+        `mngr wait` (WAITING-or-STOPPED) call resolves successfully."""
+        runner = MngrAgentRunner(
+            agent_type="agent",
+            framework="mngr-agent",
+            transcript_source="claude/common_transcript",
+        )
+        mock_proc = MagicMock()
+        mock_proc.wait.return_value = 0
+        with patch("subprocess.Popen", return_value=mock_proc), patch.object(
+            runner, "_poll_lifecycle_state", return_value="WAITING"
+        ), patch.object(runner, "_terminate_proc"):
+            self.assertTrue(runner._block_until_waiting("agent-123", time.monotonic() + 100))
+
+    def test_block_until_waiting_false_on_stop(self):
+        """If the re-arm resolves on STOPPED (external pause) rather than WAITING,
+        `_block_until_waiting` returns False so the caller stops waiting."""
+        runner = MngrAgentRunner(
+            agent_type="agent",
+            framework="mngr-agent",
+            transcript_source="claude/common_transcript",
+        )
+        mock_proc = MagicMock()
+        mock_proc.wait.return_value = 0
+        with patch("subprocess.Popen", return_value=mock_proc), patch.object(
+            runner, "_poll_lifecycle_state", return_value="STOPPED"
+        ), patch.object(runner, "_terminate_proc"):
+            self.assertFalse(runner._block_until_waiting("agent-123", time.monotonic() + 100))
 
     @patch("orchestrator.agents.mngr_runner.time.sleep")
     @patch("subprocess.Popen")
