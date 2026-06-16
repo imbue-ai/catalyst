@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react'
-import { XCircle, FileText, Lightbulb, Sparkles, GitMerge, GitCommit, UploadCloud, Folder, HelpCircle, Settings2, ChevronRight, ChevronDown } from 'lucide-react'
+import { XCircle, FileText, Lightbulb, Sparkles, GitMerge, GitCommit, UploadCloud, Folder, HelpCircle, Settings2, ChevronRight, ChevronDown, Goal } from 'lucide-react'
 import * as api from '../api'
 import { useWorkflowParams } from '../hooks/useWorkflowParams'
 import { AdditionalParamsSection } from './AdditionalParamsSection'
@@ -12,8 +12,8 @@ interface CreateTaskModalProps {
   isBackendDown: boolean;
 }
 
-type WorkflowType = 'develop-theory' | 'develop-theory-linear' | 'refine-theory-idea' | 'refine-theory-idea-linear' | 'import-theory';
-type InputCategory = 'phenomenon' | 'idea' | 'draft';
+type WorkflowType = 'develop-theory' | 'develop-theory-linear' | 'refine-theory-idea' | 'refine-theory-idea-linear' | 'import-theory' | 'solve-goal-linear';
+type InputCategory = 'phenomenon' | 'idea' | 'draft' | 'goal';
 
 const CATEGORY_WORKFLOWS: Record<InputCategory, { id: WorkflowType, label: string, description: string, icon: React.ReactNode }[]> = {
   'phenomenon': [
@@ -26,6 +26,9 @@ const CATEGORY_WORKFLOWS: Record<InputCategory, { id: WorkflowType, label: strin
   ],
   'draft': [
     { id: 'import-theory', label: 'Import', description: 'Import an existing theory. You can add further steps later on.', icon: <UploadCloud size={18} /> }
+  ],
+  'goal': [
+    { id: 'solve-goal-linear', label: 'Solve Goal (Linear)', description: 'Autonomously solve an optimization or research goal by conducting a sequence of experiments and repeatedly refining multiple interpretation strands.', icon: <Goal size={18} /> }
   ]
 };
 
@@ -94,6 +97,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     setNumRootTheories,
     maxRefinements,
     setMaxRefinements,
+    maxExperiments,
+    setMaxExperiments,
     evolveIterations,
     setEvolveIterations,
     numParents,
@@ -106,6 +111,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     setNumExtraScores,
     applyExpansions,
     setApplyExpansions,
+    numStrands,
+    setNumStrands,
     correctnessWeight,
     setCorrectnessWeight,
     powerWeight,
@@ -120,6 +127,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
   const [inputs, setInputs] = useState({
     phenomenon: '',
     idea: '',
+    goal: '',
     templateFolder: '',
     framework: '',
     model: '',
@@ -208,6 +216,14 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
       }
     } else if (activeTab === 'import-theory') {
       workflow_inputs = {}
+    } else if (activeTab === 'solve-goal-linear') {
+      workflow_inputs = {
+        goal: inputs.goal,
+        num_strands: numStrands,
+        max_experiments: maxExperiments,
+        apply_expansions: applyExpansions || undefined,
+        generate_intermediate_research_summaries: generateIntermediateResearchSummaries
+      }
     }
 
     try {
@@ -257,6 +273,13 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                     <input type="radio" checked={inputCategory === 'phenomenon'} onChange={() => handleCategoryChange('phenomenon')} />
                     <Sparkles size={18} className="text-gray-600" />
                     <span className="font-black text-sm">Phenomenon to Explain</span>
+                  </div>
+                </label>
+                <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'goal' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
+                  <div className="flex items-center gap-3">
+                    <input type="radio" checked={inputCategory === 'goal'} onChange={() => handleCategoryChange('goal')} />
+                    <Goal size={18} className="text-gray-600" />
+                    <span className="font-black text-sm">Goal to Solve</span>
                   </div>
                 </label>
                 <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'idea' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
@@ -360,6 +383,21 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       />
                     </div>
                   )}
+
+                  {activeTab === 'solve-goal-linear' && (
+                    <div>
+                      <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Goal to Solve</label>
+                      <textarea
+                        autoFocus
+                        required
+                        rows={8}
+                        value={inputs.goal}
+                        onChange={e => updateInput('goal', e.target.value)}
+                        placeholder="Describe the optimization or research goal that you want me to solve..."
+                        className="w-full border-2 border-black p-4 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none transition-colors"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 {/* Global Settings (Always Visible) */}
@@ -460,6 +498,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       <AdditionalParamsSection
                         showRootTheories={activeTab === 'develop-theory'}
                         showMaxRefinements={activeTab === 'develop-theory-linear' || activeTab === 'refine-theory-idea-linear'}
+                        showMaxExperiments={activeTab === 'solve-goal-linear'}
+                        showNumStrands={activeTab === 'solve-goal-linear'}
                         showEvolveParams={isEvolve}
                         showApplyExpansions={!isImport}
                         showGenerateIntermediateResearchSummaries={!isImport}
@@ -467,6 +507,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         setNumRootTheories={setNumRootTheories}
                         maxRefinements={maxRefinements}
                         setMaxRefinements={setMaxRefinements}
+                        maxExperiments={maxExperiments}
+                        setMaxExperiments={setMaxExperiments}
                         evolveIterations={evolveIterations}
                         setEvolveIterations={setEvolveIterations}
                         numParents={numParents}
@@ -479,6 +521,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         setNumExtraScores={setNumExtraScores}
                         applyExpansions={applyExpansions}
                         setApplyExpansions={setApplyExpansions}
+                        numStrands={numStrands}
+                        setNumStrands={setNumStrands}
                         showScoringWeights={isEvolve}
                         correctnessWeight={correctnessWeight}
                         setCorrectnessWeight={setCorrectnessWeight}

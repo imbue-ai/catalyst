@@ -42,6 +42,14 @@ cp -r "<CONTEXT_DIR>/interpretations/"* "<OUTPUT_DIR>/"
 - `<CONTEXT_DIR>/reviews/<review_id>/` — contains each review report with `review.md`.
 - `<OUTPUT_DIR>/` — contains `interpretations.md` which you will modify to resolve inconsistencies.
 
+## Obtaining cited experiment IDs
+Your inputs may cite specific experiment IDs (`X_...`). You can retrieve these experiments and their results by running:
+```bash
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
+```
+
+This command will place the experiment description (`description.md`), Python script (`script.py`), and results into the `<CONTEXT_DIR>/experiments/<EXPERIMENT_ID>` folder.
+
 ---
 
 ## Execution Steps

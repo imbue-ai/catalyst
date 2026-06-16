@@ -203,6 +203,7 @@ class TestContextManager(unittest.TestCase):
             ("generate-solution", {"--from_interpretations": i_id, "--from_solution": sol_id}),
             ("rank-experiment-proposals", {"--from_proposal": prop_id}),
             ("execute-proposal", {"--from_proposal": prop_id}),
+            ("initialize-interpretations", {}),
         ]
 
         for agent, flags in target_agents:
@@ -219,8 +220,9 @@ class TestContextManager(unittest.TestCase):
 
             self.run_cmd(*args)
             self.assertTrue(target_folder.is_dir())
-            # Basic sanity check: target folder should not be empty
-            self.assertTrue(any(target_folder.iterdir()))
+            # Basic sanity check: target folder should not be empty (unless initialize-interpretations)
+            if agent != "initialize-interpretations":
+                self.assertTrue(any(target_folder.iterdir()))
 
     def test_transactions(self):
         """Verify transaction isolation and commit."""

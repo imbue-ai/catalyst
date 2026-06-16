@@ -6,12 +6,16 @@ interface AdditionalParamsSectionProps {
   showEvolveParams?: boolean;
   showApplyExpansions?: boolean;
   showScoringWeights?: boolean;
+  showNumStrands?: boolean;
 
   numRootTheories?: number;
   setNumRootTheories?: (v: number) => void;
 
   maxRefinements?: number;
   setMaxRefinements?: (v: number) => void;
+  showMaxExperiments?: boolean;
+  maxExperiments?: number;
+  setMaxExperiments?: (v: number) => void;
 
   evolveIterations?: number;
   setEvolveIterations?: (v: number) => void;
@@ -44,6 +48,9 @@ interface AdditionalParamsSectionProps {
   generateIntermediateResearchSummaries?: boolean;
   setGenerateIntermediateResearchSummaries?: (v: boolean) => void;
 
+  numStrands?: number;
+  setNumStrands?: (v: number) => void;
+
   // Option to restrict widths like in CreateAddonModal (e.g., md:w-1/3)
   useRestrictedWidths?: boolean;
   children?: React.ReactNode;
@@ -55,12 +62,16 @@ export function AdditionalParamsSection({
   showEvolveParams,
   showApplyExpansions,
   showScoringWeights,
+  showNumStrands,
 
   numRootTheories,
   setNumRootTheories,
 
   maxRefinements,
   setMaxRefinements,
+  showMaxExperiments,
+  maxExperiments,
+  setMaxExperiments,
 
   evolveIterations,
   setEvolveIterations,
@@ -93,6 +104,9 @@ export function AdditionalParamsSection({
   generateIntermediateResearchSummaries,
   setGenerateIntermediateResearchSummaries,
 
+  numStrands,
+  setNumStrands,
+
   useRestrictedWidths = false,
   children,
 }: AdditionalParamsSectionProps) {
@@ -120,6 +134,30 @@ export function AdditionalParamsSection({
             type="number" min="0" max="10" required
             value={maxRefinements}
             onChange={e => setMaxRefinements(parseInt(e.target.value, 10))}
+            className={inputClass}
+          />
+        </div>
+      )}
+
+      {showMaxExperiments && setMaxExperiments && (
+        <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+          <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Experiments</label>
+          <input
+            type="number" min="0" max="10" required
+            value={maxExperiments}
+            onChange={e => setMaxExperiments(parseInt(e.target.value, 10))}
+            className={inputClass}
+          />
+        </div>
+      )}
+
+      {showNumStrands && setNumStrands && (
+        <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+          <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Number of Strands</label>
+          <input
+            type="number" min="1" max="10" required
+            value={numStrands}
+            onChange={e => setNumStrands(parseInt(e.target.value, 10))}
             className={inputClass}
           />
         </div>

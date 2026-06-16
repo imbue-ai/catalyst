@@ -60,6 +60,7 @@ class Addon(BaseModel):
     theory_ids: Optional[List[str]] = None
     direction: Optional[str] = None
     max_refinements: Optional[int] = None
+    max_experiments: Optional[int] = None
     apply_expansions: Optional[str] = None
     evolve_iterations: Optional[int] = None
     num_parents: Optional[int] = None

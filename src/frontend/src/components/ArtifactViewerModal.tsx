@@ -138,13 +138,13 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
     const parts = withNewlines.split(/(```[\s\S]*?```|`[^`]+`|\$\$[\s\S]*?\$\$)/g);
     return parts.map((part, i) => {
       if (i % 2 === 0) {
-        let processed = part.replace(/\b([ELTRXPS]_\d{8}_\d{6}_[a-f0-9]{6})\b/g, `[$1](#/task/${taskId}/artifact/$1?from=artifact)`);
+        let processed = part.replace(/\b([ELTRXPSOIU]_\d{8}_\d{6}_[a-f0-9]{6})\b/g, `[$1](#/task/${taskId}/artifact/$1?from=artifact)`);
         processed = processed.replace(/^([ \t]*-\s*)(Add\s+to\s+Guidance):\s*"([^"]+)"/gim, (_match, prefix, btnText, value) => {
           return `${prefix}[${btnText}](#add-to-guidance:${encodeURIComponent(value)}?from=artifact): "${value}"`;
         });
         return processed;
       } else {
-        const match = part.match(/^`([ELTRXPS]_\d{8}_\d{6}_[a-f0-9]{6})`$/);
+        const match = part.match(/^`([ELTRXPSOIU]_\d{8}_\d{6}_[a-f0-9]{6})`$/);
         if (match) {
           return `[${part}](#/task/${taskId}/artifact/${match[1]}?from=artifact)`;
         }

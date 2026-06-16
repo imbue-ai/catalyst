@@ -61,6 +61,7 @@ AGENT_TYPE_MAP: dict[str, str] = {
     "propose-experiment": "proposal",
     "generate-solution": "solution",
     "execute-proposal": "experiment",
+    "initialize-interpretations": "interpretations",
 }
 
 CATEGORY_MD_MAP: dict[str, str] = {
@@ -750,6 +751,8 @@ def _validate_create_context_args(
     elif for_agent_type == "execute-proposal":
         if not from_proposals or len(from_proposals) != 1:
             raise ValueError("Exactly one --from_proposal is required for execute-proposal")
+    elif for_agent_type == "initialize-interpretations":
+        pass
     else:
         raise ValueError(f"Unknown target agent type {for_agent_type!r}.")
 
@@ -1421,6 +1424,7 @@ def main(argv: list[str] | None = None) -> None:
             "generate-solution",
             "rank-experiment-proposals",
             "execute-proposal",
+            "initialize-interpretations",
         ],
         help="Type of agent to prepare context for",
     )
