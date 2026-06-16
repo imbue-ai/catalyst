@@ -59,11 +59,11 @@ _POST_TURN_END_POLL_INTERVAL = 0.5
 # `end_turn` -- e.g. the model announces "I'll spawn N agents and wait" as its
 # own response before producing the real final message. When that happens the
 # runner harvests the intermediate text (not the step's final JSON) and would
-# otherwise fail the step. This is intermittent (~3% on `/swarm`) and is NOT
-# specific to the WAITING strategy: the STOP_HOOK strategy keys off the same
-# `Stop`, so it is affected too (analytically more so -- it reacts to the
-# `turn_complete` event immediately, while WAITING waits out
-# `wait_for_stop_hook.sh`'s grace).
+# otherwise fail the step. This is intermittent (~3% on `/swarm`) and is not
+# unique to detecting turn end via WAITING: the Stop-hook `turn_complete` event
+# approach this replaced keyed off the same `Stop`, so it was affected too
+# (analytically more so -- it reacted to the emitted event immediately, while
+# WAITING waits out `wait_for_stop_hook.sh`'s grace).
 #
 # As a mitigation, the post-turn-end poll above (bounded by
 # `_POST_TURN_END_GRACE_SECONDS`) keeps consuming events while the harvested
