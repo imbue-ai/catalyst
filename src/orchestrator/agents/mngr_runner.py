@@ -59,31 +59,52 @@ _POST_TURN_END_POLL_INTERVAL = 2.0
 _AGENT_STATE_WAITING = "WAITING"
 _RESUMABLE_RUNNING_STATES = frozenset({"RUNNING", "RUNNING_UNKNOWN_AGENT_TYPE"})
 
-# FIXME(turn-end-grace): incomplete fix for premature turn-end detection.
+# FIXME(turn-end-grace): defensive guard against premature turn-end detection.
 #
-# mngr signals "turn ended" off a single Claude Code `Stop`/`end_turn`, but a
-# single Catalyst step (notably the `/swarm` cascade) can emit more than one
-# `end_turn` -- e.g. the model announces "I'll spawn N agents and wait" as its
-# own response before producing the real final message. When that happens the
-# parent briefly goes WAITING, then resumes. This is intermittent (~3% on
-# `/swarm`) and is not unique to detecting turn end via WAITING: the Stop-hook
-# `turn_complete` event approach this replaced keyed off the same `Stop`, so it
-# was affected too (analytically more so -- it reacted to the emitted event
-# immediately, while WAITING waits out `wait_for_stop_hook.sh`'s grace).
+# Catalyst harvests `/swarm` steps roughly 3% short in production. The root
+# cause is not pinned down; this guard is a band-aid for the observed symptom.
 #
-# `_await_final_message` handles the *common* shape of this: it watches the
-# lifecycle state, so a premature WAITING that resumes to RUNNING is waited
+# What is confirmed: a `/swarm` step emits more than one transcript `end_turn`
+# (the model announces "I'll spawn N agents and wait" as a separate assistant
+# message before the real final report). ~45/46 instrumented runs showed
+# exactly two `end_turn`s.
+#
+# What is NOT confirmed -- and is the load-bearing step for the failure: that
+# an intermediate `end_turn` makes the parent go WAITING and resume. mngr's
+# WAITING is derived from the per-agent `active` marker, which is cleared by
+# the Claude Code Stop *hook* -- not by a transcript `end_turn` (the two are
+# different layers; an extra `end_turn` does nothing to the marker on its own).
+# Across ~46 runs under the production config (`/swarm` with
+# CLAUDE_CODE_DISABLE_BACKGROUND_TASKS=1) the Stop hook fired exactly once, at
+# the true end, and there were zero premature WAITINGs and zero short harvests.
+# So the ~3% is a production-observed rate, not a measured rate of this
+# mechanism, and we could not reproduce the mechanism on demand.
+#
+# Where the premature-WAITING chain DID reproduce: only with the flag off
+# (async subagents -> a real intermediate Stop -> marker clears -> premature
+# WAITING). Leading unconfirmed hypotheses for the production failure: (1) the
+# flag enforces synchronous subagents only most of the time, and an occasional
+# async slip reopens that chain (plausibly duration-dependent -- real subagents
+# run minutes-to-hours vs. seconds in the repro); (2) an intermittent spurious
+# / duplicate Stop on the intermediate `end_turn` (cf. Claude Code #54360).
+# This is not unique to detecting turn end via WAITING: the Stop-hook
+# `turn_complete` approach this replaced keyed off the same `Stop`.
+#
+# `_await_final_message` is the guard: it watches the lifecycle state, so *if*
+# a premature WAITING does occur and then resumes to RUNNING, it is waited
 # through (we re-arm on the next WAITING) and only a parseable message while
 # WAITING -- or a continuous-WAITING timeout / terminal state -- ends the wait.
 #
 # Why it is still not a clean fix: if the model genuinely ends its turn early
 # on non-JSON output and emits nothing further, the agent stays WAITING, the
-# grace elapses, and the step still fails (just later). And if a RUNNING blip
-# between two intermediate WAITINGs is shorter than one poll interval we can
-# miss it -- we then don't reset the continuous-WAITING grace clock, so a turn
-# that is in fact still progressing could be cut off once the grace elapses. A
-# real fix needs mngr to distinguish an intermediate `end_turn` from the true
-# turn end (e.g. a turn-aware marker).
+# grace elapses, and the step still fails (just later). And if a premature
+# WAITING did occur with a RUNNING blip shorter than one poll interval before
+# the next WAITING, we could miss the blip -- we then don't reset the
+# continuous-WAITING grace clock, so a turn that is in fact still progressing
+# could be cut off once the grace elapses. A real fix belongs in mngr: either
+# a turn-aware marker that distinguishes an intermediate `end_turn` from the
+# true turn end, or post-Stop quiescence/debounce that rules out a spurious
+# Stop -- and should be chosen once the production trigger is identified.
 
 # Catalyst's isolated `mngr` host_dir, kept separate from the user's main
 # `~/.mngr` so Catalyst's agents don't mix in and the runner's `mngr` calls
@@ -559,11 +580,11 @@ class MngrAgentRunner(AgentRunner):
             fallback, or it genuinely ended on non-JSON output;
           * the agent reaches a terminal state (e.g. STOPPED via external pause).
 
-        While the agent is RUNNING -- e.g. it emitted a premature/intermediate
-        `end_turn`, briefly went WAITING, then resumed (`/swarm`) -- we keep
-        waiting and re-arm on the next WAITING. An outer loop blocks on the next
-        WAITING (cheap while RUNNING); an inner loop polls during each WAITING
-        stretch. See the `_POST_TURN_END_GRACE_SECONDS` FIXME."""
+        While the agent is RUNNING -- e.g. a premature WAITING (hypothesized for
+        the `/swarm` ~3% short harvest; see the FIXME) resumed to RUNNING -- we
+        keep waiting and re-arm on the next WAITING. An outer loop blocks on the
+        next WAITING (cheap while RUNNING); an inner loop polls during each
+        WAITING stretch. See the `_POST_TURN_END_GRACE_SECONDS` FIXME."""
         while time.monotonic() < deadline:
             if self._poll_waiting_window(agent_name, state, deadline) != "resumed":
                 return
