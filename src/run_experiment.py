@@ -17,8 +17,6 @@ from context_manager import store_results
 def stream_output(pipe, sys_stream, log_file):
     with open(log_file, "wb") as f:
         for line in iter(pipe.readline, b""):
-            if not line:
-                break
             sys_stream.buffer.write(line)
             sys_stream.flush()
             f.write(line)
@@ -67,7 +65,6 @@ def main():
         stderr=subprocess.PIPE,
         cwd=str(experiment_folder),
         env=os.environ.copy().update({"PYTHONUNBUFFERED": "1"}),
-        text=False,
         preexec_fn=preexec_setup,
     )
 
