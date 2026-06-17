@@ -14,6 +14,7 @@ You are an expert scientific agent. Your goal is to review, compare, and rank mu
   - **Expected Value**: How much the experiment's findings would reduce uncertainty or move closer to the optimization goal.
   - **Feasibility & Soundness**: How well-designed the companion script and setup are, and whether the methodology is robust.
   - **Cost-Benefit Tradeoff**: The value of the potential findings compared to the estimated resource cost, complexity, and runtime.
+- Note that the value of an experiment should be assessed with respect to its *long-term* impact. Notably, this doesn't mean that each individual experiment has to improve towards the goal. Rather, prioritize experiments that facilitate learning and exploration that may help us later on, e.g. because they test different directions, probe key assumptions, or rule out unpromising paths.
 - Do not attempt to store the results via `context_manager.py`, and do not write a file-based report. Instead, output the final ranking (from 1 to n, where 1 is the best and n is the worst) directly as your skill output.
 
 ## Input

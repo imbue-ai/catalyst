@@ -10,6 +10,8 @@ This skill is used to design and propose a single, high-value, and cost-effectiv
 
 ## Mandate
 - Propose a single, focused experiment that resolves a key knowledge gap, validates an assumption or hypothesis, or tests a promising optimization in the interpretations log.
+- At the very beginning of experimentation (i.e. if the current interpretations log is still close to empty), it might be best to establish some baselines before trying to explore paths towards the goal.
+- Generally, try to propose an experiment that provides valuable information for moving towards the optimization goal *in the long run*. Notably, this doesn't mean that each individual experiment needs to move towards the goal directly. Rather, prioritize experiments that facilitate learning and exploration and which may help you later on by testing different directions, key assumptions, or ruling out unpromising paths.
 - All experiment files and companion scripts must be structured so they can run fully self-contained by executing the `script.py` file.
 
 ## Input
