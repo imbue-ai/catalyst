@@ -1,6 +1,6 @@
 {
   "sandbox": {
-    "enabled": true,
+    "enabled": false,
     "failIfUnavailable": true,
     "allowUnsandboxedCommands": false,
     "network": {

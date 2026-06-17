@@ -64,6 +64,8 @@ def main():
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=str(experiment_folder),
+        env=os.environ.copy().update({"PYTHONUNBUFFERED": "1"}),
+        text=True,
         preexec_fn=preexec_setup,
     )
 

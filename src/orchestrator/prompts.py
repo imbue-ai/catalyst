@@ -197,7 +197,7 @@ def get_rank_experiment_proposals_prompt(proposal_ids: List[str]) -> str:
     joined_ids = " ".join(proposal_ids)
     return (
         f"Please run the rank-experiment-proposals skill with the following list of proposal IDs: {joined_ids}. "
-        "Compare and rank them. No file report or context_manager store_results call is needed! "
+        "Compare and rank them. "
         "When you are done, return a JSON object with the keys 'best_proposal_id' and 'rankings' (which is a list of the proposal IDs in order from best to worst)."
     )
 
@@ -228,5 +228,3 @@ def get_refine_interpretations_prompt(interpretations_id: str, review_id: str) -
         f"Please run the refine-interpretations skill for interpretations log ID: {interpretations_id} and review ID: {review_id}. "
         "When you are done, return ONLY a JSON object with the key 'interpretations_id'."
     )
-
-

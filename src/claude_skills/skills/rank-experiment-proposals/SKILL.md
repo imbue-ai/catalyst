@@ -50,4 +50,4 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
    1. O_20260616_111111_aaaaaa (Selected: Most promising hyperparameter sweep)
    2. O_20260616_222222_bbbbbb (Strong backup, but slightly higher runtime)
    ```
-   Provide a concise, critical rationale for each proposal's position. No file report or `context_manager.py store_results` call is needed!
+   Provide a concise, critical rationale for each proposal's position.
