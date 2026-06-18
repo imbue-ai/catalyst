@@ -167,13 +167,12 @@ class TestContextManager(unittest.TestCase):
         d_sol = self.test_dir / "seed_solution"
         d_sol.mkdir(parents=True, exist_ok=True)
         (d_sol / "solution.md").write_text("Seed solution")
-        res_sol = self.run_cmd(
+        self.run_cmd(
             "store_results",
-            "--from_agent_type", "generate-solution",
+            "--from_agent_type", "execute-proposal",
             "--from_folder", str(d_sol),
             "--parent_interpretations", i_id,
         )
-        sol_id = res_sol.stdout.strip().split()[-1]
 
         target_agents = [
             ("write-theory", {"--from_exploration": e_id, "--from_literature": l_id}),
@@ -200,7 +199,6 @@ class TestContextManager(unittest.TestCase):
             ("review-interpretations", {"--from_interpretations": i_id}),
             ("refine-interpretations", {"--from_interpretations": i_id, "--from_review": r_id}),
             ("propose-experiment", {"--from_interpretations": i_id}),
-            ("generate-solution", {"--from_interpretations": i_id, "--from_solution": sol_id}),
             ("rank-experiment-proposals", {"--from_proposal": prop_id}),
             ("execute-proposal", {"--from_proposal": prop_id}),
             ("initialize-interpretations", {}),

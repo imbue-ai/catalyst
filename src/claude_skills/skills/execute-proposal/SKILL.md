@@ -1,16 +1,11 @@
 ---
 name: execute-proposal
-description: "Coordinate the execution of a selected experiment proposal, delegating to the run-experiment skill and returning the stored experiment ID."
+description: "Determine the type of proposal given, execute/delegate accordingly, and return the appropriate resulting ID (experiment ID, literature search ID, or solution ID)."
 argument-hint: "proposal ID (e.g. O_20260616_123456_abcdef)"
 ---
 
 # Execute Proposal
-
-This skill is used to coordinate and execute a single selected experiment proposal by creating a workspace, copying the proposal's script and description, executing it through the standard `run-experiment` wrapper, and recording the final experiment ID.
-
-## Mandate
-- Run the experiment exactly as designed in the selected proposal. Do not modify the parameters or logic of the companion script unless necessary to fix runtime issues.
-- All actual experiment executions must go through the standard `run-experiment` wrapper. Never run the Python script directly.
+This skill is used to coordinate and execute a single selected proposal. It determines the proposal type and handles it accordingly.
 
 ## Input
 Arguments: $ARGUMENTS
@@ -32,16 +27,31 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
     --from_proposal <PROPOSAL_ID>
 ```
 
-- `<CONTEXT_DIR>/proposal/` — contains the read-only proposal files: `proposal.md` and the `script.py` file which forms the entrypoint to the experiment. Might contain additional Python files and dependencies for running the experiment.
-- `<OUTPUT_DIR>/` — write your execution summary and metadata here.
-
----
+- `<CONTEXT_DIR>/proposal/` — contains the read-only proposal files: `proposal.md`, and optional `script.py` / solution files.
+- `<OUTPUT_DIR>/` — write your execution summary, results, or metadata here.
 
 ## Execution Steps
-
-1. **Context Checkout**: Run the `create_context` bash command above to retrieve the selected proposal and companion script from the database.
-2. **Copy Proposal Files**: Copy all files from `<CONTEXT_DIR>/proposal/` into `<OUTPUT_DIR>/`. The `proposal.md` will serve as the `description.md` for the experiment execution, and should be renamed as such.
-2. **Execute Experiment**: Invoke the `run-experiment` skill to execute the proposal script using the run_experiment.py wrapper. Use a copy of the existing `proposal.md` as the `description.md` for the experiment, and pass the output directory as the experiment folder.
-3. **Check Results**: The runner will execute the script, capture all outputs, save them to the database, and print a unique experiment ID (e.g. `X_20260616_123456_abcdef`) at the end of its stdout/stderr. Parse this experiment ID from the runner's output.
-4. **Fix Bugs**: If the experiment execution fails due to a code or runtime bug, attempt to fix up the code in your `<OUTPUT_DIR>` and run the experiment again using the `run-experiment` procedure.
-5. **Report Results**: Note down the returned experiment ID as the result of this skill.
+1. **Context Checkout**: Run the `create_context` bash command above to retrieve the selected proposal from the database.
+2. **Determine Proposal Type**: Read `<CONTEXT_DIR>/proposal/proposal.md` and check its heading to determine the type of proposal (experiment, literature-search, or solution-candidate).
+3. **Execute Flow**:
+   - **For `"experiment"`**:
+     - Copy all files from `<CONTEXT_DIR>/proposal/` into `<OUTPUT_DIR>/`. Rename `proposal.md` to `description.md`.
+     - Invoke the `run-experiment` skill to execute the proposal script.
+     - Parse the resulting experiment ID (e.g. `X_20260616_123456_abcdef`) from the runner's output. Note it down as the result of this skill.
+   - **For `"literature-search"`**:
+     - Extract the specific search prompt from `proposal.md`.
+     - Invoke the `search-literature` skill with that search prompt as the argument.
+     - Parse and note the resulting literature review ID (e.g. `L_20260616_123456_abcdef`) as the result of this skill.
+   - **For `"solution-candidate"`**:
+     - Copy all files from `<CONTEXT_DIR>/proposal/` into `<OUTPUT_DIR>/`. Rename `proposal.md` to `description.md`.
+     - Invoke the `run-experiment` skill to execute the verification script (`script.py`) in `<OUTPUT_DIR>/`.
+     - Parse the resulting verification experiment ID (e.g. `X_20260616_123456_abcdef`).
+     - Create a `solution.md` file in `<OUTPUT_DIR>/`. Populate it with a detailed summary of the solution candidate, the results of the verification experiment (including its experiment ID `X_...`), and an assessment of how well the goal described in `goal.txt` was met by this solution candidate.
+     - Store the results using `store_results`:
+       ```bash
+       uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results \
+           --from_agent_type execute-proposal \
+           --from_folder <OUTPUT_DIR>
+       ```
+     - Parse and note the resulting solution ID (e.g. `U_20260616_123456_abcdef`) as the result of this skill.
+4. **Report Results**: Report the resulting ID as the result of this skill.

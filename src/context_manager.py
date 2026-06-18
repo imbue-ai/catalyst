@@ -59,8 +59,7 @@ AGENT_TYPE_MAP: dict[str, str] = {
     "review-interpretations": "review",
     "refine-interpretations": "interpretations",
     "propose-experiment": "proposal",
-    "generate-solution": "solution",
-    "execute-proposal": "experiment",
+    "execute-proposal": "solution",
     "initialize-interpretations": "interpretations",
 }
 
@@ -728,29 +727,42 @@ def _validate_create_context_args(
         pass
     elif for_agent_type == "interpret-experiment":
         if not from_interpretations:
-            raise ValueError("Exactly one --from_interpretations is required for interpret-experiment")
+            raise ValueError(
+                "Exactly one --from_interpretations is required for interpret-experiment"
+            )
         if not from_experiments or len(from_experiments) != 1:
-            raise ValueError("Exactly one --from_experiment is required for interpret-experiment")
+            raise ValueError(
+                "Exactly one --from_experiment is required for interpret-experiment"
+            )
     elif for_agent_type == "review-interpretations":
         if not from_interpretations:
-            raise ValueError("Exactly one --from_interpretations is required for review-interpretations")
+            raise ValueError(
+                "Exactly one --from_interpretations is required for review-interpretations"
+            )
     elif for_agent_type == "refine-interpretations":
         if not from_interpretations:
-            raise ValueError("Exactly one --from_interpretations is required for refine-interpretations")
+            raise ValueError(
+                "Exactly one --from_interpretations is required for refine-interpretations"
+            )
         if not from_reviews:
-            raise ValueError("At least one --from_review is required for refine-interpretations")
+            raise ValueError(
+                "At least one --from_review is required for refine-interpretations"
+            )
     elif for_agent_type == "propose-experiment":
         if not from_interpretations:
-            raise ValueError("Exactly one --from_interpretations is required for propose-experiment")
-    elif for_agent_type == "generate-solution":
-        if not from_interpretations:
-            raise ValueError("Exactly one --from_interpretations is required for generate-solution")
+            raise ValueError(
+                "Exactly one --from_interpretations is required for propose-experiment"
+            )
     elif for_agent_type == "rank-experiment-proposals":
         if not from_proposals:
-            raise ValueError("At least one --from_proposal is required for rank-experiment-proposals")
+            raise ValueError(
+                "At least one --from_proposal is required for rank-experiment-proposals"
+            )
     elif for_agent_type == "execute-proposal":
         if not from_proposals or len(from_proposals) != 1:
-            raise ValueError("Exactly one --from_proposal is required for execute-proposal")
+            raise ValueError(
+                "Exactly one --from_proposal is required for execute-proposal"
+            )
     elif for_agent_type == "initialize-interpretations":
         pass
     else:
@@ -919,9 +931,7 @@ def create_context(
                                 f"Parent interpretations log {parent_i!r} for solution {from_solution!r} not found or invisible"
                             )
             else:
-                raise ValueError(
-                    f"Solution {from_solution!r} not found or invisible"
-                )
+                raise ValueError(f"Solution {from_solution!r} not found or invisible")
 
         # --- Post-processing: Advanced Data Gathering ---
 
@@ -1004,10 +1014,9 @@ def create_context(
                 reviews_root.mkdir(parents=True, exist_ok=True)
 
                 for _, r_data in session.iter_metadata("review"):
-                    if (
-                        r_data.get("parent_theory") == tid
-                        and r_data.get("agent_type") in ("falsify-hypothesis", "review-adherence")
-                    ):
+                    if r_data.get("parent_theory") == tid and r_data.get(
+                        "agent_type"
+                    ) in ("falsify-hypothesis", "review-adherence"):
                         rid = r_data["id"]
                         copy_artifact(db_root / "review" / rid, reviews_root / rid)
 
@@ -1421,7 +1430,6 @@ def main(argv: list[str] | None = None) -> None:
             "review-interpretations",
             "refine-interpretations",
             "propose-experiment",
-            "generate-solution",
             "rank-experiment-proposals",
             "execute-proposal",
             "initialize-interpretations",
