@@ -47,11 +47,6 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                     for s in task.steps
                     if s.stage.startswith(f"execute-proposal-{i}-")
                 ]
-                interpret_stages = [
-                    s.stage
-                    for s in task.steps
-                    if s.stage.startswith(f"interpret-result-{i}-")
-                ]
 
                 iter_struct = [
                     {
@@ -71,21 +66,22 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                     {
                         "type": "parallel",
                         "name": "Interpret Results",
-                        "stages": interpret_stages,
+                        "stages": [
+                            f"interpret-result-{i}-{j}"
+                            for j in range(1, num_strands + 1)
+                        ],
                     },
                 ]
 
                 if i % integration_interval == 0:
-                    integrate_stages = [
-                        s.stage
-                        for s in task.steps
-                        if s.stage.startswith(f"integrate-interpretations-{i}-")
-                    ]
                     iter_struct.append(
                         {
                             "type": "parallel",
                             "name": "Integrate Interpretations",
-                            "stages": integrate_stages,
+                            "stages": [
+                                f"integrate-interpretations-{i}-{j}"
+                                for j in range(1, num_strands + 1)
+                            ],
                         }
                     )
 
