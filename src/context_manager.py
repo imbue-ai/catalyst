@@ -753,10 +753,10 @@ def _validate_create_context_args(
             raise ValueError(
                 "Exactly one --from_interpretations is required for propose-experiment"
             )
-    elif for_agent_type == "rank-experiment-proposals":
+    elif for_agent_type == "rank-proposals":
         if not from_proposals:
             raise ValueError(
-                "At least one --from_proposal is required for rank-experiment-proposals"
+                "At least one --from_proposal is required for rank-proposals"
             )
     elif for_agent_type == "execute-proposal":
         if not from_proposals or len(from_proposals) != 1:
@@ -1430,7 +1430,7 @@ def main(argv: list[str] | None = None) -> None:
             "review-interpretations",
             "refine-interpretations",
             "propose-experiment",
-            "rank-experiment-proposals",
+            "rank-proposals",
             "execute-proposal",
             "initialize-interpretations",
         ],

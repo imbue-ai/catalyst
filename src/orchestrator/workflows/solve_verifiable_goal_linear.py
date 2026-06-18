@@ -15,7 +15,7 @@ from .base import (
 from .common import run_summarize_title
 from orchestrator.prompts import (
     get_propose_experiment_prompt,
-    get_rank_experiment_proposals_prompt,
+    get_rank_proposals_prompt,
     get_execute_proposal_prompt,
     get_interpret_experiment_prompt,
     get_review_interpretations_prompt,
@@ -110,7 +110,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                             for j in range(1, num_strands + 1)
                         ],
                     },
-                    {"type": "step", "stage": f"rank-experiment-proposals-{i}"},
+                    {"type": "step", "stage": f"rank-proposals-{i}"},
                     {"type": "step", "stage": f"execute-proposal-{i}"},
                     {
                         "type": "parallel",
@@ -270,12 +270,12 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                     f"Failed to generate all {num_strands} proposals in iteration {i}."
                 )
 
-            # 2. Rank Experiment Proposals (sequential step)
+            # 2. Rank Proposals (sequential step)
             rank_data = run_step_if_needed(
                 task,
                 run_step,
-                f"rank-experiment-proposals-{i}",
-                get_rank_experiment_proposals_prompt(curr_proposal_ids),
+                f"rank-proposals-{i}",
+                get_rank_proposals_prompt(curr_proposal_ids),
                 StepCategory.REVIEW,
             )
 

@@ -199,7 +199,7 @@ class TestContextManager(unittest.TestCase):
             ("review-interpretations", {"--from_interpretations": i_id}),
             ("refine-interpretations", {"--from_interpretations": i_id, "--from_review": r_id}),
             ("propose-experiment", {"--from_interpretations": i_id}),
-            ("rank-experiment-proposals", {"--from_proposal": prop_id}),
+            ("rank-proposals", {"--from_proposal": prop_id}),
             ("execute-proposal", {"--from_proposal": prop_id}),
             ("initialize-interpretations", {}),
         ]

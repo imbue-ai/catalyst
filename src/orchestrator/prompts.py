@@ -193,12 +193,13 @@ def get_propose_experiment_prompt(interpretations_id: str) -> str:
     )
 
 
-def get_rank_experiment_proposals_prompt(proposal_ids: List[str]) -> str:
+def get_rank_proposals_prompt(proposal_ids: List[str]) -> str:
     joined_ids = " ".join(proposal_ids)
     return (
-        f"Please run the rank-experiment-proposals skill with the following list of proposal IDs: {joined_ids}. "
-        "Compare and rank them. "
-        "When you are done, return a JSON object with the keys 'best_proposal_id' and 'rankings' (which is a list of the proposal IDs in order from best to worst)."
+        f"Please run the rank-proposals skill with the following list of proposal IDs: {joined_ids}. "
+        "When you are done, return ONLY a JSON object with two keys: "
+        "'rankings' (a list of the experiment/literature-search proposal IDs in order from best to worst) "
+        "and 'solution_candidates' (a list containing all solution-candidate proposal IDs)."
     )
 
 
