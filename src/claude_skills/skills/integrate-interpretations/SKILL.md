@@ -54,6 +54,7 @@ Please maintain the following guidelines for the improved theory:
 - Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. NEVER use absolute paths. Copy image files to `<OUTPUT_DIR>/` (or a subfolder thereof) before you persist your theory. Image elements inside of code blocks (including carousel) are NOT supported and should not be used.
 - Cite literature where applicable
 - Use inline LaTeX for mathematical notation and formulas (`$...$` for inline math, and `$$...$$` for display math). Do NOT put formulas into code blocks.
+- Keep the title of the theory representative of its current key direction. Update the title `# ...` whenever the direction of the theory has changed and its current title is no longer representative.
 
 ## Execution Steps
 1. **Context Checkout**: Run the bash command above to obtain the existing theory using `context_manager.py`.

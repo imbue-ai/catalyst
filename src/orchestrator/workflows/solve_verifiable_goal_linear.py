@@ -18,6 +18,7 @@ from orchestrator.prompts import (
     get_rank_proposals_prompt,
     get_execute_proposal_prompt,
     get_interpret_result_prompt,
+    get_integrate_interpretations_prompt,
 )
 
 logger = logging.getLogger(__name__)
@@ -31,6 +32,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
     def get_structure(self, task: Task) -> List[Dict[str, Any]]:
         num_strands = int(task.workflow_inputs.get("num_strands", 3))
         max_iterations = int(task.workflow_inputs.get("max_iterations", 10))
+        integration_interval = int(task.workflow_inputs.get("integration_interval", 2))
 
         structure = [
             {"type": "step", "stage": "summarize-title"},
@@ -72,6 +74,21 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                         "stages": interpret_stages,
                     },
                 ]
+
+                if i % integration_interval == 0:
+                    integrate_stages = [
+                        s.stage
+                        for s in task.steps
+                        if s.stage.startswith(f"integrate-interpretations-{i}-")
+                    ]
+                    iter_struct.append(
+                        {
+                            "type": "parallel",
+                            "name": "Integrate Interpretations",
+                            "stages": integrate_stages,
+                        }
+                    )
+
                 iteration_structures[str(i)] = iter_struct
 
             structure.append(
@@ -169,6 +186,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
             task.workflow_inputs.get("num_executions_per_iteration", 1)
         )
         execution_cost = int(task.workflow_inputs.get("execution_cost", 1))
+        integration_interval = int(task.workflow_inputs.get("integration_interval", 2))
 
         for i in range(1, max_iterations + 1):
             # 1. Propose Experiments (in parallel for each of the n theory IDs)
@@ -342,5 +360,50 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                     f"Failed to generate all {num_strands} theories in iteration {i}."
                 )
 
-            # Update working theory IDs directly for the next iteration
-            theory_ids = new_theory_ids
+            # 5. Integrate Interpretations (conditionally every integration_interval-th iteration)
+            if i % integration_interval == 0:
+                integration_results = {}
+
+                def run_integrate_interpretations(strand_idx: int, theory_id: str):
+                    stage_name = f"integrate-interpretations-{i}-{strand_idx + 1}"
+                    res = run_step_if_needed(
+                        task,
+                        run_step,
+                        stage_name,
+                        get_integrate_interpretations_prompt(theory_id),
+                        StepCategory.THEORY_WRITING,
+                    )
+                    integration_results[strand_idx] = res
+
+                with ParallelStepRunner() as runner:
+                    for idx, theory_id in enumerate(new_theory_ids):
+                        runner.add(run_integrate_interpretations, idx, theory_id)
+
+                is_canceled = False
+                for idx in range(num_strands):
+                    res = integration_results.get(idx)
+                    if res and res.get("_canceled"):
+                        is_canceled = True
+                        break
+                if is_canceled:
+                    continue
+
+                integrated_theory_ids = []
+                for idx in range(num_strands):
+                    res = integration_results.get(idx)
+                    integrated_t_id = res.get("theory_id") if res else None
+                    integrated_theory_ids.append(integrated_t_id)
+
+                if len(integrated_theory_ids) != num_strands or any(
+                    x is None for x in integrated_theory_ids
+                ):
+                    raise Exception(
+                        f"Failed to integrate all {num_strands} interpretations in iteration {i}."
+                    )
+
+                # Update working theory IDs directly for the next iteration using integrated theories
+                theory_ids = integrated_theory_ids
+            else:
+                # Update working theory IDs directly for the next iteration using interpreted theories
+                theory_ids = new_theory_ids
+

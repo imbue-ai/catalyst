@@ -13,7 +13,8 @@ import {
   DEFAULT_ADHERENCE_WEIGHT,
   DEFAULT_NUM_STRANDS,
   DEFAULT_NUM_EXECUTIONS_PER_ITERATION,
-  DEFAULT_EXECUTION_COST
+  DEFAULT_EXECUTION_COST,
+  DEFAULT_INTEGRATION_INTERVAL
 } from '../constants'
 
 export function useWorkflowParams() {
@@ -29,6 +30,7 @@ export function useWorkflowParams() {
   const [numStrands, setNumStrands] = useState(DEFAULT_NUM_STRANDS)
   const [numExecutionsPerIteration, setNumExecutionsPerIteration] = useState(DEFAULT_NUM_EXECUTIONS_PER_ITERATION)
   const [executionCost, setExecutionCost] = useState(DEFAULT_EXECUTION_COST)
+  const [integrationInterval, setIntegrationInterval] = useState(DEFAULT_INTEGRATION_INTERVAL)
 
   const [correctnessWeight, setCorrectnessWeight] = useState(DEFAULT_CORRECTNESS_WEIGHT)
   const [powerWeight, setPowerWeight] = useState(DEFAULT_POWER_WEIGHT)
@@ -60,6 +62,8 @@ export function useWorkflowParams() {
     setNumExecutionsPerIteration,
     executionCost,
     setExecutionCost,
+    integrationInterval,
+    setIntegrationInterval,
     correctnessWeight,
     setCorrectnessWeight,
     powerWeight,

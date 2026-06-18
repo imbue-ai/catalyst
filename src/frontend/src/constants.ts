@@ -15,6 +15,7 @@ export const DEFAULT_NUM_STRANDS = 3;
 export const DEFAULT_NUM_ROOT_THEORIES = 3;
 export const DEFAULT_NUM_EXECUTIONS_PER_ITERATION = 1;
 export const DEFAULT_EXECUTION_COST = 1;
+export const DEFAULT_INTEGRATION_INTERVAL = 2;
 
 // Default scoring weights
 export const DEFAULT_CORRECTNESS_WEIGHT = 0.9;

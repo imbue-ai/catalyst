@@ -240,3 +240,81 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
 
         self.assertIn("Failed to generate all 2 proposals", str(context.exception))
 
+
+    def test_get_structure_with_integration(self):
+        task = Task(
+            id="task_solve_verifiable_test_integration",
+            workflow_name="solve-verifiable-goal-linear",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={
+                "goal": "Test goal",
+                "verification_instructions": "Verify nicely",
+                "num_strands": "2",
+                "max_iterations": "2",
+                "integration_interval": "2"
+            }
+        )
+        wf = SolveVerifiableGoalLinearWorkflow()
+        struct = wf.get_structure(task)
+        self.assertEqual(len(struct), 3)
+        loop_struct = struct[2]
+        self.assertEqual(loop_struct["type"], "loop")
+        iter_structures = loop_struct["iteration_structures"]
+        # Iteration 1 (i = 1): 1 % 2 != 0 -> 4 stages (no Integrate)
+        self.assertEqual(len(iter_structures["1"]), 4)
+        # Iteration 2 (i = 2): 2 % 2 == 0 -> 5 stages (with Integrate)
+        self.assertEqual(len(iter_structures["2"]), 5)
+        self.assertEqual(iter_structures["2"][4]["name"], "Integrate Interpretations")
+
+    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_summarize_title")
+    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_local_step_if_needed")
+    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_step_if_needed")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_run_success_with_integration(self, mock_file, mock_run_if_needed, mock_run_local, mock_summarize):
+        task = Task(
+            id="task_solve_verifiable_test_with_integration",
+            workflow_name="solve-verifiable-goal-linear",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={
+                "goal": "Test goal",
+                "verification_instructions": "Verify nicely",
+                "num_strands": "2",
+                "max_iterations": "1",
+                "integration_interval": "1"
+            }
+        )
+        wf = SolveVerifiableGoalLinearWorkflow()
+        mock_run_step = MagicMock()
+
+        # Step 1: Initialize Theories returns theory IDs
+        mock_run_local.return_value = {"theory_ids": ["T_1", "T_2"]}
+
+        # Configure mock_run_if_needed to return expected keys/dicts for different stages
+        def run_step_side_effect(task, run_step, stage_name, prompt, category, **kwargs):
+            if "propose-experiment" in stage_name:
+                return {"proposal_id": "O_prop"}
+            elif "rank-proposals" in stage_name:
+                return {"rankings": ["O_prop"], "solution_candidates": []}
+            elif "execute-proposal" in stage_name:
+                return {"experiment_id": "X_exp"}
+            elif "interpret-result" in stage_name:
+                return {"theory_id": "T_new"}
+            elif "integrate-interpretations" in stage_name:
+                return {"theory_id": "T_integrated"}
+            return {}
+
+        mock_run_if_needed.side_effect = run_step_side_effect
+
+        wf.run(task, mock_run_step)
+
+        # Check summarize and step invocations
+        mock_summarize.assert_called_once_with(task, mock_run_step, "goal: Test goal")
+        mock_run_local.assert_called_once()
+        
+        # Verify that integrate-interpretations was indeed called
+        any_integrate_calls = any("integrate-interpretations" in call.args[2] for call in mock_run_if_needed.call_args_list)
+        self.assertTrue(any_integrate_calls)
+
+

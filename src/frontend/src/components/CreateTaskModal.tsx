@@ -117,6 +117,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     setNumExecutionsPerIteration,
     executionCost,
     setExecutionCost,
+    integrationInterval,
+    setIntegrationInterval,
     correctnessWeight,
     setCorrectnessWeight,
     powerWeight,
@@ -229,6 +231,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         max_iterations: maxIterations,
         num_executions_per_iteration: numExecutionsPerIteration,
         execution_cost: executionCost,
+        integration_interval: integrationInterval,
         apply_expansions: applyExpansions || undefined,
         generate_intermediate_research_summaries: generateIntermediateResearchSummaries
       }
@@ -522,6 +525,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         showNumStrands={activeTab === 'solve-verifiable-goal-linear'}
                         showNumExecutionsPerIteration={activeTab === 'solve-verifiable-goal-linear'}
                         showExecutionCost={activeTab === 'solve-verifiable-goal-linear'}
+                        showIntegrationInterval={activeTab === 'solve-verifiable-goal-linear'}
                         showEvolveParams={isEvolve}
                         showApplyExpansions={!isImport}
                         showGenerateIntermediateResearchSummaries={!isImport}
@@ -549,6 +553,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         setNumExecutionsPerIteration={setNumExecutionsPerIteration}
                         executionCost={executionCost}
                         setExecutionCost={setExecutionCost}
+                        integrationInterval={integrationInterval}
+                        setIntegrationInterval={setIntegrationInterval}
                         showScoringWeights={isEvolve}
                         correctnessWeight={correctnessWeight}
                         setCorrectnessWeight={setCorrectnessWeight}

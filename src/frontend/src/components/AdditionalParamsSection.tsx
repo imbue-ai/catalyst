@@ -9,6 +9,7 @@ interface AdditionalParamsSectionProps {
   showNumStrands?: boolean;
   showNumExecutionsPerIteration?: boolean;
   showExecutionCost?: boolean;
+  showIntegrationInterval?: boolean;
 
   numRootTheories?: number;
   setNumRootTheories?: (v: number) => void;
@@ -59,6 +60,9 @@ interface AdditionalParamsSectionProps {
   executionCost?: number;
   setExecutionCost?: (v: number) => void;
 
+  integrationInterval?: number;
+  setIntegrationInterval?: (v: number) => void;
+
   // Option to restrict widths like in CreateAddonModal (e.g., md:w-1/3)
   useRestrictedWidths?: boolean;
   children?: React.ReactNode;
@@ -73,6 +77,7 @@ export function AdditionalParamsSection({
   showNumStrands,
   showNumExecutionsPerIteration,
   showExecutionCost,
+  showIntegrationInterval,
 
   numRootTheories,
   setNumRootTheories,
@@ -122,6 +127,9 @@ export function AdditionalParamsSection({
 
   executionCost,
   setExecutionCost,
+
+  integrationInterval,
+  setIntegrationInterval,
 
   useRestrictedWidths = false,
   children,
@@ -198,6 +206,18 @@ export function AdditionalParamsSection({
             type="number" min="1" max="5" required
             value={executionCost}
             onChange={e => setExecutionCost(parseInt(e.target.value, 10))}
+            className={inputClass}
+          />
+        </div>
+      )}
+
+      {showIntegrationInterval && setIntegrationInterval && (
+        <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+          <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Integration Interval</label>
+          <input
+            type="number" min="1" max="10" required
+            value={integrationInterval}
+            onChange={e => setIntegrationInterval(parseInt(e.target.value, 10))}
             className={inputClass}
           />
         </div>

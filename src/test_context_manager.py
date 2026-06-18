@@ -100,6 +100,7 @@ class TestContextManager(unittest.TestCase):
                 "review-adherence",
                 "improve-adherence",
                 "interpret-result",
+                "integrate-interpretations",
             )
             parent_theory_allowed_agents = parent_theory_required_agents + (
                 "run-experiment",
@@ -199,6 +200,7 @@ class TestContextManager(unittest.TestCase):
             ("edit-theory", {"--from_theory": t_id}),
             ("write-different-theory", {"--from_theory": t_id}),
             ("interpret-result", {"--from_theory": t_parent_id, "--from_experiment": x_id}),
+            ("integrate-interpretations", {"--from_theory": t_id}),
             ("propose-experiment", {"--from_theory": t_parent_id}),
             ("rank-proposals", {"--from_proposal": prop_id}),
             ("execute-proposal", {"--from_proposal": prop_id}),

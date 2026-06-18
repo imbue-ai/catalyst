@@ -218,3 +218,11 @@ def get_interpret_result_prompt(theory_id: str, result_ids: list[str]) -> str:
         f"Please run the interpret-result skill for theory ID: {theory_id} and result IDs: {result_ids_str}. "
         "When you are done, return ONLY a JSON object with the key 'theory_id'."
     )
+
+
+def get_integrate_interpretations_prompt(theory_id: str) -> str:
+    return (
+        f"Please run the integrate-interpretations skill for theory ID: {theory_id}. "
+        "When you are done, return ONLY a JSON object with the key 'theory_id'."
+    )
+
