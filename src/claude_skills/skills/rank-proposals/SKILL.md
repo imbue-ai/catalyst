@@ -17,6 +17,7 @@ You are an expert scientific agent. Your goal is to review, compare, and rank mu
      - **Expected Value**: How much the proposal's findings would reduce uncertainty or move closer to the optimization goal.
      - **Feasibility & Soundness**: How well-designed the script or search methodology is, and whether the approach is robust.
      - **Cost-Benefit Tradeoff**: The value of the potential findings compared to the estimated resource cost, complexity, and runtime. Literature search proposals can be assumed to be cheap, about ~5 minutes in runtime.
+   - Remove duplicates: If multiple experiment or literature search proposals are effectively the same, only keep the best-ranked one among those and discard the others.
 3. **Solution Candidate Proposals**:
    - Do NOT rank solution candidate proposals together with experiments or literature searches.
    - Collect all solution candidate proposals into a separate, unranked list (`solution_candidates`).
@@ -52,6 +53,6 @@ Context layout:
 1. **Context Checkout**: Run the `create_context` command above to check out all candidate proposals.
 2. **Analyze Proposals**: For each candidate under `<CONTEXT_DIR>/proposals/<O_ID>/`, inspect `proposal.md` to classify it and review its motivation and methodology.
 3. **Execute Grouping & Ranking**:
-   - Sort the regular experiments and literature searches together, ranking them from highest priority to lowest priority.
+   - Sort the regular experiments and literature searches together, ranking them from highest priority to lowest priority, while removing duplicates.
    - Gather all solution candidates into a separate, unranked collection.
 4. **Output Selection & Rankings**: Formulate a numeric ranking for the experiment/literature-search proposals (from 1...n), and list the solution candidates separately. Include both sections in the skill's output.
