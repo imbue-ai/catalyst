@@ -595,6 +595,27 @@ def get_task_experiments(task_id: str):
         raise HTTPException(status_code=500, detail="Failed to parse experiments")
 
 
+@app.get("/api/tasks/{task_id}/solutions")
+def get_task_solutions(task_id: str):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    try:
+        result = run_context_manager(task, ["list", "--type", "solution", "--json"])
+        data = json.loads(result)
+        data.reverse()
+        return data
+    except subprocess.CalledProcessError as e:
+        logger.error(
+            f"Error running context_manager list for task {task_id}: {e.stderr}"
+        )
+        raise HTTPException(status_code=500, detail="Failed to retrieve solutions")
+    except json.JSONDecodeError as e:
+        logger.error(f"Error decoding context_manager output for task {task_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to parse solutions")
+
+
 @app.get("/api/tasks/{task_id}/summaries")
 def get_task_summaries(task_id: str):
     task = get_task(task_id)
@@ -614,6 +635,8 @@ def get_task_summaries(task_id: str):
     except json.JSONDecodeError as e:
         logger.error(f"Error decoding context_manager output for task {task_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to parse summaries")
+
+
 
 
 def inject_disclaimer(content: str) -> str:

@@ -107,6 +107,14 @@ export interface SummaryArtifact {
   created_at?: string;
 }
 
+export interface SolutionArtifact {
+  id: string;
+  headline?: string;
+  agent_type?: string;
+  created_at?: string;
+  extra?: Record<string, string>;
+}
+
 
 export interface TaskShallow {
   id: string;
@@ -213,6 +221,12 @@ export async function getExperiments(id: string): Promise<ExperimentArtifact[]> 
 export async function getSummaries(id: string): Promise<SummaryArtifact[]> {
   const res = await fetch(`${API_BASE}/tasks/${id}/summaries`);
   if (!res.ok) throw new Error("Failed to get summaries");
+  return res.json();
+}
+
+export async function getSolutions(id: string): Promise<SolutionArtifact[]> {
+  const res = await fetch(`${API_BASE}/tasks/${id}/solutions`);
+  if (!res.ok) throw new Error("Failed to get solutions");
   return res.json();
 }
 

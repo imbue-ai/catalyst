@@ -21,3 +21,10 @@ export const DEFAULT_INTEGRATION_INTERVAL = 2;
 export const DEFAULT_CORRECTNESS_WEIGHT = 0.9;
 export const DEFAULT_POWER_WEIGHT = 0.7;
 export const DEFAULT_ADHERENCE_WEIGHT = 0.5;
+
+// Centralized regex for matching artifact IDs (format: [ELTRXPSOIU]_YYYYMMDD_HHMMSS_ffffff)
+export const ARTIFACT_ID_PATTERN = '[ELTRXPSOIU]_\\d{8}_\\d{6}_[a-f0-9]{6}';
+export const ARTIFACT_REGEX = new RegExp(`^${ARTIFACT_ID_PATTERN}$`);
+export const ARTIFACT_FIND_GLOBAL_REGEX = new RegExp(`\\b(${ARTIFACT_ID_PATTERN})\\b`, 'g');
+export const ARTIFACT_BACKTICK_REGEX = new RegExp(`^\`(${ARTIFACT_ID_PATTERN})\`$`);
+
