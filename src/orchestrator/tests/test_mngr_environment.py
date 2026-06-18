@@ -31,16 +31,18 @@ import tempfile
 import unittest
 
 # The exact set of plugins Catalyst's pinned mngr install registers and
-# enables. Captured from `mngr plugin list` against imbue-mngr 0.2.12 +
-# imbue-mngr-claude 0.2.12 + imbue-mngr-antigravity 0.1.3 + imbue-mngr-wait
-# 0.1.9 (see src/pyproject.toml). Notably ABSENT: claude_subagent_proxy.
+# enables. Captured from `mngr plugin list` against imbue-mngr 0.2.17 +
+# imbue-mngr-claude 0.2.17 + imbue-mngr-antigravity 0.1.8 + imbue-mngr-wait
+# 0.1.14 (see src/pyproject.toml). Notably ABSENT: claude_subagent_proxy,
+# which is opt-in (disabled unless a config layer enables it). Also absent:
+# codex, which lives in the separate imbue-mngr-codex package that Catalyst
+# does not depend on.
 EXPECTED_ACTIVE_PLUGINS = frozenset(
     {
         "antigravity",
         "builtin_help_topics",
         "claude",
         "code_guardian",
-        "codex",
         "command",
         "docker",
         "fixme_fairy",
