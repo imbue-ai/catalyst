@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import {
   DEFAULT_MAX_REFINEMENTS,
-  DEFAULT_MAX_EXPERIMENTS,
+  DEFAULT_MAX_ITERATIONS,
   DEFAULT_EVOLVE_ITERATIONS,
   DEFAULT_NUM_PARENTS,
   DEFAULT_MAX_STREAMLINE_PROB,
@@ -19,7 +19,7 @@ import {
 export function useWorkflowParams() {
   const [numRootTheories, setNumRootTheories] = useState(DEFAULT_NUM_ROOT_THEORIES)
   const [maxRefinements, setMaxRefinements] = useState(DEFAULT_MAX_REFINEMENTS)
-  const [maxExperiments, setMaxExperiments] = useState(DEFAULT_MAX_EXPERIMENTS)
+  const [maxIterations, setMaxIterations] = useState(DEFAULT_MAX_ITERATIONS)
   const [evolveIterations, setEvolveIterations] = useState(DEFAULT_EVOLVE_ITERATIONS)
   const [numParents, setNumParents] = useState(DEFAULT_NUM_PARENTS)
   const [maxStreamlineProb, setMaxStreamlineProb] = useState(DEFAULT_MAX_STREAMLINE_PROB)
@@ -40,8 +40,8 @@ export function useWorkflowParams() {
     setNumRootTheories,
     maxRefinements,
     setMaxRefinements,
-    maxExperiments,
-    setMaxExperiments,
+    maxIterations,
+    setMaxIterations,
     evolveIterations,
     setEvolveIterations,
     numParents,

@@ -15,9 +15,9 @@ interface AdditionalParamsSectionProps {
 
   maxRefinements?: number;
   setMaxRefinements?: (v: number) => void;
-  showMaxExperiments?: boolean;
-  maxExperiments?: number;
-  setMaxExperiments?: (v: number) => void;
+  showMaxIterations?: boolean;
+  maxIterations?: number;
+  setMaxIterations?: (v: number) => void;
 
   evolveIterations?: number;
   setEvolveIterations?: (v: number) => void;
@@ -79,9 +79,9 @@ export function AdditionalParamsSection({
 
   maxRefinements,
   setMaxRefinements,
-  showMaxExperiments,
-  maxExperiments,
-  setMaxExperiments,
+  showMaxIterations,
+  maxIterations,
+  setMaxIterations,
 
   evolveIterations,
   setEvolveIterations,
@@ -155,13 +155,13 @@ export function AdditionalParamsSection({
         </div>
       )}
 
-      {showMaxExperiments && setMaxExperiments && (
+      {showMaxIterations && setMaxIterations && (
         <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
-          <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Experiments</label>
+          <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Iterations</label>
           <input
-            type="number" min="0" max="10" required
-            value={maxExperiments}
-            onChange={e => setMaxExperiments(parseInt(e.target.value, 10))}
+            type="number" min="0" max="100" required
+            value={maxIterations}
+            onChange={e => setMaxIterations(parseInt(e.target.value, 10))}
             className={inputClass}
           />
         </div>

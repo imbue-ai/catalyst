@@ -112,7 +112,7 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
                 "goal": "Test goal",
                 "verification_instructions": "Verify nicely",
                 "num_strands": "2",
-                "max_experiments": "1"
+                "max_iterations": "1"
             }
         )
         wf = SolveVerifiableGoalLinearWorkflow()
@@ -136,7 +136,7 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
                 "goal": "Test goal",
                 "verification_instructions": "Verify nicely",
                 "num_strands": "2",
-                "max_experiments": "1"
+                "max_iterations": "1"
             }
         )
         wf = SolveVerifiableGoalLinearWorkflow()
@@ -183,7 +183,7 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
                 "goal": "Test goal",
                 "verification_instructions": "Verify nicely",
                 "num_strands": "2",
-                "max_experiments": "1"
+                "max_iterations": "1"
             }
         )
         wf = SolveVerifiableGoalLinearWorkflow()
@@ -223,7 +223,7 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
                 "goal": "Test goal",
                 "verification_instructions": "Verify nicely",
                 "num_strands": "2",
-                "max_experiments": "1"
+                "max_iterations": "1"
             }
         )
         wf = SolveVerifiableGoalLinearWorkflow()

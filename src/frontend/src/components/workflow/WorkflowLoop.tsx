@@ -118,17 +118,31 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
             <h4 className="font-black text-xs tracking-[0.2em]">{formatStageName(name)}</h4>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex gap-1">
-              {Array.from({ length: iterations }, (_, i) => i + 1).map(it => (
-                <button
-                  key={it}
-                  onClick={() => setActiveIteration(it)}
-                  className={`w-6 h-6 text-[10px] font-black border transition-all ${activeIteration === it ? 'bg-black text-white border-black' : 'hover:bg-gray-100 border-gray-200'}`}
-                >
-                  {it}
-                </button>
-              ))}
-            </div>
+            {iterations > 5 ? (
+              <select
+                value={activeIteration}
+                onChange={e => setActiveIteration(parseInt(e.target.value, 10))}
+                className="border-2 border-black px-2 py-1 outline-none text-[10px] font-black bg-white cursor-pointer"
+              >
+                {Array.from({ length: iterations }, (_, i) => i + 1).map(it => (
+                  <option key={it} value={it}>
+                    Iteration {it}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <div className="flex gap-1">
+                {Array.from({ length: iterations }, (_, i) => i + 1).map(it => (
+                  <button
+                    key={it}
+                    onClick={() => setActiveIteration(it)}
+                    className={`w-6 h-6 text-[10px] font-black border transition-all ${activeIteration === it ? 'bg-black text-white border-black' : 'hover:bg-gray-100 border-gray-200'}`}
+                  >
+                    {it}
+                  </button>
+                ))}
+              </div>
+            )}
             {task.status !== 'completed' && stagesToCancel.length > 0 && overallStatus !== 'completed' && overallStatus !== 'canceled' && (
               <CancelStepsButton
                 task={task}

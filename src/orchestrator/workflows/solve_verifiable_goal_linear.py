@@ -29,17 +29,17 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
         return "solve-verifiable-goal-linear"
 
     def get_structure(self, task: Task) -> List[Dict[str, Any]]:
-        num_strands = int(task.workflow_inputs.get("num_strands", 5))
-        max_experiments = int(task.workflow_inputs.get("max_experiments", 3))
+        num_strands = int(task.workflow_inputs.get("num_strands", 3))
+        max_iterations = int(task.workflow_inputs.get("max_iterations", 10))
 
         structure = [
             {"type": "step", "stage": "summarize-title"},
             {"type": "step", "stage": "initialize-interpretations"},
         ]
 
-        if max_experiments > 0:
+        if max_iterations > 0:
             iteration_structures = {}
-            for i in range(1, max_experiments + 1):
+            for i in range(1, max_iterations + 1):
                 execute_stages = [
                     s.stage
                     for s in task.steps
@@ -78,7 +78,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                 {
                     "type": "loop",
                     "name": "Solve Goal Loop",
-                    "iterations": max_experiments,
+                    "iterations": max_iterations,
                     "iteration_structures": iteration_structures,
                 }
             )
@@ -105,7 +105,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
         run_summarize_title(task, run_step, f"goal: {goal}")
 
         # Step 1: Initialize Interpretations
-        num_strands = int(task.workflow_inputs.get("num_strands", 5))
+        num_strands = int(task.workflow_inputs.get("num_strands", 3))
 
         def _initialize_interpretations() -> Dict[str, Any]:
             abs_env_folder = os.path.abspath(task.env_folder)
@@ -164,13 +164,13 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                 return
             raise Exception("Initialization failed to return interpretation log IDs.")
 
-        max_experiments = int(task.workflow_inputs.get("max_experiments", 3))
+        max_iterations = int(task.workflow_inputs.get("max_iterations", 10))
         num_executions_per_iteration = int(
             task.workflow_inputs.get("num_executions_per_iteration", 1)
         )
         execution_cost = int(task.workflow_inputs.get("execution_cost", 1))
 
-        for i in range(1, max_experiments + 1):
+        for i in range(1, max_iterations + 1):
             # 1. Propose Experiment (in parallel for each of the n interpretations log IDs)
             proposal_results = {}
 

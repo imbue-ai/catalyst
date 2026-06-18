@@ -97,8 +97,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     setNumRootTheories,
     maxRefinements,
     setMaxRefinements,
-    maxExperiments,
-    setMaxExperiments,
+    maxIterations,
+    setMaxIterations,
     evolveIterations,
     setEvolveIterations,
     numParents,
@@ -226,7 +226,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         goal: inputs.goal,
         verification_instructions: inputs.verificationInstructions,
         num_strands: numStrands,
-        max_experiments: maxExperiments,
+        max_iterations: maxIterations,
         num_executions_per_iteration: numExecutionsPerIteration,
         execution_cost: executionCost,
         apply_expansions: applyExpansions || undefined,
@@ -518,7 +518,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       <AdditionalParamsSection
                         showRootTheories={activeTab === 'develop-theory'}
                         showMaxRefinements={activeTab === 'develop-theory-linear' || activeTab === 'refine-theory-idea-linear'}
-                        showMaxExperiments={activeTab === 'solve-verifiable-goal-linear'}
+                        showMaxIterations={activeTab === 'solve-verifiable-goal-linear'}
                         showNumStrands={activeTab === 'solve-verifiable-goal-linear'}
                         showNumExecutionsPerIteration={activeTab === 'solve-verifiable-goal-linear'}
                         showExecutionCost={activeTab === 'solve-verifiable-goal-linear'}
@@ -529,8 +529,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         setNumRootTheories={setNumRootTheories}
                         maxRefinements={maxRefinements}
                         setMaxRefinements={setMaxRefinements}
-                        maxExperiments={maxExperiments}
-                        setMaxExperiments={setMaxExperiments}
+                        maxIterations={maxIterations}
+                        setMaxIterations={setMaxIterations}
                         evolveIterations={evolveIterations}
                         setEvolveIterations={setEvolveIterations}
                         numParents={numParents}
