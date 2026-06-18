@@ -25,65 +25,6 @@ from orchestrator.prompts import (
 logger = logging.getLogger(__name__)
 
 
-def extract_proposal_id_fallback(res: Any) -> str:
-    if isinstance(res, dict):
-        if "proposal_id" in res and res["proposal_id"]:
-            return res["proposal_id"]
-    text = str(res)
-    matches = re.findall(r"\b(O_\w+)\b", text)
-    if matches:
-        return matches[0]
-    return None
-
-
-def extract_best_proposal_id(res: Any, candidate_ids: List[str]) -> str:
-    if isinstance(res, dict):
-        for key in ["best_proposal_id", "selected_proposal_id", "top_proposal_id"]:
-            if key in res and res[key]:
-                return res[key]
-        if "rankings" in res and isinstance(res["rankings"], list) and res["rankings"]:
-            return res["rankings"][0]
-    text = str(res)
-    matches = re.findall(r"\b(O_\w+)\b", text)
-    for m in matches:
-        if m in candidate_ids:
-            return m
-    return candidate_ids[0] if candidate_ids else None
-
-
-def extract_experiment_id(res: Any) -> str:
-    if isinstance(res, dict):
-        if "experiment_id" in res and res["experiment_id"]:
-            return res["experiment_id"]
-    text = str(res)
-    matches = re.findall(r"\b(X_\w+)\b", text)
-    if matches:
-        return matches[0]
-    return None
-
-
-def extract_interpretations_id_fallback(res: Any) -> str:
-    if isinstance(res, dict):
-        if "interpretations_id" in res and res["interpretations_id"]:
-            return res["interpretations_id"]
-    text = str(res)
-    matches = re.findall(r"\b(I_\w+)\b", text)
-    if matches:
-        return matches[0]
-    return None
-
-
-def extract_review_id_fallback(res: Any) -> str:
-    if isinstance(res, dict):
-        if "review_id" in res and res["review_id"]:
-            return res["review_id"]
-    text = str(res)
-    matches = re.findall(r"\b(R_\w+)\b", text)
-    if matches:
-        return matches[0]
-    return None
-
-
 class SolveVerifiableGoalLinearWorkflow(Workflow):
     @property
     def name(self) -> str:
@@ -153,13 +94,17 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
     def run(self, task: Task, run_step: Callable) -> None:
         goal = task.workflow_inputs.get("goal")
         assert goal, "Goal is required."
-        verification_instructions = task.workflow_inputs.get("verification_instructions")
+        verification_instructions = task.workflow_inputs.get(
+            "verification_instructions"
+        )
         assert verification_instructions, "Verification instructions are required."
 
         with open(os.path.join(task.env_folder, "goal.txt"), "w") as f:
             f.write(goal.strip() + "\n")
 
-        with open(os.path.join(task.env_folder, "verification_instructions.txt"), "w") as f:
+        with open(
+            os.path.join(task.env_folder, "verification_instructions.txt"), "w"
+        ) as f:
             f.write(verification_instructions.strip() + "\n")
 
         # Step 0: Summarize Title
@@ -260,7 +205,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
             curr_proposal_ids = []
             for idx in range(num_strands):
                 res = proposal_results.get(idx)
-                p_id = extract_proposal_id_fallback(res)
+                p_id = res.get("proposal_id") if res else None
                 curr_proposal_ids.append(p_id)
 
             if len(curr_proposal_ids) != num_strands or any(
@@ -283,9 +228,13 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                 continue
 
             # Parse ranking and select the best proposal ID
-            best_proposal_id = extract_best_proposal_id(rank_data, curr_proposal_ids)
-            if not best_proposal_id:
-                raise Exception(f"Failed to identify top proposal ID in iteration {i}.")
+            rankings = rank_data.get("rankings") if rank_data else None
+            if rankings is None or not isinstance(rankings, list):
+                raise Exception(f"rank-proposals failed to return a list of rankings in iteration {i}.")
+            if not rankings:
+                logger.info("Rankings are empty. Completing workflow.")
+                return
+            best_proposal_id = rankings[0]
 
             # 3. Execute Proposal (sequential step)
             execute_data = run_step_if_needed(
@@ -299,7 +248,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
             if execute_data and execute_data.get("_canceled"):
                 continue
 
-            experiment_id = extract_experiment_id(execute_data)
+            experiment_id = execute_data.get("experiment_id") if execute_data else None
             if not experiment_id:
                 raise Exception(
                     f"Failed to execute proposal {best_proposal_id} in iteration {i}."
@@ -336,7 +285,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
             new_interpretations_ids = []
             for idx in range(num_strands):
                 res = interpretation_results.get(idx)
-                new_i_id = extract_interpretations_id_fallback(res)
+                new_i_id = res.get("interpretations_id") if res else None
                 new_interpretations_ids.append(new_i_id)
 
             if len(new_interpretations_ids) != num_strands or any(
@@ -380,7 +329,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
             review_ids = []
             for idx in range(num_strands):
                 res = review_results.get(idx)
-                r_id = extract_review_id_fallback(res)
+                r_id = res.get("review_id") if res else None
                 review_ids.append(r_id)
 
             if len(review_ids) != num_strands or any(r is None for r in review_ids):
@@ -426,7 +375,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
             refined_interpretations_ids = []
             for idx in range(num_strands):
                 res = refinement_results.get(idx)
-                ref_i_id = extract_interpretations_id_fallback(res)
+                ref_i_id = res.get("interpretations_id") if res else None
                 refined_interpretations_ids.append(ref_i_id)
 
             if len(refined_interpretations_ids) != num_strands or any(

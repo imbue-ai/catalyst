@@ -3,6 +3,7 @@ from unittest.mock import patch, MagicMock, mock_open
 from ..models import Task
 from ..workflows.import_theory import ImportTheoryWorkflow
 from ..workflows.develop_theory_linear import DevelopTheoryLinearWorkflow
+from ..workflows.solve_verifiable_goal_linear import SolveVerifiableGoalLinearWorkflow
 
 class TestImportTheoryWorkflow(unittest.TestCase):
     def test_get_structure(self):
@@ -98,3 +99,148 @@ class TestDevelopTheoryLinearWorkflow(unittest.TestCase):
             max_refinements=3,
             generate_intermediate_research_summaries=False
         )
+
+
+class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
+    def test_get_structure(self):
+        task = Task(
+            id="task_solve_verifiable_test",
+            workflow_name="solve-verifiable-goal-linear",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={
+                "goal": "Test goal",
+                "verification_instructions": "Verify nicely",
+                "num_strands": "2",
+                "max_experiments": "1"
+            }
+        )
+        wf = SolveVerifiableGoalLinearWorkflow()
+        self.assertEqual(wf.name, "solve-verifiable-goal-linear")
+        struct = wf.get_structure(task)
+        self.assertEqual(struct[0]["stage"], "summarize-title")
+        self.assertEqual(struct[1]["stage"], "initialize-interpretations")
+        self.assertEqual(len(struct), 3)
+
+    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_summarize_title")
+    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_local_step_if_needed")
+    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_step_if_needed")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_run_success(self, mock_file, mock_run_if_needed, mock_run_local, mock_summarize):
+        task = Task(
+            id="task_solve_verifiable_test",
+            workflow_name="solve-verifiable-goal-linear",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={
+                "goal": "Test goal",
+                "verification_instructions": "Verify nicely",
+                "num_strands": "2",
+                "max_experiments": "1"
+            }
+        )
+        wf = SolveVerifiableGoalLinearWorkflow()
+        mock_run_step = MagicMock()
+
+        # Step 1: Initialize Interpretations returns interpretations log IDs
+        mock_run_local.return_value = {"interpretations_ids": ["I_1", "I_2"]}
+
+        # Configure mock_run_if_needed to return expected keys/dicts for different stages
+        def run_step_side_effect(task, run_step, stage_name, prompt, category):
+            if "propose-experiment" in stage_name:
+                return {"proposal_id": "O_prop"}
+            elif "rank-proposals" in stage_name:
+                return {"rankings": ["O_prop"]}
+            elif "execute-proposal" in stage_name:
+                return {"experiment_id": "X_exp"}
+            elif "interpret-experiment" in stage_name:
+                return {"interpretations_id": "I_new"}
+            elif "review-interpretations" in stage_name:
+                return {"review_id": "R_rev"}
+            elif "refine-interpretations" in stage_name:
+                return {"interpretations_id": "I_refined"}
+            return {}
+
+        mock_run_if_needed.side_effect = run_step_side_effect
+
+        wf.run(task, mock_run_step)
+
+        # Assert correct files written
+        mock_file.assert_any_call("/tmp/env/goal.txt", "w")
+        mock_file.assert_any_call("/tmp/env/verification_instructions.txt", "w")
+
+        # Check summarize and step invocations
+        mock_summarize.assert_called_once_with(task, mock_run_step, "goal: Test goal")
+        mock_run_local.assert_called_once()
+
+    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_summarize_title")
+    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_local_step_if_needed")
+    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_step_if_needed")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_run_rankings_empty(self, mock_file, mock_run_if_needed, mock_run_local, mock_summarize):
+        task = Task(
+            id="task_solve_verifiable_test",
+            workflow_name="solve-verifiable-goal-linear",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={
+                "goal": "Test goal",
+                "verification_instructions": "Verify nicely",
+                "num_strands": "2",
+                "max_experiments": "1"
+            }
+        )
+        wf = SolveVerifiableGoalLinearWorkflow()
+        mock_run_step = MagicMock()
+
+        # Step 1: Initialize Interpretations returns interpretations log IDs
+        mock_run_local.return_value = {"interpretations_ids": ["I_1", "I_2"]}
+
+        # Configure mock_run_if_needed: Propose returns O_prop, Rank returns empty list
+        def run_step_side_effect(task, run_step, stage_name, prompt, category):
+            if "propose-experiment" in stage_name:
+                return {"proposal_id": "O_prop"}
+            elif "rank-proposals" in stage_name:
+                return {"rankings": []}
+            return {}
+
+        mock_run_if_needed.side_effect = run_step_side_effect
+
+        # This should complete early without exception
+        wf.run(task, mock_run_step)
+
+        # Ensure we didn't call execute-proposal
+        for call_args in mock_run_if_needed.call_args_list:
+            self.assertNotIn("execute-proposal", call_args[0][2])
+
+    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_summarize_title")
+    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_local_step_if_needed")
+    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_step_if_needed")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_run_missing_key_failure(self, mock_file, mock_run_if_needed, mock_run_local, mock_summarize):
+        task = Task(
+            id="task_solve_verifiable_test",
+            workflow_name="solve-verifiable-goal-linear",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={
+                "goal": "Test goal",
+                "verification_instructions": "Verify nicely",
+                "num_strands": "2",
+                "max_experiments": "1"
+            }
+        )
+        wf = SolveVerifiableGoalLinearWorkflow()
+        mock_run_step = MagicMock()
+
+        mock_run_local.return_value = {"interpretations_ids": ["I_1", "I_2"]}
+
+        # Propose fails to return expected key proposal_id (returns invalid_key instead)
+        mock_run_if_needed.return_value = {"invalid_key": "some_value"}
+
+        # This should raise an exception
+        with self.assertRaises(Exception) as context:
+            wf.run(task, mock_run_step)
+
+        self.assertIn("Failed to generate all 2 proposals", str(context.exception))
+
