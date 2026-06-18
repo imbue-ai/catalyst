@@ -4,8 +4,7 @@ description: "Determine the type of proposal given, execute/delegate accordingly
 argument-hint: "proposal ID (e.g. O_20260616_123456_abcdef)"
 ---
 
-# Execute Proposal
-This skill is used to coordinate and execute a single selected proposal. It determines the proposal type and handles it accordingly.
+As part of a larger research effort, you're in charge of executing a given proposal. The proposal may be one of three types: a regular experiment, a literature search, or a solution candidate.
 
 ## Input
 Arguments: $ARGUMENTS

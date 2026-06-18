@@ -4,8 +4,6 @@ description: "Interpret the results of newly run experiments, literature searche
 argument-hint: "theory ID and one or more result IDs (e.g. T_20260616_123456_abcdef X_20260616_123456_abcdef L_20260616_123456_abcdef)"
 ---
 
-# Interpret Result
-
 We are performing research to solve the goal described in the file `goal.txt`. As part of this research, we have been running experiments, literature searches, and designing solution candidates. Some new results have become available from one or more completed processes (experiments, literature searches, or solution candidates). Your goal is to interpret these results and append your interpretations and conclusions to the central interpretations log.
 
 ## Mandate
@@ -54,8 +52,6 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_experiment --tar
 ```
 
 This command will place the experiment description (`description.md`), Python script (`script.py`), and results into the `<CONTEXT_DIR>/experiments/<EXPERIMENT_ID>` folder.
-
----
 
 ## Execution Steps
 

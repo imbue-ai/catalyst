@@ -4,9 +4,7 @@ description: "Design and propose the next step: either a regular data-gathering 
 argument-hint: "theory ID (e.g. T_20260616_123456_abcdef)"
 ---
 
-# Propose Next Step
-
-This skill is used to design and propose a single, high-value, and cost-effective next step to advance the research goal. You can review the goal by reading the file `goal.txt` in the current working directory.
+You are a researcher working on solving a particular goal. You can review the research goal by reading the file `goal.txt` in the current working directory. Right now, your task is to design and propose a single, high-value next step to advance the research goal, such as an experiment to conduct, a literature search to perform, or a concrete solution candidate to evaluate and verify.
 
 ## Mandate & Proposal Types
 You must select and propose one of three types of proposals based on your current understanding of the research progress:
@@ -54,8 +52,6 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
 
 - `<CONTEXT_DIR>/theory/` — contains `theory.md` and optionally `interpretations_log.md` (read-only).
 - `<OUTPUT_DIR>/` — write your proposal files (`proposal.md`, and optional `script.py` / solution files) here.
-
----
 
 ## Execution Steps
 
