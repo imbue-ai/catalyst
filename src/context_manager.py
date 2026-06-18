@@ -620,7 +620,7 @@ def store_results(
                     theory_id=new_id,
                     parent_theory_id=parent_theory,
                 )
-            elif category == "review" and from_agent_type != "review-interpretations":
+            elif category == "review":
                 session.record_review(
                     theory_id=parent_theory,
                     review_id=new_id,
@@ -940,7 +940,9 @@ def create_context(
                             exp_dir / exp_id,
                         )
                     else:
-                        raise ValueError(f"Experiment {exp_id!r} not found or invisible")
+                        raise ValueError(
+                            f"Experiment {exp_id!r} not found or invisible"
+                        )
 
             if from_literatures:
                 lit_dir = results_dir / "literature"
@@ -952,7 +954,9 @@ def create_context(
                             lit_dir / lit_id,
                         )
                     else:
-                        raise ValueError(f"Literature search results {lit_id!r} not found or invisible")
+                        raise ValueError(
+                            f"Literature search results {lit_id!r} not found or invisible"
+                        )
 
             if from_solutions:
                 sol_dir = results_dir / "solutions"
