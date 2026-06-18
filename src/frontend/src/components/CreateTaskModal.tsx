@@ -28,7 +28,7 @@ const CATEGORY_WORKFLOWS: Record<InputCategory, { id: WorkflowType, label: strin
     { id: 'import-theory', label: 'Import', description: 'Import an existing theory. You can add further steps later on.', icon: <UploadCloud size={18} /> }
   ],
   'goal': [
-    { id: 'solve-verifiable-goal-linear', label: 'Solve Verifiable Goal (Linear)', description: 'Autonomously solve an optimization or research goal by conducting a sequence of experiments and repeatedly refining multiple interpretation strands.', icon: <Goal size={18} /> }
+    { id: 'solve-verifiable-goal-linear', label: 'Solve Verifiable Goal (Linear)', description: 'Autonomously solve a verifiable goal by conducting a sequence of experiments and maintaining a fixed number of interpretation strands.', icon: <Goal size={18} /> }
   ]
 };
 
@@ -128,6 +128,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     phenomenon: '',
     idea: '',
     goal: '',
+    verificationInstructions: '',
     templateFolder: '',
     framework: '',
     model: '',
@@ -219,6 +220,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     } else if (activeTab === 'solve-verifiable-goal-linear') {
       workflow_inputs = {
         goal: inputs.goal,
+        verification_instructions: inputs.verificationInstructions,
         num_strands: numStrands,
         max_experiments: maxExperiments,
         apply_expansions: applyExpansions || undefined,
@@ -385,17 +387,30 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                   )}
 
                   {activeTab === 'solve-verifiable-goal-linear' && (
-                    <div>
-                      <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Verifiable Goal</label>
-                      <textarea
-                        autoFocus
-                        required
-                        rows={8}
-                        value={inputs.goal}
-                        onChange={e => updateInput('goal', e.target.value)}
-                        placeholder="Describe the verifiable goal that you want me to solve..."
-                        className="w-full border-2 border-black p-4 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none transition-colors"
-                      />
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Verifiable Goal</label>
+                        <textarea
+                          autoFocus
+                          required
+                          rows={5}
+                          value={inputs.goal}
+                          onChange={e => updateInput('goal', e.target.value)}
+                          placeholder="Describe the verifiable goal that you want me to solve..."
+                          className="w-full border-2 border-black p-4 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Verification Instructions</label>
+                        <textarea
+                          required
+                          rows={5}
+                          value={inputs.verificationInstructions}
+                          onChange={e => updateInput('verificationInstructions', e.target.value)}
+                          placeholder="Provide instructions on how to verify that the goal has been achieved..."
+                          className="w-full border-2 border-black p-4 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none transition-colors"
+                        />
+                      </div>
                     </div>
                   )}
                 </div>
@@ -431,11 +446,10 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       </button>
 
                       {showTemplateDropdown && (
-                        <div ref={templateMenuRef} className={`absolute left-0 right-0 z-50 max-h-60 overflow-y-auto custom-scrollbar bg-white border-2 border-black ${
-                          openTemplateUpward 
-                            ? 'bottom-full mb-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]' 
-                            : 'top-full mt-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
-                        }`}>
+                        <div ref={templateMenuRef} className={`absolute left-0 right-0 z-50 max-h-60 overflow-y-auto custom-scrollbar bg-white border-2 border-black ${openTemplateUpward
+                          ? 'bottom-full mb-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
+                          : 'top-full mt-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
+                          }`}>
                           <button
                             type="button"
                             onClick={() => { updateInput('templateFolder', ''); setShowTemplateDropdown(false); }}

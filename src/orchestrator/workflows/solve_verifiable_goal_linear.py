@@ -153,8 +153,14 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
     def run(self, task: Task, run_step: Callable) -> None:
         goal = task.workflow_inputs.get("goal")
         assert goal, "Goal is required."
+        verification_instructions = task.workflow_inputs.get("verification_instructions")
+        assert verification_instructions, "Verification instructions are required."
+
         with open(os.path.join(task.env_folder, "goal.txt"), "w") as f:
             f.write(goal.strip() + "\n")
+
+        with open(os.path.join(task.env_folder, "verification_instructions.txt"), "w") as f:
+            f.write(verification_instructions.strip() + "\n")
 
         # Step 0: Summarize Title
         run_summarize_title(task, run_step, f"goal: {goal}")

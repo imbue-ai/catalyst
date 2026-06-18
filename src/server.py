@@ -234,7 +234,7 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
                 shutil.copyfileobj(file.file, buffer)
             inputs["file_path"] = f"tmp/import/{filename}"
 
-    summary_candidate = inputs.get("phenomenon") or inputs.get("idea") or ""
+    summary_candidate = inputs.get("phenomenon") or inputs.get("idea") or inputs.get("goal") or ""
     inputs["summary"] = summary_candidate
 
     task = Task(
