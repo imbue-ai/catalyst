@@ -99,10 +99,13 @@ class TestContextManager(unittest.TestCase):
                 "edit-theory",
                 "review-adherence",
                 "improve-adherence",
+                "interpret-result",
             )
             parent_theory_allowed_agents = parent_theory_required_agents + (
                 "run-experiment",
                 "support-idea",
+                "propose-experiment",
+                "execute-proposal",
             )
 
             if agent_type in parent_theory_allowed_agents:
@@ -156,14 +159,14 @@ class TestContextManager(unittest.TestCase):
         p_id = store_simple(
             "predict-experiments", "prediction", "predictions.md", parent=t_id
         )
-        i_id = store_simple(
-            "interpret-result", "interpretations", "interpretations.md"
+        t_parent_id = store_simple(
+            "interpret-result", "theory", "theory.md", parent=t_id
         )
         prop_id = store_simple(
             "propose-experiment", "proposal", "proposal.md"
         )
 
-        # Store a solution with parent_interpretations
+        # Store a solution with parent_theory
         d_sol = self.test_dir / "seed_solution"
         d_sol.mkdir(parents=True, exist_ok=True)
         (d_sol / "solution.md").write_text("Seed solution")
@@ -171,7 +174,7 @@ class TestContextManager(unittest.TestCase):
             "store_results",
             "--from_agent_type", "execute-proposal",
             "--from_folder", str(d_sol),
-            "--parent_interpretations", i_id,
+            "--parent_theory", t_id,
         )
 
         target_agents = [
@@ -195,11 +198,11 @@ class TestContextManager(unittest.TestCase):
             ("streamline-theory", {"--from_theory": t_id}),
             ("edit-theory", {"--from_theory": t_id}),
             ("write-different-theory", {"--from_theory": t_id}),
-            ("interpret-result", {"--from_interpretations": i_id, "--from_experiment": x_id}),
-            ("propose-experiment", {"--from_interpretations": i_id}),
+            ("interpret-result", {"--from_theory": t_parent_id, "--from_experiment": x_id}),
+            ("propose-experiment", {"--from_theory": t_parent_id}),
             ("rank-proposals", {"--from_proposal": prop_id}),
             ("execute-proposal", {"--from_proposal": prop_id}),
-            ("initialize-interpretations", {}),
+            ("initialize-theories", {}),
         ]
 
         for agent, flags in target_agents:
@@ -216,8 +219,8 @@ class TestContextManager(unittest.TestCase):
 
             self.run_cmd(*args)
             self.assertTrue(target_folder.is_dir())
-            # Basic sanity check: target folder should not be empty (unless initialize-interpretations)
-            if agent != "initialize-interpretations":
+            # Basic sanity check: target folder should not be empty (unless initialize-theories)
+            if agent != "initialize-theories":
                 self.assertTrue(any(target_folder.iterdir()))
 
     def test_transactions(self):

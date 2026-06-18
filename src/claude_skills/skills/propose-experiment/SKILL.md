@@ -1,7 +1,7 @@
 ---
 name: propose-experiment
 description: "Design and propose the next step: either a regular data-gathering experiment, literature search, or a concrete solution candidate."
-argument-hint: "interpretations log ID (e.g. I_20260616_123456_abcdef)"
+argument-hint: "theory ID (e.g. T_20260616_123456_abcdef)"
 ---
 
 # Propose Next Step
@@ -35,7 +35,7 @@ All experiment and verification files must be structured so they can run fully s
 ## Input
 Arguments: $ARGUMENTS
 
-The arguments contain an interpretations log ID (like `I_...`). Parse this ID from the arguments.
+The arguments contain a theory ID (like `T_...`). Parse this ID from the arguments.
 
 ## Folder Setup
 All commands must be run in the current working directory. Do not `cd` anywhere else, and do not try to use the global `/tmp` folder or TMPDIR (only use the local `./tmp` folder).
@@ -44,23 +44,23 @@ Set up two folders — one for the input context, one for your own output:
 - `CONTEXT_DIR`: `mktemp -d -p ./tmp propose-experiment-context-XXXX`
 - `OUTPUT_DIR`: `mktemp -d -p ./tmp propose-experiment-output-XXXX`
 
-Run this command to populate the context, which retrieves the interpretations log from the database:
+Run this command to populate the context, which retrieves the theory from the database:
 ```bash
 uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
     --for_agent_type propose-experiment \
     --target_folder <CONTEXT_DIR> \
-    --from_interpretations <I_ID>
+    --from_theory <T_ID>
 ```
 
-- `<CONTEXT_DIR>/interpretations/` — contains `interpretations.md` (read-only historical log).
+- `<CONTEXT_DIR>/theory/` — contains `theory.md` and optionally `interpretations_log.md` (read-only).
 - `<OUTPUT_DIR>/` — write your proposal files (`proposal.md`, and optional `script.py` / solution files) here.
 
 ---
 
 ## Execution Steps
 
-1. **Context Checkout**: Run the `create_context` bash command above to retrieve the interpretations log from the database.
-2. **Review Historical Log**: Read `<CONTEXT_DIR>/interpretations/interpretations.md` to identify knowledge gaps, uncertainties, or promising parameters.
+1. **Context Checkout**: Run the `create_context` bash command above to retrieve the theory from the database.
+2. **Review Current Research State**: Read `<CONTEXT_DIR>/theory/theory.md` and additionally `<CONTEXT_DIR>/theory/interpretations_log.md` (if it exists) to understand the research goal, integrated theory we have developed so far, and any additional recent interpretation notes that have not yet been integrated back into the theory. Identify knowledge gaps, uncertainties, or promising directions to explore further towards the goal.
 3. **Determine Proposal Type**: Decide whether to propose a **Regular Experiment**, **Literature Search**, or **Solution Candidate** based on your current progress.
 4. **Draft Proposal Document**: Write a document named `proposal.md` (this exact filename is required) in your `<OUTPUT_DIR>/`. Ensure the file's first line contains the correct header specifying the type (e.g. `# Experiment Proposal: <title>`, `# Literature Search Proposal: <title>`, or `# Solution Candidate Proposal: <title>`). Include:
    - **Motivation**: Why this step is important.
@@ -79,7 +79,7 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results \
        --from_agent_type propose-experiment \
        --from_folder <OUTPUT_DIR> \
-       --parent_interpretations <I_ID> \
+       --parent_theory <T_ID> \
        --metadata proposal_type=<type>
    ```
    Note down the returned proposal ID (e.g., `O_20260616_123456_abcdef`) as the result of this skill.

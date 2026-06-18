@@ -1,7 +1,7 @@
 ---
 name: interpret-result
-description: "Interpret the results of newly run experiments, literature searches, or solution candidates, and append the findings as new sections to the interpretations log."
-argument-hint: "interpretations log ID and one or more result IDs (e.g. I_20260616_123456_abcdef X_20260616_123456_abcdef L_20260616_123456_abcdef)"
+description: "Interpret the results of newly run experiments, literature searches, or solution candidates, and append the findings as new sections to the interpretations log inside the theory folder."
+argument-hint: "theory ID and one or more result IDs (e.g. T_20260616_123456_abcdef X_20260616_123456_abcdef L_20260616_123456_abcdef)"
 ---
 
 # Interpret Result
@@ -15,7 +15,7 @@ We are performing research to solve the goal described in the file `goal.txt`. A
 ## Input
 Arguments: $ARGUMENTS
 
-The arguments contain an interpretations log ID (like `I_...`) and one or more result IDs (like `X_...` for experiments, `L_...` for literature searches, or `U_...` for solution candidates). Parse all IDs from the arguments.
+The arguments contain a theory ID (like `T_...`) and one or more result IDs (like `X_...` for experiments, `L_...` for literature searches, or `U_...` for solution candidates). Parse all IDs from the arguments.
 
 ## Folder Setup
 All commands must be run in the current working directory. Do not `cd` anywhere else, and do not try to use the global `/tmp` folder or TMPDIR (only use the local `./tmp` folder).
@@ -24,28 +24,28 @@ Set up two folders — one for the input context, one for your own output:
 - `CONTEXT_DIR`: `mktemp -d -p ./tmp interpret-result-context-XXXX`
 - `OUTPUT_DIR`: `mktemp -d -p ./tmp interpret-result-output-XXXX`
 
-Run this command to populate the context, which retrieves the interpretations log and result artifacts from the database:
+Run this command to populate the context, which retrieves the theory and result artifacts from the database:
 ```bash
 uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
     --for_agent_type interpret-result \
     --target_folder <CONTEXT_DIR> \
-    --from_interpretations <I_ID> \
+    --from_theory <T_ID> \
     [--from_experiment <X_ID_1> --from_experiment <X_ID_2> ...] \
     [--from_literature <L_ID_1> --from_literature <L_ID_2> ...] \
     [--from_solution <U_ID_1> --from_solution <U_ID_2> ...]
 ```
 *Make sure to repeat the `--from_experiment`, `--from_literature`, and `--from_solution` flags for all corresponding IDs parsed from the arguments.*
 
-Initialize your output directory with the current interpretations log file:
+Initialize your output directory with the current theory folder files:
 ```bash
-cp -r "<CONTEXT_DIR>/interpretations/"* "<OUTPUT_DIR>/"
+cp -r "<CONTEXT_DIR>/theory/"* "<OUTPUT_DIR>/"
 ```
 
-- `<CONTEXT_DIR>/interpretations/` — contains `interpretations.md` (read-only historical log).
+- `<CONTEXT_DIR>/theory/` — contains `theory.md` and optionally `interpretations_log.md` (read-only historical logs).
 - `<CONTEXT_DIR>/results/experiments/<X_ID>/` — contains the experiment folder with `description.md` and all generated plots, logs, and CSV outputs (if experiment results were checked out).
 - `<CONTEXT_DIR>/results/literature/<L_ID>/` — contains the literature search results folder with `summary.md` (if literature results were checked out).
 - `<CONTEXT_DIR>/results/solutions/<U_ID>/` — contains the solution candidate folder with `solution.md` (if solution candidates were checked out).
-- `<OUTPUT_DIR>/` — contains `interpretations.md` which you will modify by appending exactly one new section for each input result.
+- `<OUTPUT_DIR>/` — contains `theory.md` (which you must leave completely unchanged) and optionally `interpretations_log.md` which you will modify or create to append exactly one new section for each input result.
 
 ## Obtaining cited experiment IDs
 Your inputs may cite specific experiment IDs (`X_...`). You can retrieve these experiments and their results by running:
@@ -59,8 +59,8 @@ This command will place the experiment description (`description.md`), Python sc
 
 ## Execution Steps
 
-1. **Context Checkout**: Run the `create_context` bash command above to retrieve the historical interpretations log and new results.
-2. **Review Historical Log**: Read `<CONTEXT_DIR>/interpretations/interpretations.md` to understand the research goal, previous findings and current context.
+1. **Context Checkout**: Run the `create_context` bash command above to retrieve the historical theory folder and new results.
+2. **Review Current Research State**: Read `<CONTEXT_DIR>/theory/theory.md` and additionally `<CONTEXT_DIR>/theory/interpretations_log.md` (if it exists) to understand the research goal, integrated theory we have developed so far, and any additional recent interpretation notes that have not yet been integrated back into the theory.
 3. **Locate and Review Results**:
    - **Experiments**: Check `<CONTEXT_DIR>/results/experiments/<X_ID>/`. Read `description.md` and carefully inspect the generated files (plots, CSVs, logs, etc.).
    - **Literature Searches**: Check `<CONTEXT_DIR>/results/literature/<L_ID>/`. Read `summary.md` to find the summarized literature findings and search insights.
@@ -73,12 +73,12 @@ This command will place the experiment description (`description.md`), Python sc
      - For an experiment: `## Experiment <X_ID>: <Title>`
      - For a literature search: `## Literature Search <L_ID>: <Title>`
      - For a solution candidate: `## Solution Candidate <U_ID>: <Title>`
-5. **Update Log**: Append these new sections to `<OUTPUT_DIR>/interpretations.md`.
-6. **Store Results**: Persist the updated interpretations log to the database:
+5. **Update Log**: Append these new sections to `<OUTPUT_DIR>/interpretations_log.md` (create the file if it does not exist, and only append to it, while leaving `<OUTPUT_DIR>/theory.md` unchanged).
+6. **Store Results**: Persist the updated theory folder to the database:
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results \
        --from_agent_type interpret-result \
        --from_folder <OUTPUT_DIR> \
-       --parent_interpretations <I_ID>
+       --parent_theory <T_ID>
    ```
-   *Replace `<I_ID>` with the ID of the input interpretations log, ensuring child-to-parent lineage mapping.*
+   *Replace `<T_ID>` with the ID of the input theory, ensuring child-to-parent lineage mapping.*

@@ -119,7 +119,7 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
         self.assertEqual(wf.name, "solve-verifiable-goal-linear")
         struct = wf.get_structure(task)
         self.assertEqual(struct[0]["stage"], "summarize-title")
-        self.assertEqual(struct[1]["stage"], "initialize-interpretations")
+        self.assertEqual(struct[1]["stage"], "initialize-theories")
         self.assertEqual(len(struct), 3)
 
     @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_summarize_title")
@@ -142,8 +142,8 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
         wf = SolveVerifiableGoalLinearWorkflow()
         mock_run_step = MagicMock()
 
-        # Step 1: Initialize Interpretations returns interpretations log IDs
-        mock_run_local.return_value = {"interpretations_ids": ["I_1", "I_2"]}
+        # Step 1: Initialize Theories returns theory IDs
+        mock_run_local.return_value = {"theory_ids": ["T_1", "T_2"]}
 
         # Configure mock_run_if_needed to return expected keys/dicts for different stages
         def run_step_side_effect(task, run_step, stage_name, prompt, category, **kwargs):
@@ -154,7 +154,7 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
             elif "execute-proposal" in stage_name:
                 return {"experiment_id": "X_exp"}
             elif "interpret-result" in stage_name:
-                return {"interpretations_id": "I_new"}
+                return {"theory_id": "T_new"}
             return {}
 
         mock_run_if_needed.side_effect = run_step_side_effect
@@ -189,8 +189,8 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
         wf = SolveVerifiableGoalLinearWorkflow()
         mock_run_step = MagicMock()
 
-        # Step 1: Initialize Interpretations returns interpretations log IDs
-        mock_run_local.return_value = {"interpretations_ids": ["I_1", "I_2"]}
+        # Step 1: Initialize Theories returns theory IDs
+        mock_run_local.return_value = {"theory_ids": ["T_1", "T_2"]}
 
         # Configure mock_run_if_needed: Propose returns O_prop, Rank returns empty lists
         def run_step_side_effect(task, run_step, stage_name, prompt, category, **kwargs):
@@ -229,7 +229,7 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
         wf = SolveVerifiableGoalLinearWorkflow()
         mock_run_step = MagicMock()
 
-        mock_run_local.return_value = {"interpretations_ids": ["I_1", "I_2"]}
+        mock_run_local.return_value = {"theory_ids": ["T_1", "T_2"]}
 
         # Propose fails to return expected key proposal_id (returns invalid_key instead)
         mock_run_if_needed.return_value = {"invalid_key": "some_value"}

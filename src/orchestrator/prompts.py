@@ -186,9 +186,9 @@ def get_summarize_research_prompt() -> str:
     )
 
 
-def get_propose_experiment_prompt(interpretations_id: str) -> str:
+def get_propose_experiment_prompt(theory_id: str) -> str:
     return (
-        f"Please run the propose-experiment skill for interpretations log ID: {interpretations_id}. "
+        f"Please run the propose-experiment skill for theory ID: {theory_id}. "
         "When you are done, return ONLY a JSON object with the key 'proposal_id'."
     )
 
@@ -212,9 +212,9 @@ def get_execute_proposal_prompt(proposal_id: str) -> str:
     )
 
 
-def get_interpret_result_prompt(interpretations_id: str, result_ids: list[str]) -> str:
+def get_interpret_result_prompt(theory_id: str, result_ids: list[str]) -> str:
     result_ids_str = " ".join(result_ids)
     return (
-        f"Please run the interpret-result skill for interpretations log ID: {interpretations_id} and result IDs: {result_ids_str}. "
-        "When you are done, return ONLY a JSON object with the key 'interpretations_id'."
+        f"Please run the interpret-result skill for theory ID: {theory_id} and result IDs: {result_ids_str}. "
+        "When you are done, return ONLY a JSON object with the key 'theory_id'."
     )

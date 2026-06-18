@@ -33,8 +33,8 @@ const CATEGORY_WORKFLOWS: Record<InputCategory, { id: WorkflowType, label: strin
 };
 
 export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTaskModalProps) {
-  const [inputCategory, setInputCategory] = useState<InputCategory>('phenomenon')
-  const [activeTab, setActiveTab] = useState<WorkflowType>('develop-theory')
+  const [inputCategory, setInputCategory] = useState<InputCategory>('goal')
+  const [activeTab, setActiveTab] = useState<WorkflowType>('solve-verifiable-goal-linear')
 
   const [showAdditional, setShowAdditional] = useState(false)
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false)
@@ -276,18 +276,18 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
             <div>
               <h3 className="text-sm font-black mb-4">Step 1: I have a...</h3>
               <div className="flex flex-col md:flex-row gap-4">
-                <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'phenomenon' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
-                  <div className="flex items-center gap-3">
-                    <input type="radio" checked={inputCategory === 'phenomenon'} onChange={() => handleCategoryChange('phenomenon')} />
-                    <Sparkles size={18} className="text-gray-600" />
-                    <span className="font-black text-sm">Phenomenon to Explain</span>
-                  </div>
-                </label>
                 <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'goal' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
                   <div className="flex items-center gap-3">
                     <input type="radio" checked={inputCategory === 'goal'} onChange={() => handleCategoryChange('goal')} />
                     <Goal size={18} className="text-gray-600" />
                     <span className="font-black text-sm">Verifiable Goal</span>
+                  </div>
+                </label>
+                <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'phenomenon' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
+                  <div className="flex items-center gap-3">
+                    <input type="radio" checked={inputCategory === 'phenomenon'} onChange={() => handleCategoryChange('phenomenon')} />
+                    <Sparkles size={18} className="text-gray-600" />
+                    <span className="font-black text-sm">Phenomenon to Explain</span>
                   </div>
                 </label>
                 <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'idea' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>

@@ -34,7 +34,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
 
         structure = [
             {"type": "step", "stage": "summarize-title"},
-            {"type": "step", "stage": "initialize-interpretations"},
+            {"type": "step", "stage": "initialize-theories"},
         ]
 
         if max_iterations > 0:
@@ -104,27 +104,27 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
         # Step 0: Summarize Title
         run_summarize_title(task, run_step, f"goal: {goal}")
 
-        # Step 1: Initialize Interpretations
+        # Step 1: Initialize Theories
         num_strands = int(task.workflow_inputs.get("num_strands", 3))
 
-        def _initialize_interpretations() -> Dict[str, Any]:
+        def _initialize_theories() -> Dict[str, Any]:
             abs_env_folder = os.path.abspath(task.env_folder)
             tmp_dir = os.path.join(abs_env_folder, "tmp")
             os.makedirs(tmp_dir, exist_ok=True)
 
-            interpretations_ids = []
+            theory_ids = []
             for idx in range(num_strands):
                 # Create unique output folder under tmp
                 output_dir = tempfile.mkdtemp(
-                    prefix=f"initialize-interpretations-output-strand-{idx + 1}-",
+                    prefix=f"initialize-theories-output-strand-{idx + 1}-",
                     dir=tmp_dir,
                 )
 
-                # Create interpretations.md
-                interpretations_file = os.path.join(output_dir, "interpretations.md")
-                with open(interpretations_file, "w", encoding="utf-8") as f:
+                # Create theory.md
+                theory_file = os.path.join(output_dir, "theory.md")
+                with open(theory_file, "w", encoding="utf-8") as f:
                     f.write(
-                        "# Interpretations log\n**Research goal:** "
+                        "# Starter Theory\n**Research goal:** "
                         + goal.strip()
                         + "\n\n"
                     )
@@ -135,34 +135,34 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                     [
                         "store_results",
                         "--from_agent_type",
-                        "initialize-interpretations",
+                        "initialize-theories",
                         "--from_folder",
                         output_dir,
                     ],
                 )
 
-                # Extract interpretations log ID from output
+                # Extract theory ID from output
                 match = re.search(r"Result stored with ID: (\S+)", out)
                 if not match:
                     raise Exception(f"Failed to parse stored results ID. Output: {out}")
-                interpretations_ids.append(match.group(1))
+                theory_ids.append(match.group(1))
 
-            return {"interpretations_ids": interpretations_ids}
+            return {"theory_ids": theory_ids}
 
         init_data = run_local_step_if_needed(
             task,
-            "initialize-interpretations",
-            _initialize_interpretations,
+            "initialize-theories",
+            _initialize_theories,
         )
 
-        interpretations_ids = []
+        theory_ids = []
         if init_data:
-            interpretations_ids = init_data.get("interpretations_ids") or []
+            theory_ids = init_data.get("theory_ids") or []
 
-        if not interpretations_ids:
+        if not theory_ids:
             if init_data and init_data.get("_canceled"):
                 return
-            raise Exception("Initialization failed to return interpretation log IDs.")
+            raise Exception("Initialization failed to return theory IDs.")
 
         max_iterations = int(task.workflow_inputs.get("max_iterations", 10))
         num_executions_per_iteration = int(
@@ -171,23 +171,23 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
         execution_cost = int(task.workflow_inputs.get("execution_cost", 1))
 
         for i in range(1, max_iterations + 1):
-            # 1. Propose Experiments (in parallel for each of the n interpretations log IDs)
+            # 1. Propose Experiments (in parallel for each of the n theory IDs)
             proposal_results = {}
 
-            def run_propose_experiment(strand_idx: int, interpretations_id: str):
+            def run_propose_experiment(strand_idx: int, theory_id: str):
                 stage_name = f"propose-experiment-{i}-{strand_idx + 1}"
                 res = run_step_if_needed(
                     task,
                     run_step,
                     stage_name,
-                    get_propose_experiment_prompt(interpretations_id),
+                    get_propose_experiment_prompt(theory_id),
                     StepCategory.THEORY_WRITING,
                 )
                 proposal_results[strand_idx] = res
 
             with ParallelStepRunner() as runner:
-                for idx, interpretations_id in enumerate(interpretations_ids):
-                    runner.add(run_propose_experiment, idx, interpretations_id)
+                for idx, theory_id in enumerate(theory_ids):
+                    runner.add(run_propose_experiment, idx, theory_id)
 
             # Check if any propose-experiment step was canceled
             is_canceled = False
@@ -301,23 +301,23 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                         f"Failed to execute proposal {selected_proposals[idx]} in iteration {i}."
                     )
 
-            # 4. Interpret Results (in parallel for each of the n interpretation logs)
+            # 4. Interpret Results (in parallel for each of the n theories)
             interpretation_results = {}
 
-            def run_interpret_result(strand_idx: int, interpretations_id: str):
+            def run_interpret_result(strand_idx: int, theory_id: str):
                 stage_name = f"interpret-result-{i}-{strand_idx + 1}"
                 res = run_step_if_needed(
                     task,
                     run_step,
                     stage_name,
-                    get_interpret_result_prompt(interpretations_id, result_ids),
+                    get_interpret_result_prompt(theory_id, result_ids),
                     StepCategory.THEORY_WRITING,
                 )
                 interpretation_results[strand_idx] = res
 
             with ParallelStepRunner() as runner:
-                for idx, interpretations_id in enumerate(interpretations_ids):
-                    runner.add(run_interpret_result, idx, interpretations_id)
+                for idx, theory_id in enumerate(theory_ids):
+                    runner.add(run_interpret_result, idx, theory_id)
 
             is_canceled = False
             for idx in range(num_strands):
@@ -328,19 +328,19 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
             if is_canceled:
                 continue
 
-            # Extract new interpretation log IDs
-            new_interpretations_ids = []
+            # Extract new theory IDs
+            new_theory_ids = []
             for idx in range(num_strands):
                 res = interpretation_results.get(idx)
-                new_i_id = res.get("interpretations_id") if res else None
-                new_interpretations_ids.append(new_i_id)
+                new_t_id = res.get("theory_id") if res else None
+                new_theory_ids.append(new_t_id)
 
-            if len(new_interpretations_ids) != num_strands or any(
-                x is None for x in new_interpretations_ids
+            if len(new_theory_ids) != num_strands or any(
+                x is None for x in new_theory_ids
             ):
                 raise Exception(
-                    f"Failed to generate all {num_strands} interpretations in iteration {i}."
+                    f"Failed to generate all {num_strands} theories in iteration {i}."
                 )
 
-            # Update working interpretations IDs directly for the next iteration
-            interpretations_ids = new_interpretations_ids
+            # Update working theory IDs directly for the next iteration
+            theory_ids = new_theory_ids
