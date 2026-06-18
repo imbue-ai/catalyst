@@ -54,7 +54,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                 iter_struct = [
                     {
                         "type": "parallel",
-                        "name": "Propose Experiment",
+                        "name": "Propose Experiments",
                         "stages": [
                             f"propose-experiment-{i}-{j}"
                             for j in range(1, num_strands + 1)
@@ -63,12 +63,12 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                     {"type": "step", "stage": f"rank-proposals-{i}"},
                     {
                         "type": "parallel",
-                        "name": "Execute Proposal",
+                        "name": "Execute Proposals",
                         "stages": execute_stages,
                     },
                     {
                         "type": "parallel",
-                        "name": "Interpret Result",
+                        "name": "Interpret Results",
                         "stages": interpret_stages,
                     },
                 ]
@@ -171,7 +171,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
         execution_cost = int(task.workflow_inputs.get("execution_cost", 1))
 
         for i in range(1, max_iterations + 1):
-            # 1. Propose Experiment (in parallel for each of the n interpretations log IDs)
+            # 1. Propose Experiments (in parallel for each of the n interpretations log IDs)
             proposal_results = {}
 
             def run_propose_experiment(strand_idx: int, interpretations_id: str):
@@ -251,7 +251,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                 logger.info("Selected proposals list is empty. Completing workflow.")
                 return
 
-            # 3. Execute Proposal (parallel step)
+            # 3. Execute Proposals (parallel step)
             execute_results = {}
 
             def run_execute_proposal(prop_idx: int, proposal_id: str):
@@ -301,7 +301,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                         f"Failed to execute proposal {selected_proposals[idx]} in iteration {i}."
                     )
 
-            # 4. Interpret Result (in parallel for each of the n interpretation logs)
+            # 4. Interpret Results (in parallel for each of the n interpretation logs)
             interpretation_results = {}
 
             def run_interpret_result(strand_idx: int, interpretations_id: str):
