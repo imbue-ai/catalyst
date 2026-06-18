@@ -84,10 +84,10 @@ def extract_review_id_fallback(res: Any) -> str:
     return None
 
 
-class SolveGoalLinearWorkflow(Workflow):
+class SolveVerifiableGoalLinearWorkflow(Workflow):
     @property
     def name(self) -> str:
-        return "solve-goal-linear"
+        return "solve-verifiable-goal-linear"
 
     def get_structure(self, task: Task) -> List[Dict[str, Any]]:
         num_strands = int(task.workflow_inputs.get("num_strands", 5))
