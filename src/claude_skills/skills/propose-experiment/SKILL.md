@@ -11,8 +11,8 @@ You must select and propose one of three types of proposals based on your curren
 
 1. **Regular Experiment**: 
    - Use this to gather data, establish baselines, or test assumptions when more exploration is needed.
-   - Propose a single, focused experiment that resolves a key knowledge gap, validates an assumption or hypothesis, or tests a promising optimization in the interpretations log.
-   - At the very beginning of experimentation (i.e. if the current interpretations log is still close to empty), it might be best to establish some baselines before trying to explore paths towards the goal.
+   - Propose a single, focused experiment that resolves a key knowledge gap, validates an assumption or hypothesis, or tests a promising optimization in the current theory / interpretations log.
+   - At the very beginning of experimentation (i.e. if the current theory and interpretations log is still ~empty), it might be best to establish some baselines before trying to explore paths towards the goal.
    - Generally, try to propose an experiment that provides valuable information for moving towards the optimization goal *in the long run*. Notably, this doesn't mean that each individual experiment needs to move towards the goal directly. Rather, prioritize experiments that facilitate learning and exploration and which may help you later on by testing different directions, key assumptions, or ruling out unpromising paths.
    - **Required Heading in `proposal.md`**: `# Experiment Proposal: <title>`
    - **Output Files**: `proposal.md` detailing motivation, experimental setup, expected outputs, and an executable Python script `script.py` set up to run the experiment.
@@ -23,7 +23,7 @@ You must select and propose one of three types of proposals based on your curren
    - **Output Files**: Only `proposal.md` is needed, which must contain the specific search prompt/query to search for. No `script.py` is needed.
 
 3. **Solution Candidate**: 
-   - When you have gathered enough understanding in the interpretations log to take a stab at solving the goal, consider emitting a solution proposal.
+   - When you have gathered enough understanding in the current theory to take a stab at solving the goal, consider emitting a solution proposal.
    - **Required Heading in `proposal.md`**: `# Solution Candidate Proposal: <title>`
    - **Output Files**: `proposal.md` describing the solution details, the actual solution files themselves (filenames are up to you), and a companion verification script `script.py` containing code to *verify* the solution.
    - **Verification Instructions**: You must read the `verification_instructions.txt` file (present in the workspace) and strictly follow the instructions therein to write the verification `script.py`.
