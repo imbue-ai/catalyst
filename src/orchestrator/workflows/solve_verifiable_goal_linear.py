@@ -40,6 +40,17 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
         if max_experiments > 0:
             iteration_structures = {}
             for i in range(1, max_experiments + 1):
+                execute_stages = [
+                    s.stage
+                    for s in task.steps
+                    if s.stage.startswith(f"execute-proposal-{i}-")
+                ]
+                interpret_stages = [
+                    s.stage
+                    for s in task.steps
+                    if s.stage.startswith(f"interpret-result-{i}-")
+                ]
+
                 iter_struct = [
                     {
                         "type": "parallel",
@@ -53,18 +64,12 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                     {
                         "type": "parallel",
                         "name": "Execute Proposal",
-                        "stages": [
-                            f"execute-proposal-{i}-{j}"
-                            for j in range(1, num_strands + num_strands + 1)
-                        ],
+                        "stages": execute_stages,
                     },
                     {
                         "type": "parallel",
                         "name": "Interpret Result",
-                        "stages": [
-                            f"interpret-result-{i}-{j}"
-                            for j in range(1, num_strands + 1)
-                        ],
+                        "stages": interpret_stages,
                     },
                 ]
                 iteration_structures[str(i)] = iter_struct
@@ -72,7 +77,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
             structure.append(
                 {
                     "type": "loop",
-                    "name": "Research Loop",
+                    "name": "Solve Goal Loop",
                     "iterations": max_experiments,
                     "iteration_structures": iteration_structures,
                 }
@@ -223,10 +228,16 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
             # Parse rankings and solution candidates
             rankings = rank_data.get("rankings") if rank_data else None
             if rankings is None or not isinstance(rankings, list):
-                raise Exception(f"rank-proposals failed to return a list of rankings in iteration {i}.")
-            solution_candidates = rank_data.get("solution_candidates") if rank_data else None
+                raise Exception(
+                    f"rank-proposals failed to return a list of rankings in iteration {i}."
+                )
+            solution_candidates = (
+                rank_data.get("solution_candidates") if rank_data else None
+            )
             if solution_candidates is None or not isinstance(solution_candidates, list):
-                raise Exception(f"rank-proposals failed to return a list of solution_candidates in iteration {i}.")
+                raise Exception(
+                    f"rank-proposals failed to return a list of solution_candidates in iteration {i}."
+                )
 
             # Merge top standard rankings with all solution candidates, removing duplicates preserving order
             seen = set()
@@ -286,7 +297,9 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                             f"execute-proposal-{i}-{idx + 1} did not return experiment_id, literature_id, or solution_id. Result: {res}"
                         )
                 else:
-                    raise Exception(f"Failed to execute proposal {selected_proposals[idx]} in iteration {i}.")
+                    raise Exception(
+                        f"Failed to execute proposal {selected_proposals[idx]} in iteration {i}."
+                    )
 
             # 4. Interpret Result (in parallel for each of the n interpretation logs)
             interpretation_results = {}
