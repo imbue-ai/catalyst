@@ -11,7 +11,9 @@ import {
   DEFAULT_CORRECTNESS_WEIGHT,
   DEFAULT_POWER_WEIGHT,
   DEFAULT_ADHERENCE_WEIGHT,
-  DEFAULT_NUM_STRANDS
+  DEFAULT_NUM_STRANDS,
+  DEFAULT_NUM_EXECUTIONS_PER_ITERATION,
+  DEFAULT_EXECUTION_COST
 } from '../constants'
 
 export function useWorkflowParams() {
@@ -25,6 +27,8 @@ export function useWorkflowParams() {
   const [numExtraScores, setNumExtraScores] = useState(DEFAULT_NUM_EXTRA_SCORES)
   const [applyExpansions, setApplyExpansions] = useState('')
   const [numStrands, setNumStrands] = useState(DEFAULT_NUM_STRANDS)
+  const [numExecutionsPerIteration, setNumExecutionsPerIteration] = useState(DEFAULT_NUM_EXECUTIONS_PER_ITERATION)
+  const [executionCost, setExecutionCost] = useState(DEFAULT_EXECUTION_COST)
 
   const [correctnessWeight, setCorrectnessWeight] = useState(DEFAULT_CORRECTNESS_WEIGHT)
   const [powerWeight, setPowerWeight] = useState(DEFAULT_POWER_WEIGHT)
@@ -52,6 +56,10 @@ export function useWorkflowParams() {
     setApplyExpansions,
     numStrands,
     setNumStrands,
+    numExecutionsPerIteration,
+    setNumExecutionsPerIteration,
+    executionCost,
+    setExecutionCost,
     correctnessWeight,
     setCorrectnessWeight,
     powerWeight,

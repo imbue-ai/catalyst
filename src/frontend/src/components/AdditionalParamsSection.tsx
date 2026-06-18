@@ -7,6 +7,8 @@ interface AdditionalParamsSectionProps {
   showApplyExpansions?: boolean;
   showScoringWeights?: boolean;
   showNumStrands?: boolean;
+  showNumExecutionsPerIteration?: boolean;
+  showExecutionCost?: boolean;
 
   numRootTheories?: number;
   setNumRootTheories?: (v: number) => void;
@@ -51,6 +53,12 @@ interface AdditionalParamsSectionProps {
   numStrands?: number;
   setNumStrands?: (v: number) => void;
 
+  numExecutionsPerIteration?: number;
+  setNumExecutionsPerIteration?: (v: number) => void;
+
+  executionCost?: number;
+  setExecutionCost?: (v: number) => void;
+
   // Option to restrict widths like in CreateAddonModal (e.g., md:w-1/3)
   useRestrictedWidths?: boolean;
   children?: React.ReactNode;
@@ -63,6 +71,8 @@ export function AdditionalParamsSection({
   showApplyExpansions,
   showScoringWeights,
   showNumStrands,
+  showNumExecutionsPerIteration,
+  showExecutionCost,
 
   numRootTheories,
   setNumRootTheories,
@@ -106,6 +116,12 @@ export function AdditionalParamsSection({
 
   numStrands,
   setNumStrands,
+
+  numExecutionsPerIteration,
+  setNumExecutionsPerIteration,
+
+  executionCost,
+  setExecutionCost,
 
   useRestrictedWidths = false,
   children,
@@ -158,6 +174,30 @@ export function AdditionalParamsSection({
             type="number" min="1" max="10" required
             value={numStrands}
             onChange={e => setNumStrands(parseInt(e.target.value, 10))}
+            className={inputClass}
+          />
+        </div>
+      )}
+
+      {showNumExecutionsPerIteration && setNumExecutionsPerIteration && (
+        <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+          <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Number of Executions per Iteration</label>
+          <input
+            type="number" min="1" max="10" required
+            value={numExecutionsPerIteration}
+            onChange={e => setNumExecutionsPerIteration(parseInt(e.target.value, 10))}
+            className={inputClass}
+          />
+        </div>
+      )}
+
+      {showExecutionCost && setExecutionCost && (
+        <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+          <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Execution Cost</label>
+          <input
+            type="number" min="1" max="5" required
+            value={executionCost}
+            onChange={e => setExecutionCost(parseInt(e.target.value, 10))}
             className={inputClass}
           />
         </div>

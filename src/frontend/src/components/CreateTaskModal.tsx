@@ -113,6 +113,10 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     setApplyExpansions,
     numStrands,
     setNumStrands,
+    numExecutionsPerIteration,
+    setNumExecutionsPerIteration,
+    executionCost,
+    setExecutionCost,
     correctnessWeight,
     setCorrectnessWeight,
     powerWeight,
@@ -223,6 +227,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         verification_instructions: inputs.verificationInstructions,
         num_strands: numStrands,
         max_experiments: maxExperiments,
+        num_executions_per_iteration: numExecutionsPerIteration,
+        execution_cost: executionCost,
         apply_expansions: applyExpansions || undefined,
         generate_intermediate_research_summaries: generateIntermediateResearchSummaries
       }
@@ -514,6 +520,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         showMaxRefinements={activeTab === 'develop-theory-linear' || activeTab === 'refine-theory-idea-linear'}
                         showMaxExperiments={activeTab === 'solve-verifiable-goal-linear'}
                         showNumStrands={activeTab === 'solve-verifiable-goal-linear'}
+                        showNumExecutionsPerIteration={activeTab === 'solve-verifiable-goal-linear'}
+                        showExecutionCost={activeTab === 'solve-verifiable-goal-linear'}
                         showEvolveParams={isEvolve}
                         showApplyExpansions={!isImport}
                         showGenerateIntermediateResearchSummaries={!isImport}
@@ -537,6 +545,10 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         setApplyExpansions={setApplyExpansions}
                         numStrands={numStrands}
                         setNumStrands={setNumStrands}
+                        numExecutionsPerIteration={numExecutionsPerIteration}
+                        setNumExecutionsPerIteration={setNumExecutionsPerIteration}
+                        executionCost={executionCost}
+                        setExecutionCost={setExecutionCost}
                         showScoringWeights={isEvolve}
                         correctnessWeight={correctnessWeight}
                         setCorrectnessWeight={setCorrectnessWeight}

@@ -157,7 +157,7 @@ class TestContextManager(unittest.TestCase):
             "predict-experiments", "prediction", "predictions.md", parent=t_id
         )
         i_id = store_simple(
-            "interpret-experiment", "interpretations", "interpretations.md"
+            "interpret-result", "interpretations", "interpretations.md"
         )
         prop_id = store_simple(
             "propose-experiment", "proposal", "proposal.md"
@@ -195,9 +195,7 @@ class TestContextManager(unittest.TestCase):
             ("streamline-theory", {"--from_theory": t_id}),
             ("edit-theory", {"--from_theory": t_id}),
             ("write-different-theory", {"--from_theory": t_id}),
-            ("interpret-experiment", {"--from_interpretations": i_id, "--from_experiment": x_id}),
-            ("review-interpretations", {"--from_interpretations": i_id}),
-            ("refine-interpretations", {"--from_interpretations": i_id, "--from_review": r_id}),
+            ("interpret-result", {"--from_interpretations": i_id, "--from_experiment": x_id}),
             ("propose-experiment", {"--from_interpretations": i_id}),
             ("rank-proposals", {"--from_proposal": prop_id}),
             ("execute-proposal", {"--from_proposal": prop_id}),

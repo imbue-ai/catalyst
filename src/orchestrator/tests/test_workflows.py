@@ -146,19 +146,15 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
         mock_run_local.return_value = {"interpretations_ids": ["I_1", "I_2"]}
 
         # Configure mock_run_if_needed to return expected keys/dicts for different stages
-        def run_step_side_effect(task, run_step, stage_name, prompt, category):
+        def run_step_side_effect(task, run_step, stage_name, prompt, category, **kwargs):
             if "propose-experiment" in stage_name:
                 return {"proposal_id": "O_prop"}
             elif "rank-proposals" in stage_name:
-                return {"rankings": ["O_prop"]}
+                return {"rankings": ["O_prop"], "solution_candidates": []}
             elif "execute-proposal" in stage_name:
                 return {"experiment_id": "X_exp"}
-            elif "interpret-experiment" in stage_name:
+            elif "interpret-result" in stage_name:
                 return {"interpretations_id": "I_new"}
-            elif "review-interpretations" in stage_name:
-                return {"review_id": "R_rev"}
-            elif "refine-interpretations" in stage_name:
-                return {"interpretations_id": "I_refined"}
             return {}
 
         mock_run_if_needed.side_effect = run_step_side_effect
@@ -196,12 +192,12 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
         # Step 1: Initialize Interpretations returns interpretations log IDs
         mock_run_local.return_value = {"interpretations_ids": ["I_1", "I_2"]}
 
-        # Configure mock_run_if_needed: Propose returns O_prop, Rank returns empty list
-        def run_step_side_effect(task, run_step, stage_name, prompt, category):
+        # Configure mock_run_if_needed: Propose returns O_prop, Rank returns empty lists
+        def run_step_side_effect(task, run_step, stage_name, prompt, category, **kwargs):
             if "propose-experiment" in stage_name:
                 return {"proposal_id": "O_prop"}
             elif "rank-proposals" in stage_name:
-                return {"rankings": []}
+                return {"rankings": [], "solution_candidates": []}
             return {}
 
         mock_run_if_needed.side_effect = run_step_side_effect

@@ -17,9 +17,7 @@ from orchestrator.prompts import (
     get_propose_experiment_prompt,
     get_rank_proposals_prompt,
     get_execute_proposal_prompt,
-    get_interpret_experiment_prompt,
-    get_review_interpretations_prompt,
-    get_refine_interpretations_prompt,
+    get_interpret_result_prompt,
 )
 
 logger = logging.getLogger(__name__)
@@ -52,28 +50,19 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                         ],
                     },
                     {"type": "step", "stage": f"rank-proposals-{i}"},
-                    {"type": "step", "stage": f"execute-proposal-{i}"},
                     {
                         "type": "parallel",
-                        "name": "Interpret Experiment",
+                        "name": "Execute Proposal",
                         "stages": [
-                            f"interpret-experiment-{i}-{j}"
-                            for j in range(1, num_strands + 1)
+                            f"execute-proposal-{i}-{j}"
+                            for j in range(1, num_strands + num_strands + 1)
                         ],
                     },
                     {
                         "type": "parallel",
-                        "name": "Review Interpretations",
+                        "name": "Interpret Result",
                         "stages": [
-                            f"review-interpretations-{i}-{j}"
-                            for j in range(1, num_strands + 1)
-                        ],
-                    },
-                    {
-                        "type": "parallel",
-                        "name": "Refine Interpretations",
-                        "stages": [
-                            f"refine-interpretations-{i}-{j}"
+                            f"interpret-result-{i}-{j}"
                             for j in range(1, num_strands + 1)
                         ],
                     },
@@ -171,6 +160,10 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
             raise Exception("Initialization failed to return interpretation log IDs.")
 
         max_experiments = int(task.workflow_inputs.get("max_experiments", 3))
+        num_executions_per_iteration = int(
+            task.workflow_inputs.get("num_executions_per_iteration", 1)
+        )
+        execution_cost = int(task.workflow_inputs.get("execution_cost", 1))
 
         for i in range(1, max_experiments + 1):
             # 1. Propose Experiment (in parallel for each of the n interpretations log IDs)
@@ -227,50 +220,91 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
             if rank_data and rank_data.get("_canceled"):
                 continue
 
-            # Parse ranking and select the best proposal ID
+            # Parse rankings and solution candidates
             rankings = rank_data.get("rankings") if rank_data else None
             if rankings is None or not isinstance(rankings, list):
                 raise Exception(f"rank-proposals failed to return a list of rankings in iteration {i}.")
-            if not rankings:
-                logger.info("Rankings are empty. Completing workflow.")
+            solution_candidates = rank_data.get("solution_candidates") if rank_data else None
+            if solution_candidates is None or not isinstance(solution_candidates, list):
+                raise Exception(f"rank-proposals failed to return a list of solution_candidates in iteration {i}.")
+
+            # Merge top standard rankings with all solution candidates, removing duplicates preserving order
+            seen = set()
+            selected_proposals = []
+            for p in rankings[:num_executions_per_iteration] + solution_candidates:
+                if p not in seen:
+                    seen.add(p)
+                    selected_proposals.append(p)
+
+            if not selected_proposals:
+                logger.info("Selected proposals list is empty. Completing workflow.")
                 return
-            best_proposal_id = rankings[0]
 
-            # 3. Execute Proposal (sequential step)
-            execute_data = run_step_if_needed(
-                task,
-                run_step,
-                f"execute-proposal-{i}",
-                get_execute_proposal_prompt(best_proposal_id),
-                StepCategory.MISC,
-            )
+            # 3. Execute Proposal (parallel step)
+            execute_results = {}
 
-            if execute_data and execute_data.get("_canceled"):
-                continue
-
-            experiment_id = execute_data.get("experiment_id") if execute_data else None
-            if not experiment_id:
-                raise Exception(
-                    f"Failed to execute proposal {best_proposal_id} in iteration {i}."
-                )
-
-            # 4. Interpret Experiment (in parallel for each of the n interpretation logs)
-            interpretation_results = {}
-
-            def run_interpret_experiment(strand_idx: int, interpretations_id: str):
-                stage_name = f"interpret-experiment-{i}-{strand_idx + 1}"
+            def run_execute_proposal(prop_idx: int, proposal_id: str):
+                stage_name = f"execute-proposal-{i}-{prop_idx + 1}"
                 res = run_step_if_needed(
                     task,
                     run_step,
                     stage_name,
-                    get_interpret_experiment_prompt(interpretations_id, experiment_id),
+                    get_execute_proposal_prompt(proposal_id),
+                    StepCategory.MISC,
+                    cost=execution_cost,
+                )
+                execute_results[prop_idx] = res
+
+            with ParallelStepRunner() as runner:
+                for idx, proposal_id in enumerate(selected_proposals):
+                    runner.add(run_execute_proposal, idx, proposal_id)
+
+            # Check if any execute-proposal step was canceled
+            is_canceled = False
+            for idx in range(len(selected_proposals)):
+                res = execute_results.get(idx)
+                if res and res.get("_canceled"):
+                    is_canceled = True
+                    break
+            if is_canceled:
+                continue
+
+            # Extract result IDs (experiment_id, literature_id, or solution_id)
+            result_ids = []
+            for idx in range(len(selected_proposals)):
+                res = execute_results.get(idx)
+                if res:
+                    ret_id = (
+                        res.get("experiment_id")
+                        or res.get("literature_id")
+                        or res.get("solution_id")
+                    )
+                    if ret_id:
+                        result_ids.append(ret_id)
+                    else:
+                        raise Exception(
+                            f"execute-proposal-{i}-{idx + 1} did not return experiment_id, literature_id, or solution_id. Result: {res}"
+                        )
+                else:
+                    raise Exception(f"Failed to execute proposal {selected_proposals[idx]} in iteration {i}.")
+
+            # 4. Interpret Result (in parallel for each of the n interpretation logs)
+            interpretation_results = {}
+
+            def run_interpret_result(strand_idx: int, interpretations_id: str):
+                stage_name = f"interpret-result-{i}-{strand_idx + 1}"
+                res = run_step_if_needed(
+                    task,
+                    run_step,
+                    stage_name,
+                    get_interpret_result_prompt(interpretations_id, result_ids),
                     StepCategory.THEORY_WRITING,
                 )
                 interpretation_results[strand_idx] = res
 
             with ParallelStepRunner() as runner:
                 for idx, interpretations_id in enumerate(interpretations_ids):
-                    runner.add(run_interpret_experiment, idx, interpretations_id)
+                    runner.add(run_interpret_result, idx, interpretations_id)
 
             is_canceled = False
             for idx in range(num_strands):
@@ -295,95 +329,5 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                     f"Failed to generate all {num_strands} interpretations in iteration {i}."
                 )
 
-            # Update working interpretations IDs
+            # Update working interpretations IDs directly for the next iteration
             interpretations_ids = new_interpretations_ids
-
-            # 5. Review Interpretations (in parallel for each of the n interpretations log IDs)
-            review_results = {}
-
-            def run_review_interpretations(strand_idx: int, interpretations_id: str):
-                stage_name = f"review-interpretations-{i}-{strand_idx + 1}"
-                res = run_step_if_needed(
-                    task,
-                    run_step,
-                    stage_name,
-                    get_review_interpretations_prompt(interpretations_id),
-                    StepCategory.REVIEW,
-                )
-                review_results[strand_idx] = res
-
-            with ParallelStepRunner() as runner:
-                for idx, interpretations_id in enumerate(interpretations_ids):
-                    runner.add(run_review_interpretations, idx, interpretations_id)
-
-            is_canceled = False
-            for idx in range(num_strands):
-                res = review_results.get(idx)
-                if res and res.get("_canceled"):
-                    is_canceled = True
-                    break
-            if is_canceled:
-                continue
-
-            # Extract review IDs
-            review_ids = []
-            for idx in range(num_strands):
-                res = review_results.get(idx)
-                r_id = res.get("review_id") if res else None
-                review_ids.append(r_id)
-
-            if len(review_ids) != num_strands or any(r is None for r in review_ids):
-                raise Exception(
-                    f"Failed to generate all {num_strands} reviews in iteration {i}."
-                )
-
-            # 6. Refine Interpretations (in parallel for each of the n interpretations log IDs)
-            refinement_results = {}
-
-            def run_refine_interpretations(
-                strand_idx: int, interpretations_id: str, review_id: str
-            ):
-                stage_name = f"refine-interpretations-{i}-{strand_idx + 1}"
-                res = run_step_if_needed(
-                    task,
-                    run_step,
-                    stage_name,
-                    get_refine_interpretations_prompt(interpretations_id, review_id),
-                    StepCategory.THEORY_WRITING,
-                )
-                refinement_results[strand_idx] = res
-
-            with ParallelStepRunner() as runner:
-                for idx in range(num_strands):
-                    runner.add(
-                        run_refine_interpretations,
-                        idx,
-                        interpretations_ids[idx],
-                        review_ids[idx],
-                    )
-
-            is_canceled = False
-            for idx in range(num_strands):
-                res = refinement_results.get(idx)
-                if res and res.get("_canceled"):
-                    is_canceled = True
-                    break
-            if is_canceled:
-                continue
-
-            # Extract refined interpretations log IDs
-            refined_interpretations_ids = []
-            for idx in range(num_strands):
-                res = refinement_results.get(idx)
-                ref_i_id = res.get("interpretations_id") if res else None
-                refined_interpretations_ids.append(ref_i_id)
-
-            if len(refined_interpretations_ids) != num_strands or any(
-                x is None for x in refined_interpretations_ids
-            ):
-                raise Exception(
-                    f"Failed to generate all {num_strands} refined interpretations in iteration {i}."
-                )
-
-            # Update interpretations log IDs for the next iteration
-            interpretations_ids = refined_interpretations_ids
