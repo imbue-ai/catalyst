@@ -137,9 +137,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
                 theory_file = os.path.join(output_dir, "theory.md")
                 with open(theory_file, "w", encoding="utf-8") as f:
                     f.write(
-                        "# Starter Theory\n**Research goal:** "
-                        + goal.strip()
-                        + "\n\n"
+                        "# Starter Theory\n**Research goal:** " + goal.strip() + "\n\n"
                     )
 
                 # Store results using run_context_manager in a subprocess
@@ -179,7 +177,7 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
 
         max_iterations = int(task.workflow_inputs.get("max_iterations", 10))
         num_executions_per_iteration = int(
-            task.workflow_inputs.get("num_executions_per_iteration", 1)
+            task.workflow_inputs.get("num_executions_per_iteration", 2)
         )
         execution_cost = int(task.workflow_inputs.get("execution_cost", 1))
         integration_interval = int(task.workflow_inputs.get("integration_interval", 2))
@@ -402,4 +400,3 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
             else:
                 # Update working theory IDs directly for the next iteration using interpreted theories
                 theory_ids = new_theory_ids
-

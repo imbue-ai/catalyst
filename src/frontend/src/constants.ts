@@ -13,7 +13,7 @@ export const DEFAULT_NUM_STRANDS = 3;
 
 // CreateTaskModal specific defaults
 export const DEFAULT_NUM_ROOT_THEORIES = 3;
-export const DEFAULT_NUM_EXECUTIONS_PER_ITERATION = 1;
+export const DEFAULT_NUM_EXECUTIONS_PER_ITERATION = 2;
 export const DEFAULT_EXECUTION_COST = 1;
 export const DEFAULT_INTEGRATION_INTERVAL = 2;
 
