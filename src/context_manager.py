@@ -56,6 +56,7 @@ AGENT_TYPE_MAP: dict[str, str] = {
     "predict-experiments": "prediction",
     "summarize-research": "summary",
     "interpret-result": "theory",
+    "integrate-interpretations": "theory",
     "propose-experiment": "proposal",
     "execute-proposal": "solution",
     "initialize-theories": "theory",
@@ -521,6 +522,7 @@ def store_results(
         "review-adherence",
         "improve-adherence",
         "interpret-result",
+        "integrate-interpretations",
     )
     parent_theory_allowed_agents = parent_theory_required_agents + (
         "run-experiment",
@@ -661,6 +663,7 @@ def _validate_create_context_args(
         "streamline-theory",
         "edit-theory",
         "review-adherence",
+        "integrate-interpretations",
     ):
         if not from_theories or len(from_theories) != 1:
             raise ValueError(
@@ -1438,6 +1441,7 @@ def main(argv: list[str] | None = None) -> None:
             "write-different-theory",
             "summarize-research",
             "interpret-result",
+            "integrate-interpretations",
             "propose-experiment",
             "rank-proposals",
             "execute-proposal",
