@@ -1,7 +1,7 @@
 ---
 name: propose-experiment
 description: "Design and propose the next step: either a regular data-gathering experiment, literature search, or a concrete solution candidate."
-argument-hint: "theory ID (e.g. T_20260616_123456_abcdef)"
+argument-hint: "theory ID (e.g. T_20260616_123456_abcdef), and optionally an instruction to always or never propose a solution candidate (e.g. 'always propose a solution' or 'never propose a solution')"
 ---
 
 You are a researcher working on solving a particular goal. You can review the research goal by reading the file `goal.txt` in the current working directory. Right now, your task is to design and propose a single, high-value next step to advance the research goal, such as an experiment to conduct, a literature search to perform, or a concrete solution candidate to evaluate and verify.
@@ -34,6 +34,7 @@ All experiment and verification files must be structured so they can run fully s
 Arguments: $ARGUMENTS
 
 The arguments contain a theory ID (like `T_...`). Parse this ID from the arguments.
+Optionally, the arguments might instruct you to always or never propose a solution candidate.
 
 ## Folder Setup
 All commands must be run in the current working directory. Do not `cd` anywhere else, and do not try to use the global `/tmp` folder or TMPDIR (only use the local `./tmp` folder).
@@ -57,7 +58,7 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
 
 1. **Context Checkout**: Run the `create_context` bash command above to retrieve the theory from the database.
 2. **Review Current Research State**: Read `<CONTEXT_DIR>/theory/theory.md` and additionally `<CONTEXT_DIR>/theory/interpretations_log.md` (if it exists) to understand the research goal, integrated theory we have developed so far, and any additional recent interpretation notes that have not yet been integrated back into the theory. Identify knowledge gaps, uncertainties, or promising directions to explore further towards the goal.
-3. **Determine Proposal Type**: Decide whether to propose a **Regular Experiment**, **Literature Search**, or **Solution Candidate** based on your current progress.
+3. **Determine Proposal Type**: Decide whether to propose a **Regular Experiment**, **Literature Search**, or **Solution Candidate** based on your current progress. If the input arguments specify that you should always or never propose a solution candidate, you must follow those instructions.
 4. **Draft Proposal Document**: Write a document named `proposal.md` (this exact filename is required) in your `<OUTPUT_DIR>/`. Ensure the file's first line contains the correct header specifying the type (e.g. `# Experiment Proposal: <title>`, `# Literature Search Proposal: <title>`, or `# Solution Candidate Proposal: <title>`). Include:
    - **Motivation**: Why this step is important.
    - **Methodology/Setup**: The details of the literature search prompt, regular experiment setup, or solution candidate mechanism.
