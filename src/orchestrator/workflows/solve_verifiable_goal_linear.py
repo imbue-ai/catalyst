@@ -188,11 +188,12 @@ class SolveVerifiableGoalLinearWorkflow(Workflow):
 
             def run_propose_experiment(strand_idx: int, theory_id: str):
                 stage_name = f"propose-experiment-{i}-{strand_idx + 1}"
+                propose_solution = "always" if i == max_iterations else None
                 res = run_step_if_needed(
                     task,
                     run_step,
                     stage_name,
-                    get_propose_experiment_prompt(theory_id),
+                    get_propose_experiment_prompt(theory_id, propose_solution=propose_solution),
                     StepCategory.THEORY_WRITING,
                 )
                 proposal_results[strand_idx] = res
