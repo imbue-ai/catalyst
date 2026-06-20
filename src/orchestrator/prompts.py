@@ -186,11 +186,18 @@ def get_summarize_research_prompt() -> str:
     )
 
 
-def get_propose_experiment_prompt(theory_id: str) -> str:
-    return (
-        f"Please run the propose-experiment skill for theory ID: {theory_id}. "
-        "When you are done, return ONLY a JSON object with the key 'proposal_id'."
-    )
+def get_propose_experiment_prompt(
+    theory_id: str, propose_solution: Optional[str] = None
+) -> str:
+    prompt = f"Please run the propose-experiment skill for theory ID: {theory_id}. "
+
+    if propose_solution == "never":
+        prompt += "Tell the skill: NEVER propose a solution candidate. "
+    elif propose_solution == "always":
+        prompt += "Tell the skill: ALWAYS propose a solution candidate. "
+
+    prompt += "When you are done, return ONLY a JSON object with the key 'proposal_id'."
+    return prompt
 
 
 def get_rank_proposals_prompt(proposal_ids: List[str]) -> str:
