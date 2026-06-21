@@ -50,7 +50,9 @@ The revised theory must be a fully self-contained, updated version of the origin
 Please maintain the following guidelines for the improved theory:
 - Start with including the current research goal itself. You can always rever back to the file `goal.txt` in the current working directory to read the research goal again if you need to.
 - Structure the main part of your theory as a set of key observations and insights. For each, cite supporting evidence (such as experiment IDs `X_...`, literature citations, or mathematical reasoning). For each observation or insight, add a tag that expresses your confidence in that statement as high, medium, or low, depending on the strength of the evidence that has been seen so far. Be conservative in your confidence assessments: Typically, you'll need many independent experiments or at least one reliable literature source to warrant a confidence level that's medium or high!
-- After the main part, add two sections that express: 1. open questions and uncertainties (e.g. unresolved contradictions in the evidence, areas where evidence is still lacking, or important knowledge gaps that remain), and 2. your current ideas and plan to move further towards solving the stated goal.
+- Feel free to organize the observations and insights into logical subsections, tables, or other types of groupings to improve the readability and brevity of the theory.
+- After the main part, add two sections subsectionsthat express: 1. open questions and uncertainties (e.g. unresolved contradictions in the evidence, areas where evidence is still lacking, or important knowledge gaps that remain), and 2. your current ideas and plan to move further towards solving the stated goal.
+- When integrating solution candidates from the interpretations log, keep track of the best solution candidate seen so far in a short separate section of the theory. Include its solution ID (`U_...`) and verification experiment ID (`X_...`) for easy lookup.
 - Image references in the markdown file need to be relative to `<OUTPUT_DIR>`. NEVER use absolute paths. Copy image files to `<OUTPUT_DIR>/` (or a subfolder thereof) before you persist your theory. Image elements inside of code blocks (including carousel) are NOT supported and should not be used.
 - Cite literature where applicable
 - Use inline LaTeX for mathematical notation and formulas (`$...$` for inline math, and `$$...$$` for display math). Do NOT put formulas into code blocks.
@@ -65,8 +67,9 @@ Please maintain the following guidelines for the improved theory:
    - Check if, given the new interpretations, the confidence of any of the existing statements should be adjusted (either upwards or downwards).
    - Obtain cited experiment IDs as needed to review the experiment details and results to inform your revisions.
    - Then, revise the open questions and current ideas / plan sections in the theory based on the new information. Remove questions that have been answered, and add new questions or ideas that are emerging.
-4. **Write Improvements**: Edit the theory in `<OUTPUT_DIR>/theory.md` to apply your improvements. Then, delete the `interpretations_log.md` file in `<OUTPUT_DIR>/` (or clear its contents) since all of the interpretations have now been integrated back into the theory.
-5. **Store results**: Persist your output and return the new theory ID:
+4. **Polish & Restructuring**: After you have made the necessary content updates, review the overall structure and flow of the theory. If any section has become too long or contains too many items, consider reorganizing the content into different (sub-)sections, adding new headings, combining similar items, organizing related items together into tables, or doing whatever else is needed to improve the readability and coherence of the document.
+5. **Write Improvements**: Edit the theory in `<OUTPUT_DIR>/theory.md` to apply your improvements. Then, delete the `interpretations_log.md` file in `<OUTPUT_DIR>/` (or clear its contents) since all of the interpretations have now been integrated back into the theory.
+6. **Store results**: Persist your output and return the new theory ID:
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type integrate-interpretations --from_folder <OUTPUT_DIR> --parent_theory <THEORY_ID>
    ```

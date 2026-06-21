@@ -3,7 +3,7 @@ from unittest.mock import patch, MagicMock, mock_open
 from ..models import Task
 from ..workflows.import_theory import ImportTheoryWorkflow
 from ..workflows.develop_theory_linear import DevelopTheoryLinearWorkflow
-from ..workflows.solve_verifiable_goal_linear import SolveVerifiableGoalLinearWorkflow
+from ..workflows.solve_verifiable_goal_multi_strand import SolveVerifiableGoalMultiStrandWorkflow
 
 class TestImportTheoryWorkflow(unittest.TestCase):
     def test_get_structure(self):
@@ -101,11 +101,11 @@ class TestDevelopTheoryLinearWorkflow(unittest.TestCase):
         )
 
 
-class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
+class TestSolveVerifiableGoalMultiStrandWorkflow(unittest.TestCase):
     def test_get_structure(self):
         task = Task(
             id="task_solve_verifiable_test",
-            workflow_name="solve-verifiable-goal-linear",
+            workflow_name="solve-verifiable-goal-multi-strand",
             framework="gemini",
             env_folder="/tmp/env",
             workflow_inputs={
@@ -115,21 +115,21 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
                 "max_iterations": "1"
             }
         )
-        wf = SolveVerifiableGoalLinearWorkflow()
-        self.assertEqual(wf.name, "solve-verifiable-goal-linear")
+        wf = SolveVerifiableGoalMultiStrandWorkflow()
+        self.assertEqual(wf.name, "solve-verifiable-goal-multi-strand")
         struct = wf.get_structure(task)
         self.assertEqual(struct[0]["stage"], "summarize-title")
         self.assertEqual(struct[1]["stage"], "initialize-theories")
         self.assertEqual(len(struct), 3)
 
-    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_summarize_title")
-    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_local_step_if_needed")
-    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_step_if_needed")
+    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_summarize_title")
+    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_local_step_if_needed")
+    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_step_if_needed")
     @patch("builtins.open", new_callable=mock_open)
     def test_run_success(self, mock_file, mock_run_if_needed, mock_run_local, mock_summarize):
         task = Task(
             id="task_solve_verifiable_test",
-            workflow_name="solve-verifiable-goal-linear",
+            workflow_name="solve-verifiable-goal-multi-strand",
             framework="gemini",
             env_folder="/tmp/env",
             workflow_inputs={
@@ -139,7 +139,7 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
                 "max_iterations": "1"
             }
         )
-        wf = SolveVerifiableGoalLinearWorkflow()
+        wf = SolveVerifiableGoalMultiStrandWorkflow()
         mock_run_step = MagicMock()
 
         # Step 1: Initialize Theories returns theory IDs
@@ -169,14 +169,14 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
         mock_summarize.assert_called_once_with(task, mock_run_step, "goal: Test goal")
         mock_run_local.assert_called_once()
 
-    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_summarize_title")
-    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_local_step_if_needed")
-    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_step_if_needed")
+    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_summarize_title")
+    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_local_step_if_needed")
+    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_step_if_needed")
     @patch("builtins.open", new_callable=mock_open)
     def test_run_rankings_empty(self, mock_file, mock_run_if_needed, mock_run_local, mock_summarize):
         task = Task(
             id="task_solve_verifiable_test",
-            workflow_name="solve-verifiable-goal-linear",
+            workflow_name="solve-verifiable-goal-multi-strand",
             framework="gemini",
             env_folder="/tmp/env",
             workflow_inputs={
@@ -186,7 +186,7 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
                 "max_iterations": "1"
             }
         )
-        wf = SolveVerifiableGoalLinearWorkflow()
+        wf = SolveVerifiableGoalMultiStrandWorkflow()
         mock_run_step = MagicMock()
 
         # Step 1: Initialize Theories returns theory IDs
@@ -209,14 +209,14 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
         for call_args in mock_run_if_needed.call_args_list:
             self.assertNotIn("execute-proposal", call_args[0][2])
 
-    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_summarize_title")
-    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_local_step_if_needed")
-    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_step_if_needed")
+    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_summarize_title")
+    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_local_step_if_needed")
+    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_step_if_needed")
     @patch("builtins.open", new_callable=mock_open)
     def test_run_missing_key_failure(self, mock_file, mock_run_if_needed, mock_run_local, mock_summarize):
         task = Task(
             id="task_solve_verifiable_test",
-            workflow_name="solve-verifiable-goal-linear",
+            workflow_name="solve-verifiable-goal-multi-strand",
             framework="gemini",
             env_folder="/tmp/env",
             workflow_inputs={
@@ -226,7 +226,7 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
                 "max_iterations": "1"
             }
         )
-        wf = SolveVerifiableGoalLinearWorkflow()
+        wf = SolveVerifiableGoalMultiStrandWorkflow()
         mock_run_step = MagicMock()
 
         mock_run_local.return_value = {"theory_ids": ["T_1", "T_2"]}
@@ -244,7 +244,7 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
     def test_get_structure_with_integration(self):
         task = Task(
             id="task_solve_verifiable_test_integration",
-            workflow_name="solve-verifiable-goal-linear",
+            workflow_name="solve-verifiable-goal-multi-strand",
             framework="gemini",
             env_folder="/tmp/env",
             workflow_inputs={
@@ -255,7 +255,7 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
                 "integration_interval": "2"
             }
         )
-        wf = SolveVerifiableGoalLinearWorkflow()
+        wf = SolveVerifiableGoalMultiStrandWorkflow()
         struct = wf.get_structure(task)
         self.assertEqual(len(struct), 3)
         loop_struct = struct[2]
@@ -267,14 +267,14 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
         self.assertEqual(len(iter_structures["2"]), 5)
         self.assertEqual(iter_structures["2"][4]["name"], "Integrate Interpretations")
 
-    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_summarize_title")
-    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_local_step_if_needed")
-    @patch("orchestrator.workflows.solve_verifiable_goal_linear.run_step_if_needed")
+    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_summarize_title")
+    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_local_step_if_needed")
+    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_step_if_needed")
     @patch("builtins.open", new_callable=mock_open)
     def test_run_success_with_integration(self, mock_file, mock_run_if_needed, mock_run_local, mock_summarize):
         task = Task(
             id="task_solve_verifiable_test_with_integration",
-            workflow_name="solve-verifiable-goal-linear",
+            workflow_name="solve-verifiable-goal-multi-strand",
             framework="gemini",
             env_folder="/tmp/env",
             workflow_inputs={
@@ -285,7 +285,7 @@ class TestSolveVerifiableGoalLinearWorkflow(unittest.TestCase):
                 "integration_interval": "1"
             }
         )
-        wf = SolveVerifiableGoalLinearWorkflow()
+        wf = SolveVerifiableGoalMultiStrandWorkflow()
         mock_run_step = MagicMock()
 
         # Step 1: Initialize Theories returns theory IDs

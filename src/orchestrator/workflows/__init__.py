@@ -5,7 +5,7 @@ from .refine_theory_idea import RefineTheoryIdeaWorkflow
 from .refine_theory_idea_linear import RefineTheoryIdeaLinearWorkflow
 from .import_theory import ImportTheoryWorkflow
 from .smoke import SmokeWorkflow
-from .solve_verifiable_goal_linear import SolveVerifiableGoalLinearWorkflow
+from .solve_verifiable_goal_multi_strand import SolveVerifiableGoalMultiStrandWorkflow
 
 WORKFLOWS = {
     "develop-theory": DevelopTheoryWorkflow(),
@@ -14,7 +14,7 @@ WORKFLOWS = {
     "refine-theory-idea-linear": RefineTheoryIdeaLinearWorkflow(),
     "import-theory": ImportTheoryWorkflow(),
     "smoke": SmokeWorkflow(),
-    "solve-verifiable-goal-linear": SolveVerifiableGoalLinearWorkflow(),
+    "solve-verifiable-goal-multi-strand": SolveVerifiableGoalMultiStrandWorkflow(),
 }
 
 def get_workflow(name: str) -> Workflow:

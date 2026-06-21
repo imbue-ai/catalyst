@@ -24,10 +24,10 @@ from orchestrator.prompts import (
 logger = logging.getLogger(__name__)
 
 
-class SolveVerifiableGoalLinearWorkflow(Workflow):
+class SolveVerifiableGoalMultiStrandWorkflow(Workflow):
     @property
     def name(self) -> str:
-        return "solve-verifiable-goal-linear"
+        return "solve-verifiable-goal-multi-strand"
 
     def get_structure(self, task: Task) -> List[Dict[str, Any]]:
         num_strands = int(task.workflow_inputs.get("num_strands", 3))
