@@ -201,7 +201,6 @@ class StoredMetadata(BaseModel):
     created_at: str
     headline: str = ""
     parent_theory: str | None = None
-    parent_solution: str | None = None
     extra: dict[str, str] = Field(default_factory=dict)
     staged_for_transaction: str | None = None
 
@@ -486,7 +485,6 @@ def store_results(
     from_agent_type: str,
     from_folder: Path,
     parent_theory: str | None = None,
-    parent_solution: str | None = None,
     metadata_extra: dict[str, str] | None = None,
 ) -> str:
     """Persist agent output into the immutable database. Returns the new ID."""
@@ -543,16 +541,6 @@ def store_results(
                 f"in the database (expected {theory_dir})"
             )
 
-
-
-    if parent_solution:
-        solution_dir = db_root / "solution" / parent_solution
-        if not solution_dir.is_dir():
-            raise ValueError(
-                f"Referenced parent solution {parent_solution!r} does not exist "
-                f"in the database (expected {solution_dir})"
-            )
-
     with DatabaseSession(db_root) as session:
         new_id = generate_id(category)
 
@@ -595,7 +583,6 @@ def store_results(
             parent_theory=parent_theory
             if from_agent_type in parent_theory_allowed_agents
             else None,
-            parent_solution=parent_solution,
             extra=metadata_extra or {},
             staged_for_transaction=session.tx_id,
         )
@@ -851,8 +838,6 @@ def create_context(
             preds_root.mkdir(exist_ok=True)
             for pid in from_predictions:
                 copy_artifact(db_root / "prediction" / pid, preds_root / pid)
-
-
 
         # 8. Proposals
         if from_proposals:
@@ -1399,12 +1384,6 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help="Parent theory ID (required for falsify-hypothesis)",
     )
-
-    sp_store.add_argument(
-        "--parent_solution",
-        default=None,
-        help="Parent solution ID",
-    )
     sp_store.add_argument(
         "--metadata",
         action="append",
@@ -1700,7 +1679,6 @@ def main(argv: list[str] | None = None) -> None:
                 from_agent_type=args.from_agent_type,
                 from_folder=args.from_folder.resolve(),
                 parent_theory=args.parent_theory,
-                parent_solution=args.parent_solution,
                 metadata_extra=extra,
             )
             print(f"Result stored with ID: {new_id}")
