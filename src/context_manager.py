@@ -1157,7 +1157,7 @@ def list_entries(
     with DatabaseSession(db_root) as session:
         for _, data in session.iter_metadata(entry_type):
             if (
-                entry_type in ("review", "experiment")
+                entry_type in ("review", "experiment", "solution")
                 and parent_theory
                 and data.get("parent_theory") != parent_theory
             ):
@@ -1595,7 +1595,7 @@ def main(argv: list[str] | None = None) -> None:
     sp_list.add_argument(
         "--parent_theory",
         default=None,
-        help="Filter reviews by parent theory ID",
+        help="Filter entries (reviews, experiments, solutions) by parent theory ID",
     )
     sp_list.add_argument(
         "--sort_by",

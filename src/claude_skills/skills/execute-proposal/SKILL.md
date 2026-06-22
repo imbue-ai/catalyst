@@ -43,7 +43,7 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
      - Parse and note the resulting literature review ID (e.g. `L_20260616_123456_abcdef`) as the result of this skill.
    - **For `"solution-candidate"`**:
      - Copy all files from `<CONTEXT_DIR>/proposal/` into `<OUTPUT_DIR>/`. Rename `proposal.md` to `description.md`.
-     - Review the verification script of the solution candidate (`script.py`) and confirm that it adheres to any verification requirements given in `verification_instructions.txt` and/or `GUIDANCE.txt` (if any). If you notice any signs of reward-hacking, intentaional result falsification, or non-adherence to the requirements, you must highlight those issues prominently in your `solution.md` output!
+     - Review the verification script of the solution candidate (`script.py`) and confirm that it adheres to any verification requirements given in `verification_instructions.txt` and/or `GUIDANCE.txt` (if any). If you notice any signs of reward-hacking, intentional result falsification, or non-adherence to the requirements, you must highlight those issues prominently in your `solution.md` output!
      - Invoke the `run-experiment` skill to execute the verification script (`script.py`) in `<OUTPUT_DIR>/`.
      - Parse the resulting verification experiment ID (e.g. `X_20260616_123456_abcdef`).
      - Create a `solution.md` file in `<OUTPUT_DIR>/`. Populate it with a detailed summary of the solution candidate, the results of the verification experiment (including its experiment ID `X_...`), and an assessment of how well the goal described in `goal.txt` was met by this solution candidate.

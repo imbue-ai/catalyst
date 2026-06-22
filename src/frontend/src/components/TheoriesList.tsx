@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Briefcase, Clock, ChevronDown, ChevronUp } from 'lucide-react';
-import { getTheories, getReviews } from '../api';
-import type { TheoryArtifact, ReviewArtifact } from '../api';
+import { getTheories, getReviews, getSolutions } from '../api';
+import type { TheoryArtifact, ReviewArtifact, SolutionArtifact } from '../api';
 
 interface TheoriesListProps {
   taskId: string;
@@ -10,21 +10,25 @@ interface TheoriesListProps {
 export function TheoriesList({ taskId }: TheoriesListProps) {
   const [theories, setTheories] = useState<TheoryArtifact[]>([]);
   const [reviews, setReviews] = useState<ReviewArtifact[]>([]);
+  const [solutions, setSolutions] = useState<SolutionArtifact[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showAll, setShowAll] = useState(false);
-  const [expandedTheories, setExpandedTheories] = useState<Set<string>>(new Set());
+  const [expandedReviews, setExpandedReviews] = useState<Set<string>>(new Set());
+  const [expandedSolutions, setExpandedSolutions] = useState<Set<string>>(new Set());
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [theoriesData, reviewsData] = await Promise.all([
+      const [theoriesData, reviewsData, solutionsData] = await Promise.all([
         getTheories(taskId),
-        getReviews(taskId).catch(() => []) // Default to empty array if reviews fail to fetch
+        getReviews(taskId).catch(() => []), // Default to empty array if reviews fail to fetch
+        getSolutions(taskId).catch(() => []) // Default to empty array if solutions fail to fetch
       ]);
       setTheories(theoriesData);
       setReviews(reviewsData);
+      setSolutions(solutionsData);
     } catch (err: any) {
       setError(err.message || "Failed to fetch data.");
     } finally {
@@ -64,10 +68,24 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
     };
   };
 
-  const toggleExpand = (theoryId: string, e: React.MouseEvent) => {
+  const toggleExpandReviews = (theoryId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    setExpandedTheories(prev => {
+    setExpandedReviews(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(theoryId)) {
+        newSet.delete(theoryId);
+      } else {
+        newSet.add(theoryId);
+      }
+      return newSet;
+    });
+  };
+
+  const toggleExpandSolutions = (theoryId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setExpandedSolutions(prev => {
       const newSet = new Set(prev);
       if (newSet.has(theoryId)) {
         newSet.delete(theoryId);
@@ -123,7 +141,9 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
           <ul className="space-y-4">
             {filteredTheories.map((theory) => {
               const theoryReviews = reviews.filter(r => r.parent_theory === theory.id);
-              const isExpanded = expandedTheories.has(theory.id);
+              const theorySolutions = solutions.filter(s => s.parent_theory === theory.id);
+              const isReviewsExpanded = expandedReviews.has(theory.id);
+              const isSolutionsExpanded = expandedSolutions.has(theory.id);
 
               return (
                 <li key={theory.id}>
@@ -160,20 +180,32 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
                               : 'Unknown Date'}
                           </div>
                         </div>
-                        {theoryReviews.length > 0 && (
-                          <button 
-                            onClick={(e) => toggleExpand(theory.id, e)}
-                            className="text-[10px] font-black tracking-widest text-gray-500 hover:text-black flex items-center gap-1 transition-colors"
-                          >
-                            {isExpanded ? 'Hide Reviews' : `${theoryReviews.length} Review${theoryReviews.length > 1 ? 's' : ''} Available`}
-                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                          </button>
-                        )}
+                        <div className="flex flex-col items-end gap-1.5">
+                          {theoryReviews.length > 0 && (
+                            <button 
+                              onClick={(e) => toggleExpandReviews(theory.id, e)}
+                              className="text-[10px] font-black tracking-widest text-gray-500 hover:text-black flex items-center gap-1 transition-colors"
+                            >
+                              {isReviewsExpanded ? 'Hide Reviews' : `${theoryReviews.length} Review${theoryReviews.length > 1 ? 's' : ''} Available`}
+                              {isReviewsExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </button>
+                          )}
+                          {theorySolutions.length > 0 && (
+                            <button 
+                              onClick={(e) => toggleExpandSolutions(theory.id, e)}
+                              className="text-[10px] font-black tracking-widest text-gray-500 hover:text-black flex items-center gap-1 transition-colors"
+                            >
+                              {isSolutionsExpanded ? 'Hide Solutions' : `${theorySolutions.length} Solution${theorySolutions.length > 1 ? 's' : ''} Available`}
+                              {isSolutionsExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </a>
                     
-                    {isExpanded && theoryReviews.length > 0 && (
+                    {isReviewsExpanded && theoryReviews.length > 0 && (
                       <div className="border-t-2 border-gray-100 bg-gray-50 p-4">
+                        <div className="text-[10px] font-black text-gray-400 tracking-widest mb-2">Reviews</div>
                         <ul className="space-y-2">
                           {theoryReviews.map(review => (
                             <li key={review.id}>
@@ -187,6 +219,31 @@ export function TheoriesList({ taskId }: TheoriesListProps) {
                                 {review.headline && (
                                   <div className="text-[10px] text-gray-600 font-bold truncate">
                                     {review.headline}
+                                  </div>
+                                )}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+
+                    {isSolutionsExpanded && theorySolutions.length > 0 && (
+                      <div className="border-t-2 border-gray-100 bg-gray-50 p-4">
+                        <div className="text-[10px] font-black text-gray-400 tracking-widest mb-2">Solutions</div>
+                        <ul className="space-y-2">
+                          {theorySolutions.map(solution => (
+                            <li key={solution.id}>
+                              <a 
+                                href={`#/task/${taskId}/artifact/${solution.id}`}
+                                className="block p-2 bg-white border border-gray-200 hover:border-black transition-colors"
+                              >
+                                <div className="text-[10px] font-black text-black truncate tracking-widest mb-1">
+                                  {solution.id}
+                                </div>
+                                {solution.headline && (
+                                  <div className="text-[10px] text-gray-600 font-bold truncate">
+                                    {solution.headline}
                                   </div>
                                 )}
                               </a>

@@ -113,6 +113,7 @@ export interface SolutionArtifact {
   agent_type?: string;
   created_at?: string;
   extra?: Record<string, string>;
+  parent_theory?: string;
 }
 
 
