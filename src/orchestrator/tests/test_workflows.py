@@ -428,3 +428,25 @@ class TestSolveVerifiableGoalWorkflow(unittest.TestCase):
         mock_run_init_solutions.assert_called_once()
         mock_run_evolve_step.assert_called_once()
 
+    def test_get_structure_with_summaries(self):
+        task = Task(
+            id="task_solve_verifiable_test_summaries",
+            workflow_name="solve-verifiable-goal",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={
+                "goal": "Test goal",
+                "verification_instructions": "Verify nicely",
+                "num_strands": "2",
+                "max_iterations": "1",
+                "generate_intermediate_research_summaries": True,
+            },
+        )
+        wf = SolveVerifiableGoalWorkflow()
+        struct = wf.get_structure(task)
+        self.assertEqual(struct[0]["stage"], "summarize-title")
+        self.assertEqual(struct[1]["stage"], "initialize-theories")
+        self.assertEqual(struct[2]["stage"], "initialize-solutions")
+        self.assertEqual(struct[3]["stage"], "summarize-goal-progress")
+        self.assertEqual(len(struct), 5)
+

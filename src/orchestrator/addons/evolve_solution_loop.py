@@ -22,18 +22,29 @@ class EvolveSolutionLoopAddon(AddonHandler):
         max_iterations = (
             addon.max_iterations if addon.max_iterations is not None else 20
         )
+        generate_summaries = (
+            addon.generate_intermediate_research_summaries
+            if addon.generate_intermediate_research_summaries is not None
+            else False
+        )
 
         return build_evolve_solution_loop_structure(
             task=task,
             num_strands=num_strands,
             max_iterations=max_iterations,
             stage_prefix=f"addon-{index}-",
+            generate_intermediate_research_summaries=generate_summaries,
         )
 
     def run(self, task: Task, run_step: Callable, addon: Addon, index: int) -> None:
         theory_ids = addon.theory_ids or []
         max_iterations = (
             addon.max_iterations if addon.max_iterations is not None else 20
+        )
+        generate_summaries = (
+            addon.generate_intermediate_research_summaries
+            if addon.generate_intermediate_research_summaries is not None
+            else False
         )
 
         run_evolve_solution_loop(
@@ -42,6 +53,7 @@ class EvolveSolutionLoopAddon(AddonHandler):
             theory_ids=theory_ids,
             max_iterations=max_iterations,
             stage_prefix=f"addon-{index}-",
+            generate_intermediate_research_summaries=generate_summaries,
         )
 
     def get_prompt(self, addon: Addon) -> str:

@@ -17,6 +17,7 @@ from orchestrator.prompts import (
     get_interpret_result_prompt,
     get_integrate_interpretations_prompt,
     get_score_theory_solutions_prompt,
+    get_summarize_goal_progress_prompt,
 )
 
 logger = logging.getLogger(__name__)
@@ -90,6 +91,7 @@ def build_evolve_solution_loop_structure(
     num_strands: int,
     max_iterations: int,
     stage_prefix: str = "",
+    generate_intermediate_research_summaries: bool = False,
 ) -> Dict[str, Any]:
     if max_iterations <= 0:
         return {}
@@ -194,6 +196,14 @@ def build_evolve_solution_loop_structure(
                 {"type": "step", "stage": f"{stage_prefix}score-theory-solutions-{i}"},
             ]
 
+            if generate_intermediate_research_summaries or i == max_iterations:
+                iter_struct.append(
+                    {
+                        "type": "step",
+                        "stage": f"{stage_prefix}summarize-goal-progress-{i}",
+                    }
+                )
+
         iteration_structures[str(i)] = iter_struct
 
     return {
@@ -210,6 +220,7 @@ def run_evolve_solution_loop(
     theory_ids: List[str],
     max_iterations: int,
     stage_prefix: str = "",
+    generate_intermediate_research_summaries: bool = False,
 ) -> None:
     num_strands = len(theory_ids)
 
@@ -629,3 +640,14 @@ def run_evolve_solution_loop(
             )
             if score_res and score_res.get("_canceled"):
                 continue
+
+            if generate_intermediate_research_summaries or i == max_iterations:
+                sum_res = run_step_if_needed(
+                    task,
+                    run_step,
+                    f"{stage_prefix}summarize-goal-progress-{i}",
+                    get_summarize_goal_progress_prompt(),
+                    StepCategory.MISC,
+                )
+                if sum_res and sum_res.get("_canceled"):
+                    continue

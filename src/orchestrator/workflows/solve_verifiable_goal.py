@@ -4,11 +4,12 @@ import re
 import tempfile
 from typing import Any, Callable, List, Dict
 
-from ..models import Task
+from ..models import Task, StepCategory
 from ..utils import run_context_manager
 from .base import (
     Workflow,
     run_local_step_if_needed,
+    run_step_if_needed,
 )
 from .common import (
     run_summarize_title,
@@ -16,6 +17,7 @@ from .common import (
     run_evolve_solution_loop,
     run_initialize_theories,
 )
+from orchestrator.prompts import get_summarize_goal_progress_prompt
 
 
 logger = logging.getLogger(__name__)
@@ -95,6 +97,7 @@ class SolveVerifiableGoalWorkflow(Workflow):
     def get_structure(self, task: Task) -> List[Dict[str, Any]]:
         num_strands = int(task.workflow_inputs.get("num_strands", 3))
         max_iterations = int(task.workflow_inputs.get("max_iterations", 20))
+        generate_summaries = bool(task.workflow_inputs.get("generate_intermediate_research_summaries"))
 
         structure = [
             {"type": "step", "stage": "summarize-title"},
@@ -102,12 +105,16 @@ class SolveVerifiableGoalWorkflow(Workflow):
             {"type": "step", "stage": "initialize-solutions"},
         ]
 
+        if generate_summaries:
+            structure.append({"type": "step", "stage": "summarize-goal-progress"})
+
         if max_iterations > 0:
             loop_struct = build_evolve_solution_loop_structure(
                 task,
                 num_strands=num_strands,
                 max_iterations=max_iterations,
                 stage_prefix="",
+                generate_intermediate_research_summaries=generate_summaries,
             )
             structure.append(loop_struct)
 
@@ -142,6 +149,16 @@ class SolveVerifiableGoalWorkflow(Workflow):
         if not solution_theory_pairs:
             return
 
+        generate_summaries = bool(task.workflow_inputs.get("generate_intermediate_research_summaries"))
+        if generate_summaries:
+            run_step_if_needed(
+                task,
+                run_step,
+                "summarize-goal-progress",
+                get_summarize_goal_progress_prompt(),
+                StepCategory.MISC,
+            )
+
         max_iterations = int(task.workflow_inputs.get("max_iterations", 20))
 
         run_evolve_solution_loop(
@@ -150,5 +167,6 @@ class SolveVerifiableGoalWorkflow(Workflow):
             theory_ids=theory_ids,
             max_iterations=max_iterations,
             stage_prefix="",
+            generate_intermediate_research_summaries=generate_summaries,
         )
 

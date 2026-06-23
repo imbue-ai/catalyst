@@ -457,7 +457,7 @@ class TestEvolveSolutionLoop(unittest.TestCase):
 
         # Iteration 2: Mutation iteration (steps 5-9 only, with added interpretation steps)
         iter2 = struct["iteration_structures"]["2"]
-        self.assertEqual(len(iter2), 8)
+        self.assertEqual(len(iter2), 9)
         self.assertEqual(iter2[0]["stage"], "test-sample-integrate-parents-2")
         self.assertEqual(iter2[1]["name"], "Integrate Interpretations")
         self.assertEqual(iter2[2]["name"], "Propose Solution Candidates")
@@ -466,6 +466,7 @@ class TestEvolveSolutionLoop(unittest.TestCase):
         self.assertEqual(iter2[5]["name"], "Interpret Results")
         self.assertEqual(iter2[6]["stage"], "test-sample-scoring-2")
         self.assertEqual(iter2[7]["stage"], "test-score-theory-solutions-2")
+        self.assertEqual(iter2[8]["stage"], "test-summarize-goal-progress-2")
 
     @patch("orchestrator.workflows.common.evolve_solution.run_context_manager")
     @patch("orchestrator.workflows.common.evolve_solution.run_local_step_if_needed")
@@ -519,6 +520,7 @@ class TestEvolveSolutionLoop(unittest.TestCase):
             {"theory_id": "theory-new-2-1"},  # Interpret 2-1 (theory-1-integrated)
             {"theory_id": "theory-new-2-2"},  # Interpret 2-2 (theory-3)
             {"status": "scored"},  # Score Theory Solutions
+            {"status": "summarized"},  # Summarize Goal Progress 2
         ]
 
         run_evolve_solution_loop(
@@ -530,6 +532,106 @@ class TestEvolveSolutionLoop(unittest.TestCase):
         )
 
         self.assertEqual(mock_run_local.call_count, 5)
+        self.assertEqual(mock_run_if_needed.call_count, 15)
+
+    def test_build_evolve_solution_loop_structure_with_summaries(self):
+        task = Task(
+            id="task_evolve_solution_loop_struct_test_summaries",
+            workflow_name="solve-verifiable-goal",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={
+                "num_strands": "2",
+                "num_proposals": "2",
+                "num_interpretations": "2",
+                "num_parents": "2",
+                "rescore_interval": "1",
+            },
+        )
+        struct = build_evolve_solution_loop_structure(
+            task=task,
+            num_strands=2,
+            max_iterations=2,
+            stage_prefix="test-",
+            generate_intermediate_research_summaries=True,
+        )
+        self.assertEqual(struct["type"], "loop")
+        self.assertEqual(struct["iterations"], 2)
+        self.assertEqual(len(struct["iteration_structures"]), 2)
+
+        # Both iteration 1 and 2 are mutation iterations since rescore_interval=1
+        # And since generate_intermediate_research_summaries is True, both must have a summary step at the end!
+        iter1 = struct["iteration_structures"]["1"]
+        self.assertEqual(len(iter1), 9)
+        self.assertEqual(iter1[8]["stage"], "test-summarize-goal-progress-1")
+
+        iter2 = struct["iteration_structures"]["2"]
+        self.assertEqual(len(iter2), 9)
+        self.assertEqual(iter2[8]["stage"], "test-summarize-goal-progress-2")
+
+    @patch("orchestrator.workflows.common.evolve_solution.run_context_manager")
+    @patch("orchestrator.workflows.common.evolve_solution.run_local_step_if_needed")
+    @patch("orchestrator.workflows.common.evolve_solution.run_step_if_needed")
+    def test_run_evolve_solution_loop_success_with_summaries(
+        self, mock_run_if_needed, mock_run_local, mock_context_manager
+    ):
+        task = Task(
+            id="task_evolve_solution_loop_run_test_summaries",
+            workflow_name="solve-verifiable-goal",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={
+                "num_proposals": "2",
+                "num_interpretations": "2",
+                "num_parents": "1",
+                "num_extra_scores": "1",
+                "rescore_interval": "1",
+                "branch_prob": "0.0",
+            },
+        )
+        mock_run_step = MagicMock()
+
+        # Mocks setup:
+        # Mock local steps (sampling)
+        mock_run_local.side_effect = [
+            {"samples": [{"id": "theory-1"}]},  # sample-integrate-parents-1
+            {"samples": [{"id": "theory-3"}]},  # sample-interpretations-1
+            {"samples": [{"id": "theory-4", "latest_solution": "sol-latest"}]},  # sample-scoring-1
+            {"samples": [{"id": "theory-1"}]},  # sample-integrate-parents-2
+            {"samples": [{"id": "theory-3"}]},  # sample-interpretations-2
+            {"samples": [{"id": "theory-4", "latest_solution": "sol-latest"}]},  # sample-scoring-2
+        ]
+
+        # Mock standard/parallel steps
+        mock_run_if_needed.side_effect = [
+            # Iteration 1 (Mutation since rescore_interval=1)
+            {"theory_ids": ["theory-1-integrated"]},  # Integrate 1-1
+            {"proposal_id": "solution-prop-1"},  # Propose Solution ALWAYS
+            {"solution_id": "solution-real-1"},  # Execute Solution Proposal
+            {"theory_id": "theory-new-1-1"},  # Interpret 1-1 (theory-1-integrated)
+            {"theory_id": "theory-new-1-2"},  # Interpret 1-2 (theory-3)
+            {"status": "scored"},  # Score Theory Solutions 1
+            {"status": "summarized"},  # Summarize Goal Progress 1
+            # Iteration 2 (Mutation since rescore_interval=1)
+            {"theory_ids": ["theory-2-integrated"]},  # Integrate 2-1
+            {"proposal_id": "solution-prop-2"},  # Propose Solution ALWAYS
+            {"solution_id": "solution-real-2"},  # Execute Solution Proposal
+            {"theory_id": "theory-new-2-1"},  # Interpret 2-1 (theory-2-integrated)
+            {"theory_id": "theory-new-2-2"},  # Interpret 2-2 (theory-3)
+            {"status": "scored"},  # Score Theory Solutions 2
+            {"status": "summarized"},  # Summarize Goal Progress 2
+        ]
+
+        run_evolve_solution_loop(
+            task=task,
+            run_step=mock_run_step,
+            theory_ids=["theory-1", "theory-2"],
+            max_iterations=2,
+            stage_prefix="test-",
+            generate_intermediate_research_summaries=True,
+        )
+
+        self.assertEqual(mock_run_local.call_count, 6)
         self.assertEqual(mock_run_if_needed.call_count, 14)
 
 
