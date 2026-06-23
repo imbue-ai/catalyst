@@ -11,6 +11,11 @@ from .common import (
     build_solve_goal_loop_structure,
     run_solve_goal_loop,
     run_initialize_theories,
+    DEFAULT_NUM_STRANDS,
+    DEFAULT_MAX_ITERATIONS,
+    DEFAULT_INTEGRATION_INTERVAL,
+    DEFAULT_NUM_EXECUTIONS_PER_ITERATION,
+    DEFAULT_EXECUTION_COST,
 )
 
 
@@ -23,9 +28,9 @@ class SolveVerifiableGoalMultiStrandWorkflow(Workflow):
         return "solve-verifiable-goal-multi-strand"
 
     def get_structure(self, task: Task) -> List[Dict[str, Any]]:
-        num_strands = int(task.workflow_inputs.get("num_strands", 3))
-        max_iterations = int(task.workflow_inputs.get("max_iterations", 20))
-        integration_interval = int(task.workflow_inputs.get("integration_interval", 5))
+        num_strands = int(task.workflow_inputs.get("num_strands", DEFAULT_NUM_STRANDS))
+        max_iterations = int(task.workflow_inputs.get("max_iterations", DEFAULT_MAX_ITERATIONS))
+        integration_interval = int(task.workflow_inputs.get("integration_interval", DEFAULT_INTEGRATION_INTERVAL))
 
         structure = [
             {"type": "step", "stage": "summarize-title"},
@@ -68,12 +73,12 @@ class SolveVerifiableGoalMultiStrandWorkflow(Workflow):
         if theory_ids is None:
             return
 
-        max_iterations = int(task.workflow_inputs.get("max_iterations", 20))
+        max_iterations = int(task.workflow_inputs.get("max_iterations", DEFAULT_MAX_ITERATIONS))
         num_executions_per_iteration = int(
-            task.workflow_inputs.get("num_executions_per_iteration", 2)
+            task.workflow_inputs.get("num_executions_per_iteration", DEFAULT_NUM_EXECUTIONS_PER_ITERATION)
         )
-        execution_cost = int(task.workflow_inputs.get("execution_cost", 1))
-        integration_interval = int(task.workflow_inputs.get("integration_interval", 5))
+        execution_cost = int(task.workflow_inputs.get("execution_cost", DEFAULT_EXECUTION_COST))
+        integration_interval = int(task.workflow_inputs.get("integration_interval", DEFAULT_INTEGRATION_INTERVAL))
 
         run_solve_goal_loop(
             task=task,

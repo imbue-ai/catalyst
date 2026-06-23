@@ -10,6 +10,11 @@ interface AdditionalParamsSectionProps {
   showNumExecutionsPerIteration?: boolean;
   showExecutionCost?: boolean;
   showIntegrationInterval?: boolean;
+  showVerifiableGoalEvolveParams?: boolean;
+  showVerifiableGoalMultiStrandParams?: boolean;
+
+  numProposals?: number;
+  setNumProposals?: (v: number) => void;
 
   numRootTheories?: number;
   setNumRootTheories?: (v: number) => void;
@@ -63,6 +68,15 @@ interface AdditionalParamsSectionProps {
   integrationInterval?: number;
   setIntegrationInterval?: (v: number) => void;
 
+  rescoreInterval?: number;
+  setRescoreInterval?: (v: number) => void;
+
+  numInterpretations?: number;
+  setNumInterpretations?: (v: number) => void;
+
+  branchProb?: number;
+  setBranchProb?: (v: number) => void;
+
   // Option to restrict widths like in CreateAddonModal (e.g., md:w-1/3)
   useRestrictedWidths?: boolean;
   children?: React.ReactNode;
@@ -78,6 +92,11 @@ export function AdditionalParamsSection({
   showNumExecutionsPerIteration,
   showExecutionCost,
   showIntegrationInterval,
+  showVerifiableGoalEvolveParams,
+  showVerifiableGoalMultiStrandParams,
+
+  numProposals,
+  setNumProposals,
 
   numRootTheories,
   setNumRootTheories,
@@ -131,11 +150,229 @@ export function AdditionalParamsSection({
   integrationInterval,
   setIntegrationInterval,
 
+  rescoreInterval,
+  setRescoreInterval,
+
+  numInterpretations,
+  setNumInterpretations,
+
+  branchProb,
+  setBranchProb,
+
   useRestrictedWidths = false,
   children,
 }: AdditionalParamsSectionProps) {
   const inputClass = "w-full border-2 border-black p-2 outline-none text-sm font-bold bg-white"
   const selectClass = "w-full border-2 border-black p-2 outline-none text-sm font-bold bg-white cursor-pointer"
+
+  if (showVerifiableGoalEvolveParams) {
+    return (
+      <div className={useRestrictedWidths ? "flex flex-col gap-6 p-6 border-2 border-dashed border-gray-200" : "grid grid-cols-2 md:grid-cols-4 gap-6 p-6 border-2 border-dashed border-gray-200"}>
+        {setNumStrands && numStrands !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Root Strands</label>
+            <input
+              type="number" min="1" max="10" required
+              value={numStrands}
+              onChange={e => setNumStrands(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {setMaxIterations && maxIterations !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Evolve Iterations</label>
+            <input
+              type="number" min="0" max="100" required
+              value={maxIterations}
+              onChange={e => setMaxIterations(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {setNumProposals && numProposals !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Number of Proposals</label>
+            <input
+              type="number" min="1" max="20" required
+              value={numProposals}
+              onChange={e => setNumProposals(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {setNumParents && numParents !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Num Parents</label>
+            <input
+              type="number" min="1" max="10" required
+              value={numParents}
+              onChange={e => setNumParents(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {setNumExecutionsPerIteration && numExecutionsPerIteration !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Executions per Iteration</label>
+            <input
+              type="number" min="1" max="10" required
+              value={numExecutionsPerIteration}
+              onChange={e => setNumExecutionsPerIteration(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {setExecutionCost && executionCost !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Execution Cost</label>
+            <input
+              type="number" min="1" max="5" required
+              value={executionCost}
+              onChange={e => setExecutionCost(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {setRescoreInterval && rescoreInterval !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Scoring Interval</label>
+            <input
+              type="number" min="1" max="100" required
+              value={rescoreInterval}
+              onChange={e => setRescoreInterval(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {setNumInterpretations && numInterpretations !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Interpretations</label>
+            <input
+              type="number" min="1" max="100" required
+              value={numInterpretations}
+              onChange={e => setNumInterpretations(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {setNumExtraScores && numExtraScores !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Scores</label>
+            <input
+              type="number" min="0" max="100" required
+              value={numExtraScores}
+              onChange={e => setNumExtraScores(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {setBranchProb && branchProb !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Branch Prob</label>
+            <input
+              type="number" min="0" max="1" step="any" required
+              value={branchProb}
+              onChange={e => setBranchProb(parseFloat(e.target.value))}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {setGenerateIntermediateResearchSummaries && generateIntermediateResearchSummaries !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-2/3 flex items-center gap-2 pt-4" : "col-span-1 md:col-span-2 flex items-center gap-2 pt-4"}>
+            <input
+              id="generate-intermediate-summaries"
+              type="checkbox"
+              checked={generateIntermediateResearchSummaries}
+              onChange={e => setGenerateIntermediateResearchSummaries(e.target.checked)}
+              className="w-4 h-4 accent-black cursor-pointer border-2 border-black"
+            />
+            <label htmlFor="generate-intermediate-summaries" className="text-xs font-bold text-black cursor-pointer select-none">
+              Generate Intermediate Summaries
+            </label>
+          </div>
+        )}
+        {children}
+      </div>
+    )
+  }
+
+  if (showVerifiableGoalMultiStrandParams) {
+    return (
+      <div className={useRestrictedWidths ? "flex flex-col gap-6 p-6 border-2 border-dashed border-gray-200" : "grid grid-cols-2 md:grid-cols-4 gap-6 p-6 border-2 border-dashed border-gray-200"}>
+        {setNumStrands && numStrands !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Number of Strands</label>
+            <input
+              type="number" min="1" max="10" required
+              value={numStrands}
+              onChange={e => setNumStrands(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {setMaxIterations && maxIterations !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Iterations</label>
+            <input
+              type="number" min="0" max="100" required
+              value={maxIterations}
+              onChange={e => setMaxIterations(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {setNumExecutionsPerIteration && numExecutionsPerIteration !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Executions per Iteration</label>
+            <input
+              type="number" min="1" max="10" required
+              value={numExecutionsPerIteration}
+              onChange={e => setNumExecutionsPerIteration(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {setExecutionCost && executionCost !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Execution Cost</label>
+            <input
+              type="number" min="1" max="5" required
+              value={executionCost}
+              onChange={e => setExecutionCost(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </div>
+        )}
+
+        {setIntegrationInterval && integrationInterval !== undefined && (
+          <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Integration Interval</label>
+            <input
+              type="number" min="1" max="10" required
+              value={integrationInterval}
+              onChange={e => setIntegrationInterval(parseInt(e.target.value, 10))}
+              className={inputClass}
+            />
+          </div>
+        )}
+        {children}
+      </div>
+    )
+  }
 
   return (
     <div className={useRestrictedWidths ? "flex flex-col gap-6 p-6 border-2 border-dashed border-gray-200" : "grid grid-cols-2 md:grid-cols-4 gap-6 p-6 border-2 border-dashed border-gray-200"}>

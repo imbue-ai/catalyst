@@ -640,6 +640,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
           })() as string}
           initialWeights={task.theory_scoring_weights}
           newlyAddedText={pendingGuidanceAppend}
+          workflowName={task.workflow_name}
           onSave={async (newGuidance, newWeights) => {
             await api.updateGuidance(task.id, newGuidance, newWeights)
             onRefresh()

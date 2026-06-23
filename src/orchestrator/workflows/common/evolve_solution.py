@@ -88,15 +88,13 @@ def _run_interpret_results_helper(
 
 def build_evolve_solution_loop_structure(
     task: Task,
-    num_strands: int,
     max_iterations: int,
+    rescore_interval: int,
+    generate_intermediate_research_summaries: bool,
     stage_prefix: str = "",
-    generate_intermediate_research_summaries: bool = False,
 ) -> Dict[str, Any]:
     if max_iterations <= 0:
         return {}
-
-    rescore_interval = int(task.workflow_inputs.get("rescore_interval", 5))
 
     iteration_structures = {}
     for i in range(1, max_iterations + 1):
@@ -217,25 +215,18 @@ def build_evolve_solution_loop_structure(
 def run_evolve_solution_loop(
     task: Task,
     run_step: Callable,
-    theory_ids: List[str],
     max_iterations: int,
+    num_proposals: int,
+    num_interpretations: int,
+    num_parents: int,
+    num_extra_scores: int,
+    rescore_interval: int,
+    num_executions_per_iteration: int,
+    execution_cost: int,
+    branch_prob: float,
+    generate_intermediate_research_summaries: bool,
     stage_prefix: str = "",
-    generate_intermediate_research_summaries: bool = False,
 ) -> None:
-    num_strands = len(theory_ids)
-
-    num_proposals = int(task.workflow_inputs.get("num_proposals", num_strands))
-    num_interpretations = int(
-        task.workflow_inputs.get("num_interpretations", num_strands)
-    )
-    num_parents = int(task.workflow_inputs.get("num_parents", num_strands))
-    num_extra_scores = int(task.workflow_inputs.get("num_extra_scores", 2))
-    rescore_interval = int(task.workflow_inputs.get("rescore_interval", 5))
-    num_executions_per_iteration = int(
-        task.workflow_inputs.get("num_executions_per_iteration", 2)
-    )
-    execution_cost = int(task.workflow_inputs.get("execution_cost", 1))
-    branch_prob = float(task.workflow_inputs.get("branch_prob", 0.5))
 
     for i in range(1, max_iterations + 1):
         logger.debug(

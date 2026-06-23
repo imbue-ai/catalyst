@@ -5,6 +5,7 @@ import { useWorkflowParams } from '../hooks/useWorkflowParams'
 import { AdditionalParamsSection } from './AdditionalParamsSection'
 import { HarnessSettings } from './HarnessSettings'
 import { CategoryOverridesSettings } from './CategoryOverridesSettings'
+import { isVerifiableGoalWorkflow } from '../utils'
 
 interface CreateTaskModalProps {
   onClose: () => void;
@@ -120,6 +121,12 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     setExecutionCost,
     integrationInterval,
     setIntegrationInterval,
+    rescoreInterval,
+    setRescoreInterval,
+    numInterpretations,
+    setNumInterpretations,
+    branchProb,
+    setBranchProb,
     correctnessWeight,
     setCorrectnessWeight,
     powerWeight,
@@ -127,7 +134,9 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     adherenceWeight,
     setAdherenceWeight,
     generateIntermediateResearchSummaries,
-    setGenerateIntermediateResearchSummaries
+    setGenerateIntermediateResearchSummaries,
+    numProposals,
+    setNumProposals
   } = useWorkflowParams()
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -224,7 +233,23 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
       }
     } else if (activeTab === 'import-theory') {
       workflow_inputs = {}
-    } else if (activeTab === 'solve-verifiable-goal-multi-strand' || activeTab === 'solve-verifiable-goal') {
+    } else if (activeTab === 'solve-verifiable-goal') {
+      workflow_inputs = {
+        goal: inputs.goal,
+        verification_instructions: inputs.verificationInstructions,
+        num_strands: numStrands,
+        max_iterations: maxIterations,
+        num_parents: numParents,
+        num_executions_per_iteration: numExecutionsPerIteration,
+        execution_cost: executionCost,
+        rescore_interval: rescoreInterval,
+        num_interpretations: numInterpretations,
+        num_extra_scores: numExtraScores,
+        branch_prob: branchProb,
+        num_proposals: numProposals,
+        generate_intermediate_research_summaries: generateIntermediateResearchSummaries
+      }
+    } else if (activeTab === 'solve-verifiable-goal-multi-strand') {
       workflow_inputs = {
         goal: inputs.goal,
         verification_instructions: inputs.verificationInstructions,
@@ -395,7 +420,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                     </div>
                   )}
 
-                  {(activeTab === 'solve-verifiable-goal-multi-strand' || activeTab === 'solve-verifiable-goal') && (
+                  {isVerifiableGoalWorkflow(activeTab) && (
                     <div className="space-y-6">
                       <div>
                         <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Verifiable Goal</label>
@@ -521,14 +546,16 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       <AdditionalParamsSection
                         showRootTheories={activeTab === 'develop-theory'}
                         showMaxRefinements={activeTab === 'develop-theory-linear' || activeTab === 'refine-theory-idea-linear'}
-                        showMaxIterations={activeTab === 'solve-verifiable-goal-multi-strand' || activeTab === 'solve-verifiable-goal'}
-                        showNumStrands={activeTab === 'solve-verifiable-goal-multi-strand' || activeTab === 'solve-verifiable-goal'}
-                        showNumExecutionsPerIteration={activeTab === 'solve-verifiable-goal-multi-strand' || activeTab === 'solve-verifiable-goal'}
-                        showExecutionCost={activeTab === 'solve-verifiable-goal-multi-strand' || activeTab === 'solve-verifiable-goal'}
-                        showIntegrationInterval={activeTab === 'solve-verifiable-goal-multi-strand' || activeTab === 'solve-verifiable-goal'}
+                        showMaxIterations={isVerifiableGoalWorkflow(activeTab)}
+                        showNumStrands={isVerifiableGoalWorkflow(activeTab)}
+                        showNumExecutionsPerIteration={isVerifiableGoalWorkflow(activeTab)}
+                        showExecutionCost={isVerifiableGoalWorkflow(activeTab)}
+                        showIntegrationInterval={isVerifiableGoalWorkflow(activeTab)}
                         showEvolveParams={isEvolve}
-                        showApplyExpansions={!isImport && activeTab !== 'solve-verifiable-goal-multi-strand' && activeTab !== 'solve-verifiable-goal'}
+                        showApplyExpansions={!isImport && !isVerifiableGoalWorkflow(activeTab)}
                         showGenerateIntermediateResearchSummaries={!isImport}
+                        showVerifiableGoalEvolveParams={activeTab === 'solve-verifiable-goal'}
+                        showVerifiableGoalMultiStrandParams={activeTab === 'solve-verifiable-goal-multi-strand'}
                         numRootTheories={numRootTheories}
                         setNumRootTheories={setNumRootTheories}
                         maxRefinements={maxRefinements}
@@ -555,6 +582,14 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         setExecutionCost={setExecutionCost}
                         integrationInterval={integrationInterval}
                         setIntegrationInterval={setIntegrationInterval}
+                        rescoreInterval={rescoreInterval}
+                        setRescoreInterval={setRescoreInterval}
+                        numInterpretations={numInterpretations}
+                        setNumInterpretations={setNumInterpretations}
+                        branchProb={branchProb}
+                        setBranchProb={setBranchProb}
+                        numProposals={numProposals}
+                        setNumProposals={setNumProposals}
                         showScoringWeights={isEvolve}
                         correctnessWeight={correctnessWeight}
                         setCorrectnessWeight={setCorrectnessWeight}

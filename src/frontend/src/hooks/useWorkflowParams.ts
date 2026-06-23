@@ -14,7 +14,11 @@ import {
   DEFAULT_NUM_STRANDS,
   DEFAULT_NUM_EXECUTIONS_PER_ITERATION,
   DEFAULT_EXECUTION_COST,
-  DEFAULT_INTEGRATION_INTERVAL
+  DEFAULT_INTEGRATION_INTERVAL,
+  DEFAULT_RESCORE_INTERVAL,
+  DEFAULT_NUM_INTERPRETATIONS,
+  DEFAULT_BRANCH_PROB,
+  DEFAULT_NUM_PROPOSALS
 } from '../constants'
 
 export function useWorkflowParams() {
@@ -31,6 +35,10 @@ export function useWorkflowParams() {
   const [numExecutionsPerIteration, setNumExecutionsPerIteration] = useState(DEFAULT_NUM_EXECUTIONS_PER_ITERATION)
   const [executionCost, setExecutionCost] = useState(DEFAULT_EXECUTION_COST)
   const [integrationInterval, setIntegrationInterval] = useState(DEFAULT_INTEGRATION_INTERVAL)
+  const [rescoreInterval, setRescoreInterval] = useState(DEFAULT_RESCORE_INTERVAL)
+  const [numInterpretations, setNumInterpretations] = useState(DEFAULT_NUM_INTERPRETATIONS)
+  const [branchProb, setBranchProb] = useState(DEFAULT_BRANCH_PROB)
+  const [numProposals, setNumProposals] = useState(DEFAULT_NUM_PROPOSALS)
 
   const [correctnessWeight, setCorrectnessWeight] = useState(DEFAULT_CORRECTNESS_WEIGHT)
   const [powerWeight, setPowerWeight] = useState(DEFAULT_POWER_WEIGHT)
@@ -64,6 +72,14 @@ export function useWorkflowParams() {
     setExecutionCost,
     integrationInterval,
     setIntegrationInterval,
+    rescoreInterval,
+    setRescoreInterval,
+    numInterpretations,
+    setNumInterpretations,
+    branchProb,
+    setBranchProb,
+    numProposals,
+    setNumProposals,
     correctnessWeight,
     setCorrectnessWeight,
     powerWeight,

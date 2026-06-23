@@ -437,8 +437,9 @@ class TestEvolveSolutionLoop(unittest.TestCase):
         )
         struct = build_evolve_solution_loop_structure(
             task=task,
-            num_strands=2,
             max_iterations=2,
+            rescore_interval=2,
+            generate_intermediate_research_summaries=False,
             stage_prefix="test-",
         )
         self.assertEqual(struct["type"], "loop")
@@ -526,8 +527,16 @@ class TestEvolveSolutionLoop(unittest.TestCase):
         run_evolve_solution_loop(
             task=task,
             run_step=mock_run_step,
-            theory_ids=["theory-1", "theory-2"],
             max_iterations=2,
+            num_proposals=2,
+            num_interpretations=2,
+            num_parents=1,
+            num_extra_scores=1,
+            rescore_interval=2,
+            num_executions_per_iteration=2,
+            execution_cost=1,
+            branch_prob=0.0,
+            generate_intermediate_research_summaries=True,
             stage_prefix="test-",
         )
 
@@ -550,10 +559,10 @@ class TestEvolveSolutionLoop(unittest.TestCase):
         )
         struct = build_evolve_solution_loop_structure(
             task=task,
-            num_strands=2,
             max_iterations=2,
-            stage_prefix="test-",
+            rescore_interval=1,
             generate_intermediate_research_summaries=True,
+            stage_prefix="test-",
         )
         self.assertEqual(struct["type"], "loop")
         self.assertEqual(struct["iterations"], 2)
@@ -625,10 +634,17 @@ class TestEvolveSolutionLoop(unittest.TestCase):
         run_evolve_solution_loop(
             task=task,
             run_step=mock_run_step,
-            theory_ids=["theory-1", "theory-2"],
             max_iterations=2,
-            stage_prefix="test-",
+            num_proposals=2,
+            num_interpretations=2,
+            num_parents=1,
+            num_extra_scores=1,
+            rescore_interval=1,
+            num_executions_per_iteration=2,
+            execution_cost=1,
+            branch_prob=0.0,
             generate_intermediate_research_summaries=True,
+            stage_prefix="test-",
         )
 
         self.assertEqual(mock_run_local.call_count, 6)

@@ -16,6 +16,15 @@ from .common import (
     build_evolve_solution_loop_structure,
     run_evolve_solution_loop,
     run_initialize_theories,
+    DEFAULT_MAX_ITERATIONS,
+    DEFAULT_RESCORE_INTERVAL,
+    DEFAULT_NUM_INTERPRETATIONS,
+    DEFAULT_NUM_PARENTS,
+    DEFAULT_NUM_EXTRA_SCORES,
+    DEFAULT_NUM_EXECUTIONS_PER_ITERATION,
+    DEFAULT_EXECUTION_COST,
+    DEFAULT_BRANCH_PROB,
+    DEFAULT_NUM_PROPOSALS,
 )
 from orchestrator.prompts import get_summarize_goal_progress_prompt
 
@@ -95,9 +104,10 @@ class SolveVerifiableGoalWorkflow(Workflow):
         return "solve-verifiable-goal"
 
     def get_structure(self, task: Task) -> List[Dict[str, Any]]:
-        num_strands = int(task.workflow_inputs.get("num_strands", 3))
-        max_iterations = int(task.workflow_inputs.get("max_iterations", 20))
-        generate_summaries = bool(task.workflow_inputs.get("generate_intermediate_research_summaries"))
+        max_iterations = int(task.workflow_inputs.get("max_iterations", DEFAULT_MAX_ITERATIONS))
+        rescore_interval = int(task.workflow_inputs.get("rescore_interval", DEFAULT_RESCORE_INTERVAL))
+        generate_summaries_val = task.workflow_inputs.get("generate_intermediate_research_summaries")
+        generate_summaries = True if generate_summaries_val is None else bool(generate_summaries_val)
 
         structure = [
             {"type": "step", "stage": "summarize-title"},
@@ -110,11 +120,11 @@ class SolveVerifiableGoalWorkflow(Workflow):
 
         if max_iterations > 0:
             loop_struct = build_evolve_solution_loop_structure(
-                task,
-                num_strands=num_strands,
+                task=task,
                 max_iterations=max_iterations,
-                stage_prefix="",
+                rescore_interval=rescore_interval,
                 generate_intermediate_research_summaries=generate_summaries,
+                stage_prefix="",
             )
             structure.append(loop_struct)
 
@@ -149,7 +159,8 @@ class SolveVerifiableGoalWorkflow(Workflow):
         if not solution_theory_pairs:
             return
 
-        generate_summaries = bool(task.workflow_inputs.get("generate_intermediate_research_summaries"))
+        generate_summaries_val = task.workflow_inputs.get("generate_intermediate_research_summaries")
+        generate_summaries = True if generate_summaries_val is None else bool(generate_summaries_val)
         if generate_summaries:
             run_step_if_needed(
                 task,
@@ -159,14 +170,29 @@ class SolveVerifiableGoalWorkflow(Workflow):
                 StepCategory.MISC,
             )
 
-        max_iterations = int(task.workflow_inputs.get("max_iterations", 20))
+        max_iterations = int(task.workflow_inputs.get("max_iterations", DEFAULT_MAX_ITERATIONS))
+        num_proposals = int(task.workflow_inputs.get("num_proposals", DEFAULT_NUM_PROPOSALS))
+        num_interpretations = int(task.workflow_inputs.get("num_interpretations", DEFAULT_NUM_INTERPRETATIONS))
+        num_parents = int(task.workflow_inputs.get("num_parents", DEFAULT_NUM_PARENTS))
+        num_extra_scores = int(task.workflow_inputs.get("num_extra_scores", DEFAULT_NUM_EXTRA_SCORES))
+        rescore_interval = int(task.workflow_inputs.get("rescore_interval", DEFAULT_RESCORE_INTERVAL))
+        num_executions_per_iteration = int(task.workflow_inputs.get("num_executions_per_iteration", DEFAULT_NUM_EXECUTIONS_PER_ITERATION))
+        execution_cost = int(task.workflow_inputs.get("execution_cost", DEFAULT_EXECUTION_COST))
+        branch_prob = float(task.workflow_inputs.get("branch_prob", DEFAULT_BRANCH_PROB))
 
         run_evolve_solution_loop(
             task=task,
             run_step=run_step,
-            theory_ids=theory_ids,
             max_iterations=max_iterations,
-            stage_prefix="",
+            num_proposals=num_proposals,
+            num_interpretations=num_interpretations,
+            num_parents=num_parents,
+            num_extra_scores=num_extra_scores,
+            rescore_interval=rescore_interval,
+            num_executions_per_iteration=num_executions_per_iteration,
+            execution_cost=execution_cost,
+            branch_prob=branch_prob,
             generate_intermediate_research_summaries=generate_summaries,
+            stage_prefix="",
         )
 

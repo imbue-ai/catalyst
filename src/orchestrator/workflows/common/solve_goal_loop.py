@@ -14,14 +14,23 @@ from orchestrator.prompts import (
     get_integrate_interpretations_prompt,
 )
 
+from .constants import (
+    DEFAULT_MAX_ITERATIONS,
+    DEFAULT_NUM_STRANDS,
+    DEFAULT_INTEGRATION_INTERVAL,
+    DEFAULT_NUM_EXECUTIONS_PER_ITERATION,
+    DEFAULT_EXECUTION_COST,
+)
+
+
 logger = logging.getLogger(__name__)
 
 
 def build_solve_goal_loop_structure(
     task: Task,
-    num_strands: int,
-    max_iterations: int,
-    integration_interval: int,
+    num_strands: int = DEFAULT_NUM_STRANDS,
+    max_iterations: int = DEFAULT_MAX_ITERATIONS,
+    integration_interval: int = DEFAULT_INTEGRATION_INTERVAL,
     stage_prefix: str = "",
 ) -> Dict[str, Any]:
     if max_iterations <= 0:
@@ -86,10 +95,10 @@ def run_solve_goal_loop(
     task: Task,
     run_step: Callable,
     theory_ids: List[str],
-    max_iterations: int,
-    num_executions_per_iteration: int,
-    execution_cost: int,
-    integration_interval: int,
+    max_iterations: int = DEFAULT_MAX_ITERATIONS,
+    num_executions_per_iteration: int = DEFAULT_NUM_EXECUTIONS_PER_ITERATION,
+    execution_cost: int = DEFAULT_EXECUTION_COST,
+    integration_interval: int = DEFAULT_INTEGRATION_INTERVAL,
     stage_prefix: str = "",
 ) -> List[str]:
     num_strands = len(theory_ids)

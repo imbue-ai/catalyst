@@ -286,6 +286,10 @@ class CreateAddonRequest(BaseModel):
     num_executions_per_iteration: Optional[int] = None
     execution_cost: Optional[int] = None
     integration_interval: Optional[int] = None
+    rescore_interval: Optional[int] = None
+    num_interpretations: Optional[int] = None
+    branch_prob: Optional[float] = None
+    num_proposals: Optional[int] = None
 
 
 @app.post("/api/tasks/{task_id}/addons", response_model=Task)
@@ -316,6 +320,10 @@ def create_addon(task_id: str, req: CreateAddonRequest):
         num_executions_per_iteration=req.num_executions_per_iteration,
         execution_cost=req.execution_cost,
         integration_interval=req.integration_interval,
+        rescore_interval=req.rescore_interval,
+        num_interpretations=req.num_interpretations,
+        branch_prob=req.branch_prob,
+        num_proposals=req.num_proposals,
     )
     task.addons.append(addon)
 

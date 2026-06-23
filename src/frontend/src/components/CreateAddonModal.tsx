@@ -3,6 +3,7 @@ import { XCircle, ChevronRight, ChevronDown, FileText, Users, Settings2, Message
 import * as api from '../api'
 import { useWorkflowParams } from '../hooks/useWorkflowParams'
 import { AdditionalParamsSection } from './AdditionalParamsSection'
+import { isVerifiableGoalWorkflow } from '../utils'
 
 interface CreateAddonModalProps {
   task: api.Task;
@@ -40,7 +41,7 @@ const ADDON_DESCRIPTIONS: Record<string, string> = {
 type InputCategory = 'population' | 'theory' | 'statement' | 'strands' | 'population_strands';
 
 const getAvailableSkills = (cat: InputCategory, reviewed: boolean, workflowName?: string): { id: string, label: string }[] => {
-  if (workflowName === 'solve-verifiable-goal-multi-strand' || workflowName === 'solve-verifiable-goal') {
+  if (isVerifiableGoalWorkflow(workflowName)) {
     if (cat === 'strands') {
       return reviewed ? [
         { id: 'score-solutions', label: 'Score Solutions' },
@@ -110,7 +111,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
 
   const isSolveVerifiableGoalMultiStrand = task.workflow_name === 'solve-verifiable-goal-multi-strand';
   const isSolveVerifiableGoalEvolve = task.workflow_name === 'solve-verifiable-goal';
-  const isSolveVerifiableGoal = isSolveVerifiableGoalMultiStrand || isSolveVerifiableGoalEvolve;
+  const isSolveVerifiableGoal = isVerifiableGoalWorkflow(task.workflow_name);
   const [inputCategory, setInputCategory] = useState<InputCategory>(
     isSolveVerifiableGoalEvolve ? 'population_strands' : (isSolveVerifiableGoalMultiStrand ? 'strands' : 'theory')
   )
@@ -136,7 +137,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     task.workflow_name
   )
   const [addonType, setAddonType] = useState(initialSkills.length > 0 ? initialSkills[0].id : '')
-  const isMultiTheoryAddon = ['score-theories', 'write-different-theory', 'solve-goal-loop', 'evolve-solution-loop', 'score-solutions'].includes(addonType);
+  const isMultiTheoryAddon = ['score-theories', 'write-different-theory', 'solve-goal-loop', 'score-solutions'].includes(addonType);
 
   const [theoryId, setTheoryId] = useState('')
   const [theoryIds, setTheoryIds] = useState<string[]>([])
@@ -183,6 +184,12 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     setApplyExpansions,
     generateIntermediateResearchSummaries,
     setGenerateIntermediateResearchSummaries,
+    rescoreInterval,
+    setRescoreInterval,
+    numInterpretations,
+    setNumInterpretations,
+    branchProb,
+    setBranchProb,
     maxIterations,
     setMaxIterations,
     numExecutionsPerIteration,
@@ -191,6 +198,8 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     setExecutionCost,
     integrationInterval,
     setIntegrationInterval,
+    numProposals,
+    setNumProposals,
   } = useWorkflowParams()
 
   const filteredReviews = availableReviews.filter(r => r.parent_theory === theoryId)
@@ -232,25 +241,29 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     try {
       const updatedTask = await api.createAddon(task.id, {
         type: addonType,
-        theory_id: (inputCategory === 'population' || addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop' || addonType === 'score-solutions') ? undefined : theoryId,
-        theory_ids: (addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop' || addonType === 'score-solutions') ? theoryIds : undefined,
+        theory_id: (inputCategory === 'population' || inputCategory === 'population_strands' || addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop' || addonType === 'score-solutions') ? undefined : theoryId,
+        theory_ids: (addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop' || addonType === 'score-solutions') ? theoryIds : undefined,
         direction: addonType === 'streamline-theory' && direction ? direction : undefined,
         max_refinements: addonType === 'refinement-loop' ? maxRefinements : undefined,
         apply_expansions: (addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory') ? (applyExpansions || undefined) : undefined,
         evolve_iterations: addonType === 'evolve-loop' ? evolveIterations : undefined,
-        num_parents: addonType === 'evolve-loop' ? numParents : undefined,
+        num_parents: (addonType === 'evolve-loop' || addonType === 'evolve-solution-loop') ? numParents : undefined,
         max_streamline_prob: addonType === 'evolve-loop' ? maxStreamlineProb : undefined,
         write_different_prob: addonType === 'evolve-loop' ? writeDifferentProb : undefined,
-        num_extra_scores: addonType === 'evolve-loop' ? numExtraScores : undefined,
+        num_extra_scores: (addonType === 'evolve-loop' || addonType === 'evolve-solution-loop') ? numExtraScores : undefined,
         review_id: (addonType === 'refine-hypothesis' || addonType === 'expand-theory' || addonType === 'improve-adherence') ? reviewId : undefined,
         hypothesis_title: addonType === 'falsify-hypothesis' ? hypothesisTitle : undefined,
         instruction: addonType === 'edit-theory' ? instruction : undefined,
         lit_review_id: (['edit-theory', 'expand-theory', 'improve-adherence', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop', 'write-different-theory'].includes(addonType)) ? (litReviewId || undefined) : undefined,
-        generate_intermediate_research_summaries: (addonType === 'refinement-loop' || addonType === 'evolve-loop') ? generateIntermediateResearchSummaries : undefined,
+        generate_intermediate_research_summaries: (addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'evolve-solution-loop') ? generateIntermediateResearchSummaries : undefined,
         max_iterations: (addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop') ? maxIterations : undefined,
-        num_executions_per_iteration: addonType === 'solve-goal-loop' ? numExecutionsPerIteration : undefined,
-        execution_cost: addonType === 'solve-goal-loop' ? executionCost : undefined,
+        num_executions_per_iteration: (addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop') ? numExecutionsPerIteration : undefined,
+        execution_cost: (addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop') ? executionCost : undefined,
         integration_interval: addonType === 'solve-goal-loop' ? integrationInterval : undefined,
+        rescore_interval: addonType === 'evolve-solution-loop' ? rescoreInterval : undefined,
+        num_interpretations: addonType === 'evolve-solution-loop' ? numInterpretations : undefined,
+        branch_prob: addonType === 'evolve-solution-loop' ? branchProb : undefined,
+        num_proposals: addonType === 'evolve-solution-loop' ? numProposals : undefined,
       })
       onCreated(updatedTask)
     } catch (e: any) {
@@ -552,11 +565,13 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                           showMaxRefinements={addonType === 'refinement-loop'}
                           showEvolveParams={addonType === 'evolve-loop'}
                           showApplyExpansions={addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory'}
-                          showGenerateIntermediateResearchSummaries={addonType === 'refinement-loop' || addonType === 'evolve-loop'}
+                          showGenerateIntermediateResearchSummaries={addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'evolve-solution-loop'}
                           showMaxIterations={addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop'}
-                          showNumExecutionsPerIteration={addonType === 'solve-goal-loop'}
-                          showExecutionCost={addonType === 'solve-goal-loop'}
+                          showNumExecutionsPerIteration={addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop'}
+                          showExecutionCost={addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop'}
                           showIntegrationInterval={addonType === 'solve-goal-loop'}
+                          showVerifiableGoalEvolveParams={addonType === 'evolve-solution-loop'}
+                          showVerifiableGoalMultiStrandParams={addonType === 'solve-goal-loop'}
                           maxRefinements={maxRefinements}
                           setMaxRefinements={setMaxRefinements}
                           evolveIterations={evolveIterations}
@@ -581,6 +596,14 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                           setExecutionCost={setExecutionCost}
                           integrationInterval={integrationInterval}
                           setIntegrationInterval={setIntegrationInterval}
+                          rescoreInterval={rescoreInterval}
+                          setRescoreInterval={setRescoreInterval}
+                          numInterpretations={numInterpretations}
+                          setNumInterpretations={setNumInterpretations}
+                          branchProb={branchProb}
+                          setBranchProb={setBranchProb}
+                          numProposals={numProposals}
+                          setNumProposals={setNumProposals}
                         >
                           {addonType === 'streamline-theory' && (
                             <div>

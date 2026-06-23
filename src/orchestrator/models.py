@@ -76,6 +76,11 @@ class Addon(BaseModel):
     num_executions_per_iteration: Optional[int] = None
     execution_cost: Optional[int] = None
     integration_interval: Optional[int] = None
+    rescore_interval: Optional[int] = None
+    num_interpretations: Optional[int] = None
+    branch_prob: Optional[float] = None
+    num_proposals: Optional[int] = None
+
 
 
 class TheoryScoringWeights(BaseModel):

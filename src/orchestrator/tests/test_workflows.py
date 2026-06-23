@@ -379,6 +379,7 @@ class TestSolveVerifiableGoalWorkflow(unittest.TestCase):
                 "verification_instructions": "Verify nicely",
                 "num_strands": "2",
                 "max_iterations": "1",
+                "generate_intermediate_research_summaries": False,
             },
         )
         wf = SolveVerifiableGoalWorkflow()
@@ -407,6 +408,7 @@ class TestSolveVerifiableGoalWorkflow(unittest.TestCase):
                 "verification_instructions": "Verify nicely",
                 "num_strands": "2",
                 "max_iterations": "1",
+                "generate_intermediate_research_summaries": False,
             },
         )
         wf = SolveVerifiableGoalWorkflow()
