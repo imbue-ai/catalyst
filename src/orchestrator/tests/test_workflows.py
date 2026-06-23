@@ -4,6 +4,7 @@ from ..models import Task
 from ..workflows.import_theory import ImportTheoryWorkflow
 from ..workflows.develop_theory_linear import DevelopTheoryLinearWorkflow
 from ..workflows.solve_verifiable_goal_multi_strand import SolveVerifiableGoalMultiStrandWorkflow
+from ..workflows.solve_verifiable_goal import SolveVerifiableGoalWorkflow
 
 class TestImportTheoryWorkflow(unittest.TestCase):
     def test_get_structure(self):
@@ -316,5 +317,61 @@ class TestSolveVerifiableGoalMultiStrandWorkflow(unittest.TestCase):
         # Verify that integrate-interpretations was indeed called
         any_integrate_calls = any("integrate-interpretations" in call.args[2] for call in mock_run_if_needed.call_args_list)
         self.assertTrue(any_integrate_calls)
+
+
+class TestSolveVerifiableGoalWorkflow(unittest.TestCase):
+    def test_get_structure(self):
+        task = Task(
+            id="task_solve_verifiable_test",
+            workflow_name="solve-verifiable-goal",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={
+                "goal": "Test goal",
+                "verification_instructions": "Verify nicely",
+                "num_strands": "2",
+                "max_iterations": "1"
+            }
+        )
+        wf = SolveVerifiableGoalWorkflow()
+        self.assertEqual(wf.name, "solve-verifiable-goal")
+        struct = wf.get_structure(task)
+        self.assertEqual(struct[0]["stage"], "summarize-title")
+        self.assertEqual(struct[1]["stage"], "initialize-theories")
+        self.assertEqual(len(struct), 3)
+
+    @patch("orchestrator.workflows.solve_verifiable_goal.run_summarize_title")
+    @patch("orchestrator.workflows.solve_verifiable_goal.run_local_step_if_needed")
+    @patch("orchestrator.workflows.common.evolve_solution.run_local_step_if_needed")
+    @patch("builtins.open", new_callable=mock_open)
+    def test_run_success(self, mock_file, mock_run_evolve_step, mock_run_local, mock_summarize):
+        task = Task(
+            id="task_solve_verifiable_test",
+            workflow_name="solve-verifiable-goal",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={
+                "goal": "Test goal",
+                "verification_instructions": "Verify nicely",
+                "num_strands": "2",
+                "max_iterations": "1"
+            }
+        )
+        wf = SolveVerifiableGoalWorkflow()
+        mock_run_step = MagicMock()
+
+        # Step 1: Initialize Theories returns theory IDs
+        mock_run_local.return_value = {"theory_ids": ["T_1", "T_2"]}
+
+        wf.run(task, mock_run_step)
+
+        # Assert correct files written
+        mock_file.assert_any_call("/tmp/env/goal.txt", "w")
+        mock_file.assert_any_call("/tmp/env/verification_instructions.txt", "w")
+
+        # Check summarize and step invocations
+        mock_summarize.assert_called_once_with(task, mock_run_step, "goal: Test goal")
+        mock_run_local.assert_called_once()
+        mock_run_evolve_step.assert_called_once()
 
 

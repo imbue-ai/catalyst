@@ -12,7 +12,7 @@ interface CreateTaskModalProps {
   isBackendDown: boolean;
 }
 
-type WorkflowType = 'develop-theory' | 'develop-theory-linear' | 'refine-theory-idea' | 'refine-theory-idea-linear' | 'import-theory' | 'solve-verifiable-goal-multi-strand';
+type WorkflowType = 'develop-theory' | 'develop-theory-linear' | 'refine-theory-idea' | 'refine-theory-idea-linear' | 'import-theory' | 'solve-verifiable-goal-multi-strand' | 'solve-verifiable-goal';
 type InputCategory = 'phenomenon' | 'idea' | 'draft' | 'goal';
 
 const CATEGORY_WORKFLOWS: Record<InputCategory, { id: WorkflowType, label: string, description: string, icon: React.ReactNode }[]> = {
@@ -28,13 +28,14 @@ const CATEGORY_WORKFLOWS: Record<InputCategory, { id: WorkflowType, label: strin
     { id: 'import-theory', label: 'Import', description: 'Import an existing theory. You can add further steps later on.', icon: <UploadCloud size={18} /> }
   ],
   'goal': [
+    { id: 'solve-verifiable-goal', label: 'Solve Verifiable Goal (Evolution)', description: 'Autonomously solve a verifiable goal using evolutionary methods to evolve a population of candidate solutions.', icon: <GitMerge size={18} /> },
     { id: 'solve-verifiable-goal-multi-strand', label: 'Solve Verifiable Goal (Multi Strand)', description: 'Autonomously solve a verifiable goal by conducting a sequence of experiments and maintaining a fixed number of interpretation strands.', icon: <Goal size={18} /> }
   ]
 };
 
 export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTaskModalProps) {
   const [inputCategory, setInputCategory] = useState<InputCategory>('goal')
-  const [activeTab, setActiveTab] = useState<WorkflowType>('solve-verifiable-goal-multi-strand')
+  const [activeTab, setActiveTab] = useState<WorkflowType>('solve-verifiable-goal')
 
   const [showAdditional, setShowAdditional] = useState(false)
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false)
@@ -223,7 +224,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
       }
     } else if (activeTab === 'import-theory') {
       workflow_inputs = {}
-    } else if (activeTab === 'solve-verifiable-goal-multi-strand') {
+    } else if (activeTab === 'solve-verifiable-goal-multi-strand' || activeTab === 'solve-verifiable-goal') {
       workflow_inputs = {
         goal: inputs.goal,
         verification_instructions: inputs.verificationInstructions,
@@ -394,7 +395,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                     </div>
                   )}
 
-                  {activeTab === 'solve-verifiable-goal-multi-strand' && (
+                  {(activeTab === 'solve-verifiable-goal-multi-strand' || activeTab === 'solve-verifiable-goal') && (
                     <div className="space-y-6">
                       <div>
                         <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Verifiable Goal</label>
@@ -520,13 +521,13 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       <AdditionalParamsSection
                         showRootTheories={activeTab === 'develop-theory'}
                         showMaxRefinements={activeTab === 'develop-theory-linear' || activeTab === 'refine-theory-idea-linear'}
-                        showMaxIterations={activeTab === 'solve-verifiable-goal-multi-strand'}
-                        showNumStrands={activeTab === 'solve-verifiable-goal-multi-strand'}
-                        showNumExecutionsPerIteration={activeTab === 'solve-verifiable-goal-multi-strand'}
-                        showExecutionCost={activeTab === 'solve-verifiable-goal-multi-strand'}
-                        showIntegrationInterval={activeTab === 'solve-verifiable-goal-multi-strand'}
+                        showMaxIterations={activeTab === 'solve-verifiable-goal-multi-strand' || activeTab === 'solve-verifiable-goal'}
+                        showNumStrands={activeTab === 'solve-verifiable-goal-multi-strand' || activeTab === 'solve-verifiable-goal'}
+                        showNumExecutionsPerIteration={activeTab === 'solve-verifiable-goal-multi-strand' || activeTab === 'solve-verifiable-goal'}
+                        showExecutionCost={activeTab === 'solve-verifiable-goal-multi-strand' || activeTab === 'solve-verifiable-goal'}
+                        showIntegrationInterval={activeTab === 'solve-verifiable-goal-multi-strand' || activeTab === 'solve-verifiable-goal'}
                         showEvolveParams={isEvolve}
-                        showApplyExpansions={!isImport && activeTab !== 'solve-verifiable-goal-multi-strand'}
+                        showApplyExpansions={!isImport && activeTab !== 'solve-verifiable-goal-multi-strand' && activeTab !== 'solve-verifiable-goal'}
                         showGenerateIntermediateResearchSummaries={!isImport}
                         numRootTheories={numRootTheories}
                         setNumRootTheories={setNumRootTheories}

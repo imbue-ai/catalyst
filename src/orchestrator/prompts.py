@@ -223,13 +223,17 @@ def get_interpret_result_prompt(theory_id: str, result_ids: list[str]) -> str:
     result_ids_str = " ".join(result_ids)
     return (
         f"Please run the interpret-result skill for theory ID: {theory_id} and result IDs: {result_ids_str}. "
-        "When you are done, return ONLY a JSON object with the key 'theory_id'."
+        "When you are done, return ONLY a JSON object with the key 'theory_id' to confirm that the new interpretation has been stored for that theory."
     )
 
 
-def get_integrate_interpretations_prompt(theory_id: str) -> str:
-    return (
+def get_integrate_interpretations_prompt(
+    theory_id: str, create_branch: bool = False
+) -> str:
+    prompt = (
         f"Please run the integrate-interpretations skill for theory ID: {theory_id}. "
-        "When you are done, return ONLY a JSON object with the key 'theory_id'."
     )
-
+    if create_branch:
+        prompt += "Please BRANCH into two new theories. "
+    prompt += "When you are done, return ONLY a JSON object with the key 'theory_ids' containing an array of the new theory IDs."
+    return prompt

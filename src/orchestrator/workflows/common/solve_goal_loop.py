@@ -262,9 +262,7 @@ def run_solve_goal_loop(
             new_t_id = res.get("theory_id") if res else None
             new_theory_ids.append(new_t_id)
 
-        if len(new_theory_ids) != num_strands or any(
-            x is None for x in new_theory_ids
-        ):
+        if len(new_theory_ids) != num_strands or any(x is None for x in new_theory_ids):
             raise Exception(
                 f"Failed to generate all {num_strands} theories in iteration {i}."
             )
@@ -274,7 +272,9 @@ def run_solve_goal_loop(
             integration_results = {}
 
             def run_integrate_interpretations(strand_idx: int, theory_id: str):
-                stage_name = f"{stage_prefix}integrate-interpretations-{i}-{strand_idx + 1}"
+                stage_name = (
+                    f"{stage_prefix}integrate-interpretations-{i}-{strand_idx + 1}"
+                )
                 res = run_step_if_needed(
                     task,
                     run_step,
@@ -300,12 +300,10 @@ def run_solve_goal_loop(
             integrated_theory_ids = []
             for idx in range(num_strands):
                 res = integration_results.get(idx)
-                integrated_t_id = res.get("theory_id") if res else None
-                integrated_theory_ids.append(integrated_t_id)
+                integrated_t_ids = res.get("theory_ids", []) if res else []
+                integrated_theory_ids.extend(integrated_t_ids)
 
-            if len(integrated_theory_ids) != num_strands or any(
-                x is None for x in integrated_theory_ids
-            ):
+            if len(integrated_theory_ids) != num_strands:
                 raise Exception(
                     f"Failed to integrate all {num_strands} interpretations in iteration {i}."
                 )

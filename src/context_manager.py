@@ -495,6 +495,33 @@ def store_results(
             f"Must be one of: {', '.join(AGENT_TYPE_MAP)}"
         )
 
+    if from_agent_type == "interpret-result":
+        if not parent_theory:
+            raise ValueError(
+                f"--parent_theory is required when storing {from_agent_type} results"
+            )
+        db_root = get_db_path()
+        theory_dir = db_root / "theory" / parent_theory
+        if not theory_dir.is_dir():
+            raise ValueError(
+                f"Referenced parent theory {parent_theory!r} does not exist "
+                f"in the database (expected {theory_dir})"
+            )
+        if not from_folder.is_dir():
+            raise ValueError(f"Source folder does not exist: {from_folder}")
+        src_log = from_folder / "interpretation_log.md"
+        if not src_log.is_file():
+            raise ValueError(
+                f"Source folder is missing the required file 'interpretation_log.md': {from_folder}"
+            )
+
+        with DatabaseSession(db_root) as session:
+            _make_writable(theory_dir)
+            target_log = theory_dir / "interpretation_log.md"
+            shutil.copy2(src_log, target_log)
+            _make_readonly(theory_dir)
+            return parent_theory
+
     category = AGENT_TYPE_MAP[from_agent_type]
     expected_md = CATEGORY_MD_MAP[category]
 

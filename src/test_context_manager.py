@@ -76,7 +76,10 @@ class TestContextManager(unittest.TestCase):
             src_dir = self.test_dir / f"src_{agent_type}"
             src_dir.mkdir(parents=True, exist_ok=True)
 
-            expected_md = CATEGORY_MD_MAP[category]
+            if agent_type == "interpret-result":
+                expected_md = "interpretation_log.md"
+            else:
+                expected_md = CATEGORY_MD_MAP[category]
             (src_dir / expected_md).write_text(f"Content for {agent_type}")
 
             args = [
@@ -116,12 +119,20 @@ class TestContextManager(unittest.TestCase):
             new_id = res.stdout.strip().split()[-1]
             self.assertTrue(len(new_id) > 0)
 
-            # Verify metadata
-            target_meta = self.db_path / category / new_id / "metadata.json"
-            self.assertTrue(target_meta.exists())
-            meta_data = json.loads(target_meta.read_text())
-            self.assertEqual(meta_data["id"], new_id)
-            self.assertEqual(meta_data["agent_type"], agent_type)
+            if agent_type == "interpret-result":
+                # For interpret-result, it updates in-place, returning the parent_theory_id
+                self.assertEqual(new_id, parent_theory_id)
+                # Verify that interpretation_log.md is successfully updated
+                target_log = self.db_path / "theory" / parent_theory_id / "interpretation_log.md"
+                self.assertTrue(target_log.exists())
+                self.assertEqual(target_log.read_text(), f"Content for {agent_type}")
+            else:
+                # Verify metadata
+                target_meta = self.db_path / category / new_id / "metadata.json"
+                self.assertTrue(target_meta.exists())
+                meta_data = json.loads(target_meta.read_text())
+                self.assertEqual(meta_data["id"], new_id)
+                self.assertEqual(meta_data["agent_type"], agent_type)
 
     def test_create_context_all_agent_types(self):
         """Verify create_context works for all supported target agent types."""
@@ -161,7 +172,7 @@ class TestContextManager(unittest.TestCase):
             "predict-experiments", "prediction", "predictions.md", parent=t_id
         )
         t_parent_id = store_simple(
-            "interpret-result", "theory", "theory.md", parent=t_id
+            "interpret-result", "theory", "interpretation_log.md", parent=t_id
         )
         prop_id = store_simple(
             "propose-experiment", "proposal", "proposal.md"

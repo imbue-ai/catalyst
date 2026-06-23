@@ -20,4 +20,9 @@ from .solve_goal_loop import (
     build_solve_goal_loop_structure as build_solve_goal_loop_structure,
     run_solve_goal_loop as run_solve_goal_loop,
 )
+from .evolve_solution import (
+    build_evolve_solution_loop_structure as build_evolve_solution_loop_structure,
+    run_evolve_solution_loop as run_evolve_solution_loop,
+)
+
 

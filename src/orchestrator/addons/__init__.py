@@ -18,6 +18,7 @@ from .score_theories import ScoreTheoriesAddon
 from .write_different_theory import WriteDifferentTheoryAddon
 from .summarize_research import SummarizeResearchAddon
 from .solve_goal_loop import SolveGoalLoopAddon
+from .evolve_solution_loop import EvolveSolutionLoopAddon
 
 _ADDONS: Dict[str, AddonHandler] = {
     "streamline-theory": StreamlineTheoryAddon(),
@@ -38,6 +39,7 @@ _ADDONS: Dict[str, AddonHandler] = {
     "write-different-theory": WriteDifferentTheoryAddon(),
     "summarize-research": SummarizeResearchAddon(),
     "solve-goal-loop": SolveGoalLoopAddon(),
+    "evolve-solution-loop": EvolveSolutionLoopAddon(),
 }
 
 def get_addon_handler(name: str) -> AddonHandler:

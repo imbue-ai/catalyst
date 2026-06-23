@@ -70,11 +70,11 @@ This command will place the experiment description (`description.md`), Python sc
      - For a literature search: `## Literature Search <L_ID>: <Title>`
      - For a solution candidate: `## Solution Candidate <U_ID>: <Title>`
 5. **Update Log**: Append these new sections to `<OUTPUT_DIR>/interpretations_log.md` (create the file if it does not exist, and only append to it, while leaving `<OUTPUT_DIR>/theory.md` unchanged).
-6. **Store Results**: Persist the updated theory folder to the database:
+6. **Store Results**: Persist the updated interpretation log to the database:
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results \
        --from_agent_type interpret-result \
        --from_folder <OUTPUT_DIR> \
        --parent_theory <T_ID>
    ```
-   *Replace `<T_ID>` with the ID of the input theory, ensuring child-to-parent lineage mapping.*
+   *Replace `<T_ID>` with the ID of the input theory.*
