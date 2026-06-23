@@ -11,8 +11,8 @@ You must select and propose one of three types of proposals based on your curren
 
 1. **Regular Experiment**: 
    - Use this to gather data, establish baselines, or test assumptions when more exploration is needed.
-   - Propose a single, focused experiment that resolves a key knowledge gap, validates an assumption or hypothesis, or tests a promising optimization in the current theory / interpretations log.
-   - At the very beginning of experimentation (i.e. if the current theory and interpretations log is still ~empty), it might be best to establish some baselines before trying to explore paths towards the goal.
+   - Propose a single, focused experiment that resolves a key knowledge gap, validates an assumption or hypothesis, or tests a promising optimization in the current theory / interpretation log.
+   - At the very beginning of experimentation (i.e. if the current theory and interpretation log is still ~empty), it might be best to establish some baselines before trying to explore paths towards the goal.
    - Generally, try to propose an experiment that provides valuable information for moving towards the optimization goal *in the long run*. Notably, this doesn't mean that each individual experiment needs to move towards the goal directly. Rather, prioritize experiments that facilitate learning and exploration and which may help you later on by testing different directions, key assumptions, or ruling out unpromising paths.
    - **Required Heading in `proposal.md`**: `# Experiment Proposal: <title>`
    - **Output Files**: `proposal.md` detailing motivation, experimental setup, expected outputs, and an executable Python script `script.py` set up to run the experiment. Also include the given theory ID in the `proposal.md`.
@@ -51,13 +51,13 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
     --from_theory <T_ID>
 ```
 
-- `<CONTEXT_DIR>/theory/` — contains `theory.md` and optionally `interpretations_log.md` (read-only).
+- `<CONTEXT_DIR>/theory/` — contains `theory.md` and optionally `interpretation_log.md` (read-only).
 - `<OUTPUT_DIR>/` — write your proposal files (`proposal.md`, and optional `script.py` / solution files) here.
 
 ## Execution Steps
 
 1. **Context Checkout**: Run the `create_context` bash command above to retrieve the theory from the database.
-2. **Review Current Research State**: Read `<CONTEXT_DIR>/theory/theory.md` and additionally `<CONTEXT_DIR>/theory/interpretations_log.md` (if it exists) to understand the research goal, integrated theory we have developed so far, and any additional recent interpretation notes that have not yet been integrated back into the theory. Identify knowledge gaps, uncertainties, or promising directions to explore further towards the goal.
+2. **Review Current Research State**: Read `<CONTEXT_DIR>/theory/theory.md` and additionally `<CONTEXT_DIR>/theory/interpretation_log.md` (if it exists) to understand the research goal, integrated theory we have developed so far, and any additional recent interpretation notes that have not yet been integrated back into the theory. Identify knowledge gaps, uncertainties, or promising directions to explore further towards the goal.
 3. **Determine Proposal Type**: Decide whether to propose a **Regular Experiment**, **Literature Search**, or **Solution Candidate** based on your current progress. If the input arguments specify that you should always or never propose a solution candidate, you must follow those instructions.
 4. **Draft Proposal Document**: Write a document named `proposal.md` (this exact filename is required) in your `<OUTPUT_DIR>/`. Ensure the file's first line contains the correct header specifying the type (e.g. `# Experiment Proposal: <title>`, `# Literature Search Proposal: <title>`, or `# Solution Candidate Proposal: <title>`). Include:
    - **Motivation**: Why this step is important.

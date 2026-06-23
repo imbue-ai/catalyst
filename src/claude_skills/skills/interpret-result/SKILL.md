@@ -1,14 +1,14 @@
 ---
 name: interpret-result
-description: "Interpret the results of newly run experiments, literature searches, or solution candidates, and append the findings as new sections to the interpretations log inside the theory folder."
+description: "Interpret the results of newly run experiments, literature searches, or solution candidates, and append the findings as new sections to the interpretation log inside the theory folder."
 argument-hint: "theory ID and one or more result IDs (e.g. T_20260616_123456_abcdef X_20260616_123456_abcdef L_20260616_123456_abcdef)"
 ---
 
-We are performing research to solve the goal described in the file `goal.txt`. As part of this research, we have been running experiments, literature searches, and designing solution candidates. Some new results have become available from one or more completed processes (experiments, literature searches, or solution candidates). Your goal is to interpret these results and append your interpretations and conclusions to the central interpretations log.
+We are performing research to solve the goal described in the file `goal.txt`. As part of this research, we have been running experiments, literature searches, and designing solution candidates. Some new results have become available from one or more completed processes (experiments, literature searches, or solution candidates). Your goal is to interpret these results and append your interpretations and conclusions to the central interpretation log.
 
 ## Mandate
 - Keep interpretations objective and strictly supported by empirical observations or literature findings. Avoid over-generalizing or jumping to unsupported conclusions.
-- Do not modify or overwrite any historical sections of the interpretations log; only append the new sections under new headers, with exactly one section for each input result.
+- Do not modify or overwrite any historical sections of the interpretation log; only append the new sections under new headers, with exactly one section for each input result.
 
 ## Input
 Arguments: $ARGUMENTS
@@ -39,11 +39,11 @@ Initialize your output directory with the current theory folder files:
 cp -r "<CONTEXT_DIR>/theory/"* "<OUTPUT_DIR>/"
 ```
 
-- `<CONTEXT_DIR>/theory/` — contains `theory.md` and optionally `interpretations_log.md` (read-only historical logs).
+- `<CONTEXT_DIR>/theory/` — contains `theory.md` and optionally `interpretation_log.md` (read-only historical logs).
 - `<CONTEXT_DIR>/results/experiments/<X_ID>/` — contains the experiment folder with `description.md` and all generated plots, logs, and CSV outputs (if experiment results were checked out).
 - `<CONTEXT_DIR>/results/literature/<L_ID>/` — contains the literature search results folder with `summary.md` (if literature results were checked out).
 - `<CONTEXT_DIR>/results/solutions/<U_ID>/` — contains the solution candidate folder with `solution.md` (if solution candidates were checked out).
-- `<OUTPUT_DIR>/` — contains `theory.md` (which you must leave completely unchanged) and optionally `interpretations_log.md` which you will modify or create to append exactly one new section for each input result.
+- `<OUTPUT_DIR>/` — contains `theory.md` (which you must leave completely unchanged) and optionally `interpretation_log.md` which you will modify or create to append exactly one new section for each input result.
 
 ## Obtaining cited experiment IDs
 Your inputs may cite specific experiment IDs (`X_...`). You can retrieve these experiments and their results by running:
@@ -56,7 +56,7 @@ This command will place the experiment description (`description.md`), Python sc
 ## Execution Steps
 
 1. **Context Checkout**: Run the `create_context` bash command above to retrieve the historical theory folder and new results.
-2. **Review Current Research State**: Read `<CONTEXT_DIR>/theory/theory.md` and additionally `<CONTEXT_DIR>/theory/interpretations_log.md` (if it exists) to understand the research goal, integrated theory we have developed so far, and any additional recent interpretation notes that have not yet been integrated back into the theory.
+2. **Review Current Research State**: Read `<CONTEXT_DIR>/theory/theory.md` and additionally `<CONTEXT_DIR>/theory/interpretation_log.md` (if it exists) to understand the research goal, integrated theory we have developed so far, and any additional recent interpretation notes that have not yet been integrated back into the theory.
 3. **Locate and Review Results**:
    - **Experiments**: Check `<CONTEXT_DIR>/results/experiments/<X_ID>/`. Read `description.md` and carefully inspect the generated files (plots, CSVs, logs, etc.).
    - **Literature Searches**: Check `<CONTEXT_DIR>/results/literature/<L_ID>/`. Read `summary.md` to find the summarized literature findings and search insights.
@@ -69,7 +69,7 @@ This command will place the experiment description (`description.md`), Python sc
      - For an experiment: `## Experiment <X_ID>: <Title>`
      - For a literature search: `## Literature Search <L_ID>: <Title>`
      - For a solution candidate: `## Solution Candidate <U_ID>: <Title>`
-5. **Update Log**: Append these new sections to `<OUTPUT_DIR>/interpretations_log.md` (create the file if it does not exist, and only append to it, while leaving `<OUTPUT_DIR>/theory.md` unchanged).
+5. **Update Log**: Append these new sections to `<OUTPUT_DIR>/interpretation_log.md` (create the file if it does not exist, and only append to it, while leaving `<OUTPUT_DIR>/theory.md` unchanged).
 6. **Store Results**: Persist the updated interpretation log to the database:
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results \
