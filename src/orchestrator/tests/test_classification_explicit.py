@@ -29,6 +29,7 @@ class TestExplicitClassification(unittest.TestCase):
             "score-theories": StepCategory.REVIEW,
             "write-different-theory": StepCategory.THEORY_WRITING,
             "summarize-research": StepCategory.MISC,
+            "summarize-goal-progress": StepCategory.MISC,
             "solve-goal-loop": StepCategory.MISC,
             "evolve-solution-loop": StepCategory.MISC,
         }

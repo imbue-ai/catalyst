@@ -186,6 +186,14 @@ def get_summarize_research_prompt() -> str:
     )
 
 
+def get_summarize_goal_progress_prompt() -> str:
+    return (
+        "Please run the summarize-goal-progress skill.\n"
+        "When you are done, return ONLY a JSON object with the key 'summary_id'."
+    )
+
+
+
 def get_propose_experiment_prompt(
     theory_id: str, propose_solution: Optional[str] = None
 ) -> str:

@@ -593,6 +593,102 @@ class TestContextManager(unittest.TestCase):
         self.assertEqual(meta["headline"], "Research Summary Report")
         self.assertIsNone(meta.get("parent_theory"))
 
+    def test_summarize_goal_progress(self):
+        """Verify context population and storage for summarize-goal-progress."""
+        self.run_cmd("init")
+
+        # Helpers
+        def store_t(name):
+            d = self.test_dir / f"theory_{name}"
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "theory.md").write_text(f"Theory content for {name}")
+            res = self.run_cmd(
+                "store_results",
+                "--from_agent_type",
+                "write-theory",
+                "--from_folder",
+                str(d),
+            )
+            return res.stdout.strip().split()[-1]
+
+        def store_s(name, parent_id):
+            d = self.test_dir / f"solution_{name}"
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "solution.md").write_text(f"Solution content for {name}")
+            res = self.run_cmd(
+                "store_results",
+                "--from_agent_type",
+                "execute-proposal",
+                "--from_folder",
+                str(d),
+                "--parent_theory",
+                parent_id,
+            )
+            return res.stdout.strip().split()[-1]
+
+        # 1. Store theories
+        t1 = store_t("T1") # score 0.9, no solution
+        t2 = store_t("T2") # score 0.85, has solution
+        t3 = store_t("T3") # score 0.7, has solution
+
+        # 2. Rescore them
+        scores = {
+            t1: {"score": 0.9, "is_viable": True},
+            t2: {"score": 0.85, "is_viable": True},
+            t3: {"score": 0.7, "is_viable": True},
+        }
+        self.run_cmd("rescore_theories", json.dumps(scores))
+
+        # 3. Store solutions
+        sol2 = store_s("Sol2", t2)
+        sol3 = store_s("Sol3", t3)
+        self.assertIsNotNone(sol3)
+
+        # 4. Create context for summarize-goal-progress
+        target_folder = self.test_dir / "goal_progress_context"
+        self.run_cmd(
+            "create_context",
+            "--for_agent_type",
+            "summarize-goal-progress",
+            "--target_folder",
+            str(target_folder),
+        )
+
+        self.assertTrue(target_folder.is_dir())
+        self.assertTrue((target_folder / "theory" / "theory.md").is_file())
+        self.assertTrue((target_folder / "solution" / "solution.md").is_file())
+
+        info_file = target_folder / "info.json"
+        self.assertTrue(info_file.is_file())
+        info_data = json.loads(info_file.read_text())
+        self.assertEqual(info_data["theory_id"], t2)
+        self.assertEqual(info_data["solution_id"], sol2)
+
+        # 5. Test storing summarize-goal-progress results (summary.md)
+        summary_src = self.test_dir / "goal_summary_src"
+        summary_src.mkdir(parents=True, exist_ok=True)
+        (summary_src / "summary.md").write_text("# Goal Progress Summary\nThis is a progress summary.")
+
+        res_store = self.run_cmd(
+            "store_results",
+            "--from_agent_type",
+            "summarize-goal-progress",
+            "--from_folder",
+            str(summary_src),
+        )
+        s_id = res_store.stdout.strip().split()[-1]
+        self.assertTrue(s_id.startswith("S_"))
+
+        # Check metadata
+        meta_file = self.db_path / "summary" / s_id / "metadata.json"
+        self.assertTrue(meta_file.is_file())
+        meta = json.loads(meta_file.read_text())
+        self.assertEqual(meta["id"], s_id)
+        self.assertEqual(meta["category"], "summary")
+        self.assertEqual(meta["agent_type"], "summarize-goal-progress")
+        self.assertEqual(meta["headline"], "Goal Progress Summary")
+        self.assertIsNone(meta.get("parent_theory"))
+
     def test_record_and_sample_solutions(self):
         """Verify recording solutions and sampling theories with latest_solution field."""
         self.run_cmd("init")

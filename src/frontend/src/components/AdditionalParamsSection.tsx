@@ -308,7 +308,7 @@ export function AdditionalParamsSection({
             className="w-4 h-4 accent-black cursor-pointer border-2 border-black"
           />
           <label htmlFor="generate-intermediate-summaries" className="text-xs font-bold text-black cursor-pointer select-none">
-            Generate Intermediate Research Summaries
+            Generate Intermediate Summaries
           </label>
         </div>
       )}

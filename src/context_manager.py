@@ -55,6 +55,7 @@ AGENT_TYPE_MAP: dict[str, str] = {
     "run-experiment": "experiment",
     "predict-experiments": "prediction",
     "summarize-research": "summary",
+    "summarize-goal-progress": "summary",
     "interpret-result": "theory",
     "integrate-interpretations": "theory",
     "propose-experiment": "proposal",
@@ -767,7 +768,7 @@ def _validate_create_context_args(
             raise ValueError(
                 f"At least one --from_theory is required for {for_agent_type}"
             )
-    elif for_agent_type == "summarize-research":
+    elif for_agent_type in ("summarize-research", "summarize-goal-progress"):
         pass
     elif for_agent_type == "interpret-result":
         if not from_theories or len(from_theories) != 1:
@@ -1104,6 +1105,55 @@ def create_context(
                     ) in ("falsify-hypothesis", "review-adherence"):
                         rid = r_data["id"]
                         copy_artifact(db_root / "review" / rid, reviews_root / rid)
+
+        elif for_agent_type == "summarize-goal-progress":
+            population = session.get_population()
+            best_theory_id = None
+            best_solution_id = None
+
+            if population:
+                sorted_organisms = sorted(
+                    population.organisms,
+                    key=lambda item: (
+                        (item[1].score if item[1].score is not None else float("-inf")),
+                        item[0].created_at if hasattr(item[0], "created_at") else "",
+                    ),
+                    reverse=True,
+                )
+                for organism, eval_result in sorted_organisms:
+                    if hasattr(organism, "theory_id"):
+                        tid = organism.theory_id
+                        sol_ids = [
+                            fc.solution_id
+                            for fc in eval_result.trainable_failure_cases
+                            if getattr(fc, "solution_id", None) is not None
+                        ]
+                        if sol_ids:
+                            best_theory_id = tid
+                            best_solution_id = sol_ids[-1]
+                            break
+
+            if not best_theory_id or not best_solution_id:
+                raise ValueError(
+                    "No theory with a recorded solution was found in the population."
+                )
+
+            copy_artifact(db_root / "theory" / best_theory_id, target_folder / "theory")
+            copy_artifact(
+                db_root / "solution" / best_solution_id, target_folder / "solution"
+            )
+
+            info_path = target_folder / "info.json"
+            info_path.write_text(
+                json.dumps(
+                    {
+                        "theory_id": best_theory_id,
+                        "solution_id": best_solution_id,
+                    },
+                    indent=2,
+                )
+                + "\n"
+            )
 
 
 def fetch_experiment(
@@ -1531,6 +1581,7 @@ def main(argv: list[str] | None = None) -> None:
             "search-literature",
             "write-different-theory",
             "summarize-research",
+            "summarize-goal-progress",
             "interpret-result",
             "integrate-interpretations",
             "propose-experiment",

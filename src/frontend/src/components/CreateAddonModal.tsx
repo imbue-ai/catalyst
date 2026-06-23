@@ -29,6 +29,7 @@ const ADDON_DESCRIPTIONS: Record<string, string> = {
   'suggest-expansions': "Suggest ways in which a theory can be expanded and/or generalized.",
   'score-theories': "Score the quality of the given theories relative to each other and update all population scores.",
   'summarize-research': "Summarize the current research status",
+  'summarize-goal-progress': "Summarize the current goal progress",
   'write-different-theory': "Write a theory that explores a different approach from the provided theories.",
   'solve-goal-loop': "Iteratively propose and execute experiments towards solving a verifiable goal.",
   'evolve-solution-loop': "Evolve solution candidates over multiple generations to solve a verifiable goal. Interleaves research with scoring iterations.",
@@ -51,8 +52,11 @@ const getAvailableSkills = (cat: InputCategory, reviewed: boolean, workflowName?
     }
     if (cat === 'population_strands') {
       return reviewed ? [
-        { id: 'evolve-solution-loop', label: 'Evolve Solution Loop' }
-      ] : [];
+        { id: 'evolve-solution-loop', label: 'Evolve Solution Loop' },
+        { id: 'summarize-goal-progress', label: 'Summarize Progress' }
+      ] : [
+        { id: 'summarize-goal-progress', label: 'Summarize Progress' }
+      ];
     }
     return [];
   }
