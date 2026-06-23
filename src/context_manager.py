@@ -1786,7 +1786,13 @@ def main(argv: list[str] | None = None) -> None:
     )
     sp_sample.add_argument(
         "--purpose",
-        choices=["scoring", "mutation", "proposals", "interpret_results", "mutate"],
+        choices=[
+            "scoring",
+            "mutation",
+            "proposals",
+            "interpret_results",
+            "integration",
+        ],
         required=True,
         help="Intended use of the sampled theories (may influence sampling strategy)",
     )
