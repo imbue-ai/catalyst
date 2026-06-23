@@ -282,6 +282,10 @@ class CreateAddonRequest(BaseModel):
     instruction: Optional[str] = None
     lit_review_id: Optional[str] = None
     generate_intermediate_research_summaries: Optional[bool] = None
+    max_iterations: Optional[int] = None
+    num_executions_per_iteration: Optional[int] = None
+    execution_cost: Optional[int] = None
+    integration_interval: Optional[int] = None
 
 
 @app.post("/api/tasks/{task_id}/addons", response_model=Task)
@@ -308,6 +312,10 @@ def create_addon(task_id: str, req: CreateAddonRequest):
         instruction=req.instruction,
         lit_review_id=req.lit_review_id,
         generate_intermediate_research_summaries=req.generate_intermediate_research_summaries,
+        max_iterations=req.max_iterations,
+        num_executions_per_iteration=req.num_executions_per_iteration,
+        execution_cost=req.execution_cost,
+        integration_interval=req.integration_interval,
     )
     task.addons.append(addon)
 

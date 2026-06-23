@@ -189,7 +189,7 @@ export function AdditionalParamsSection({
 
       {showNumExecutionsPerIteration && setNumExecutionsPerIteration && (
         <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
-          <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Number of Executions per Iteration</label>
+          <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Executions per Iteration</label>
           <input
             type="number" min="1" max="10" required
             value={numExecutionsPerIteration}

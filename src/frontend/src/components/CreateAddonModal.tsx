@@ -29,12 +29,24 @@ const ADDON_DESCRIPTIONS: Record<string, string> = {
   'suggest-expansions': "Suggest ways in which a theory can be expanded and/or generalized.",
   'score-theories': "Score the quality of the given theories relative to each other and update all population scores.",
   'summarize-research': "Summarize the current research status",
-  'write-different-theory': "Write a theory that explores a different approach from the provided theories."
+  'write-different-theory': "Write a theory that explores a different approach from the provided theories.",
+  'solve-goal-loop': "Iteratively propose experiments, rank proposals, execute them in parallel, interpret the results and optionally integrate them."
 };
 
-type InputCategory = 'population' | 'theory' | 'statement';
+type InputCategory = 'population' | 'theory' | 'statement' | 'strands' | 'population_strands';
 
-const getAvailableSkills = (cat: InputCategory, reviewed: boolean): { id: string, label: string }[] => {
+const getAvailableSkills = (cat: InputCategory, reviewed: boolean, workflowName?: string): { id: string, label: string }[] => {
+  if (workflowName === 'solve-verifiable-goal-multi-strand') {
+    if (cat === 'strands') {
+      return [
+        { id: 'solve-goal-loop', label: 'Solve Goal Loop' }
+      ];
+    }
+    if (cat === 'population_strands') {
+      return [];
+    }
+    return [];
+  }
   if (cat === 'population') {
     return reviewed ? [
       { id: 'evolve-loop', label: 'Evolve Theory Loop' },
@@ -82,20 +94,21 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
   const [availableReviews, setAvailableReviews] = useState<api.ReviewArtifact[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
-  const [inputCategory, setInputCategory] = useState<InputCategory>('theory')
+  const isSolveVerifiableGoalMultiStrand = task.workflow_name === 'solve-verifiable-goal-multi-strand';
+  const [inputCategory, setInputCategory] = useState<InputCategory>(isSolveVerifiableGoalMultiStrand ? 'strands' : 'theory')
   const [isReviewed, setIsReviewed] = useState(false)
 
   const sortedAndFilteredTheories = React.useMemo(() => {
     let theories = [...availableTheories].sort((a, b) => {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-    if (isReviewed) {
+    if (isReviewed && !isSolveVerifiableGoalMultiStrand) {
       theories = theories.filter(t => availableReviews.some(r => r.parent_theory === t.id));
     }
     return theories;
-  }, [availableTheories, availableReviews, isReviewed]);
+  }, [availableTheories, availableReviews, isReviewed, isSolveVerifiableGoalMultiStrand]);
 
-  const initialSkills = getAvailableSkills('theory', false)
+  const initialSkills = getAvailableSkills(isSolveVerifiableGoalMultiStrand ? 'strands' : 'theory', false, task.workflow_name)
   const [addonType, setAddonType] = useState(initialSkills.length > 0 ? initialSkills[0].id : '')
 
   const [theoryId, setTheoryId] = useState('')
@@ -140,7 +153,15 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     applyExpansions,
     setApplyExpansions,
     generateIntermediateResearchSummaries,
-    setGenerateIntermediateResearchSummaries
+    setGenerateIntermediateResearchSummaries,
+    maxIterations,
+    setMaxIterations,
+    numExecutionsPerIteration,
+    setNumExecutionsPerIteration,
+    executionCost,
+    setExecutionCost,
+    integrationInterval,
+    setIntegrationInterval,
   } = useWorkflowParams()
 
   const filteredReviews = availableReviews.filter(r => r.parent_theory === theoryId)
@@ -162,18 +183,18 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
 
   const hasRequiredConfig = ['falsify-hypothesis', 'edit-theory'].includes(addonType);
   const hasOptionalConfig = addonType === 'streamline-theory' ||
-    ['refinement-loop', 'evolve-loop', 'refine-theory'].includes(addonType) ||
+    ['refinement-loop', 'evolve-loop', 'refine-theory', 'solve-goal-loop'].includes(addonType) ||
     (['edit-theory', 'expand-theory', 'improve-adherence', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop', 'write-different-theory'].includes(addonType) && availableLiteratureIds.length > 0);
 
   const handleCategoryChange = (cat: InputCategory) => {
     setInputCategory(cat);
-    const skills = getAvailableSkills(cat, isReviewed);
+    const skills = getAvailableSkills(cat, isReviewed, task.workflow_name);
     setAddonType(skills.length > 0 ? skills[0].id : '');
   };
 
   const handleReviewedChange = (reviewed: boolean) => {
     setIsReviewed(reviewed);
-    const skills = getAvailableSkills(inputCategory, reviewed);
+    const skills = getAvailableSkills(inputCategory, reviewed, task.workflow_name);
     setAddonType(skills.length > 0 ? skills[0].id : '');
   };
 
@@ -182,8 +203,8 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     try {
       const updatedTask = await api.createAddon(task.id, {
         type: addonType,
-        theory_id: (inputCategory === 'population' || addonType === 'score-theories' || addonType === 'write-different-theory') ? undefined : theoryId,
-        theory_ids: (addonType === 'score-theories' || addonType === 'write-different-theory') ? theoryIds : undefined,
+        theory_id: (inputCategory === 'population' || addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop') ? undefined : theoryId,
+        theory_ids: (addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop') ? theoryIds : undefined,
         direction: addonType === 'streamline-theory' && direction ? direction : undefined,
         max_refinements: addonType === 'refinement-loop' ? maxRefinements : undefined,
         apply_expansions: (addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory') ? (applyExpansions || undefined) : undefined,
@@ -196,7 +217,11 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
         hypothesis_title: addonType === 'falsify-hypothesis' ? hypothesisTitle : undefined,
         instruction: addonType === 'edit-theory' ? instruction : undefined,
         lit_review_id: (['edit-theory', 'expand-theory', 'improve-adherence', 'refine-hypothesis', 'refine-theory', 'refinement-loop', 'evolve-loop', 'write-different-theory'].includes(addonType)) ? (litReviewId || undefined) : undefined,
-        generate_intermediate_research_summaries: (addonType === 'refinement-loop' || addonType === 'evolve-loop') ? generateIntermediateResearchSummaries : undefined
+        generate_intermediate_research_summaries: (addonType === 'refinement-loop' || addonType === 'evolve-loop') ? generateIntermediateResearchSummaries : undefined,
+        max_iterations: addonType === 'solve-goal-loop' ? maxIterations : undefined,
+        num_executions_per_iteration: addonType === 'solve-goal-loop' ? numExecutionsPerIteration : undefined,
+        execution_cost: addonType === 'solve-goal-loop' ? executionCost : undefined,
+        integration_interval: addonType === 'solve-goal-loop' ? integrationInterval : undefined,
       })
       onCreated(updatedTask)
     } catch (e: any) {
@@ -204,7 +229,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     }
   }
 
-  const isPopulation = inputCategory === 'population';
+  const isPopulation = inputCategory === 'population' || inputCategory === 'population_strands';
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
@@ -222,57 +247,85 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
             {/* STEP 1: Input Type */}
             <div>
               <h3 className="text-sm font-black mb-4">Step 1: I have a...</h3>
-              <div className="flex flex-col md:flex-row gap-4">
-                <label
-                  className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'population' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
-                >
-                  <div className="flex items-center gap-3">
-                    <input type="radio" checked={inputCategory === 'population'} onChange={() => handleCategoryChange('population')} disabled={availableTheories.length === 0} />
-                    <Users size={18} className="text-gray-600" />
-                    <span className="font-black text-sm">Population of Theories</span>
-                  </div>
-                </label>
-                <label
-                  className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'theory' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
-                >
-                  <div className="flex items-center gap-3">
-                    <input type="radio" checked={inputCategory === 'theory'} onChange={() => handleCategoryChange('theory')} disabled={availableTheories.length === 0} />
-                    <FileText size={18} className="text-gray-600" />
-                    <span className="font-black text-sm">Theory</span>
-                  </div>
-                </label>
-                <label
-                  className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'statement' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
-                >
-                  <div className="flex items-center gap-3">
-                    <input type="radio" checked={inputCategory === 'statement'} onChange={() => handleCategoryChange('statement')} disabled={availableTheories.length === 0} />
-                    <MessageSquare size={18} className="text-gray-600" />
-                    <span className="font-black text-sm">Statement Within a Theory</span>
-                  </div>
-                </label>
-              </div>
+              {isSolveVerifiableGoalMultiStrand ? (
+                <div className="flex flex-col md:flex-row gap-4">
+                  <label
+                    className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'population_strands' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input type="radio" checked={inputCategory === 'population_strands'} onChange={() => handleCategoryChange('population_strands')} disabled={availableTheories.length === 0} />
+                      <Users size={18} className="text-gray-600" />
+                      <span className="font-black text-sm">Population of Strands</span>
+                    </div>
+                  </label>
+                  <label
+                    className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'strands' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
+                  >
+                    <div className="flex items-center gap-3">
+                      <input type="radio" checked={inputCategory === 'strands'} onChange={() => handleCategoryChange('strands')} disabled={availableTheories.length === 0} />
+                      <FileText size={18} className="text-gray-600" />
+                      <span className="font-black text-sm">Set of Strands</span>
+                    </div>
+                  </label>
+                </div>
 
-              <div className="mt-4">
-                <label
-                  className={`flex items-center gap-3 cursor-pointer group w-fit ${(availableReviews.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  title={availableReviews.length === 0 ? "Requires at least one review." : ""}
-                >
-                  <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
-                    <input
-                      type="checkbox"
-                      className="absolute opacity-0 w-full h-full cursor-pointer"
-                      checked={isReviewed}
-                      onChange={e => handleReviewedChange(e.target.checked)}
-                      disabled={availableReviews.length === 0}
-                    />
-                    {isReviewed && <div className="w-3 h-3 bg-black" />}
+              ) : (
+                <>
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <label
+                      className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'population' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input type="radio" checked={inputCategory === 'population'} onChange={() => handleCategoryChange('population')} disabled={availableTheories.length === 0} />
+                        <Users size={18} className="text-gray-600" />
+                        <span className="font-black text-sm">Population of Theories</span>
+                      </div>
+                    </label>
+                    <label
+                      className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'theory' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input type="radio" checked={inputCategory === 'theory'} onChange={() => handleCategoryChange('theory')} disabled={availableTheories.length === 0} />
+                        <FileText size={18} className="text-gray-600" />
+                        <span className="font-black text-sm">Theory</span>
+                      </div>
+                    </label>
+                    <label
+                      className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'statement' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input type="radio" checked={inputCategory === 'statement'} onChange={() => handleCategoryChange('statement')} disabled={availableTheories.length === 0} />
+                        <MessageSquare size={18} className="text-gray-600" />
+                        <span className="font-black text-sm">Statement Within a Theory</span>
+                      </div>
+                    </label>
                   </div>
-                  <span className="text-sm font-bold">...which has already been reviewed</span>
-                </label>
-              </div>
+
+                  <div className="mt-4">
+                    <label
+                      className={`flex items-center gap-3 cursor-pointer group w-fit ${(availableReviews.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={availableReviews.length === 0 ? "Requires at least one review." : ""}
+                    >
+                      <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
+                        <input
+                          type="checkbox"
+                          className="absolute opacity-0 w-full h-full cursor-pointer"
+                          checked={isReviewed}
+                          onChange={e => handleReviewedChange(e.target.checked)}
+                          disabled={availableReviews.length === 0}
+                        />
+                        {isReviewed && <div className="w-3 h-3 bg-black" />}
+                      </div>
+                      <span className="text-sm font-bold">...which has already been reviewed</span>
+                    </label>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* STEP 2: Action */}
@@ -280,13 +333,13 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
               <h3 className="text-sm font-black mb-4">
                 Step 2: And I want to...
               </h3>
-              {getAvailableSkills(inputCategory, isReviewed).length === 0 ? (
+              {getAvailableSkills(inputCategory, isReviewed, task.workflow_name).length === 0 ? (
                 <div className="text-sm font-bold text-gray-500 italic p-4 border-2 border-dashed border-gray-200">
                   No skills available for this context. Please ensure you have generated theories or reviews as required, or check the 'already reviewed' option if applicable.
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {getAvailableSkills(inputCategory, isReviewed).map(skill => (
+                  {getAvailableSkills(inputCategory, isReviewed, task.workflow_name).map(skill => (
                     <label key={skill.id} className={`border-2 p-4 cursor-pointer transition-colors flex flex-col gap-2 ${addonType === skill.id ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
                       <div className="flex items-start gap-3">
                         <input type="radio" name="addonSkill" className="mt-1" checked={addonType === skill.id} onChange={() => setAddonType(skill.id)} />
@@ -304,15 +357,15 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
             </div>
 
             {/* STEP 3: Targets */}
-            {(!isPopulation || addonType === 'score-theories' || addonType === 'write-different-theory') && (
+            {(!isPopulation || addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop') && (
               <div>
                 <h3 className="text-sm font-black mb-4">Step 3: Select Targets</h3>
                 <div className="flex flex-col gap-6">
                   <div>
                     <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">
-                      {(addonType === 'score-theories' || addonType === 'write-different-theory') ? 'Target Theories' : 'Target Theory'}
+                      {(addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop') ? 'Target Theories (Strands)' : 'Target Theory'}
                     </label>
-                    {(addonType === 'score-theories' || addonType === 'write-different-theory') ? (
+                    {(addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop') ? (
                       <select
                         multiple
                         required
@@ -446,6 +499,10 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                           showEvolveParams={addonType === 'evolve-loop'}
                           showApplyExpansions={addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory'}
                           showGenerateIntermediateResearchSummaries={addonType === 'refinement-loop' || addonType === 'evolve-loop'}
+                          showMaxIterations={addonType === 'solve-goal-loop'}
+                          showNumExecutionsPerIteration={addonType === 'solve-goal-loop'}
+                          showExecutionCost={addonType === 'solve-goal-loop'}
+                          showIntegrationInterval={addonType === 'solve-goal-loop'}
                           maxRefinements={maxRefinements}
                           setMaxRefinements={setMaxRefinements}
                           evolveIterations={evolveIterations}
@@ -462,6 +519,14 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                           setApplyExpansions={setApplyExpansions}
                           generateIntermediateResearchSummaries={generateIntermediateResearchSummaries}
                           setGenerateIntermediateResearchSummaries={setGenerateIntermediateResearchSummaries}
+                          maxIterations={maxIterations}
+                          setMaxIterations={setMaxIterations}
+                          numExecutionsPerIteration={numExecutionsPerIteration}
+                          setNumExecutionsPerIteration={setNumExecutionsPerIteration}
+                          executionCost={executionCost}
+                          setExecutionCost={setExecutionCost}
+                          integrationInterval={integrationInterval}
+                          setIntegrationInterval={setIntegrationInterval}
                         >
                           {addonType === 'streamline-theory' && (
                             <div>
@@ -504,7 +569,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
           <div className="flex gap-4 pt-6 border-t border-gray-100 shrink-0 mt-4">
             <button
               type="submit"
-              disabled={isBackendDown || !addonType || (!isPopulation && addonType !== 'score-theories' && !theoryId) || (addonType === 'score-theories' && theoryIds.length === 0)}
+              disabled={isBackendDown || !addonType || (!isPopulation && addonType !== 'score-theories' && addonType !== 'solve-goal-loop' && !theoryId) || ((addonType === 'score-theories' || addonType === 'solve-goal-loop') && theoryIds.length === 0)}
               className="flex-1 bg-black text-white p-4 font-black text-sm tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
             >
               {isBackendDown ? 'Backend Offline' : 'Add Step'} <ChevronRight size={18} />

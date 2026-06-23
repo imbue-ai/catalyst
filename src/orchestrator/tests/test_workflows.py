@@ -124,7 +124,7 @@ class TestSolveVerifiableGoalMultiStrandWorkflow(unittest.TestCase):
 
     @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_summarize_title")
     @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_local_step_if_needed")
-    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_step_if_needed")
+    @patch("orchestrator.workflows.common.solve_goal_loop.run_step_if_needed")
     @patch("builtins.open", new_callable=mock_open)
     def test_run_success(self, mock_file, mock_run_if_needed, mock_run_local, mock_summarize):
         task = Task(
@@ -171,7 +171,7 @@ class TestSolveVerifiableGoalMultiStrandWorkflow(unittest.TestCase):
 
     @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_summarize_title")
     @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_local_step_if_needed")
-    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_step_if_needed")
+    @patch("orchestrator.workflows.common.solve_goal_loop.run_step_if_needed")
     @patch("builtins.open", new_callable=mock_open)
     def test_run_rankings_empty(self, mock_file, mock_run_if_needed, mock_run_local, mock_summarize):
         task = Task(
@@ -211,7 +211,7 @@ class TestSolveVerifiableGoalMultiStrandWorkflow(unittest.TestCase):
 
     @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_summarize_title")
     @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_local_step_if_needed")
-    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_step_if_needed")
+    @patch("orchestrator.workflows.common.solve_goal_loop.run_step_if_needed")
     @patch("builtins.open", new_callable=mock_open)
     def test_run_missing_key_failure(self, mock_file, mock_run_if_needed, mock_run_local, mock_summarize):
         task = Task(
@@ -269,7 +269,7 @@ class TestSolveVerifiableGoalMultiStrandWorkflow(unittest.TestCase):
 
     @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_summarize_title")
     @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_local_step_if_needed")
-    @patch("orchestrator.workflows.solve_verifiable_goal_multi_strand.run_step_if_needed")
+    @patch("orchestrator.workflows.common.solve_goal_loop.run_step_if_needed")
     @patch("builtins.open", new_callable=mock_open)
     def test_run_success_with_integration(self, mock_file, mock_run_if_needed, mock_run_local, mock_summarize):
         task = Task(

@@ -232,7 +232,6 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         num_executions_per_iteration: numExecutionsPerIteration,
         execution_cost: executionCost,
         integration_interval: integrationInterval,
-        apply_expansions: applyExpansions || undefined,
         generate_intermediate_research_summaries: generateIntermediateResearchSummaries
       }
     }
@@ -527,7 +526,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         showExecutionCost={activeTab === 'solve-verifiable-goal-multi-strand'}
                         showIntegrationInterval={activeTab === 'solve-verifiable-goal-multi-strand'}
                         showEvolveParams={isEvolve}
-                        showApplyExpansions={!isImport}
+                        showApplyExpansions={!isImport && activeTab !== 'solve-verifiable-goal-multi-strand'}
                         showGenerateIntermediateResearchSummaries={!isImport}
                         numRootTheories={numRootTheories}
                         setNumRootTheories={setNumRootTheories}

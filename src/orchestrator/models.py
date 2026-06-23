@@ -72,6 +72,10 @@ class Addon(BaseModel):
     instruction: Optional[str] = None
     lit_review_id: Optional[str] = None
     generate_intermediate_research_summaries: Optional[bool] = None
+    max_iterations: Optional[int] = None
+    num_executions_per_iteration: Optional[int] = None
+    execution_cost: Optional[int] = None
+    integration_interval: Optional[int] = None
 
 
 class TheoryScoringWeights(BaseModel):

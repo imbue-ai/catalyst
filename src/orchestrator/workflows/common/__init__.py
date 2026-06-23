@@ -16,3 +16,8 @@ from .evolve import (
     build_evolve_loop_structure as build_evolve_loop_structure,
     run_evolve_loop as run_evolve_loop,
 )
+from .solve_goal_loop import (
+    build_solve_goal_loop_structure as build_solve_goal_loop_structure,
+    run_solve_goal_loop as run_solve_goal_loop,
+)
+

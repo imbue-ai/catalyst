@@ -5,6 +5,10 @@ from ..workflows.common.title import run_summarize_title
 from ..workflows.common.refinement import run_refinement_loop, get_active_max_iterations
 from ..workflows.common.exploration import run_literature_review_and_exploration_parallel
 from ..workflows.common.evolve import build_evolve_loop_structure, run_evolve_loop
+from ..workflows.common.solve_goal_loop import (
+    build_solve_goal_loop_structure,
+    run_solve_goal_loop,
+)
 
 class TestWorkflowTitle(unittest.TestCase):
     def test_run_summarize_title_not_needed(self):
@@ -270,3 +274,115 @@ class TestWorkflowEvolve(unittest.TestCase):
 
         self.assertEqual(mock_run_local_if_needed.call_count, 2)
         self.assertEqual(mock_run_if_needed.call_count, 3)
+
+
+
+class TestWorkflowSolveGoalLoop(unittest.TestCase):
+    def test_build_solve_goal_loop_structure(self):
+        task = Task(
+            id="task_solve_goal_loop_test",
+            workflow_name="solve-verifiable-goal-multi-strand",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={}
+        )
+        struct = build_solve_goal_loop_structure(
+            task=task,
+            num_strands=3,
+            max_iterations=2,
+            integration_interval=2,
+            stage_prefix="test-"
+        )
+        self.assertEqual(struct["type"], "loop")
+        self.assertEqual(struct["iterations"], 2)
+        self.assertEqual(len(struct["iteration_structures"]), 2)
+        
+        # Iteration 1 has no integration
+        iter1 = struct["iteration_structures"]["1"]
+        self.assertEqual(len(iter1), 4)
+        self.assertEqual(iter1[0]["stages"], ["test-propose-experiment-1-1", "test-propose-experiment-1-2", "test-propose-experiment-1-3"])
+        
+        # Iteration 2 has integration (integration_interval = 2)
+        iter2 = struct["iteration_structures"]["2"]
+        self.assertEqual(len(iter2), 5)
+        self.assertEqual(iter2[4]["name"], "Integrate Interpretations")
+        self.assertEqual(iter2[4]["stages"], ["test-integrate-interpretations-2-1", "test-integrate-interpretations-2-2", "test-integrate-interpretations-2-3"])
+
+    @patch("orchestrator.workflows.common.solve_goal_loop.run_step_if_needed")
+    def test_run_solve_goal_loop_success(self, mock_run_if_needed):
+        task = Task(
+            id="task_solve_goal_loop_test",
+            workflow_name="solve-verifiable-goal-multi-strand",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={}
+        )
+        mock_run_step = MagicMock()
+        
+        # Configure mock responses for run_step_if_needed
+        # 1. Propose Experiment 1-1, 1-2
+        # 2. Rank Proposals 1
+        # 3. Execute Proposal 1-1, 1-2
+        # 4. Interpret Result 1-1, 1-2
+        mock_run_if_needed.side_effect = [
+            {"proposal_id": "prop-1-1"}, # Propose 1-1
+            {"proposal_id": "prop-1-2"}, # Propose 1-2
+            {"rankings": ["prop-1-1", "prop-1-2"], "solution_candidates": []}, # Rank
+            {"experiment_id": "exp-1-1"}, # Execute prop-1-1
+            {"experiment_id": "exp-1-2"}, # Execute prop-1-2
+            {"theory_id": "theory-new-1-1"}, # Interpret 1-1
+            {"theory_id": "theory-new-1-2"}, # Interpret 1-2
+        ]
+        
+        final_theory_ids = run_solve_goal_loop(
+            task=task,
+            run_step=mock_run_step,
+            theory_ids=["theory-1", "theory-2"],
+            max_iterations=1,
+            num_executions_per_iteration=2,
+            execution_cost=1,
+            integration_interval=5,
+            stage_prefix="addon-1-"
+        )
+        
+        self.assertEqual(final_theory_ids, ["theory-new-1-1", "theory-new-1-2"])
+        self.assertEqual(mock_run_if_needed.call_count, 7)
+
+    @patch("orchestrator.workflows.common.solve_goal_loop.run_step_if_needed")
+    def test_run_solve_goal_loop_with_integration(self, mock_run_if_needed):
+        task = Task(
+            id="task_solve_goal_loop_test",
+            workflow_name="solve-verifiable-goal-multi-strand",
+            framework="gemini",
+            env_folder="/tmp/env",
+            workflow_inputs={}
+        )
+        mock_run_step = MagicMock()
+        
+        # Configure mock responses for 1 iteration with integration_interval = 1
+        mock_run_if_needed.side_effect = [
+            {"proposal_id": "prop-1-1"}, # Propose 1-1
+            {"proposal_id": "prop-1-2"}, # Propose 1-2
+            {"rankings": ["prop-1-1", "prop-1-2"], "solution_candidates": []}, # Rank
+            {"experiment_id": "exp-1-1"}, # Execute prop-1-1
+            {"experiment_id": "exp-1-2"}, # Execute prop-1-2
+            {"theory_id": "theory-new-1-1"}, # Interpret 1-1
+            {"theory_id": "theory-new-1-2"}, # Interpret 1-2
+            {"theory_id": "theory-integrated-1-1"}, # Integrate 1-1
+            {"theory_id": "theory-integrated-1-2"}, # Integrate 1-2
+        ]
+        
+        final_theory_ids = run_solve_goal_loop(
+            task=task,
+            run_step=mock_run_step,
+            theory_ids=["theory-1", "theory-2"],
+            max_iterations=1,
+            num_executions_per_iteration=2,
+            execution_cost=1,
+            integration_interval=1,
+            stage_prefix="addon-1-"
+        )
+        
+        self.assertEqual(final_theory_ids, ["theory-integrated-1-1", "theory-integrated-1-2"])
+        self.assertEqual(mock_run_if_needed.call_count, 9)
+
