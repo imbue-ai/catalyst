@@ -22,17 +22,39 @@ class HarnessInfo(BaseModel):
 
 harnesses_lock = threading.Lock()
 harnesses_cache: Dict[str, Dict[str, Any]] = {
-    "mngr-claude": {
-        "name": "mngr-claude",
-        "display_name": "Claude Code (mngr)",
+    "claude": {
+        "name": "claude",
+        "display_name": "Claude Code (claude -p)",
         "available": False,
         "help_message": "Checking framework availability...",
         "models": ["fable", "opus", "sonnet", "haiku"],
         "effort_options": ["low", "medium", "high", "xhigh", "max"],
     },
-    "claude": {
-        "name": "claude",
-        "display_name": "Claude Code (claude -p)",
+    "agy": {
+        "name": "agy",
+        "display_name": "Antigravity CLI (agy -p)",
+        "available": False,
+        "help_message": "Checking framework availability...",
+        "models": [],
+    },
+    "codex": {
+        "name": "codex",
+        "display_name": "Codex CLI (codex exec)",
+        "available": False,
+        "help_message": "Checking framework availability...",
+        "models": ["gpt-5.5", "gpt-5.4-mini"],
+        "effort_options": ["minimal", "low", "medium", "high", "xhigh"],
+    },
+    "gemini": {
+        "name": "gemini",
+        "display_name": "Gemini CLI (gemini -p)",
+        "available": False,
+        "help_message": "Checking framework availability...",
+        "models": ["pro", "flash"],
+    },
+    "mngr-claude": {
+        "name": "mngr-claude",
+        "display_name": "Claude Code (mngr)",
         "available": False,
         "help_message": "Checking framework availability...",
         "models": ["fable", "opus", "sonnet", "haiku"],
@@ -44,28 +66,6 @@ harnesses_cache: Dict[str, Dict[str, Any]] = {
         "available": False,
         "help_message": "Checking framework availability...",
         "models": [],
-    },
-    "agy": {
-        "name": "agy",
-        "display_name": "Antigravity CLI (agy -p)",
-        "available": False,
-        "help_message": "Checking framework availability...",
-        "models": [],
-    },
-    "gemini": {
-        "name": "gemini",
-        "display_name": "Gemini CLI (gemini -p)",
-        "available": False,
-        "help_message": "Checking framework availability...",
-        "models": ["pro", "flash"],
-    },
-    "codex": {
-        "name": "codex",
-        "display_name": "Codex CLI (codex exec)",
-        "available": False,
-        "help_message": "Checking framework availability...",
-        "models": ["gpt-5.5", "gpt-5.4-mini"],
-        "effort_options": ["minimal", "low", "medium", "high", "xhigh"],
     },
 }
 
