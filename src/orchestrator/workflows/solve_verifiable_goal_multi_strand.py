@@ -31,8 +31,8 @@ class SolveVerifiableGoalMultiStrandWorkflow(Workflow):
 
     def get_structure(self, task: Task) -> List[Dict[str, Any]]:
         num_strands = int(task.workflow_inputs.get("num_strands", 3))
-        max_iterations = int(task.workflow_inputs.get("max_iterations", 10))
-        integration_interval = int(task.workflow_inputs.get("integration_interval", 2))
+        max_iterations = int(task.workflow_inputs.get("max_iterations", 20))
+        integration_interval = int(task.workflow_inputs.get("integration_interval", 5))
 
         structure = [
             {"type": "step", "stage": "summarize-title"},
@@ -175,12 +175,12 @@ class SolveVerifiableGoalMultiStrandWorkflow(Workflow):
                 return
             raise Exception("Initialization failed to return theory IDs.")
 
-        max_iterations = int(task.workflow_inputs.get("max_iterations", 10))
+        max_iterations = int(task.workflow_inputs.get("max_iterations", 20))
         num_executions_per_iteration = int(
             task.workflow_inputs.get("num_executions_per_iteration", 2)
         )
         execution_cost = int(task.workflow_inputs.get("execution_cost", 1))
-        integration_interval = int(task.workflow_inputs.get("integration_interval", 2))
+        integration_interval = int(task.workflow_inputs.get("integration_interval", 5))
 
         for i in range(1, max_iterations + 1):
             # 1. Propose Experiments (in parallel for each of the n theory IDs)
@@ -193,7 +193,9 @@ class SolveVerifiableGoalMultiStrandWorkflow(Workflow):
                     task,
                     run_step,
                     stage_name,
-                    get_propose_experiment_prompt(theory_id, propose_solution=propose_solution),
+                    get_propose_experiment_prompt(
+                        theory_id, propose_solution=propose_solution
+                    ),
                     StepCategory.THEORY_WRITING,
                 )
                 proposal_results[strand_idx] = res

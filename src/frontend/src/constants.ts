@@ -3,7 +3,7 @@
  */
 
 export const DEFAULT_MAX_REFINEMENTS = 3;
-export const DEFAULT_MAX_ITERATIONS = 10;
+export const DEFAULT_MAX_ITERATIONS = 20;
 export const DEFAULT_EVOLVE_ITERATIONS = 5;
 export const DEFAULT_NUM_PARENTS = 3;
 export const DEFAULT_MAX_STREAMLINE_PROB = 0.5;
@@ -15,7 +15,7 @@ export const DEFAULT_NUM_STRANDS = 3;
 export const DEFAULT_NUM_ROOT_THEORIES = 3;
 export const DEFAULT_NUM_EXECUTIONS_PER_ITERATION = 2;
 export const DEFAULT_EXECUTION_COST = 1;
-export const DEFAULT_INTEGRATION_INTERVAL = 2;
+export const DEFAULT_INTEGRATION_INTERVAL = 5;
 
 // Default scoring weights
 export const DEFAULT_CORRECTNESS_WEIGHT = 0.9;

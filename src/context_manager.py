@@ -59,6 +59,7 @@ AGENT_TYPE_MAP: dict[str, str] = {
     "integrate-interpretations": "theory",
     "propose-experiment": "proposal",
     "execute-proposal": "solution",
+    "score-theory-solutions": "solution",
     "initialize-theories": "theory",
 }
 
@@ -727,6 +728,11 @@ def _validate_create_context_args(
             raise ValueError(
                 "Exactly one --from_proposal is required for execute-proposal"
             )
+    elif for_agent_type == "score-theory-solutions":
+        if not from_solutions:
+            raise ValueError(
+                "At least one --from_solution is required for score-theory-solutions"
+            )
     elif for_agent_type == "initialize-theories":
         pass
     else:
@@ -866,6 +872,17 @@ def create_context(
         if from_solutions:
             if for_agent_type == "interpret-result":
                 pass
+            elif for_agent_type == "score-theory-solutions":
+                solutions_root = target_folder / "solutions"
+                solutions_root.mkdir(exist_ok=True)
+                for sol_id in from_solutions:
+                    if session.get_metadata("solution", sol_id):
+                        copy_artifact(
+                            db_root / "solution" / sol_id,
+                            solutions_root / sol_id,
+                        )
+                    else:
+                        raise ValueError(f"Solution {sol_id!r} not found or invisible")
             else:
                 sol_id = from_solutions[0]
                 if session.get_metadata("solution", sol_id):
@@ -1424,6 +1441,7 @@ def main(argv: list[str] | None = None) -> None:
             "propose-experiment",
             "rank-proposals",
             "execute-proposal",
+            "score-theory-solutions",
             "initialize-theories",
         ],
         help="Type of agent to prepare context for",
