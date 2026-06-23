@@ -172,7 +172,7 @@ def list_templates():
 
     templates = []
     for item in os.listdir(templates_dir):
-        if os.path.isdir(os.path.join(templates_dir, item)):
+        if not item.startswith('.') and os.path.isdir(os.path.join(templates_dir, item)):
             templates.append(item)
     return sorted(templates)
 
