@@ -111,12 +111,15 @@ class SolveVerifiableGoalWorkflow(Workflow):
 
         structure = [
             {"type": "step", "stage": "summarize-title"},
-            {"type": "step", "stage": "initialize-theories"},
-            {"type": "step", "stage": "initialize-solutions"},
         ]
 
         if generate_summaries:
             structure.append({"type": "step", "stage": "summarize-goal-progress"})
+
+        structure.extend([
+            {"type": "step", "stage": "initialize-theories"},
+            {"type": "step", "stage": "initialize-solutions"},
+        ])
 
         if max_iterations > 0:
             loop_struct = build_evolve_solution_loop_structure(
@@ -149,16 +152,6 @@ class SolveVerifiableGoalWorkflow(Workflow):
         # Step 0: Summarize Title
         run_summarize_title(task, run_step, f"goal: {goal}")
 
-        # Step 1: Initialize Theories
-        theory_ids = run_initialize_theories(task)
-        if theory_ids is None:
-            return
-
-        # Step 1b: Initialize Solutions
-        solution_theory_pairs = run_initialize_solutions(task, theory_ids)
-        if not solution_theory_pairs:
-            return
-
         generate_summaries_val = task.workflow_inputs.get("generate_intermediate_research_summaries")
         generate_summaries = True if generate_summaries_val is None else bool(generate_summaries_val)
         if generate_summaries:
@@ -169,6 +162,16 @@ class SolveVerifiableGoalWorkflow(Workflow):
                 get_summarize_goal_progress_prompt(),
                 StepCategory.MISC,
             )
+
+        # Step 1: Initialize Theories
+        theory_ids = run_initialize_theories(task)
+        if theory_ids is None:
+            return
+
+        # Step 1b: Initialize Solutions
+        solution_theory_pairs = run_initialize_solutions(task, theory_ids)
+        if not solution_theory_pairs:
+            return
 
         max_iterations = int(task.workflow_inputs.get("max_iterations", DEFAULT_MAX_ITERATIONS))
         num_proposals = int(task.workflow_inputs.get("num_proposals", DEFAULT_NUM_PROPOSALS))

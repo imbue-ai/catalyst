@@ -447,8 +447,8 @@ class TestSolveVerifiableGoalWorkflow(unittest.TestCase):
         wf = SolveVerifiableGoalWorkflow()
         struct = wf.get_structure(task)
         self.assertEqual(struct[0]["stage"], "summarize-title")
-        self.assertEqual(struct[1]["stage"], "initialize-theories")
-        self.assertEqual(struct[2]["stage"], "initialize-solutions")
-        self.assertEqual(struct[3]["stage"], "summarize-goal-progress")
+        self.assertEqual(struct[1]["stage"], "summarize-goal-progress")
+        self.assertEqual(struct[2]["stage"], "initialize-theories")
+        self.assertEqual(struct[3]["stage"], "initialize-solutions")
         self.assertEqual(len(struct), 5)
 
