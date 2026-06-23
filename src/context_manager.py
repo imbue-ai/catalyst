@@ -59,6 +59,7 @@ AGENT_TYPE_MAP: dict[str, str] = {
     "integrate-interpretations": "theory",
     "propose-experiment": "proposal",
     "execute-proposal": "solution",
+    "generate-solution": "solution",
     "score-theory-solutions": "solution",
     "initialize-theories": "theory",
 }
@@ -346,6 +347,30 @@ class DatabaseSession:
         )
         self.mark_population_modified()
 
+    def record_solution(self, theory_id: str | None, solution_id: str) -> None:
+        """Attach a newly-stored solution to its parent theory in the population."""
+        if theory_id is None:
+            raise RuntimeError(
+                f"Attempting to record solution {solution_id!r} without a parent theory."
+            )
+        pop = self.get_population()
+        if pop is None:
+            raise RuntimeError(
+                f"Attempting to record solution {solution_id!r} for theory {theory_id!r} but no population exists yet."
+            )
+        found = _find_organism_by_theory_id(pop, theory_id)
+        if found is None:
+            raise RuntimeError(
+                f"Parent theory {theory_id!r} for solution {solution_id!r} is not in the population."
+            )
+        _, result = found
+        assert isinstance(result, TheoryEvaluationResult)
+        result.trainable_failure_cases.append(
+            TheoryEvaluationFailureCase(solution_id=solution_id, data_point_id=solution_id)
+        )
+        self.mark_population_modified()
+
+
 
 def copy_artifact(src: Path, dst: Path, exclude_results: bool = False) -> None:
     """Helper to copy an artifact, optionally omitting results, and restoring write permissions."""
@@ -403,11 +428,17 @@ class TheoryEvaluationResult(EvaluationResult):
 
 
 class TheoryEvaluationFailureCase(EvaluationFailureCase):
-    """Represents a review that has been performed on a theory."""
+    """Represents a review or solution that has been performed on a theory."""
 
-    review_id: str = Field(
+    review_id: str | None = Field(
+        default=None,
         description="Review ID (e.g. 'R_20260414_150000_a1b2c3') stored in the context_manager DB."
     )
+    solution_id: str | None = Field(
+        default=None,
+        description="Solution ID (e.g. 'U_20260414_150000_a1b2c3') stored in the context_manager DB."
+    )
+
 
 
 # ---------------------------------------------------------------------------
@@ -555,6 +586,7 @@ def store_results(
         "support-idea",
         "propose-experiment",
         "execute-proposal",
+        "generate-solution",
     )
 
     if from_agent_type in parent_theory_required_agents and not parent_theory:
@@ -633,6 +665,13 @@ def store_results(
                     theory_id=parent_theory,
                     review_id=new_id,
                 )
+            elif category == "solution":
+                if parent_theory:
+                    session.record_solution(
+                        theory_id=parent_theory,
+                        solution_id=new_id,
+                    )
+
 
     return new_id
 
@@ -1246,7 +1285,8 @@ def list_entries(
 
 
 def sample_theories(
-    num_theories: int, purpose: Literal["scoring", "mutation"]
+    num_theories: int,
+    purpose: Literal["scoring", "mutation", "proposals", "interpret_results", "mutate"],
 ) -> list[dict]:
     db_root = get_db_path()
     with DatabaseSession(db_root) as session:
@@ -1268,19 +1308,27 @@ def sample_theories(
                 replace=False,
                 novelty_weight=0.0,
             )
-        elif purpose == "mutation":
+        elif purpose in ("mutation", "proposals", "interpret_results", "mutate"):
             samples = population.sample_parents(k=num_theories)
         else:
             raise ValueError(f"Unknown sampling purpose {purpose!r}")
 
-        return [
-            {
+        results = []
+        for o, r in samples:
+            latest_sol = None
+            if hasattr(r, "trainable_failure_cases") and r.trainable_failure_cases:
+                for fc in reversed(r.trainable_failure_cases):
+                    if getattr(fc, "solution_id", None) is not None:
+                        latest_sol = fc.solution_id
+                        break
+            results.append({
                 "id": o.theory_id,
                 "score": r.score,
                 "subscores": r.subscores if hasattr(r, "subscores") else {},
-            }
-            for o, r in samples
-        ]
+                "latest_solution": latest_sol,
+            })
+        return results
+
 
 
 def rescore_theories(theory_scores: dict[str, dict[str, float]]) -> None:
@@ -1367,6 +1415,21 @@ def commit_transaction(transaction_id: str) -> None:
                 )
             except Exception as e:
                 print(f"Error recording review {r.get('id')!r} in population: {e}")
+
+        # 4. Update population (Solutions)
+        solutions = [
+            d for _, d in staged_items
+            if d.get("category") == "solution" and d.get("parent_theory")
+        ]
+        for s in solutions:
+            try:
+                session.record_solution(
+                    theory_id=s.get("parent_theory"),
+                    solution_id=s.get("id"),
+                )
+            except Exception as e:
+                print(f"Error recording solution {s.get('id')!r} in population: {e}")
+
 
 
 def export_theory_population(dest_path: Path) -> None:
@@ -1667,7 +1730,7 @@ def main(argv: list[str] | None = None) -> None:
     )
     sp_sample.add_argument(
         "--purpose",
-        choices=["scoring", "mutation"],
+        choices=["scoring", "mutation", "proposals", "interpret_results", "mutate"],
         required=True,
         help="Intended use of the sampled theories (may influence sampling strategy)",
     )
@@ -1862,13 +1925,15 @@ def main(argv: list[str] | None = None) -> None:
                         subscore_keys.update(t.get("subscores", {}).keys())
                     subscore_keys = sorted(list(subscore_keys))
 
-                    header = f"{'ID':<40} {'Score':<20}"
+                    header = f"{'ID':<40} {'Score':<20} {'Latest Solution':<40}"
                     for k in subscore_keys:
                         header += f" {k.capitalize():<20}"
                     print(header)
                     print("-" * len(header))
                     for t in sampled_theories:
-                        row = f"{t['id']:<40} {t['score']:<20.4f}"
+                        latest_sol = t.get("latest_solution")
+                        latest_sol_str = latest_sol if latest_sol else "None"
+                        row = f"{t['id']:<40} {t['score']:<20.4f} {latest_sol_str:<40}"
                         for k in subscore_keys:
                             val = t.get("subscores", {}).get(k)
                             val_str = (
@@ -1880,6 +1945,7 @@ def main(argv: list[str] | None = None) -> None:
                             )
                             row += f" {val_str:<20}"
                         print(row)
+
 
         elif args.command == "rescore_theories":
             theory_score_dict = json.loads(args.theory_score_dict)

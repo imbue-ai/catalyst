@@ -31,7 +31,9 @@ const ADDON_DESCRIPTIONS: Record<string, string> = {
   'summarize-research': "Summarize the current research status",
   'write-different-theory': "Write a theory that explores a different approach from the provided theories.",
   'solve-goal-loop': "Iteratively propose and execute experiments towards solving a verifiable goal.",
-  'evolve-solution-loop': "Evolve solution candidates iteratively over multiple generations to solve a verifiable goal."
+  'evolve-solution-loop': "Evolve solution candidates over multiple generations to solve a verifiable goal. Interleaves research with scoring iterations.",
+  'generate-solution': "Generate a solution candidate from a theory.",
+  'score-solutions': "Score generated solutions based on their achievement of goal criteria."
 };
 
 type InputCategory = 'population' | 'theory' | 'statement' | 'strands' | 'population_strands';
@@ -39,14 +41,18 @@ type InputCategory = 'population' | 'theory' | 'statement' | 'strands' | 'popula
 const getAvailableSkills = (cat: InputCategory, reviewed: boolean, workflowName?: string): { id: string, label: string }[] => {
   if (workflowName === 'solve-verifiable-goal-multi-strand' || workflowName === 'solve-verifiable-goal') {
     if (cat === 'strands') {
-      return [
+      return reviewed ? [
+        { id: 'score-solutions', label: 'Score Solutions' },
         { id: 'solve-goal-loop', label: 'Solve Goal Loop' }
+      ] : [
+        { id: 'solve-goal-loop', label: 'Solve Goal Loop' },
+        { id: 'generate-solution', label: 'Generate Solution' }
       ];
     }
     if (cat === 'population_strands') {
-      return [
+      return reviewed ? [
         { id: 'evolve-solution-loop', label: 'Evolve Solution Loop' }
-      ];
+      ] : [];
     }
     return [];
   }
@@ -95,6 +101,7 @@ const getAvailableSkills = (cat: InputCategory, reviewed: boolean, workflowName?
 export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCreated, isBackendDown }: CreateAddonModalProps) {
   const [availableTheories, setAvailableTheories] = useState<api.TheoryArtifact[]>([])
   const [availableReviews, setAvailableReviews] = useState<api.ReviewArtifact[]>([])
+  const [availableSolutions, setAvailableSolutions] = useState<api.SolutionArtifact[]>([])
   const [isLoading, setIsLoading] = useState(true)
 
   const isSolveVerifiableGoalMultiStrand = task.workflow_name === 'solve-verifiable-goal-multi-strand';
@@ -109,11 +116,15 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     let theories = [...availableTheories].sort((a, b) => {
       return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
-    if (isReviewed && !isSolveVerifiableGoal) {
-      theories = theories.filter(t => availableReviews.some(r => r.parent_theory === t.id));
+    if (isReviewed) {
+      if (isSolveVerifiableGoal) {
+        theories = theories.filter(t => availableSolutions.some(s => s.parent_theory === t.id));
+      } else {
+        theories = theories.filter(t => availableReviews.some(r => r.parent_theory === t.id));
+      }
     }
     return theories;
-  }, [availableTheories, availableReviews, isReviewed, isSolveVerifiableGoal]);
+  }, [availableTheories, availableReviews, availableSolutions, isReviewed, isSolveVerifiableGoal]);
 
   const initialSkills = getAvailableSkills(
     isSolveVerifiableGoalEvolve ? 'population_strands' : (isSolveVerifiableGoalMultiStrand ? 'strands' : 'theory'),
@@ -121,6 +132,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     task.workflow_name
   )
   const [addonType, setAddonType] = useState(initialSkills.length > 0 ? initialSkills[0].id : '')
+  const isMultiTheoryAddon = ['score-theories', 'write-different-theory', 'solve-goal-loop', 'evolve-solution-loop', 'score-solutions'].includes(addonType);
 
   const [theoryId, setTheoryId] = useState('')
   const [theoryIds, setTheoryIds] = useState<string[]>([])
@@ -129,11 +141,13 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     setIsLoading(true)
     Promise.all([
       api.getTheories(task.id),
-      api.getReviews(task.id)
+      api.getReviews(task.id),
+      api.getSolutions(task.id).catch(() => [])
     ])
-      .then(([theories, reviews]) => {
+      .then(([theories, reviews, solutions]) => {
         setAvailableTheories(theories)
         setAvailableReviews(reviews)
+        setAvailableSolutions(solutions)
       })
       .catch(console.error)
       .finally(() => setIsLoading(false))
@@ -214,8 +228,8 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     try {
       const updatedTask = await api.createAddon(task.id, {
         type: addonType,
-        theory_id: (inputCategory === 'population' || addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop') ? undefined : theoryId,
-        theory_ids: (addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop') ? theoryIds : undefined,
+        theory_id: (inputCategory === 'population' || addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop' || addonType === 'score-solutions') ? undefined : theoryId,
+        theory_ids: (addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop' || addonType === 'score-solutions') ? theoryIds : undefined,
         direction: addonType === 'streamline-theory' && direction ? direction : undefined,
         max_refinements: addonType === 'refinement-loop' ? maxRefinements : undefined,
         apply_expansions: (addonType === 'refinement-loop' || addonType === 'evolve-loop' || addonType === 'refine-theory') ? (applyExpansions || undefined) : undefined,
@@ -257,30 +271,51 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
 
             {/* STEP 1: Input Type */}
             <div>
-              <h3 className="text-sm font-black mb-4">Step 1: I have a...</h3>
+              <h3 className="text-sm font-black mb-4">Step 1: I Have a...</h3>
               {isSolveVerifiableGoal ? (
-                <div className="flex flex-col md:flex-row gap-4">
-                  <label
-                    className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'population_strands' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
-                  >
-                    <div className="flex items-center gap-3">
-                      <input type="radio" checked={inputCategory === 'population_strands'} onChange={() => handleCategoryChange('population_strands')} disabled={availableTheories.length === 0} />
-                      <Users size={18} className="text-gray-600" />
-                      <span className="font-black text-sm">Population of Strands</span>
-                    </div>
-                  </label>
-                  <label
-                    className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'strands' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
-                    title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
-                  >
-                    <div className="flex items-center gap-3">
-                      <input type="radio" checked={inputCategory === 'strands'} onChange={() => handleCategoryChange('strands')} disabled={availableTheories.length === 0} />
-                      <FileText size={18} className="text-gray-600" />
-                      <span className="font-black text-sm">Set of Strands</span>
-                    </div>
-                  </label>
-                </div>
+                <>
+                  <div className="flex flex-col md:flex-row gap-4">
+                    <label
+                      className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'population_strands' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input type="radio" checked={inputCategory === 'population_strands'} onChange={() => handleCategoryChange('population_strands')} disabled={availableTheories.length === 0} />
+                        <Users size={18} className="text-gray-600" />
+                        <span className="font-black text-sm">Population of Strands</span>
+                      </div>
+                    </label>
+                    <label
+                      className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'strands' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'} ${availableTheories.length === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={availableTheories.length === 0 ? "No theories have been generated yet in this task. Please wait for a step to generate a theory." : ""}
+                    >
+                      <div className="flex items-center gap-3">
+                        <input type="radio" checked={inputCategory === 'strands'} onChange={() => handleCategoryChange('strands')} disabled={availableTheories.length === 0} />
+                        <FileText size={18} className="text-gray-600" />
+                        <span className="font-black text-sm">Set of Strands</span>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div className="mt-4">
+                    <label
+                      className={`flex items-center gap-3 cursor-pointer group w-fit ${(availableSolutions.length === 0) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      title={availableSolutions.length === 0 ? "Requires at least one solution." : ""}
+                    >
+                      <div className="relative flex items-center justify-center w-5 h-5 border-2 border-black group-hover:border-gray-500 transition-colors">
+                        <input
+                          type="checkbox"
+                          className="absolute opacity-0 w-full h-full cursor-pointer"
+                          checked={isReviewed}
+                          onChange={e => handleReviewedChange(e.target.checked)}
+                          disabled={availableSolutions.length === 0}
+                        />
+                        {isReviewed && <div className="w-3 h-3 bg-black" />}
+                      </div>
+                      <span className="text-sm font-bold">...which have generated solutions</span>
+                    </label>
+                  </div>
+                </>
 
               ) : (
                 <>
@@ -342,11 +377,15 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
             {/* STEP 2: Action */}
             <div>
               <h3 className="text-sm font-black mb-4">
-                Step 2: And I want to...
+                Step 2: And I Want to...
               </h3>
               {getAvailableSkills(inputCategory, isReviewed, task.workflow_name).length === 0 ? (
                 <div className="text-sm font-bold text-gray-500 italic p-4 border-2 border-dashed border-gray-200">
-                  No skills available for this context. Please ensure you have generated theories or reviews as required, or check the 'already reviewed' option if applicable.
+                  {isSolveVerifiableGoal ? (
+                    "No skills available for this context. Please ensure you have generated theories or solutions as required, or check the '...which have generated solutions' option if applicable."
+                  ) : (
+                    "No skills available for this context. Please ensure you have generated theories or reviews as required, or check the 'already reviewed' option if applicable."
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -368,15 +407,15 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
             </div>
 
             {/* STEP 3: Targets */}
-            {(!isPopulation || addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop') && (
+            {(!isPopulation || isMultiTheoryAddon) && (
               <div>
                 <h3 className="text-sm font-black mb-4">Step 3: Select Targets</h3>
                 <div className="flex flex-col gap-6">
                   <div>
                     <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">
-                      {(addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop') ? 'Target Theories (Strands)' : 'Target Theory'}
+                      {isMultiTheoryAddon ? 'Target Theories (Strands)' : 'Target Theory'}
                     </label>
-                    {(addonType === 'score-theories' || addonType === 'write-different-theory' || addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop') ? (
+                    {isMultiTheoryAddon ? (
                       <select
                         multiple
                         required
@@ -580,7 +619,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
           <div className="flex gap-4 pt-6 border-t border-gray-100 shrink-0 mt-4">
             <button
               type="submit"
-              disabled={isBackendDown || !addonType || (!isPopulation && addonType !== 'score-theories' && addonType !== 'solve-goal-loop' && addonType !== 'evolve-solution-loop' && !theoryId) || ((addonType === 'score-theories' || addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop') && theoryIds.length === 0)}
+              disabled={isBackendDown || !addonType || (!isPopulation && !isMultiTheoryAddon && !theoryId) || (isMultiTheoryAddon && theoryIds.length === 0)}
               className="flex-1 bg-black text-white p-4 font-black text-sm tracking-widest hover:bg-gray-800 transition-all flex items-center justify-center gap-2 disabled:opacity-30 disabled:cursor-not-allowed shrink-0"
             >
               {isBackendDown ? 'Backend Offline' : 'Add Step'} <ChevronRight size={18} />

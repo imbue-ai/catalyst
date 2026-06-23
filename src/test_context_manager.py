@@ -110,6 +110,7 @@ class TestContextManager(unittest.TestCase):
                 "support-idea",
                 "propose-experiment",
                 "execute-proposal",
+                "generate-solution",
             )
 
             if agent_type in parent_theory_allowed_agents:
@@ -592,6 +593,63 @@ class TestContextManager(unittest.TestCase):
         self.assertEqual(meta["headline"], "Research Summary Report")
         self.assertIsNone(meta.get("parent_theory"))
 
+    def test_record_and_sample_solutions(self):
+        """Verify recording solutions and sampling theories with latest_solution field."""
+        self.run_cmd("init")
+
+        # 1. Create and store a theory
+        theory_dir = self.test_dir / "t_sol_test"
+        theory_dir.mkdir(parents=True, exist_ok=True)
+        (theory_dir / "theory.md").write_text("# Sol Test Theory")
+        t_id = (
+            self.run_cmd(
+                "store_results",
+                "--from_agent_type",
+                "write-theory",
+                "--from_folder",
+                str(theory_dir),
+            )
+            .stdout.strip()
+            .split()[-1]
+        )
+
+        # 2. Create and store a solution with that theory as parent
+        sol_dir = self.test_dir / "s_sol_test"
+        sol_dir.mkdir(parents=True, exist_ok=True)
+        (sol_dir / "solution.md").write_text("# Solution candidate")
+        sol_id = (
+            self.run_cmd(
+                "store_results",
+                "--from_agent_type",
+                "execute-proposal",
+                "--from_folder",
+                str(sol_dir),
+                "--parent_theory",
+                t_id,
+            )
+            .stdout.strip()
+            .split()[-1]
+        )
+
+        # 3. Rescore the theory to make it sampleable under "scoring"
+        scores = {t_id: {"score": 0.85, "is_viable": True}}
+        self.run_cmd("rescore_theories", json.dumps(scores))
+
+        # 4. Sample the theory with "scoring" purpose and check results
+        res = self.run_cmd(
+            "sample_theories",
+            "--num_theories",
+            "1",
+            "--purpose",
+            "scoring",
+            "--json",
+        )
+        sampled = json.loads(res.stdout)
+        self.assertEqual(len(sampled), 1)
+        self.assertEqual(sampled[0]["id"], t_id)
+        self.assertEqual(sampled[0]["latest_solution"], sol_id)
+
 
 if __name__ == "__main__":
     unittest.main()
+

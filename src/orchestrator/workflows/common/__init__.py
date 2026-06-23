@@ -24,5 +24,9 @@ from .evolve_solution import (
     build_evolve_solution_loop_structure as build_evolve_solution_loop_structure,
     run_evolve_solution_loop as run_evolve_solution_loop,
 )
+from .theory_initialization import (
+    run_initialize_theories as run_initialize_theories,
+)
+
 
 

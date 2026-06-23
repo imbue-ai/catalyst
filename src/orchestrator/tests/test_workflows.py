@@ -143,7 +143,7 @@ class TestSolveVerifiableGoalMultiStrandWorkflow(unittest.TestCase):
         "orchestrator.workflows.solve_verifiable_goal_multi_strand.run_summarize_title"
     )
     @patch(
-        "orchestrator.workflows.solve_verifiable_goal_multi_strand.run_local_step_if_needed"
+        "orchestrator.workflows.solve_verifiable_goal_multi_strand.run_initialize_theories"
     )
     @patch("orchestrator.workflows.common.solve_goal_loop.run_step_if_needed")
     @patch("builtins.open", new_callable=mock_open)
@@ -166,7 +166,7 @@ class TestSolveVerifiableGoalMultiStrandWorkflow(unittest.TestCase):
         mock_run_step = MagicMock()
 
         # Step 1: Initialize Theories returns theory IDs
-        mock_run_local.return_value = {"theory_ids": ["T_1", "T_2"]}
+        mock_run_local.return_value = ["T_1", "T_2"]
 
         # Configure mock_run_if_needed to return expected keys/dicts for different stages
         def run_step_side_effect(
@@ -198,7 +198,7 @@ class TestSolveVerifiableGoalMultiStrandWorkflow(unittest.TestCase):
         "orchestrator.workflows.solve_verifiable_goal_multi_strand.run_summarize_title"
     )
     @patch(
-        "orchestrator.workflows.solve_verifiable_goal_multi_strand.run_local_step_if_needed"
+        "orchestrator.workflows.solve_verifiable_goal_multi_strand.run_initialize_theories"
     )
     @patch("orchestrator.workflows.common.solve_goal_loop.run_step_if_needed")
     @patch("builtins.open", new_callable=mock_open)
@@ -221,7 +221,7 @@ class TestSolveVerifiableGoalMultiStrandWorkflow(unittest.TestCase):
         mock_run_step = MagicMock()
 
         # Step 1: Initialize Theories returns theory IDs
-        mock_run_local.return_value = {"theory_ids": ["T_1", "T_2"]}
+        mock_run_local.return_value = ["T_1", "T_2"]
 
         # Configure mock_run_if_needed: Propose returns O_prop, Rank returns empty lists
         def run_step_side_effect(
@@ -246,7 +246,7 @@ class TestSolveVerifiableGoalMultiStrandWorkflow(unittest.TestCase):
         "orchestrator.workflows.solve_verifiable_goal_multi_strand.run_summarize_title"
     )
     @patch(
-        "orchestrator.workflows.solve_verifiable_goal_multi_strand.run_local_step_if_needed"
+        "orchestrator.workflows.solve_verifiable_goal_multi_strand.run_initialize_theories"
     )
     @patch("orchestrator.workflows.common.solve_goal_loop.run_step_if_needed")
     @patch("builtins.open", new_callable=mock_open)
@@ -268,7 +268,7 @@ class TestSolveVerifiableGoalMultiStrandWorkflow(unittest.TestCase):
         wf = SolveVerifiableGoalMultiStrandWorkflow()
         mock_run_step = MagicMock()
 
-        mock_run_local.return_value = {"theory_ids": ["T_1", "T_2"]}
+        mock_run_local.return_value = ["T_1", "T_2"]
 
         # Propose fails to return expected key proposal_id (returns invalid_key instead)
         mock_run_if_needed.return_value = {"invalid_key": "some_value"}
@@ -309,7 +309,7 @@ class TestSolveVerifiableGoalMultiStrandWorkflow(unittest.TestCase):
         "orchestrator.workflows.solve_verifiable_goal_multi_strand.run_summarize_title"
     )
     @patch(
-        "orchestrator.workflows.solve_verifiable_goal_multi_strand.run_local_step_if_needed"
+        "orchestrator.workflows.solve_verifiable_goal_multi_strand.run_initialize_theories"
     )
     @patch("orchestrator.workflows.common.solve_goal_loop.run_step_if_needed")
     @patch("builtins.open", new_callable=mock_open)
@@ -333,7 +333,7 @@ class TestSolveVerifiableGoalMultiStrandWorkflow(unittest.TestCase):
         mock_run_step = MagicMock()
 
         # Step 1: Initialize Theories returns theory IDs
-        mock_run_local.return_value = {"theory_ids": ["T_1", "T_2"]}
+        mock_run_local.return_value = ["T_1", "T_2"]
 
         # Configure mock_run_if_needed to return expected keys/dicts for different stages
         def run_step_side_effect(
@@ -386,14 +386,16 @@ class TestSolveVerifiableGoalWorkflow(unittest.TestCase):
         struct = wf.get_structure(task)
         self.assertEqual(struct[0]["stage"], "summarize-title")
         self.assertEqual(struct[1]["stage"], "initialize-theories")
-        self.assertEqual(len(struct), 3)
+        self.assertEqual(struct[2]["stage"], "initialize-solutions")
+        self.assertEqual(len(struct), 4)
 
     @patch("orchestrator.workflows.solve_verifiable_goal.run_summarize_title")
-    @patch("orchestrator.workflows.solve_verifiable_goal.run_local_step_if_needed")
+    @patch("orchestrator.workflows.solve_verifiable_goal.run_initialize_theories")
+    @patch("orchestrator.workflows.solve_verifiable_goal.run_initialize_solutions")
     @patch("orchestrator.workflows.common.evolve_solution.run_local_step_if_needed")
     @patch("builtins.open", new_callable=mock_open)
     def test_run_success(
-        self, mock_file, mock_run_evolve_step, mock_run_local, mock_summarize
+        self, mock_file, mock_run_evolve_step, mock_run_init_solutions, mock_run_local, mock_summarize
     ):
         task = Task(
             id="task_solve_verifiable_test",
@@ -411,7 +413,8 @@ class TestSolveVerifiableGoalWorkflow(unittest.TestCase):
         mock_run_step = MagicMock()
 
         # Step 1: Initialize Theories returns theory IDs
-        mock_run_local.return_value = {"theory_ids": ["T_1", "T_2"]}
+        mock_run_local.return_value = ["T_1", "T_2"]
+        mock_run_init_solutions.return_value = [("S_1", "T_1"), ("S_2", "T_2")]
 
         wf.run(task, mock_run_step)
 
@@ -422,4 +425,6 @@ class TestSolveVerifiableGoalWorkflow(unittest.TestCase):
         # Check summarize and step invocations
         mock_summarize.assert_called_once_with(task, mock_run_step, "goal: Test goal")
         mock_run_local.assert_called_once()
+        mock_run_init_solutions.assert_called_once()
         mock_run_evolve_step.assert_called_once()
+

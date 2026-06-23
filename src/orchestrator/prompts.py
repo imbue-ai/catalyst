@@ -237,3 +237,13 @@ def get_integrate_interpretations_prompt(
         prompt += "Please BRANCH into two new theories. "
     prompt += "When you are done, return ONLY a JSON object with the key 'theory_ids' containing an array of the new theory IDs."
     return prompt
+
+
+def get_score_theory_solutions_prompt(
+    solution_theory_pairs: List[tuple[str, str]],
+) -> str:
+    pairs_str = " ".join(f"{sol}:{the}" for sol, the in solution_theory_pairs)
+    return (
+        f"Please run the score-theory-solutions skill with the following pairs of solution ID and parent theory ID: {pairs_str}. "
+        "When you are done, return ONLY a JSON object mapping each theory ID to its assigned scores object (including subscores)."
+    )
