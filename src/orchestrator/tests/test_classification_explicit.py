@@ -29,6 +29,8 @@ class TestExplicitClassification(unittest.TestCase):
             "score-theories": StepCategory.REVIEW,
             "write-different-theory": StepCategory.THEORY_WRITING,
             "summarize-research": StepCategory.MISC,
+            "solve-goal-loop": StepCategory.MISC,
+            "evolve-solution-loop": StepCategory.MISC,
         }
 
         for name, expected_cat in addons_and_expected_categories.items():
