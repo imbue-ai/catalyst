@@ -18,7 +18,6 @@ from ..workflows.common.evolve_solution import (
 from ..workflows.common.theory_initialization import run_initialize_theories
 
 
-
 class TestWorkflowTitle(unittest.TestCase):
     def test_run_summarize_title_not_needed(self):
         task = Task(
@@ -459,7 +458,7 @@ class TestEvolveSolutionLoop(unittest.TestCase):
         # Iteration 2: Mutation iteration (steps 5-9 only, with added interpretation steps)
         iter2 = struct["iteration_structures"]["2"]
         self.assertEqual(len(iter2), 8)
-        self.assertEqual(iter2[0]["stage"], "test-sample-mutate-parents-2")
+        self.assertEqual(iter2[0]["stage"], "test-sample-integrate-parents-2")
         self.assertEqual(iter2[1]["name"], "Integrate Interpretations")
         self.assertEqual(iter2[2]["name"], "Propose Solution Candidates")
         self.assertEqual(iter2[3]["name"], "Execute Solution Candidates")
@@ -493,11 +492,13 @@ class TestEvolveSolutionLoop(unittest.TestCase):
         # Mocks setup:
         # Mock local steps (sampling)
         mock_run_local.side_effect = [
-            {"samples": [{"id": "theory-1"}, {"id": "theory-2"}]},      # sample-proposals-1
-            {"samples": [{"id": "theory-3"}]},                          # sample-interpretations-1
-            {"samples": [{"id": "theory-1"}]},                          # sample-mutate-parents-2
-            {"samples": [{"id": "theory-3"}]},                          # sample-interpretations-2
-            {"samples": [{"id": "theory-4", "latest_solution": "sol-latest"}]}, # sample-scoring-2
+            {"samples": [{"id": "theory-1"}, {"id": "theory-2"}]},  # sample-proposals-1
+            {"samples": [{"id": "theory-3"}]},  # sample-interpretations-1
+            {"samples": [{"id": "theory-1"}]},  # sample-integrate-parents-2
+            {"samples": [{"id": "theory-3"}]},  # sample-interpretations-2
+            {
+                "samples": [{"id": "theory-4", "latest_solution": "sol-latest"}]
+            },  # sample-scoring-2
         ]
 
         # Mock standard/parallel steps
@@ -513,11 +514,11 @@ class TestEvolveSolutionLoop(unittest.TestCase):
             {"theory_id": "theory-new-1-3"},  # Interpret 1-3 (theory-3)
             # Iteration 2 (Mutation)
             {"theory_ids": ["theory-1-integrated"]},  # Integrate 2-1
-            {"proposal_id": "solution-prop-2"},       # Propose Solution ALWAYS
-            {"solution_id": "solution-real-2"},       # Execute Solution Proposal
-            {"theory_id": "theory-new-2-1"},          # Interpret 2-1 (theory-1-integrated)
-            {"theory_id": "theory-new-2-2"},          # Interpret 2-2 (theory-3)
-            {"status": "scored"},                     # Score Theory Solutions
+            {"proposal_id": "solution-prop-2"},  # Propose Solution ALWAYS
+            {"solution_id": "solution-real-2"},  # Execute Solution Proposal
+            {"theory_id": "theory-new-2-1"},  # Interpret 2-1 (theory-1-integrated)
+            {"theory_id": "theory-new-2-2"},  # Interpret 2-2 (theory-3)
+            {"status": "scored"},  # Score Theory Solutions
         ]
 
         run_evolve_solution_loop(
@@ -533,13 +534,20 @@ class TestEvolveSolutionLoop(unittest.TestCase):
 
 
 class TestTheoryInitialization(unittest.TestCase):
-    @patch("orchestrator.workflows.common.theory_initialization.run_local_step_if_needed")
+    @patch(
+        "orchestrator.workflows.common.theory_initialization.run_local_step_if_needed"
+    )
     @patch("orchestrator.workflows.common.theory_initialization.run_context_manager")
     @patch("tempfile.mkdtemp")
     @patch("builtins.open", new_callable=mock_open)
     @patch("os.makedirs")
     def test_run_initialize_theories_success(
-        self, mock_makedirs, mock_file, mock_mkdtemp, mock_context_manager, mock_run_local
+        self,
+        mock_makedirs,
+        mock_file,
+        mock_mkdtemp,
+        mock_context_manager,
+        mock_run_local,
     ):
         task = Task(
             id="task_test",
@@ -560,6 +568,7 @@ class TestTheoryInitialization(unittest.TestCase):
         # Simulating run_local_step_if_needed calling the inner fn
         def run_local_side_effect(task, stage, fn):
             return fn()
+
         mock_run_local.side_effect = run_local_side_effect
 
         theory_ids = run_initialize_theories(task)
@@ -571,7 +580,9 @@ class TestTheoryInitialization(unittest.TestCase):
         mock_file.assert_any_call("/tmp/env/tmp/dir1/theory.md", "w", encoding="utf-8")
         mock_file.assert_any_call("/tmp/env/tmp/dir2/theory.md", "w", encoding="utf-8")
 
-    @patch("orchestrator.workflows.common.theory_initialization.run_local_step_if_needed")
+    @patch(
+        "orchestrator.workflows.common.theory_initialization.run_local_step_if_needed"
+    )
     def test_run_initialize_theories_canceled(self, mock_run_local):
         task = Task(
             id="task_test",
@@ -586,4 +597,3 @@ class TestTheoryInitialization(unittest.TestCase):
         mock_run_local.return_value = {"_canceled": True}
         theory_ids = run_initialize_theories(task)
         self.assertIsNone(theory_ids)
-

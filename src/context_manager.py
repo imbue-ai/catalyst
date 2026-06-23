@@ -366,10 +366,11 @@ class DatabaseSession:
         _, result = found
         assert isinstance(result, TheoryEvaluationResult)
         result.trainable_failure_cases.append(
-            TheoryEvaluationFailureCase(solution_id=solution_id, data_point_id=solution_id)
+            TheoryEvaluationFailureCase(
+                solution_id=solution_id, data_point_id=solution_id
+            )
         )
         self.mark_population_modified()
-
 
 
 def copy_artifact(src: Path, dst: Path, exclude_results: bool = False) -> None:
@@ -432,13 +433,12 @@ class TheoryEvaluationFailureCase(EvaluationFailureCase):
 
     review_id: str | None = Field(
         default=None,
-        description="Review ID (e.g. 'R_20260414_150000_a1b2c3') stored in the context_manager DB."
+        description="Review ID (e.g. 'R_20260414_150000_a1b2c3') stored in the context_manager DB.",
     )
     solution_id: str | None = Field(
         default=None,
-        description="Solution ID (e.g. 'U_20260414_150000_a1b2c3') stored in the context_manager DB."
+        description="Solution ID (e.g. 'U_20260414_150000_a1b2c3') stored in the context_manager DB.",
     )
-
 
 
 # ---------------------------------------------------------------------------
@@ -671,7 +671,6 @@ def store_results(
                         theory_id=parent_theory,
                         solution_id=new_id,
                     )
-
 
     return new_id
 
@@ -1286,29 +1285,34 @@ def list_entries(
 
 def sample_theories(
     num_theories: int,
-    purpose: Literal["scoring", "mutation", "proposals", "interpret_results", "mutate"],
+    purpose: Literal[
+        "scoring", "mutation", "proposals", "interpret_results", "integration"
+    ],
 ) -> list[dict]:
     db_root = get_db_path()
     with DatabaseSession(db_root) as session:
         population = session.get_population()
         if not population:
             return []
-        if purpose == "scoring":
+        unique_k = min(
+            len([o for o, r in population.organisms if r.trainable_failure_cases]),
+            num_theories,
+        )
+        if purpose in ("scoring", "interpret_results", "proposals"):
+            # Unique parents, ignoring novelty weight
             samples = population.sample_parents(
-                k=min(
-                    len(
-                        [
-                            o
-                            for o, r in population.organisms
-                            if r.trainable_failure_cases
-                        ]
-                    ),
-                    num_theories,
-                ),
+                k=unique_k,
                 replace=False,
                 novelty_weight=0.0,
             )
-        elif purpose in ("mutation", "proposals", "interpret_results", "mutate"):
+        elif purpose == "integration":
+            # Unique parents
+            samples = population.sample_parents(
+                k=unique_k,
+                replace=False,
+            )
+        elif purpose == "mutation":
+            # Allowing duplicates
             samples = population.sample_parents(k=num_theories)
         else:
             raise ValueError(f"Unknown sampling purpose {purpose!r}")
@@ -1321,14 +1325,15 @@ def sample_theories(
                     if getattr(fc, "solution_id", None) is not None:
                         latest_sol = fc.solution_id
                         break
-            results.append({
-                "id": o.theory_id,
-                "score": r.score,
-                "subscores": r.subscores if hasattr(r, "subscores") else {},
-                "latest_solution": latest_sol,
-            })
+            results.append(
+                {
+                    "id": o.theory_id,
+                    "score": r.score,
+                    "subscores": r.subscores if hasattr(r, "subscores") else {},
+                    "latest_solution": latest_sol,
+                }
+            )
         return results
-
 
 
 def rescore_theories(theory_scores: dict[str, dict[str, float]]) -> None:
@@ -1418,7 +1423,8 @@ def commit_transaction(transaction_id: str) -> None:
 
         # 4. Update population (Solutions)
         solutions = [
-            d for _, d in staged_items
+            d
+            for _, d in staged_items
             if d.get("category") == "solution" and d.get("parent_theory")
         ]
         for s in solutions:
@@ -1429,7 +1435,6 @@ def commit_transaction(transaction_id: str) -> None:
                 )
             except Exception as e:
                 print(f"Error recording solution {s.get('id')!r} in population: {e}")
-
 
 
 def export_theory_population(dest_path: Path) -> None:
@@ -1945,7 +1950,6 @@ def main(argv: list[str] | None = None) -> None:
                             )
                             row += f" {val_str:<20}"
                         print(row)
-
 
         elif args.command == "rescore_theories":
             theory_score_dict = json.loads(args.theory_score_dict)

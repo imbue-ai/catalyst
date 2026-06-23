@@ -98,7 +98,7 @@ def build_evolve_solution_loop_structure(
 
     iteration_structures = {}
     for i in range(1, max_iterations + 1):
-        is_mutation_iteration = (i % rescore_interval == 0 or i == max_iterations)
+        is_mutation_iteration = i % rescore_interval == 0 or i == max_iterations
 
         if not is_mutation_iteration:
             propose_stages = [
@@ -165,7 +165,10 @@ def build_evolve_solution_loop_structure(
             ]
 
             iter_struct = [
-                {"type": "step", "stage": f"{stage_prefix}sample-mutate-parents-{i}"},
+                {
+                    "type": "step",
+                    "stage": f"{stage_prefix}sample-integrate-parents-{i}",
+                },
                 {
                     "type": "parallel",
                     "name": "Integrate Interpretations",
@@ -211,11 +214,15 @@ def run_evolve_solution_loop(
     num_strands = len(theory_ids)
 
     num_proposals = int(task.workflow_inputs.get("num_proposals", num_strands))
-    num_interpretations = int(task.workflow_inputs.get("num_interpretations", num_strands))
+    num_interpretations = int(
+        task.workflow_inputs.get("num_interpretations", num_strands)
+    )
     num_parents = int(task.workflow_inputs.get("num_parents", num_strands))
     num_extra_scores = int(task.workflow_inputs.get("num_extra_scores", 2))
     rescore_interval = int(task.workflow_inputs.get("rescore_interval", 5))
-    num_executions_per_iteration = int(task.workflow_inputs.get("num_executions_per_iteration", 2))
+    num_executions_per_iteration = int(
+        task.workflow_inputs.get("num_executions_per_iteration", 2)
+    )
     execution_cost = int(task.workflow_inputs.get("execution_cost", 1))
     branch_prob = float(task.workflow_inputs.get("branch_prob", 0.5))
 
@@ -224,7 +231,7 @@ def run_evolve_solution_loop(
             f"[ORCHESTRATOR] [{task.id[:8]}] Evolve Solution Loop Iteration {i}/{max_iterations}"
         )
 
-        is_mutation_iteration = (i % rescore_interval == 0 or i == max_iterations)
+        is_mutation_iteration = i % rescore_interval == 0 or i == max_iterations
 
         if not is_mutation_iteration:
             # --- REGULAR ITERATION ---
@@ -236,7 +243,9 @@ def run_evolve_solution_loop(
                 purpose="proposals",
                 stage_name=f"{stage_prefix}sample-proposals-{i}",
             )
-            proposal_theory_ids = [p.get("id") for p in proposal_theories if p.get("id")]
+            proposal_theory_ids = [
+                p.get("id") for p in proposal_theories if p.get("id")
+            ]
 
             if not proposal_theory_ids:
                 logger.warning(
@@ -284,7 +293,7 @@ def run_evolve_solution_loop(
 
             if len(curr_proposal_ids) != len(proposal_theory_ids) or any(
                 p is None for p in curr_proposal_ids
-                ):
+            ):
                 raise Exception(
                     f"Failed to generate all {len(proposal_theory_ids)} proposals in iteration {i}."
                 )
@@ -324,7 +333,9 @@ def run_evolve_solution_loop(
                     selected_proposals.append(p)
 
             if not selected_proposals:
-                logger.info("Selected proposals list is empty. Skipping to interpretation.")
+                logger.info(
+                    "Selected proposals list is empty. Skipping to interpretation."
+                )
                 continue
 
             # Execute Proposals (in parallel)
@@ -384,9 +395,13 @@ def run_evolve_solution_loop(
                 purpose="interpret_results",
                 stage_name=f"{stage_prefix}sample-interpretations-{i}",
             )
-            interpret_theory_ids = [p.get("id") for p in interpret_theories if p.get("id")]
+            interpret_theory_ids = [
+                p.get("id") for p in interpret_theories if p.get("id")
+            ]
 
-            unioned_theory_ids = sorted(list(set(interpret_theory_ids + proposal_theory_ids)))
+            unioned_theory_ids = sorted(
+                list(set(interpret_theory_ids + proposal_theory_ids))
+            )
 
             # Run interpret-result helper
             success = _run_interpret_results_helper(
@@ -403,18 +418,20 @@ def run_evolve_solution_loop(
         else:
             # --- MUTATION ITERATION ---
 
-            # A. Sample mutate parents
-            mutate_parents = _sample_theories_helper(
+            # A. Sample integration parents
+            integrate_parents = _sample_theories_helper(
                 task=task,
                 num_theories=num_parents,
-                purpose="mutate",
-                stage_name=f"{stage_prefix}sample-mutate-parents-{i}",
+                purpose="integration",
+                stage_name=f"{stage_prefix}sample-integrate-parents-{i}",
             )
-            mutate_parent_ids = [p.get("id") for p in mutate_parents if p.get("id")]
+            integrate_parent_ids = [
+                p.get("id") for p in integrate_parents if p.get("id")
+            ]
 
-            if not mutate_parent_ids:
+            if not integrate_parent_ids:
                 logger.warning(
-                    f"[ORCHESTRATOR] [{task.id[:8]}] No mutate parents sampled in iteration {i}. Skipping iteration."
+                    f"[ORCHESTRATOR] [{task.id[:8]}] No integrate parents sampled in iteration {i}. Skipping iteration."
                 )
                 continue
 
@@ -431,18 +448,20 @@ def run_evolve_solution_loop(
                     task,
                     run_step,
                     stage_name,
-                    get_integrate_interpretations_prompt(theory_id, create_branch=create_branch),
+                    get_integrate_interpretations_prompt(
+                        theory_id, create_branch=create_branch
+                    ),
                     StepCategory.THEORY_WRITING,
                 )
                 integration_results[idx] = res
 
             with ParallelStepRunner() as runner:
-                for idx, theory_id in enumerate(mutate_parent_ids):
+                for idx, theory_id in enumerate(integrate_parent_ids):
                     runner.add(run_integrate_interpretations, idx, theory_id)
 
             # Check if canceled
             is_canceled = False
-            for idx in range(len(mutate_parent_ids)):
+            for idx in range(len(integrate_parent_ids)):
                 res = integration_results.get(idx)
                 if res and res.get("_canceled"):
                     is_canceled = True
@@ -452,7 +471,7 @@ def run_evolve_solution_loop(
 
             # Extract integrated theory IDs
             integrated_theory_ids = []
-            for idx in range(len(mutate_parent_ids)):
+            for idx in range(len(integrate_parent_ids)):
                 res = integration_results.get(idx)
                 t_ids = res.get("theory_ids", []) if res else []
                 if isinstance(t_ids, list):
@@ -500,7 +519,9 @@ def run_evolve_solution_loop(
                 p_id = res.get("proposal_id") if res else None
                 proposal_ids.append(p_id)
 
-            if len(proposal_ids) != len(integrated_theory_ids) or any(p is None for p in proposal_ids):
+            if len(proposal_ids) != len(integrated_theory_ids) or any(
+                p is None for p in proposal_ids
+            ):
                 raise Exception(
                     f"Failed to generate all solution candidate proposals in iteration {i}."
                 )
@@ -553,9 +574,13 @@ def run_evolve_solution_loop(
                 purpose="interpret_results",
                 stage_name=f"{stage_prefix}sample-interpretations-{i}",
             )
-            interpret_theory_ids = [p.get("id") for p in interpret_theories if p.get("id")]
+            interpret_theory_ids = [
+                p.get("id") for p in interpret_theories if p.get("id")
+            ]
 
-            unioned_theory_ids = sorted(list(set(interpret_theory_ids + integrated_theory_ids)))
+            unioned_theory_ids = sorted(
+                list(set(interpret_theory_ids + integrated_theory_ids))
+            )
 
             # Run interpret-result helper with new solution candidate IDs as result_ids
             success = _run_interpret_results_helper(
