@@ -55,8 +55,23 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
 - `<CONTEXT_DIR>/theory/` — contains `theory.md` and optionally `interpretation_log.md` (read-only).
 - `<OUTPUT_DIR>/` — write your proposal files (`proposal.md`, and optional `script.py` / solution files) here.
 
-## Execution Steps
+## Obtaining cited experiment IDs
+Your inputs may cite specific experiment IDs (`X_...`). You can retrieve these experiments and their results by running:
+```bash
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_experiment --target_folder <CONTEXT_DIR> --from_experiment <EXPERIMENT_ID>
+```
 
+This command will place the experiment description (`description.md`), Python script (`script.py`), and results into the `<CONTEXT_DIR>/experiments/<EXPERIMENT_ID>` folder.
+
+## Obtaining cited solution IDs
+Your inputs may cite specific solution IDs (`U_...`). You can retrieve these solutions and their contents by running:
+```bash
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_solution --target_folder <CONTEXT_DIR> --from_solution <SOLUTION_ID>
+```
+
+This command will place the solution candidate description (`solution.md`) and any related files into the `<CONTEXT_DIR>/solutions/<SOLUTION_ID>` folder.
+
+## Execution Steps
 1. **Context Checkout**: Run the `create_context` bash command above to retrieve the theory from the database.
 2. **Review Current Research State**: Read `<CONTEXT_DIR>/theory/theory.md` and additionally `<CONTEXT_DIR>/theory/interpretation_log.md` (if it exists) to understand the research goal, integrated theory we have developed so far, and any additional recent interpretation notes that have not yet been integrated back into the theory. Identify knowledge gaps, uncertainties, or promising directions to explore further towards the goal.
 3. **Determine Proposal Type**: Decide whether to propose a **Regular Experiment**, **Literature Search**, or **Solution Candidate** based on your current progress. If the input arguments specify that you should always or never propose a solution candidate, you must follow those instructions.
@@ -68,6 +83,7 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
    - **Theory ID**: Include the ID (`T_...`) of the theory that this proposal is based on.
 5. **Write Solution**:
    - If proposing a **Solution Candidate**, write the proposed solution into one or multiple files under `<OUTPUT_DIR>/`. Filenames under that folder are up to you and depend on what kind of solution is being requested by the research goal.
+   - You can obtain the previous best solution mentioned in the theory (if any) using its ID (`U_...`) by running the `fetch_solution` command described above. Feel free to use it as a reference point for building your new solution.
 6. **Write Experiment / Verification Script**:
    - For an **Experiment** or **Solution Candidate**, write a Python script named `script.py` in the same `<OUTPUT_DIR>/` folder. Make sure to copy any of its dependencies into `OUTPUT_DIR` as well. The script must be self-contained, and only depend on files within its own folder and/or Python libraries provided in the project environment.
    - For a **Solution Candidate**, the `script.py` script must contain a *verification* of your solution. You must read the `verification_instructions.txt` file in the current working directory to understand the verification process, and follow those instructions to write the verification `script.py`.

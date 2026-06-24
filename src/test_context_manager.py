@@ -429,6 +429,28 @@ class TestContextManager(unittest.TestCase):
         )
         self.assertTrue((target / "experiments" / x_id / "description.md").exists())
 
+        # 3. Solution
+        sol_dir = self.test_dir / "sol_src_fetch"
+        sol_dir.mkdir()
+        (sol_dir / "solution.md").write_text("Solution text")
+        res = self.run_cmd(
+            "store_results",
+            "--from_agent_type",
+            "generate-solution",
+            "--from_folder",
+            str(sol_dir),
+        )
+        u_id = res.stdout.strip().split()[-1]
+
+        self.run_cmd(
+            "fetch_solution",
+            "--target_folder",
+            str(target),
+            "--from_solution",
+            u_id,
+        )
+        self.assertTrue((target / "solutions" / u_id / "solution.md").exists())
+
     def test_export_population(self):
         """Verify population export."""
         self.run_cmd("init")

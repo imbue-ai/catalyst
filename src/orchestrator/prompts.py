@@ -221,7 +221,7 @@ def get_execute_proposal_prompt(proposal_id: str) -> str:
     return (
         f"Please run the execute-proposal skill for proposal ID: {proposal_id}. "
         "Depending on the proposal type, return ONLY a JSON object with one of these keys: "
-        "'experiment_id' (for an experiment, e.g. X_..., or null if failed to execute), 'literature_id' (for literature research, e.g. L_...), "
+        "'experiment_id' (for an experiment, e.g. X_...), 'literature_id' (for literature research, e.g. L_...), "
         "or 'solution_id' (for a solution candidate, e.g. U_...)."
     )
 

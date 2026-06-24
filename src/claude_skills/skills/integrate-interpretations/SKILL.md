@@ -43,6 +43,14 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_experiment --tar
 
 This command will place the experiment description (`description.md`), Python script (`script.py`), and results into the `<CONTEXT_DIR>/experiments/<EXPERIMENT_ID>` folder.
 
+## Obtaining cited solution IDs
+Your inputs may cite specific solution IDs (`U_...`). You can retrieve these solutions and their contents by running:
+```bash
+uv run python <SKILL_BASE_DIR>/scripts/context_manager.py fetch_solution --target_folder <CONTEXT_DIR> --from_solution <SOLUTION_ID>
+```
+
+This command will place the solution candidate description (`solution.md`) and any related files into the `<CONTEXT_DIR>/solutions/<SOLUTION_ID>` folder.
+
 ## Theory Output Format
 Your `theory.md` file must be: A revised theory that integrates the new interpretations from the interpretation log.
 

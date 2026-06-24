@@ -16,6 +16,7 @@ user-invocable: false
   ```bash
   uv run python <SKILL_BASE_DIR>/scripts/run_experiment.py --experiment_folder <EXPERIMENT_FOLDER_PATH> --agent_type <AGENT_TYPE> [--parent_theory <T_ID>]
   ```
+  By default, the `run_experiment.py` wrapper will only store results for experiments that execute successfully. To store results for failed experiments as well, add the `--store_failures` flag.
 6. The wrapper will execute the script with CWD set to EXPERIMENT_FOLDER_PATH, passing through its stdout and stderr. It will additionally capture all experiment outputs and persist them to a database for record keeping. It will finish its output by printing a unique experiment ID (e.g. `X_20260416_150000_a1b2c3`) that can be used to retrieve the results later.
 
 Some experiments may take a long time to complete (up to a few hours). Please allow enough time for the experiment to finish before assuming that it has failed.

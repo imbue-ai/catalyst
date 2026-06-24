@@ -1176,6 +1176,24 @@ def fetch_experiment(
         )
 
 
+def fetch_solution(target_folder: Path, solution_id: str) -> None:
+    """Fetch a solution into an existing context folder under
+    ``solutions/<solution_id>/``.
+    """
+    db_root = get_db_path()
+    with DatabaseSession(db_root) as session:
+        if not session.get_metadata("solution", solution_id):
+            raise ValueError(f"Solution {solution_id!r} not found or invisible")
+
+        dst_root = target_folder / "solutions"
+        dst_root.mkdir(exist_ok=True)
+        copy_artifact(
+            db_root / "solution" / solution_id,
+            dst_root / solution_id,
+        )
+
+
+
 def search_experiments(
     query: str | None = None,
     tags: list[str] | None = None,
@@ -1693,6 +1711,23 @@ def main(argv: list[str] | None = None) -> None:
         help="Exclude experiment results (only fetch description and script)",
     )
 
+    # -- fetch_solution ----------------------------------------------------
+    sp_fetch_sol = sub.add_parser(
+        "fetch_solution",
+        help="Fetch a solution into an existing context folder.",
+    )
+    sp_fetch_sol.add_argument(
+        "--target_folder",
+        required=True,
+        type=Path,
+        help="Existing context folder produced by a prior create_context call",
+    )
+    sp_fetch_sol.add_argument(
+        "--from_solution",
+        required=True,
+        help="Solution ID to add (nested under solutions/<U_ID>/)",
+    )
+
     # -- search_experiments --------------------------------------------------
     sp_search_exp = sub.add_parser(
         "search_experiments",
@@ -1879,6 +1914,12 @@ def main(argv: list[str] | None = None) -> None:
                 target_folder=args.target_folder.resolve(),
                 experiment_id=args.from_experiment,
                 exclude_results=args.exclude_results,
+            )
+
+        elif args.command == "fetch_solution":
+            fetch_solution(
+                target_folder=args.target_folder.resolve(),
+                solution_id=args.from_solution,
             )
 
         elif args.command == "search_experiments":

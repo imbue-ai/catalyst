@@ -35,7 +35,7 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
 3. **Execute Flow**:
    - **For `"experiment"`**:
      - Copy all files from `<CONTEXT_DIR>/proposal/` into `<OUTPUT_DIR>/`. Rename `proposal.md` to `description.md`.
-     - Invoke the `run-experiment` skill to execute the proposal script.
+     - Invoke the `run-experiment` skill to execute the proposal script. Use the `--store_failures` flag to ensure that even failed experiments are stored to the database and assigned an experiment ID.
      - If the experiment fails due to a transient technical error, you can retry it. You can also perform minor syntactic or non-functional changes to its code to fix obvious bugs. However, never change the substance of the experiment! Just report the failed experiment result if it consistently fails or cannot be fixed through trivial changes.
      - Parse the resulting experiment ID (e.g. `X_20260616_123456_abcdef`) from the runner's output. Note it down as the result of this skill.
    - **For `"literature-search"`**:
