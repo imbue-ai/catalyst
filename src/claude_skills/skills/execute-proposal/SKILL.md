@@ -49,12 +49,9 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context \
      - Parse the resulting verification experiment ID (e.g. `X_20260616_123456_abcdef`).
      - Create a `solution.md` file in `<OUTPUT_DIR>/`. Populate it with a detailed summary of the solution candidate, the results of the verification experiment (including its experiment ID `X_...`), and an assessment of how well the goal described in `goal.txt` was met by this solution candidate.
      - Find the parent theory ID (`T_...`) from the `proposal.md` file.
-     - Store the results using `store_results`:
+     - Store the results using `context_manager.py store_results`:
        ```bash
-       uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results \
-           --from_agent_type execute-proposal \
-           --from_folder <OUTPUT_DIR>
-           --parent_theory <T_ID>
+       uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results --from_agent_type execute-proposal --from_folder <OUTPUT_DIR> --parent_theory <T_ID>
        ```
      - Parse and note the resulting solution ID (e.g. `U_20260616_123456_abcdef`) as the result of this skill.
 4. **Report Results**: Report the resulting ID as the result of this skill.
