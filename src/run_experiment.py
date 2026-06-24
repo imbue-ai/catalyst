@@ -5,6 +5,7 @@ Run with ``--help`` to see the available CLI subcommands.
 
 import argparse
 import os
+import re
 import resource
 import subprocess
 import sys
@@ -101,7 +102,7 @@ def main():
             with open(stderr_log, "r") as f:
                 stderr_content = f.read()
                 if (
-                    "MemoryError" in stderr_content
+                    re.search(r"(?<![a-zA-Z])MemoryError(?![a-zA-Z])", stderr_content)
                     or "std::bad_alloc" in stderr_content
                 ):
                     print(
