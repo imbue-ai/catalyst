@@ -42,14 +42,16 @@ def run_initialize_theories(task: Task) -> Optional[List[str]]:
 
             # Create theory.md
             theory_file = os.path.join(output_dir, "theory.md")
-            philosophy = APPROACH_PHILOSOPHIES[idx % len(APPROACH_PHILOSOPHIES)]
+            if num_strands > 1:
+                philosophy = APPROACH_PHILOSOPHIES[idx % len(APPROACH_PHILOSOPHIES)]
+            else:
+                philosophy = None
             with open(theory_file, "w", encoding="utf-8") as f:
+                f.write("# Starter Theory\n**Research goal:** " + goal.strip())
+                if philosophy:
+                    f.write("\n\n**Approach philosophy:** " + philosophy)
                 f.write(
-                    "# Starter Theory\n**Research goal:** "
-                    + goal.strip()
-                    + "\n\n**Approach philosophy:** "
-                    + philosophy
-                    + "\n\nThis is a placeholder theory. No research has been conducted yet.\n"
+                    "\n\nThis is a placeholder theory. No research has been conducted yet.\n"
                 )
 
             # Store results using run_context_manager in a subprocess
