@@ -59,12 +59,15 @@ def main():
 
     print("Running script.py...", flush=True)
 
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+
     process = subprocess.Popen(
         [sys.executable, str(script_path)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=str(experiment_folder),
-        env=os.environ.copy().update({"PYTHONUNBUFFERED": "1"}),
+        env=env,
         preexec_fn=preexec_setup,
     )
 
