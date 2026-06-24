@@ -5,6 +5,7 @@ Run with ``--help`` to see the available CLI subcommands.
 
 import argparse
 import os
+import re
 import resource
 import subprocess
 import sys
@@ -29,6 +30,11 @@ def main():
     parser.add_argument("--experiment_folder", required=True, type=Path)
     parser.add_argument("--agent_type", required=True, type=str)
     parser.add_argument("--parent_theory", default=None, type=str)
+    parser.add_argument(
+        "--store_failures",
+        action="store_true",
+        help="Store results even if exit code is non-zero.",
+    )
     args = parser.parse_args()
 
     experiment_folder = args.experiment_folder.resolve()
@@ -59,11 +65,15 @@ def main():
 
     print("Running script.py...", flush=True)
 
+    env = os.environ.copy()
+    env["PYTHONUNBUFFERED"] = "1"
+
     process = subprocess.Popen(
         [sys.executable, str(script_path)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         cwd=str(experiment_folder),
+        env=env,
         preexec_fn=preexec_setup,
     )
 
@@ -86,7 +96,9 @@ def main():
             f"Error: Experiment timed out after {timeout_secs} seconds.",
             file=sys.stderr,
         )
-        sys.exit(124)  # 124 is a common exit code for timeout
+        if not args.store_failures:
+            sys.exit(124)  # 124 is a common exit code for timeout
+        exit_code = 124
 
     stdout_thread.join()
     stderr_thread.join()
@@ -97,20 +109,26 @@ def main():
             with open(stderr_log, "r") as f:
                 stderr_content = f.read()
                 if (
-                    "MemoryError" in stderr_content
+                    re.search(r"(?<![a-zA-Z])MemoryError(?![a-zA-Z])", stderr_content)
                     or "std::bad_alloc" in stderr_content
                 ):
                     print(
                         f"Error: Experiment hit memory limit ({memory_limit_as} bytes).",
                         file=sys.stderr,
                     )
-            sys.exit(137)  # 137 is common for OOM (128 + 9)
+                    if not args.store_failures:
+                        sys.exit(137)  # 137 is common for OOM (128 + 9)
+                    exit_code = 137
         except Exception:
             pass
 
-        sys.exit(exit_code)
+        if not args.store_failures:
+            sys.exit(exit_code)
 
-    print("script.py executed successfully.")
+    if exit_code == 0:
+        print("script.py executed successfully.")
+    else:
+        print(f"script.py failed with exit code {exit_code}.")
 
     metadata_extra = {"parent_agent_type": args.agent_type}
 
@@ -122,6 +140,9 @@ def main():
     )
 
     print(f"Stored experiment into database under ID {new_id}.")
+
+    if exit_code != 0:
+        sys.exit(exit_code)
 
 
 if __name__ == "__main__":

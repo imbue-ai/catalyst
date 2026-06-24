@@ -299,6 +299,17 @@ class TestServerEndpoints(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()[0]["id"], "S_1")
 
+    @patch("server.get_task")
+    @patch("server.subprocess.run")
+    def test_get_task_solutions(self, mock_run, mock_get_task):
+        mock_get_task.return_value = self.dummy_task
+        mock_res = MagicMock()
+        mock_res.stdout = '[{"id": "U_1"}]'
+        mock_run.return_value = mock_res
+        response = client.get("/api/tasks/test_task_123/solutions")
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()[0]["id"], "U_1")
+
 
     def test_get_harnesses(self):
         response = client.get("/api/harnesses")

@@ -13,7 +13,7 @@ export type StepCategory = "THEORY_WRITING" | "REVIEW" | "MISC";
 export const STEP_CATEGORIES: StepCategory[] = ["THEORY_WRITING", "REVIEW", "MISC"];
 
 export const STEP_CATEGORY_LABELS: Record<StepCategory, string> = {
-  THEORY_WRITING: "Theory Development",
+  THEORY_WRITING: "Theory & Solution Development",
   REVIEW: "Review & Scoring",
   MISC: "Miscellaneous Steps",
 };
@@ -45,6 +45,14 @@ export interface Addon {
   instruction?: string;
   lit_review_id?: string;
   generate_intermediate_research_summaries?: boolean;
+  max_iterations?: number;
+  num_executions_per_iteration?: number;
+  execution_cost?: number;
+  integration_interval?: number;
+  rescore_interval?: number;
+  num_extra_interpretations?: number;
+  branch_prob?: number;
+  num_proposals?: number;
 }
 
 export interface TheoryScoringWeights {
@@ -105,6 +113,15 @@ export interface SummaryArtifact {
   id: string;
   headline?: string;
   created_at?: string;
+}
+
+export interface SolutionArtifact {
+  id: string;
+  headline?: string;
+  agent_type?: string;
+  created_at?: string;
+  extra?: Record<string, string>;
+  parent_theory?: string;
 }
 
 
@@ -213,6 +230,12 @@ export async function getExperiments(id: string): Promise<ExperimentArtifact[]> 
 export async function getSummaries(id: string): Promise<SummaryArtifact[]> {
   const res = await fetch(`${API_BASE}/tasks/${id}/summaries`);
   if (!res.ok) throw new Error("Failed to get summaries");
+  return res.json();
+}
+
+export async function getSolutions(id: string): Promise<SolutionArtifact[]> {
+  const res = await fetch(`${API_BASE}/tasks/${id}/solutions`);
+  if (!res.ok) throw new Error("Failed to get solutions");
   return res.json();
 }
 

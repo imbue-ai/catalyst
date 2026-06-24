@@ -185,3 +185,72 @@ def get_summarize_research_prompt() -> str:
         "When you are done, return ONLY a JSON object with the key 'summary_id'."
     )
 
+
+def get_summarize_goal_progress_prompt() -> str:
+    return (
+        "Please run the summarize-goal-progress skill.\n"
+        "When you are done, return ONLY a JSON object with the key 'summary_id'."
+    )
+
+
+def get_propose_experiment_prompt(
+    theory_id: str, propose_solution: Optional[str] = None
+) -> str:
+    prompt = f"Please run the propose-experiment skill for theory ID: {theory_id}. "
+
+    if propose_solution == "never":
+        prompt += "Tell the skill: NEVER propose a solution candidate. "
+    elif propose_solution == "always":
+        prompt += "Tell the skill: ALWAYS propose a solution candidate. "
+
+    prompt += "When you are done, return ONLY a JSON object with the key 'proposal_id'."
+    return prompt
+
+
+def get_rank_proposals_prompt(proposal_ids: List[str]) -> str:
+    joined_ids = " ".join(proposal_ids)
+    return (
+        f"Please run the rank-proposals skill with the following list of proposal IDs: {joined_ids}. "
+        "When you are done, return ONLY a JSON object with two keys: "
+        "'rankings' (a list of the experiment/literature-search proposal IDs in order from best to worst) "
+        "and 'solution_candidates' (a list containing all solution-candidate proposal IDs)."
+    )
+
+
+def get_execute_proposal_prompt(proposal_id: str) -> str:
+    return (
+        f"Please run the execute-proposal skill for proposal ID: {proposal_id}. "
+        "Depending on the proposal type, return ONLY a JSON object with one of these keys: "
+        "'experiment_id' (for an experiment, e.g. X_...), 'literature_id' (for literature research, e.g. L_...), "
+        "or 'solution_id' (for a solution candidate, e.g. U_...)."
+    )
+
+
+def get_interpret_result_prompt(theory_id: str, result_ids: list[str]) -> str:
+    result_ids_str = " ".join(result_ids)
+    return (
+        f"Please run the interpret-result skill for theory ID: {theory_id} and result IDs: {result_ids_str}. "
+        "When you are done, return ONLY a JSON object with the key 'theory_id' to confirm that the new interpretation has been stored for that theory."
+    )
+
+
+def get_integrate_interpretations_prompt(
+    theory_id: str, create_branch: bool = False
+) -> str:
+    prompt = (
+        f"Please run the integrate-interpretations skill for theory ID: {theory_id}. "
+    )
+    if create_branch:
+        prompt += "Please BRANCH into two new theories. "
+    prompt += "When you are done, return ONLY a JSON object with the key 'theory_ids' containing an array of the new theory IDs."
+    return prompt
+
+
+def get_score_theory_solutions_prompt(
+    solution_theory_pairs: List[tuple[str, str]],
+) -> str:
+    pairs_str = " ".join(f"{sol}:{the}" for sol, the in solution_theory_pairs)
+    return (
+        f"Please run the score-theory-solutions skill with the following pairs of solution ID and parent theory ID: {pairs_str}. "
+        "When you are done, return ONLY a JSON object mapping each theory ID to its assigned scores object (including subscores)."
+    )

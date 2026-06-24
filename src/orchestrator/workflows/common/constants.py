@@ -7,3 +7,14 @@ DEFAULT_NUM_EXTRA_SCORES = 5
 # Make the theory development process more efficient and adds diversity by occasionally forcing the application of expansion reviews,
 # even when there are still falsifications to be applied.
 FORCE_EXPANSION_PROB = 0.25
+
+DEFAULT_MAX_ITERATIONS = 20
+DEFAULT_RESCORE_INTERVAL = 5
+DEFAULT_NUM_EXTRA_INTERPRETATIONS = 3
+DEFAULT_NUM_EXECUTIONS_PER_ITERATION = 2
+DEFAULT_EXECUTION_COST = 1
+DEFAULT_BRANCH_PROB = 0.5
+DEFAULT_NUM_STRANDS = 3
+DEFAULT_INTEGRATION_INTERVAL = 5
+DEFAULT_NUM_PROPOSALS = 3
+

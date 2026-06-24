@@ -18,6 +18,7 @@ const ArtifactViewerModal = lazy(() => import('./ArtifactViewerModal').then(m =>
 import { CreateAddonModal } from './CreateAddonModal'
 import { TheoriesList } from './TheoriesList'
 import { ExperimentsList } from './ExperimentsList'
+import { SolutionsList } from './SolutionsList'
 import { EditGuidanceModal } from './EditGuidanceModal'
 const SummaryTab = lazy(() => import('./SummaryTab').then(m => ({ default: m.SummaryTab })))
 import { HarnessSettings } from './HarnessSettings'
@@ -34,7 +35,7 @@ interface TaskDetailProps {
 
 export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh, isBackendDown }: TaskDetailProps) {
   const [selectedStage, setSelectedStage] = useState<string | null>(null)
-  const [activeRightTab, setActiveRightTab] = useState<'summary' | 'stepDetails' | 'topTheories' | 'experiments'>('summary')
+  const [activeRightTab, setActiveRightTab] = useState<'summary' | 'stepDetails' | 'topTheories' | 'experiments' | 'solutions'>('summary')
   const [isProcessing, setIsProcessing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAddonModal, setShowAddonModal] = useState(false)
@@ -449,6 +450,15 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             >
               Experiments
             </button>
+            <button
+              onClick={() => setActiveRightTab('solutions')}
+              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'solutions'
+                ? 'bg-black text-white'
+                : 'text-black hover:bg-gray-100'
+                }`}
+            >
+              Solutions
+            </button>
           </div>
 
           <div className="flex-1 overflow-hidden flex flex-col">
@@ -465,6 +475,8 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               <TheoriesList taskId={task.id} />
             ) : activeRightTab === 'experiments' ? (
               <ExperimentsList taskId={task.id} />
+            ) : activeRightTab === 'solutions' ? (
+              <SolutionsList taskId={task.id} />
             ) : selectedStage !== null ? (
               <div className="flex flex-col h-full">
                 <div className="p-6 border-b border-black bg-white flex justify-between items-center">
@@ -628,6 +640,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
           })() as string}
           initialWeights={task.theory_scoring_weights}
           newlyAddedText={pendingGuidanceAppend}
+          workflowName={task.workflow_name}
           onSave={async (newGuidance, newWeights) => {
             await api.updateGuidance(task.id, newGuidance, newWeights)
             onRefresh()

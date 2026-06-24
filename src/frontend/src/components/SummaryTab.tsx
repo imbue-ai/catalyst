@@ -7,6 +7,8 @@ import rehypeSlug from 'rehype-slug';
 import 'katex/dist/katex.min.css';
 import { Loader2, BookOpen } from 'lucide-react';
 import * as api from '../api';
+import { ARTIFACT_FIND_GLOBAL_REGEX, ARTIFACT_BACKTICK_REGEX } from '../constants';
+
 
 const MemoizedMarkdown = memo(({ content, components, remarkPlugins, rehypePlugins }: any) => (
   <ReactMarkdown
@@ -38,7 +40,7 @@ export function SummaryTab({ taskId }: SummaryTabProps) {
     try {
       const summaryList = await api.getSummaries(taskId);
       setSummaries(summaryList);
-      
+
       if (summaryList.length > 0) {
         const latest = summaryList[0];
         // If it's a new summary or we haven't loaded any summary yet
@@ -88,7 +90,7 @@ export function SummaryTab({ taskId }: SummaryTabProps) {
 
   const processedContent = useMemo(() => {
     if (!content) return '';
-    
+
     // Process markdown to robustly handle math block lines
     const withNewlines = content.replace(/\$\$(.*?)\$\$/gs, (_, mathContent) => {
       return `\n\n$$\n${mathContent.trim()}\n$$\n\n`;
@@ -97,13 +99,13 @@ export function SummaryTab({ taskId }: SummaryTabProps) {
     const parts = withNewlines.split(/(```[\s\S]*?```|`[^`]+`|\$\$[\s\S]*?\$\$)/g);
     return parts.map((part, i) => {
       if (i % 2 === 0) {
-        let processed = part.replace(/\b([ELTRXPS]_\d{8}_\d{6}_[a-f0-9]{6})\b/g, `[$1](#/task/${taskId}/artifact/$1)`);
+        let processed = part.replace(ARTIFACT_FIND_GLOBAL_REGEX, `[$1](#/task/${taskId}/artifact/$1)`);
         processed = processed.replace(/^([ \t]*-\s*)(Add\s+to\s+Guidance):\s*"([^"]+)"/gim, (_match, prefix, btnText, value) => {
           return `${prefix}[${btnText}](#add-to-guidance:${encodeURIComponent(value)}): "${value}"`;
         });
         return processed;
       } else {
-        const match = part.match(/^`([ELTRXPS]_\d{8}_\d{6}_[a-f0-9]{6})`$/);
+        const match = part.match(ARTIFACT_BACKTICK_REGEX);
         if (match) {
           return `[${part}](#/task/${taskId}/artifact/${match[1]})`;
         }
@@ -118,7 +120,7 @@ export function SummaryTab({ taskId }: SummaryTabProps) {
         const isHash = href.startsWith('#add-to-guidance:');
         const prefixLen = isHash ? '#add-to-guidance:'.length : 'add-to-guidance:'.length;
         const queryIdx = href.indexOf('?');
-        const encodedValue = queryIdx !== -1 
+        const encodedValue = queryIdx !== -1
           ? href.slice(prefixLen, queryIdx)
           : href.slice(prefixLen);
         const value = decodeURIComponent(encodedValue);

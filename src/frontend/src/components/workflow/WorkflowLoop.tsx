@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react'
-import { RotateCw } from 'lucide-react'
+import { useState, useEffect, useMemo, useRef } from 'react'
+import { RotateCw, ChevronDown } from 'lucide-react'
 import * as api from '../../api'
 import { InnerStepCard, InnerParallelCard, CancelStepsButton, StepIndicator, formatStageName } from './shared'
 
@@ -19,10 +19,34 @@ interface WorkflowLoopProps {
 export function WorkflowLoop({ name, baseStages, iterationStructures, iterations, task, onSelect, selectedStage, onRetry, onRefresh, showConnector = true }: WorkflowLoopProps) {
   const [activeIteration, setActiveIteration] = useState(1)
   const [lastLatest, setLastLatest] = useState(0)
+  const [showDropdown, setShowDropdown] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    // Calculate what the current latest iteration is based on steps
-    let currentLatest = 1
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowDropdown(false)
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => document.removeEventListener("mousedown", handleClickOutside)
+  }, [])
+
+  useEffect(() => {
+    if (showDropdown && scrollContainerRef.current) {
+      const selectedElement = scrollContainerRef.current.querySelector('[data-selected="true"]')
+      if (selectedElement) {
+        requestAnimationFrame(() => {
+          selectedElement.scrollIntoView({ block: 'nearest' })
+        })
+      }
+    }
+  }, [showDropdown])
+
+  // Calculate what the current latest iteration is based on steps
+  const currentLatest = useMemo(() => {
+    let latest = 1
     for (let i = iterations; i >= 1; i--) {
       // Collect exact stage names for this iteration to avoid brittle suffix matching
       const iterationStages = new Set<string>();
@@ -41,11 +65,14 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
       // Check if any of these exact stages are in a state other than 'pending'
       const hasStarted = task.steps.some(s => iterationStages.has(s.stage) && s.status !== 'pending');
       if (hasStarted) {
-        currentLatest = i;
+        latest = i;
         break;
       }
     }
+    return latest;
+  }, [task.steps, iterations, iterationStructures, baseStages])
 
+  useEffect(() => {
     if (lastLatest === 0) {
       // First load: sync both to latest
       setActiveIteration(currentLatest)
@@ -58,7 +85,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
       }
       setLastLatest(currentLatest)
     }
-  }, [task.steps, iterations, activeIteration, lastLatest, iterationStructures, baseStages])
+  }, [currentLatest, activeIteration, lastLatest])
 
   const getStepForIteration = (it: number, baseStage: string) => {
     const stage = `${baseStage}-${it}`
@@ -118,17 +145,76 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
             <h4 className="font-black text-xs tracking-[0.2em]">{formatStageName(name)}</h4>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex gap-1">
-              {Array.from({ length: iterations }, (_, i) => i + 1).map(it => (
+            {iterations > 5 ? (
+              <div className="relative inline-block" ref={dropdownRef}>
                 <button
-                  key={it}
-                  onClick={() => setActiveIteration(it)}
-                  className={`w-6 h-6 text-[10px] font-black border transition-all ${activeIteration === it ? 'bg-black text-white border-black' : 'hover:bg-gray-100 border-gray-200'}`}
+                  type="button"
+                  onClick={() => setShowDropdown(!showDropdown)}
+                  className="border-2 border-black px-3 py-1.5 outline-none text-[10px] font-black bg-white cursor-pointer flex items-center gap-2 select-none min-w-[120px] justify-between"
                 >
-                  {it}
+                  <span>Iteration {activeIteration}</span>
+                  <ChevronDown size={12} className={`transition-transform duration-200 ${showDropdown ? 'rotate-180' : ''}`} />
                 </button>
-              ))}
-            </div>
+
+                {showDropdown && (
+                  <div ref={scrollContainerRef} className="absolute right-0 top-full mt-1 w-[160px] bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] z-50 max-h-[240px] overflow-y-auto custom-scrollbar">
+                    {Array.from({ length: iterations }, (_, i) => i + 1).map(it => {
+                      const isDeEmphasized = it > currentLatest;
+                      const isSelected = activeIteration === it;
+                      
+                      let itemClass = `px-3 py-2 text-[10px] font-black border-b border-gray-100 last:border-0 cursor-pointer transition-colors `;
+                      if (isSelected) {
+                        itemClass += 'bg-black text-white';
+                      } else if (isDeEmphasized) {
+                        itemClass += 'text-gray-300 bg-gray-50/30 hover:bg-gray-100';
+                      } else {
+                        itemClass += 'text-black bg-white hover:bg-gray-100';
+                      }
+                      
+                      return (
+                        <div
+                          key={it}
+                          onClick={() => {
+                            setActiveIteration(it);
+                            setShowDropdown(false);
+                          }}
+                          className={itemClass}
+                          data-selected={isSelected}
+                        >
+                          Iteration {it}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex gap-1">
+                {Array.from({ length: iterations }, (_, i) => i + 1).map(it => {
+                  const isDeEmphasized = it > currentLatest;
+                  const isSelected = activeIteration === it;
+                  let btnClass = "w-6 h-6 text-[10px] font-black border transition-all cursor-pointer ";
+                  
+                  if (isSelected) {
+                    btnClass += "bg-black text-white border-black";
+                  } else if (isDeEmphasized) {
+                    btnClass += "border-gray-200 text-gray-300 bg-gray-50/50 hover:bg-gray-100";
+                  } else {
+                    btnClass += "border-black text-black hover:bg-gray-100";
+                  }
+                  
+                  return (
+                    <button
+                      key={it}
+                      onClick={() => setActiveIteration(it)}
+                      className={btnClass}
+                    >
+                      {it}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
             {task.status !== 'completed' && stagesToCancel.length > 0 && overallStatus !== 'completed' && overallStatus !== 'canceled' && (
               <CancelStepsButton
                 task={task}

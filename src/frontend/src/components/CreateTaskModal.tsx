@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useLayoutEffect } from 'react'
-import { XCircle, FileText, Lightbulb, Sparkles, GitMerge, GitCommit, UploadCloud, Folder, HelpCircle, Settings2, ChevronRight, ChevronDown } from 'lucide-react'
+import { XCircle, FileText, Lightbulb, Sparkles, GitMerge, GitCommit, UploadCloud, Folder, HelpCircle, Settings2, ChevronRight, ChevronDown, Goal } from 'lucide-react'
 import * as api from '../api'
 import { useWorkflowParams } from '../hooks/useWorkflowParams'
 import { AdditionalParamsSection } from './AdditionalParamsSection'
 import { HarnessSettings } from './HarnessSettings'
 import { CategoryOverridesSettings } from './CategoryOverridesSettings'
+import { isVerifiableGoalWorkflow } from '../utils'
 
 interface CreateTaskModalProps {
   onClose: () => void;
@@ -12,8 +13,8 @@ interface CreateTaskModalProps {
   isBackendDown: boolean;
 }
 
-type WorkflowType = 'develop-theory' | 'develop-theory-linear' | 'refine-theory-idea' | 'refine-theory-idea-linear' | 'import-theory';
-type InputCategory = 'phenomenon' | 'idea' | 'draft';
+type WorkflowType = 'develop-theory' | 'develop-theory-linear' | 'refine-theory-idea' | 'refine-theory-idea-linear' | 'import-theory' | 'solve-verifiable-goal-multi-strand' | 'solve-verifiable-goal';
+type InputCategory = 'phenomenon' | 'idea' | 'draft' | 'goal';
 
 const CATEGORY_WORKFLOWS: Record<InputCategory, { id: WorkflowType, label: string, description: string, icon: React.ReactNode }[]> = {
   'phenomenon': [
@@ -26,12 +27,16 @@ const CATEGORY_WORKFLOWS: Record<InputCategory, { id: WorkflowType, label: strin
   ],
   'draft': [
     { id: 'import-theory', label: 'Import', description: 'Import an existing theory. You can add further steps later on.', icon: <UploadCloud size={18} /> }
+  ],
+  'goal': [
+    { id: 'solve-verifiable-goal', label: 'Solve Verifiable Goal (Evolution)', description: 'Autonomously solve a verifiable goal using evolutionary methods to evolve a population of candidate solutions.', icon: <GitMerge size={18} /> },
+    { id: 'solve-verifiable-goal-multi-strand', label: 'Solve Verifiable Goal (Multi Strand)', description: 'Autonomously solve a verifiable goal by conducting a sequence of experiments and maintaining a fixed number of interpretation strands.', icon: <Goal size={18} /> }
   ]
 };
 
 export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTaskModalProps) {
-  const [inputCategory, setInputCategory] = useState<InputCategory>('phenomenon')
-  const [activeTab, setActiveTab] = useState<WorkflowType>('develop-theory')
+  const [inputCategory, setInputCategory] = useState<InputCategory>('goal')
+  const [activeTab, setActiveTab] = useState<WorkflowType>('solve-verifiable-goal')
 
   const [showAdditional, setShowAdditional] = useState(false)
   const [showTemplateDropdown, setShowTemplateDropdown] = useState(false)
@@ -94,6 +99,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     setNumRootTheories,
     maxRefinements,
     setMaxRefinements,
+    maxIterations,
+    setMaxIterations,
     evolveIterations,
     setEvolveIterations,
     numParents,
@@ -106,6 +113,20 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     setNumExtraScores,
     applyExpansions,
     setApplyExpansions,
+    numStrands,
+    setNumStrands,
+    numExecutionsPerIteration,
+    setNumExecutionsPerIteration,
+    executionCost,
+    setExecutionCost,
+    integrationInterval,
+    setIntegrationInterval,
+    rescoreInterval,
+    setRescoreInterval,
+    numExtraInterpretations,
+    setNumExtraInterpretations,
+    branchProb,
+    setBranchProb,
     correctnessWeight,
     setCorrectnessWeight,
     powerWeight,
@@ -113,13 +134,17 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     adherenceWeight,
     setAdherenceWeight,
     generateIntermediateResearchSummaries,
-    setGenerateIntermediateResearchSummaries
+    setGenerateIntermediateResearchSummaries,
+    numProposals,
+    setNumProposals
   } = useWorkflowParams()
 
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [inputs, setInputs] = useState({
     phenomenon: '',
     idea: '',
+    goal: '',
+    verificationInstructions: '',
     templateFolder: '',
     framework: '',
     model: '',
@@ -208,6 +233,33 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
       }
     } else if (activeTab === 'import-theory') {
       workflow_inputs = {}
+    } else if (activeTab === 'solve-verifiable-goal') {
+      workflow_inputs = {
+        goal: inputs.goal,
+        verification_instructions: inputs.verificationInstructions,
+        num_strands: numStrands,
+        max_iterations: maxIterations,
+        num_parents: numParents,
+        num_executions_per_iteration: numExecutionsPerIteration,
+        execution_cost: executionCost,
+        rescore_interval: rescoreInterval,
+        num_extra_interpretations: numExtraInterpretations,
+        num_extra_scores: numExtraScores,
+        branch_prob: branchProb,
+        num_proposals: numProposals,
+        generate_intermediate_research_summaries: generateIntermediateResearchSummaries
+      }
+    } else if (activeTab === 'solve-verifiable-goal-multi-strand') {
+      workflow_inputs = {
+        goal: inputs.goal,
+        verification_instructions: inputs.verificationInstructions,
+        num_strands: numStrands,
+        max_iterations: maxIterations,
+        num_executions_per_iteration: numExecutionsPerIteration,
+        execution_cost: executionCost,
+        integration_interval: integrationInterval,
+        generate_intermediate_research_summaries: generateIntermediateResearchSummaries
+      }
     }
 
     try {
@@ -252,6 +304,13 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
             <div>
               <h3 className="text-sm font-black mb-4">Step 1: I have a...</h3>
               <div className="flex flex-col md:flex-row gap-4">
+                <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'goal' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
+                  <div className="flex items-center gap-3">
+                    <input type="radio" checked={inputCategory === 'goal'} onChange={() => handleCategoryChange('goal')} />
+                    <Goal size={18} className="text-gray-600" />
+                    <span className="font-black text-sm">Verifiable Goal</span>
+                  </div>
+                </label>
                 <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'phenomenon' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
                   <div className="flex items-center gap-3">
                     <input type="radio" checked={inputCategory === 'phenomenon'} onChange={() => handleCategoryChange('phenomenon')} />
@@ -360,6 +419,34 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       />
                     </div>
                   )}
+
+                  {isVerifiableGoalWorkflow(activeTab) && (
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Verifiable Goal</label>
+                        <textarea
+                          autoFocus
+                          required
+                          rows={5}
+                          value={inputs.goal}
+                          onChange={e => updateInput('goal', e.target.value)}
+                          placeholder="Describe the verifiable goal that you want me to solve..."
+                          className="w-full border-2 border-black p-4 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black mb-3 tracking-widest text-gray-400">Verification Instructions</label>
+                        <textarea
+                          required
+                          rows={5}
+                          value={inputs.verificationInstructions}
+                          onChange={e => updateInput('verificationInstructions', e.target.value)}
+                          placeholder="Provide instructions on how to verify that the goal has been achieved..."
+                          className="w-full border-2 border-black p-4 outline-none focus:bg-gray-50 text-sm font-bold placeholder:text-gray-200 resize-none transition-colors"
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* Global Settings (Always Visible) */}
@@ -393,11 +480,10 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       </button>
 
                       {showTemplateDropdown && (
-                        <div ref={templateMenuRef} className={`absolute left-0 right-0 z-50 max-h-60 overflow-y-auto custom-scrollbar bg-white border-2 border-black ${
-                          openTemplateUpward 
-                            ? 'bottom-full mb-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]' 
-                            : 'top-full mt-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
-                        }`}>
+                        <div ref={templateMenuRef} className={`absolute left-0 right-0 z-50 max-h-60 overflow-y-auto custom-scrollbar bg-white border-2 border-black ${openTemplateUpward
+                          ? 'bottom-full mb-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
+                          : 'top-full mt-2 shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)]'
+                          }`}>
                           <button
                             type="button"
                             onClick={() => { updateInput('templateFolder', ''); setShowTemplateDropdown(false); }}
@@ -460,13 +546,22 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                       <AdditionalParamsSection
                         showRootTheories={activeTab === 'develop-theory'}
                         showMaxRefinements={activeTab === 'develop-theory-linear' || activeTab === 'refine-theory-idea-linear'}
+                        showMaxIterations={isVerifiableGoalWorkflow(activeTab)}
+                        showNumStrands={isVerifiableGoalWorkflow(activeTab)}
+                        showNumExecutionsPerIteration={isVerifiableGoalWorkflow(activeTab)}
+                        showExecutionCost={isVerifiableGoalWorkflow(activeTab)}
+                        showIntegrationInterval={isVerifiableGoalWorkflow(activeTab)}
                         showEvolveParams={isEvolve}
-                        showApplyExpansions={!isImport}
+                        showApplyExpansions={!isImport && !isVerifiableGoalWorkflow(activeTab)}
                         showGenerateIntermediateResearchSummaries={!isImport}
+                        showVerifiableGoalEvolveParams={activeTab === 'solve-verifiable-goal'}
+                        showVerifiableGoalMultiStrandParams={activeTab === 'solve-verifiable-goal-multi-strand'}
                         numRootTheories={numRootTheories}
                         setNumRootTheories={setNumRootTheories}
                         maxRefinements={maxRefinements}
                         setMaxRefinements={setMaxRefinements}
+                        maxIterations={maxIterations}
+                        setMaxIterations={setMaxIterations}
                         evolveIterations={evolveIterations}
                         setEvolveIterations={setEvolveIterations}
                         numParents={numParents}
@@ -479,6 +574,22 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         setNumExtraScores={setNumExtraScores}
                         applyExpansions={applyExpansions}
                         setApplyExpansions={setApplyExpansions}
+                        numStrands={numStrands}
+                        setNumStrands={setNumStrands}
+                        numExecutionsPerIteration={numExecutionsPerIteration}
+                        setNumExecutionsPerIteration={setNumExecutionsPerIteration}
+                        executionCost={executionCost}
+                        setExecutionCost={setExecutionCost}
+                        integrationInterval={integrationInterval}
+                        setIntegrationInterval={setIntegrationInterval}
+                        rescoreInterval={rescoreInterval}
+                        setRescoreInterval={setRescoreInterval}
+                        numExtraInterpretations={numExtraInterpretations}
+                        setNumExtraInterpretations={setNumExtraInterpretations}
+                        branchProb={branchProb}
+                        setBranchProb={setBranchProb}
+                        numProposals={numProposals}
+                        setNumProposals={setNumProposals}
                         showScoringWeights={isEvolve}
                         correctnessWeight={correctnessWeight}
                         setCorrectnessWeight={setCorrectnessWeight}

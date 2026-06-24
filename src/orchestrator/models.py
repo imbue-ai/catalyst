@@ -60,6 +60,7 @@ class Addon(BaseModel):
     theory_ids: Optional[List[str]] = None
     direction: Optional[str] = None
     max_refinements: Optional[int] = None
+    max_experiments: Optional[int] = None
     apply_expansions: Optional[str] = None
     evolve_iterations: Optional[int] = None
     num_parents: Optional[int] = None
@@ -71,6 +72,15 @@ class Addon(BaseModel):
     instruction: Optional[str] = None
     lit_review_id: Optional[str] = None
     generate_intermediate_research_summaries: Optional[bool] = None
+    max_iterations: Optional[int] = None
+    num_executions_per_iteration: Optional[int] = None
+    execution_cost: Optional[int] = None
+    integration_interval: Optional[int] = None
+    rescore_interval: Optional[int] = None
+    num_extra_interpretations: Optional[int] = None
+    branch_prob: Optional[float] = None
+    num_proposals: Optional[int] = None
+
 
 
 class TheoryScoringWeights(BaseModel):

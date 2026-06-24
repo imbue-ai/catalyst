@@ -1,4 +1,5 @@
 import React from 'react';
+import { ARTIFACT_REGEX } from '../constants';
 
 interface DataSectionProps {
   label: string;
@@ -7,13 +8,12 @@ interface DataSectionProps {
   taskId?: string;
 }
 
-const ARTIFACT_REGEX = /^[ELTRXPS]_\d{8}_\d{6}_[a-f0-9]{6}$/;
 
 function renderJsonValue(val: any, taskId?: string): React.ReactNode {
   if (typeof val === 'string') {
     if (ARTIFACT_REGEX.test(val) && taskId) {
       return (
-        <a 
+        <a
           href={`#/task/${taskId}/artifact/${val}`}
           className="text-blue-600 font-black hover:underline cursor-pointer bg-blue-50 px-1 py-0.5 rounded-sm inline-block"
         >
@@ -48,7 +48,7 @@ function renderJsonValue(val: any, taskId?: string): React.ReactNode {
   }
   if (typeof val === 'object') {
     const keys = Object.keys(val);
-    if (keys.length === 0) return <span>{}</span>;
+    if (keys.length === 0) return <span>{ }</span>;
     return (
       <div className="pl-4 border-l border-gray-200 ml-2">
         <span className="text-gray-500">{'{'}</span>
@@ -90,8 +90,8 @@ export const DataSection = React.memo(({ label, data, primary, taskId }: DataSec
     </div>
   )
 }, (prev, next) => {
-  return prev.label === next.label && 
-         prev.primary === next.primary && 
-         prev.taskId === next.taskId && 
-         JSON.stringify(prev.data) === JSON.stringify(next.data);
+  return prev.label === next.label &&
+    prev.primary === next.primary &&
+    prev.taskId === next.taskId &&
+    JSON.stringify(prev.data) === JSON.stringify(next.data);
 });

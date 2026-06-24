@@ -55,6 +55,14 @@ AGENT_TYPE_MAP: dict[str, str] = {
     "run-experiment": "experiment",
     "predict-experiments": "prediction",
     "summarize-research": "summary",
+    "summarize-goal-progress": "summary",
+    "interpret-result": "theory",
+    "integrate-interpretations": "theory",
+    "propose-experiment": "proposal",
+    "execute-proposal": "solution",
+    "generate-solution": "solution",
+    "score-theory-solutions": "solution",
+    "initialize-theories": "theory",
 }
 
 CATEGORY_MD_MAP: dict[str, str] = {
@@ -65,6 +73,8 @@ CATEGORY_MD_MAP: dict[str, str] = {
     "experiment": "description.md",
     "prediction": "predictions.md",
     "summary": "summary.md",
+    "proposal": "proposal.md",
+    "solution": "solution.md",
 }
 
 ID_PREFIXES: dict[str, str] = {
@@ -75,6 +85,8 @@ ID_PREFIXES: dict[str, str] = {
     "experiment": "X",
     "prediction": "P",
     "summary": "S",
+    "proposal": "O",
+    "solution": "U",
 }
 
 PREFIX_TO_CATEGORY: dict[str, str] = {v: k for k, v in ID_PREFIXES.items()}
@@ -87,6 +99,8 @@ VALID_CATEGORIES: tuple[str, ...] = (
     "experiment",
     "prediction",
     "summary",
+    "proposal",
+    "solution",
 )
 
 DEFAULT_DB_DIR = ".ai-scientist-db"
@@ -334,6 +348,31 @@ class DatabaseSession:
         )
         self.mark_population_modified()
 
+    def record_solution(self, theory_id: str | None, solution_id: str) -> None:
+        """Attach a newly-stored solution to its parent theory in the population."""
+        if theory_id is None:
+            raise RuntimeError(
+                f"Attempting to record solution {solution_id!r} without a parent theory."
+            )
+        pop = self.get_population()
+        if pop is None:
+            raise RuntimeError(
+                f"Attempting to record solution {solution_id!r} for theory {theory_id!r} but no population exists yet."
+            )
+        found = _find_organism_by_theory_id(pop, theory_id)
+        if found is None:
+            raise RuntimeError(
+                f"Parent theory {theory_id!r} for solution {solution_id!r} is not in the population."
+            )
+        _, result = found
+        assert isinstance(result, TheoryEvaluationResult)
+        result.trainable_failure_cases.append(
+            TheoryEvaluationFailureCase(
+                solution_id=solution_id, data_point_id=solution_id
+            )
+        )
+        self.mark_population_modified()
+
 
 def copy_artifact(src: Path, dst: Path, exclude_results: bool = False) -> None:
     """Helper to copy an artifact, optionally omitting results, and restoring write permissions."""
@@ -391,10 +430,15 @@ class TheoryEvaluationResult(EvaluationResult):
 
 
 class TheoryEvaluationFailureCase(EvaluationFailureCase):
-    """Represents a review that has been performed on a theory."""
+    """Represents a review or solution that has been performed on a theory."""
 
-    review_id: str = Field(
-        description="Review ID (e.g. 'R_20260414_150000_a1b2c3') stored in the context_manager DB."
+    review_id: str | None = Field(
+        default=None,
+        description="Review ID (e.g. 'R_20260414_150000_a1b2c3') stored in the context_manager DB.",
+    )
+    solution_id: str | None = Field(
+        default=None,
+        description="Solution ID (e.g. 'U_20260414_150000_a1b2c3') stored in the context_manager DB.",
     )
 
 
@@ -483,6 +527,33 @@ def store_results(
             f"Must be one of: {', '.join(AGENT_TYPE_MAP)}"
         )
 
+    if from_agent_type == "interpret-result":
+        if not parent_theory:
+            raise ValueError(
+                f"--parent_theory is required when storing {from_agent_type} results"
+            )
+        db_root = get_db_path()
+        theory_dir = db_root / "theory" / parent_theory
+        if not theory_dir.is_dir():
+            raise ValueError(
+                f"Referenced parent theory {parent_theory!r} does not exist "
+                f"in the database (expected {theory_dir})"
+            )
+        if not from_folder.is_dir():
+            raise ValueError(f"Source folder does not exist: {from_folder}")
+        src_log = from_folder / "interpretation_log.md"
+        if not src_log.is_file():
+            raise ValueError(
+                f"Source folder is missing the required file 'interpretation_log.md': {from_folder}"
+            )
+
+        with DatabaseSession(db_root) as session:
+            _make_writable(theory_dir)
+            target_log = theory_dir / "interpretation_log.md"
+            shutil.copy2(src_log, target_log)
+            _make_readonly(theory_dir)
+            return parent_theory
+
     category = AGENT_TYPE_MAP[from_agent_type]
     expected_md = CATEGORY_MD_MAP[category]
 
@@ -508,10 +579,15 @@ def store_results(
         "expand-theory",
         "review-adherence",
         "improve-adherence",
+        "interpret-result",
+        "integrate-interpretations",
     )
     parent_theory_allowed_agents = parent_theory_required_agents + (
         "run-experiment",
         "support-idea",
+        "propose-experiment",
+        "execute-proposal",
+        "generate-solution",
     )
 
     if from_agent_type in parent_theory_required_agents and not parent_theory:
@@ -590,6 +666,12 @@ def store_results(
                     theory_id=parent_theory,
                     review_id=new_id,
                 )
+            elif category == "solution":
+                if parent_theory:
+                    session.record_solution(
+                        theory_id=parent_theory,
+                        solution_id=new_id,
+                    )
 
     return new_id
 
@@ -619,6 +701,8 @@ def _validate_create_context_args(
     from_reviews: list[str] | None,
     from_experiments: list[str] | None,
     from_predictions: list[str] | None,
+    from_proposals: list[str] | None,
+    from_solutions: list[str] | None,
 ) -> None:
     if for_agent_type == "write-theory":
         if from_literatures and len(from_literatures) > 1:
@@ -633,6 +717,7 @@ def _validate_create_context_args(
         "streamline-theory",
         "edit-theory",
         "review-adherence",
+        "integrate-interpretations",
     ):
         if not from_theories or len(from_theories) != 1:
             raise ValueError(
@@ -683,7 +768,38 @@ def _validate_create_context_args(
             raise ValueError(
                 f"At least one --from_theory is required for {for_agent_type}"
             )
-    elif for_agent_type == "summarize-research":
+    elif for_agent_type in ("summarize-research", "summarize-goal-progress"):
+        pass
+    elif for_agent_type == "interpret-result":
+        if not from_theories or len(from_theories) != 1:
+            raise ValueError(
+                "Exactly one --from_theory is required for interpret-result"
+            )
+        if not from_experiments and not from_literatures and not from_solutions:
+            raise ValueError(
+                "At least one of --from_experiment, --from_literature, or --from_solution is required for interpret-result"
+            )
+    elif for_agent_type == "propose-experiment":
+        if not from_theories or len(from_theories) != 1:
+            raise ValueError(
+                "Exactly one --from_theory is required for propose-experiment"
+            )
+    elif for_agent_type == "rank-proposals":
+        if not from_proposals:
+            raise ValueError(
+                "At least one --from_proposal is required for rank-proposals"
+            )
+    elif for_agent_type == "execute-proposal":
+        if not from_proposals or len(from_proposals) != 1:
+            raise ValueError(
+                "Exactly one --from_proposal is required for execute-proposal"
+            )
+    elif for_agent_type == "score-theory-solutions":
+        if not from_solutions:
+            raise ValueError(
+                "At least one --from_solution is required for score-theory-solutions"
+            )
+    elif for_agent_type == "initialize-theories":
         pass
     else:
         raise ValueError(f"Unknown target agent type {for_agent_type!r}.")
@@ -698,6 +814,8 @@ def create_context(
     from_reviews: list[str] | None = None,
     from_experiments: list[str] | None = None,
     from_predictions: list[str] | None = None,
+    from_proposals: list[str] | None = None,
+    from_solutions: list[str] | None = None,
 ) -> None:
     """Assemble upstream artifacts into *target_folder* for the next agent."""
     db_root = get_db_path()
@@ -710,6 +828,8 @@ def create_context(
         from_reviews=from_reviews,
         from_experiments=from_experiments,
         from_predictions=from_predictions,
+        from_proposals=from_proposals,
+        from_solutions=from_solutions,
     )
 
     with DatabaseSession(db_root) as session:
@@ -729,7 +849,9 @@ def create_context(
 
         # 2. Literature
         if from_literatures:
-            if for_agent_type == "write-theory":
+            if for_agent_type == "interpret-result":
+                pass
+            elif for_agent_type == "write-theory":
                 # Special case: flat literature layout
                 copy_artifact(
                     db_root / "literature" / from_literatures[0],
@@ -771,7 +893,9 @@ def create_context(
 
         # 5. Experiments
         if from_experiments:
-            if for_agent_type == "predict-experiments":
+            if for_agent_type == "interpret-result":
+                pass
+            elif for_agent_type == "predict-experiments":
                 for exp_id in from_experiments:
                     fetch_experiment(target_folder, exp_id, exclude_results=True)
             elif for_agent_type == "rank-predictions":
@@ -786,6 +910,114 @@ def create_context(
             preds_root.mkdir(exist_ok=True)
             for pid in from_predictions:
                 copy_artifact(db_root / "prediction" / pid, preds_root / pid)
+
+        # 8. Proposals
+        if from_proposals:
+            if for_agent_type == "execute-proposal":
+                pid = from_proposals[0]
+                if session.get_metadata("proposal", pid):
+                    copy_artifact(
+                        db_root / "proposal" / pid,
+                        target_folder / "proposal",
+                    )
+                else:
+                    raise ValueError(f"Proposal {pid!r} not found or invisible")
+            else:
+                proposals_root = target_folder / "proposals"
+                proposals_root.mkdir(exist_ok=True)
+                for pid in from_proposals:
+                    if session.get_metadata("proposal", pid):
+                        copy_artifact(
+                            db_root / "proposal" / pid,
+                            proposals_root / pid,
+                        )
+                    else:
+                        raise ValueError(f"Proposal {pid!r} not found or invisible")
+
+        # 9. Solution
+        if from_solutions:
+            if for_agent_type == "interpret-result":
+                pass
+            elif for_agent_type == "score-theory-solutions":
+                solutions_root = target_folder / "solutions"
+                solutions_root.mkdir(exist_ok=True)
+                for sol_id in from_solutions:
+                    if session.get_metadata("solution", sol_id):
+                        copy_artifact(
+                            db_root / "solution" / sol_id,
+                            solutions_root / sol_id,
+                        )
+                    else:
+                        raise ValueError(f"Solution {sol_id!r} not found or invisible")
+            else:
+                sol_id = from_solutions[0]
+                if session.get_metadata("solution", sol_id):
+                    # Copy solution flatly to <target_folder>/previous_solution
+                    copy_artifact(
+                        db_root / "solution" / sol_id,
+                        target_folder / "previous_solution",
+                    )
+                    # Look up parent_theory from its metadata
+                    sol_meta = session.get_metadata("solution", sol_id)
+                    if sol_meta:
+                        parent_t = sol_meta.get("parent_theory")
+                        if parent_t:
+                            if session.get_metadata("theory", parent_t):
+                                copy_artifact(
+                                    db_root / "theory" / parent_t,
+                                    target_folder / "previous_theory",
+                                )
+                            else:
+                                raise ValueError(
+                                    f"Parent theory {parent_t!r} for solution {sol_id!r} not found or invisible"
+                                )
+                else:
+                    raise ValueError(f"Solution {sol_id!r} not found or invisible")
+
+        # Checkouts for interpret-result are nested inside results/
+        if for_agent_type == "interpret-result":
+            results_dir = target_folder / "results"
+            results_dir.mkdir(parents=True, exist_ok=True)
+
+            if from_experiments:
+                exp_dir = results_dir / "experiments"
+                exp_dir.mkdir(parents=True, exist_ok=True)
+                for exp_id in from_experiments:
+                    if session.get_metadata("experiment", exp_id):
+                        copy_artifact(
+                            db_root / "experiment" / exp_id,
+                            exp_dir / exp_id,
+                        )
+                    else:
+                        raise ValueError(
+                            f"Experiment {exp_id!r} not found or invisible"
+                        )
+
+            if from_literatures:
+                lit_dir = results_dir / "literature"
+                lit_dir.mkdir(parents=True, exist_ok=True)
+                for lit_id in from_literatures:
+                    if session.get_metadata("literature", lit_id):
+                        copy_artifact(
+                            db_root / "literature" / lit_id,
+                            lit_dir / lit_id,
+                        )
+                    else:
+                        raise ValueError(
+                            f"Literature search results {lit_id!r} not found or invisible"
+                        )
+
+            if from_solutions:
+                sol_dir = results_dir / "solutions"
+                sol_dir.mkdir(parents=True, exist_ok=True)
+                for sol_id in from_solutions:
+                    if session.get_metadata("solution", sol_id):
+                        copy_artifact(
+                            db_root / "solution" / sol_id,
+                            sol_dir / sol_id,
+                        )
+                    else:
+                        raise ValueError(f"Solution {sol_id!r} not found or invisible")
 
         # --- Post-processing: Advanced Data Gathering ---
 
@@ -868,12 +1100,60 @@ def create_context(
                 reviews_root.mkdir(parents=True, exist_ok=True)
 
                 for _, r_data in session.iter_metadata("review"):
-                    if (
-                        r_data.get("parent_theory") == tid
-                        and r_data.get("agent_type") in ("falsify-hypothesis", "review-adherence")
-                    ):
+                    if r_data.get("parent_theory") == tid and r_data.get(
+                        "agent_type"
+                    ) in ("falsify-hypothesis", "review-adherence"):
                         rid = r_data["id"]
                         copy_artifact(db_root / "review" / rid, reviews_root / rid)
+
+        elif for_agent_type == "summarize-goal-progress":
+            population = session.get_population()
+            best_theory_id = None
+            best_solution_id = None
+
+            if population:
+                sorted_organisms = sorted(
+                    population.organisms,
+                    key=lambda item: (
+                        (item[1].score if item[1].score is not None else float("-inf")),
+                        item[0].created_at if hasattr(item[0], "created_at") else "",
+                    ),
+                    reverse=True,
+                )
+                for organism, eval_result in sorted_organisms:
+                    if hasattr(organism, "theory_id"):
+                        tid = organism.theory_id
+                        sol_ids = [
+                            fc.solution_id
+                            for fc in eval_result.trainable_failure_cases
+                            if getattr(fc, "solution_id", None) is not None
+                        ]
+                        if sol_ids:
+                            best_theory_id = tid
+                            best_solution_id = sol_ids[-1]
+                            break
+
+            if not best_theory_id or not best_solution_id:
+                raise ValueError(
+                    "No theory with a recorded solution was found in the population."
+                )
+
+            copy_artifact(db_root / "theory" / best_theory_id, target_folder / "theory")
+            copy_artifact(
+                db_root / "solution" / best_solution_id, target_folder / "solution"
+            )
+
+            info_path = target_folder / "info.json"
+            info_path.write_text(
+                json.dumps(
+                    {
+                        "theory_id": best_theory_id,
+                        "solution_id": best_solution_id,
+                    },
+                    indent=2,
+                )
+                + "\n"
+            )
 
 
 def fetch_experiment(
@@ -894,6 +1174,24 @@ def fetch_experiment(
             dst_root / experiment_id,
             exclude_results=exclude_results,
         )
+
+
+def fetch_solution(target_folder: Path, solution_id: str) -> None:
+    """Fetch a solution into an existing context folder under
+    ``solutions/<solution_id>/``.
+    """
+    db_root = get_db_path()
+    with DatabaseSession(db_root) as session:
+        if not session.get_metadata("solution", solution_id):
+            raise ValueError(f"Solution {solution_id!r} not found or invisible")
+
+        dst_root = target_folder / "solutions"
+        dst_root.mkdir(exist_ok=True)
+        copy_artifact(
+            db_root / "solution" / solution_id,
+            dst_root / solution_id,
+        )
+
 
 
 def search_experiments(
@@ -1009,7 +1307,7 @@ def list_entries(
     with DatabaseSession(db_root) as session:
         for _, data in session.iter_metadata(entry_type):
             if (
-                entry_type in ("review", "experiment")
+                entry_type in ("review", "experiment", "solution")
                 and parent_theory
                 and data.get("parent_theory") != parent_theory
             ):
@@ -1054,41 +1352,56 @@ def list_entries(
 
 
 def sample_theories(
-    num_theories: int, purpose: Literal["scoring", "mutation"]
+    num_theories: int,
+    purpose: Literal[
+        "scoring", "mutation", "proposals", "interpret_results", "integration"
+    ],
 ) -> list[dict]:
     db_root = get_db_path()
     with DatabaseSession(db_root) as session:
         population = session.get_population()
         if not population:
             return []
-        if purpose == "scoring":
+        unique_k = min(
+            len([o for o, r in population.organisms if r.trainable_failure_cases]),
+            num_theories,
+        )
+        if purpose in ("scoring", "interpret_results", "proposals"):
+            # Unique parents, ignoring novelty weight
             samples = population.sample_parents(
-                k=min(
-                    len(
-                        [
-                            o
-                            for o, r in population.organisms
-                            if r.trainable_failure_cases
-                        ]
-                    ),
-                    num_theories,
-                ),
+                k=unique_k,
                 replace=False,
                 novelty_weight=0.0,
             )
+        elif purpose == "integration":
+            # Unique parents
+            samples = population.sample_parents(
+                k=unique_k,
+                replace=False,
+            )
         elif purpose == "mutation":
+            # Allowing duplicates
             samples = population.sample_parents(k=num_theories)
         else:
             raise ValueError(f"Unknown sampling purpose {purpose!r}")
 
-        return [
-            {
-                "id": o.theory_id,
-                "score": r.score,
-                "subscores": r.subscores if hasattr(r, "subscores") else {},
-            }
-            for o, r in samples
-        ]
+        results = []
+        for o, r in samples:
+            latest_sol = None
+            if hasattr(r, "trainable_failure_cases") and r.trainable_failure_cases:
+                for fc in reversed(r.trainable_failure_cases):
+                    if getattr(fc, "solution_id", None) is not None:
+                        latest_sol = fc.solution_id
+                        break
+            results.append(
+                {
+                    "id": o.theory_id,
+                    "score": r.score,
+                    "subscores": r.subscores if hasattr(r, "subscores") else {},
+                    "latest_solution": latest_sol,
+                }
+            )
+        return results
 
 
 def rescore_theories(theory_scores: dict[str, dict[str, float]]) -> None:
@@ -1175,6 +1488,21 @@ def commit_transaction(transaction_id: str) -> None:
                 )
             except Exception as e:
                 print(f"Error recording review {r.get('id')!r} in population: {e}")
+
+        # 4. Update population (Solutions)
+        solutions = [
+            d
+            for _, d in staged_items
+            if d.get("category") == "solution" and d.get("parent_theory")
+        ]
+        for s in solutions:
+            try:
+                session.record_solution(
+                    theory_id=s.get("parent_theory"),
+                    solution_id=s.get("id"),
+                )
+            except Exception as e:
+                print(f"Error recording solution {s.get('id')!r} in population: {e}")
 
 
 def export_theory_population(dest_path: Path) -> None:
@@ -1271,6 +1599,14 @@ def main(argv: list[str] | None = None) -> None:
             "search-literature",
             "write-different-theory",
             "summarize-research",
+            "summarize-goal-progress",
+            "interpret-result",
+            "integrate-interpretations",
+            "propose-experiment",
+            "rank-proposals",
+            "execute-proposal",
+            "score-theory-solutions",
+            "initialize-theories",
         ],
         help="Type of agent to prepare context for",
     )
@@ -1321,6 +1657,21 @@ def main(argv: list[str] | None = None) -> None:
         help="Prediction ID (repeatable, used by rank-predictions)",
     )
 
+    sp_ctx.add_argument(
+        "--from_proposal",
+        action="append",
+        default=[],
+        dest="from_proposals",
+        help="Proposal ID (repeatable)",
+    )
+    sp_ctx.add_argument(
+        "--from_solution",
+        action="append",
+        default=[],
+        dest="from_solutions",
+        help="Solution ID (repeatable)",
+    )
+
     # -- fetch_literature ----------------------------------------------------
     sp_fetch_lit = sub.add_parser(
         "fetch_literature",
@@ -1358,6 +1709,23 @@ def main(argv: list[str] | None = None) -> None:
         "--exclude_results",
         action="store_true",
         help="Exclude experiment results (only fetch description and script)",
+    )
+
+    # -- fetch_solution ----------------------------------------------------
+    sp_fetch_sol = sub.add_parser(
+        "fetch_solution",
+        help="Fetch a solution into an existing context folder.",
+    )
+    sp_fetch_sol.add_argument(
+        "--target_folder",
+        required=True,
+        type=Path,
+        help="Existing context folder produced by a prior create_context call",
+    )
+    sp_fetch_sol.add_argument(
+        "--from_solution",
+        required=True,
+        help="Solution ID to add (nested under solutions/<U_ID>/)",
     )
 
     # -- search_experiments --------------------------------------------------
@@ -1426,7 +1794,7 @@ def main(argv: list[str] | None = None) -> None:
     sp_list.add_argument(
         "--parent_theory",
         default=None,
-        help="Filter reviews by parent theory ID",
+        help="Filter entries (reviews, experiments, solutions) by parent theory ID",
     )
     sp_list.add_argument(
         "--sort_by",
@@ -1453,7 +1821,13 @@ def main(argv: list[str] | None = None) -> None:
     )
     sp_sample.add_argument(
         "--purpose",
-        choices=["scoring", "mutation"],
+        choices=[
+            "scoring",
+            "mutation",
+            "proposals",
+            "interpret_results",
+            "integration",
+        ],
         required=True,
         help="Intended use of the sampled theories (may influence sampling strategy)",
     )
@@ -1524,6 +1898,8 @@ def main(argv: list[str] | None = None) -> None:
                 from_reviews=args.from_reviews or None,
                 from_experiments=args.from_experiments or None,
                 from_predictions=args.from_predictions or None,
+                from_proposals=args.from_proposals or None,
+                from_solutions=args.from_solutions or None,
             )
             print("Created context in folder:", args.target_folder.resolve())
 
@@ -1538,6 +1914,12 @@ def main(argv: list[str] | None = None) -> None:
                 target_folder=args.target_folder.resolve(),
                 experiment_id=args.from_experiment,
                 exclude_results=args.exclude_results,
+            )
+
+        elif args.command == "fetch_solution":
+            fetch_solution(
+                target_folder=args.target_folder.resolve(),
+                solution_id=args.from_solution,
             )
 
         elif args.command == "search_experiments":
@@ -1646,13 +2028,15 @@ def main(argv: list[str] | None = None) -> None:
                         subscore_keys.update(t.get("subscores", {}).keys())
                     subscore_keys = sorted(list(subscore_keys))
 
-                    header = f"{'ID':<40} {'Score':<20}"
+                    header = f"{'ID':<40} {'Score':<20} {'Latest Solution':<40}"
                     for k in subscore_keys:
                         header += f" {k.capitalize():<20}"
                     print(header)
                     print("-" * len(header))
                     for t in sampled_theories:
-                        row = f"{t['id']:<40} {t['score']:<20.4f}"
+                        latest_sol = t.get("latest_solution")
+                        latest_sol_str = latest_sol if latest_sol else "None"
+                        row = f"{t['id']:<40} {t['score']:<20.4f} {latest_sol_str:<40}"
                         for k in subscore_keys:
                             val = t.get("subscores", {}).get(k)
                             val_str = (

@@ -76,7 +76,10 @@ class TestContextManager(unittest.TestCase):
             src_dir = self.test_dir / f"src_{agent_type}"
             src_dir.mkdir(parents=True, exist_ok=True)
 
-            expected_md = CATEGORY_MD_MAP[category]
+            if agent_type == "interpret-result":
+                expected_md = "interpretation_log.md"
+            else:
+                expected_md = CATEGORY_MD_MAP[category]
             (src_dir / expected_md).write_text(f"Content for {agent_type}")
 
             args = [
@@ -99,10 +102,15 @@ class TestContextManager(unittest.TestCase):
                 "edit-theory",
                 "review-adherence",
                 "improve-adherence",
+                "interpret-result",
+                "integrate-interpretations",
             )
             parent_theory_allowed_agents = parent_theory_required_agents + (
                 "run-experiment",
                 "support-idea",
+                "propose-experiment",
+                "execute-proposal",
+                "generate-solution",
             )
 
             if agent_type in parent_theory_allowed_agents:
@@ -112,12 +120,20 @@ class TestContextManager(unittest.TestCase):
             new_id = res.stdout.strip().split()[-1]
             self.assertTrue(len(new_id) > 0)
 
-            # Verify metadata
-            target_meta = self.db_path / category / new_id / "metadata.json"
-            self.assertTrue(target_meta.exists())
-            meta_data = json.loads(target_meta.read_text())
-            self.assertEqual(meta_data["id"], new_id)
-            self.assertEqual(meta_data["agent_type"], agent_type)
+            if agent_type == "interpret-result":
+                # For interpret-result, it updates in-place, returning the parent_theory_id
+                self.assertEqual(new_id, parent_theory_id)
+                # Verify that interpretation_log.md is successfully updated
+                target_log = self.db_path / "theory" / parent_theory_id / "interpretation_log.md"
+                self.assertTrue(target_log.exists())
+                self.assertEqual(target_log.read_text(), f"Content for {agent_type}")
+            else:
+                # Verify metadata
+                target_meta = self.db_path / category / new_id / "metadata.json"
+                self.assertTrue(target_meta.exists())
+                meta_data = json.loads(target_meta.read_text())
+                self.assertEqual(meta_data["id"], new_id)
+                self.assertEqual(meta_data["agent_type"], agent_type)
 
     def test_create_context_all_agent_types(self):
         """Verify create_context works for all supported target agent types."""
@@ -156,6 +172,23 @@ class TestContextManager(unittest.TestCase):
         p_id = store_simple(
             "predict-experiments", "prediction", "predictions.md", parent=t_id
         )
+        t_parent_id = store_simple(
+            "interpret-result", "theory", "interpretation_log.md", parent=t_id
+        )
+        prop_id = store_simple(
+            "propose-experiment", "proposal", "proposal.md"
+        )
+
+        # Store a solution with parent_theory
+        d_sol = self.test_dir / "seed_solution"
+        d_sol.mkdir(parents=True, exist_ok=True)
+        (d_sol / "solution.md").write_text("Seed solution")
+        sol_id = self.run_cmd(
+            "store_results",
+            "--from_agent_type", "execute-proposal",
+            "--from_folder", str(d_sol),
+            "--parent_theory", t_id,
+        ).stdout.strip().split()[-1]
 
         target_agents = [
             ("write-theory", {"--from_exploration": e_id, "--from_literature": l_id}),
@@ -178,6 +211,13 @@ class TestContextManager(unittest.TestCase):
             ("streamline-theory", {"--from_theory": t_id}),
             ("edit-theory", {"--from_theory": t_id}),
             ("write-different-theory", {"--from_theory": t_id}),
+            ("interpret-result", {"--from_theory": t_parent_id, "--from_experiment": x_id}),
+            ("integrate-interpretations", {"--from_theory": t_id}),
+            ("propose-experiment", {"--from_theory": t_parent_id}),
+            ("rank-proposals", {"--from_proposal": prop_id}),
+            ("execute-proposal", {"--from_proposal": prop_id}),
+            ("score-theory-solutions", {"--from_solution": sol_id}),
+            ("initialize-theories", {}),
         ]
 
         for agent, flags in target_agents:
@@ -194,8 +234,9 @@ class TestContextManager(unittest.TestCase):
 
             self.run_cmd(*args)
             self.assertTrue(target_folder.is_dir())
-            # Basic sanity check: target folder should not be empty
-            self.assertTrue(any(target_folder.iterdir()))
+            # Basic sanity check: target folder should not be empty (unless initialize-theories)
+            if agent != "initialize-theories":
+                self.assertTrue(any(target_folder.iterdir()))
 
     def test_transactions(self):
         """Verify transaction isolation and commit."""
@@ -388,6 +429,28 @@ class TestContextManager(unittest.TestCase):
         )
         self.assertTrue((target / "experiments" / x_id / "description.md").exists())
 
+        # 3. Solution
+        sol_dir = self.test_dir / "sol_src_fetch"
+        sol_dir.mkdir()
+        (sol_dir / "solution.md").write_text("Solution text")
+        res = self.run_cmd(
+            "store_results",
+            "--from_agent_type",
+            "generate-solution",
+            "--from_folder",
+            str(sol_dir),
+        )
+        u_id = res.stdout.strip().split()[-1]
+
+        self.run_cmd(
+            "fetch_solution",
+            "--target_folder",
+            str(target),
+            "--from_solution",
+            u_id,
+        )
+        self.assertTrue((target / "solutions" / u_id / "solution.md").exists())
+
     def test_export_population(self):
         """Verify population export."""
         self.run_cmd("init")
@@ -552,6 +615,159 @@ class TestContextManager(unittest.TestCase):
         self.assertEqual(meta["headline"], "Research Summary Report")
         self.assertIsNone(meta.get("parent_theory"))
 
+    def test_summarize_goal_progress(self):
+        """Verify context population and storage for summarize-goal-progress."""
+        self.run_cmd("init")
+
+        # Helpers
+        def store_t(name):
+            d = self.test_dir / f"theory_{name}"
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "theory.md").write_text(f"Theory content for {name}")
+            res = self.run_cmd(
+                "store_results",
+                "--from_agent_type",
+                "write-theory",
+                "--from_folder",
+                str(d),
+            )
+            return res.stdout.strip().split()[-1]
+
+        def store_s(name, parent_id):
+            d = self.test_dir / f"solution_{name}"
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "solution.md").write_text(f"Solution content for {name}")
+            res = self.run_cmd(
+                "store_results",
+                "--from_agent_type",
+                "execute-proposal",
+                "--from_folder",
+                str(d),
+                "--parent_theory",
+                parent_id,
+            )
+            return res.stdout.strip().split()[-1]
+
+        # 1. Store theories
+        t1 = store_t("T1") # score 0.9, no solution
+        t2 = store_t("T2") # score 0.85, has solution
+        t3 = store_t("T3") # score 0.7, has solution
+
+        # 2. Rescore them
+        scores = {
+            t1: {"score": 0.9, "is_viable": True},
+            t2: {"score": 0.85, "is_viable": True},
+            t3: {"score": 0.7, "is_viable": True},
+        }
+        self.run_cmd("rescore_theories", json.dumps(scores))
+
+        # 3. Store solutions
+        sol2 = store_s("Sol2", t2)
+        sol3 = store_s("Sol3", t3)
+        self.assertIsNotNone(sol3)
+
+        # 4. Create context for summarize-goal-progress
+        target_folder = self.test_dir / "goal_progress_context"
+        self.run_cmd(
+            "create_context",
+            "--for_agent_type",
+            "summarize-goal-progress",
+            "--target_folder",
+            str(target_folder),
+        )
+
+        self.assertTrue(target_folder.is_dir())
+        self.assertTrue((target_folder / "theory" / "theory.md").is_file())
+        self.assertTrue((target_folder / "solution" / "solution.md").is_file())
+
+        info_file = target_folder / "info.json"
+        self.assertTrue(info_file.is_file())
+        info_data = json.loads(info_file.read_text())
+        self.assertEqual(info_data["theory_id"], t2)
+        self.assertEqual(info_data["solution_id"], sol2)
+
+        # 5. Test storing summarize-goal-progress results (summary.md)
+        summary_src = self.test_dir / "goal_summary_src"
+        summary_src.mkdir(parents=True, exist_ok=True)
+        (summary_src / "summary.md").write_text("# Goal Progress Summary\nThis is a progress summary.")
+
+        res_store = self.run_cmd(
+            "store_results",
+            "--from_agent_type",
+            "summarize-goal-progress",
+            "--from_folder",
+            str(summary_src),
+        )
+        s_id = res_store.stdout.strip().split()[-1]
+        self.assertTrue(s_id.startswith("S_"))
+
+        # Check metadata
+        meta_file = self.db_path / "summary" / s_id / "metadata.json"
+        self.assertTrue(meta_file.is_file())
+        meta = json.loads(meta_file.read_text())
+        self.assertEqual(meta["id"], s_id)
+        self.assertEqual(meta["category"], "summary")
+        self.assertEqual(meta["agent_type"], "summarize-goal-progress")
+        self.assertEqual(meta["headline"], "Goal Progress Summary")
+        self.assertIsNone(meta.get("parent_theory"))
+
+    def test_record_and_sample_solutions(self):
+        """Verify recording solutions and sampling theories with latest_solution field."""
+        self.run_cmd("init")
+
+        # 1. Create and store a theory
+        theory_dir = self.test_dir / "t_sol_test"
+        theory_dir.mkdir(parents=True, exist_ok=True)
+        (theory_dir / "theory.md").write_text("# Sol Test Theory")
+        t_id = (
+            self.run_cmd(
+                "store_results",
+                "--from_agent_type",
+                "write-theory",
+                "--from_folder",
+                str(theory_dir),
+            )
+            .stdout.strip()
+            .split()[-1]
+        )
+
+        # 2. Create and store a solution with that theory as parent
+        sol_dir = self.test_dir / "s_sol_test"
+        sol_dir.mkdir(parents=True, exist_ok=True)
+        (sol_dir / "solution.md").write_text("# Solution candidate")
+        sol_id = (
+            self.run_cmd(
+                "store_results",
+                "--from_agent_type",
+                "execute-proposal",
+                "--from_folder",
+                str(sol_dir),
+                "--parent_theory",
+                t_id,
+            )
+            .stdout.strip()
+            .split()[-1]
+        )
+
+        # 3. Rescore the theory to make it sampleable under "scoring"
+        scores = {t_id: {"score": 0.85, "is_viable": True}}
+        self.run_cmd("rescore_theories", json.dumps(scores))
+
+        # 4. Sample the theory with "scoring" purpose and check results
+        res = self.run_cmd(
+            "sample_theories",
+            "--num_theories",
+            "1",
+            "--purpose",
+            "scoring",
+            "--json",
+        )
+        sampled = json.loads(res.stdout)
+        self.assertEqual(len(sampled), 1)
+        self.assertEqual(sampled[0]["id"], t_id)
+        self.assertEqual(sampled[0]["latest_solution"], sol_id)
+
 
 if __name__ == "__main__":
     unittest.main()
+

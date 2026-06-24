@@ -9,6 +9,8 @@ import GithubSlugger from 'github-slugger';
 import 'katex/dist/katex.min.css';
 import { X, Loader2, Printer, List as ListIcon, ArrowLeft, Download, FileCode, FileText, Image as ImageIcon } from 'lucide-react';
 import * as api from '../api';
+import { ARTIFACT_FIND_GLOBAL_REGEX, ARTIFACT_BACKTICK_REGEX } from '../constants';
+
 
 const MemoizedMarkdown = memo(({ content, components, remarkPlugins, rehypePlugins }: any) => (
   <ReactMarkdown
@@ -30,6 +32,34 @@ interface TocEntry {
   id: string;
   text: string;
   level: number;
+}
+
+function processMarkdown(rawContent: string | null, taskId: string): string {
+  if (!rawContent) return '';
+
+  // Ensure display math blocks ($$ ... $$) are robustly handled.
+  // remark-math v6+ requires delimiters to be on their own lines for block math.
+  // This transforms $$math$$ -> $$\nmath\n$$ and also ensures blank lines around it.
+  const withNewlines = rawContent.replace(/\$\$(.*?)\$\$/gs, (_, mathContent) => {
+    return `\n\n$$\n${mathContent.trim()}\n$$\n\n`;
+  });
+
+  const parts = withNewlines.split(/(```[\s\S]*?```|`[^`]+`|\$\$[\s\S]*?\$\$)/g);
+  return parts.map((part, i) => {
+    if (i % 2 === 0) {
+      let processed = part.replace(ARTIFACT_FIND_GLOBAL_REGEX, `[$1](#/task/${taskId}/artifact/$1?from=artifact)`);
+      processed = processed.replace(/^([ \t]*-\s*)(Add\s+to\s+Guidance):\s*"([^"]+)"/gim, (_match, prefix, btnText, value) => {
+        return `${prefix}[${btnText}](#add-to-guidance:${encodeURIComponent(value)}?from=artifact): "${value}"`;
+      });
+      return processed;
+    } else {
+      const match = part.match(ARTIFACT_BACKTICK_REGEX);
+      if (match) {
+        return `[${part}](#/task/${taskId}/artifact/${match[1]}?from=artifact)`;
+      }
+      return part;
+    }
+  }).join('');
 }
 
 export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactViewerModalProps) {
@@ -125,33 +155,13 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
     };
   }, []);
 
-  const processedContent = useMemo(() => {
-    if (!content) return '';
-    
-    // Ensure display math blocks ($$ ... $$) are robustly handled.
-    // remark-math v6+ requires delimiters to be on their own lines for block math.
-    // This transforms $$math$$ -> $$\nmath\n$$ and also ensures blank lines around it.
-    const withNewlines = content.replace(/\$\$(.*?)\$\$/gs, (_, mathContent) => {
-      return `\n\n$$\n${mathContent.trim()}\n$$\n\n`;
-    });
+  const processedContent = useMemo(() => processMarkdown(content, taskId), [content, taskId]);
 
-    const parts = withNewlines.split(/(```[\s\S]*?```|`[^`]+`|\$\$[\s\S]*?\$\$)/g);
-    return parts.map((part, i) => {
-      if (i % 2 === 0) {
-        let processed = part.replace(/\b([ELTRXPS]_\d{8}_\d{6}_[a-f0-9]{6})\b/g, `[$1](#/task/${taskId}/artifact/$1?from=artifact)`);
-        processed = processed.replace(/^([ \t]*-\s*)(Add\s+to\s+Guidance):\s*"([^"]+)"/gim, (_match, prefix, btnText, value) => {
-          return `${prefix}[${btnText}](#add-to-guidance:${encodeURIComponent(value)}?from=artifact): "${value}"`;
-        });
-        return processed;
-      } else {
-        const match = part.match(/^`([ELTRXPS]_\d{8}_\d{6}_[a-f0-9]{6})`$/);
-        if (match) {
-          return `[${part}](#/task/${taskId}/artifact/${match[1]}?from=artifact)`;
-        }
-        return part;
-      }
-    }).join('');
-  }, [content, taskId]);
+  const processedFileContent = useMemo(() => {
+    if (!selectedFile || !selectedFile.toLowerCase().endsWith('.md')) return '';
+    return processMarkdown(fileContent, taskId);
+  }, [fileContent, selectedFile, taskId]);
+
 
   const toc = useMemo(() => {
     if (!content) return [];
@@ -189,7 +199,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
   }, [content]);
 
   const filteredFiles = useMemo(() => {
-    const allowedExtensions = ['.png', '.jpg', '.gif', '.py', '.log', '.txt', '.csv', '.json', '.jsonl'];
+    const allowedExtensions = ['.png', '.jpg', '.gif', '.py', '.log', '.txt', '.csv', '.json', '.jsonl', '.md'];
     return files.filter(f => {
       const lower = f.toLowerCase();
       return f !== 'metadata.json' && allowedExtensions.some(ext => lower.endsWith(ext));
@@ -225,7 +235,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
         const isHash = href.startsWith('#add-to-guidance:');
         const prefixLen = isHash ? '#add-to-guidance:'.length : 'add-to-guidance:'.length;
         const queryIdx = href.indexOf('?');
-        const encodedValue = queryIdx !== -1 
+        const encodedValue = queryIdx !== -1
           ? href.slice(prefixLen, queryIdx)
           : href.slice(prefixLen);
         const value = decodeURIComponent(encodedValue);
@@ -248,7 +258,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
       const combinedClassName = className ? `${className} print:break-inside-avoid` : 'print:break-inside-avoid';
       const imgStyle = { pageBreakInside: 'avoid', breakInside: 'avoid' } as React.CSSProperties;
       const wrapperStyle = { display: 'inline-block', pageBreakInside: 'avoid', breakInside: 'avoid', width: '100%' } as React.CSSProperties;
-      
+
       let resolvedSrc = src;
       if (src && !src.startsWith('http') && !src.startsWith('data:')) {
         // rewrite local relative paths to our files endpoint
@@ -379,7 +389,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
                         const isSelected = selectedFile === file;
                         const isImage = ['.png', '.jpg', '.gif'].some(ext => file.toLowerCase().endsWith(ext));
                         const isCode = file.toLowerCase().endsWith('.py');
-                        
+
                         return (
                           <li key={`${file}-${idx}`}>
                             <button
@@ -429,6 +439,20 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
                       alt={selectedFile}
                       className="max-w-full h-auto mx-auto"
                     />
+                  </div>
+                ) : selectedFile.toLowerCase().endsWith('.md') ? (
+                  <div className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-white p-6 md:p-10">
+                    <div className="px-4 py-2 -mx-6 md:-mx-10 -mt-6 md:-mt-10 border-b-2 border-black bg-gray-50 flex justify-between items-center mb-6 md:mb-10">
+                      <span className="font-mono text-xs font-bold">{selectedFile}</span>
+                    </div>
+                    <div className="prose prose-sm md:prose-base max-w-none prose-img:border-2 prose-img:border-black prose-img:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] prose-pre:border-2 prose-pre:border-black prose-pre:rounded-none prose-pre:shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] prose-headings:font-black">
+                      <MemoizedMarkdown
+                        content={processedFileContent}
+                        remarkPlugins={remarkPlugins}
+                        rehypePlugins={rehypePlugins}
+                        components={markdownComponents}
+                      />
+                    </div>
                   </div>
                 ) : (
                   <div className="border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,1)] bg-gray-50 overflow-hidden">

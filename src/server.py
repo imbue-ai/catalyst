@@ -234,7 +234,7 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
                 shutil.copyfileobj(file.file, buffer)
             inputs["file_path"] = f"tmp/import/{filename}"
 
-    summary_candidate = inputs.get("phenomenon") or inputs.get("idea") or ""
+    summary_candidate = inputs.get("phenomenon") or inputs.get("idea") or inputs.get("goal") or ""
     inputs["summary"] = summary_candidate
 
     task = Task(
@@ -270,6 +270,7 @@ class CreateAddonRequest(BaseModel):
     theory_ids: Optional[List[str]] = None
     direction: Optional[str] = None
     max_refinements: Optional[int] = None
+    max_experiments: Optional[int] = None
     apply_expansions: Optional[str] = None
     evolve_iterations: Optional[int] = None
     num_parents: Optional[int] = None
@@ -281,6 +282,14 @@ class CreateAddonRequest(BaseModel):
     instruction: Optional[str] = None
     lit_review_id: Optional[str] = None
     generate_intermediate_research_summaries: Optional[bool] = None
+    max_iterations: Optional[int] = None
+    num_executions_per_iteration: Optional[int] = None
+    execution_cost: Optional[int] = None
+    integration_interval: Optional[int] = None
+    rescore_interval: Optional[int] = None
+    num_extra_interpretations: Optional[int] = None
+    branch_prob: Optional[float] = None
+    num_proposals: Optional[int] = None
 
 
 @app.post("/api/tasks/{task_id}/addons", response_model=Task)
@@ -295,6 +304,7 @@ def create_addon(task_id: str, req: CreateAddonRequest):
         theory_ids=req.theory_ids,
         direction=req.direction,
         max_refinements=req.max_refinements,
+        max_experiments=req.max_experiments,
         apply_expansions=req.apply_expansions,
         evolve_iterations=req.evolve_iterations,
         num_parents=req.num_parents,
@@ -306,6 +316,14 @@ def create_addon(task_id: str, req: CreateAddonRequest):
         instruction=req.instruction,
         lit_review_id=req.lit_review_id,
         generate_intermediate_research_summaries=req.generate_intermediate_research_summaries,
+        max_iterations=req.max_iterations,
+        num_executions_per_iteration=req.num_executions_per_iteration,
+        execution_cost=req.execution_cost,
+        integration_interval=req.integration_interval,
+        rescore_interval=req.rescore_interval,
+        num_extra_interpretations=req.num_extra_interpretations,
+        branch_prob=req.branch_prob,
+        num_proposals=req.num_proposals,
     )
     task.addons.append(addon)
 
@@ -593,6 +611,27 @@ def get_task_experiments(task_id: str):
         raise HTTPException(status_code=500, detail="Failed to parse experiments")
 
 
+@app.get("/api/tasks/{task_id}/solutions")
+def get_task_solutions(task_id: str):
+    task = get_task(task_id)
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+
+    try:
+        result = run_context_manager(task, ["list", "--type", "solution", "--json"])
+        data = json.loads(result)
+        data.reverse()
+        return data
+    except subprocess.CalledProcessError as e:
+        logger.error(
+            f"Error running context_manager list for task {task_id}: {e.stderr}"
+        )
+        raise HTTPException(status_code=500, detail="Failed to retrieve solutions")
+    except json.JSONDecodeError as e:
+        logger.error(f"Error decoding context_manager output for task {task_id}: {e}")
+        raise HTTPException(status_code=500, detail="Failed to parse solutions")
+
+
 @app.get("/api/tasks/{task_id}/summaries")
 def get_task_summaries(task_id: str):
     task = get_task(task_id)
@@ -612,6 +651,8 @@ def get_task_summaries(task_id: str):
     except json.JSONDecodeError as e:
         logger.error(f"Error decoding context_manager output for task {task_id}: {e}")
         raise HTTPException(status_code=500, detail="Failed to parse summaries")
+
+
 
 
 def inject_disclaimer(content: str) -> str:
