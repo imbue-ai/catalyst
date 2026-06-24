@@ -38,7 +38,7 @@ Catalyst is *not* a good fit for:
 * Engineering problems, e.g. "build an operating system for microcontrollers", "design an efficient HTML rendering engine"
 * Problems that are significantly out of reach for the underlying base model, e.g. "Prove or disprove P=NP", "Unify quantum physics and general relativity into a practically testable theory of everything"
 * Problems that require experiments that can't be run on a computer (life sciences, psychology, experimental physics, etc.)
-* Problems that require significant computational resources to solve. Catalyst limits the runtime of any single experiment to no more than 30 minutes. Furthermore, it presently does not particularly optimize for compute and/or experiment efficiency.
+* Problems that require significant computational resources to solve. Catalyst limits the runtime of any single experiment to 30 minutes by default (adjustable via `CATALYST_EXPERIMENT_TIMEOUT_SECS`). Furthermore, it presently does not particularly optimize for compute and/or experiment efficiency.
 
 ### Why Choose Catalyst Over a Bare LLM Chat or Coding Agent?
 
