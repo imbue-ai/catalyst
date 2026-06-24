@@ -21,6 +21,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
   const [lastLatest, setLastLatest] = useState(0)
   const [showDropdown, setShowDropdown] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
+  const scrollContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -31,6 +32,17 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
     document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [])
+
+  useEffect(() => {
+    if (showDropdown && scrollContainerRef.current) {
+      const selectedElement = scrollContainerRef.current.querySelector('[data-selected="true"]')
+      if (selectedElement) {
+        requestAnimationFrame(() => {
+          selectedElement.scrollIntoView({ block: 'nearest' })
+        })
+      }
+    }
+  }, [showDropdown])
 
   // Calculate what the current latest iteration is based on steps
   const currentLatest = useMemo(() => {
@@ -145,7 +157,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
                 </button>
 
                 {showDropdown && (
-                  <div className="absolute right-0 top-full mt-1 w-[160px] bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] z-50 max-h-[240px] overflow-y-auto custom-scrollbar">
+                  <div ref={scrollContainerRef} className="absolute right-0 top-full mt-1 w-[160px] bg-white border-2 border-black shadow-[4px_4px_0px_0px_rgba(0,0,0,0.1)] z-50 max-h-[240px] overflow-y-auto custom-scrollbar">
                     {Array.from({ length: iterations }, (_, i) => i + 1).map(it => {
                       const isDeEmphasized = it > currentLatest;
                       const isSelected = activeIteration === it;
@@ -167,6 +179,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
                             setShowDropdown(false);
                           }}
                           className={itemClass}
+                          data-selected={isSelected}
                         >
                           Iteration {it}
                         </div>
