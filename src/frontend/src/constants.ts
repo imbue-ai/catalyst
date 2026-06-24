@@ -19,7 +19,7 @@ export const DEFAULT_NUM_EXECUTIONS_PER_ITERATION = 2;
 export const DEFAULT_EXECUTION_COST = 1;
 export const DEFAULT_INTEGRATION_INTERVAL = 5;
 export const DEFAULT_RESCORE_INTERVAL = 5;
-export const DEFAULT_NUM_INTERPRETATIONS = 5;
+export const DEFAULT_NUM_EXTRA_INTERPRETATIONS = 3;
 export const DEFAULT_BRANCH_PROB = 0.5;
 
 // Default scoring weights

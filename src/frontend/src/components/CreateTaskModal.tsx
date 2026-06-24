@@ -123,8 +123,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     setIntegrationInterval,
     rescoreInterval,
     setRescoreInterval,
-    numInterpretations,
-    setNumInterpretations,
+    numExtraInterpretations,
+    setNumExtraInterpretations,
     branchProb,
     setBranchProb,
     correctnessWeight,
@@ -243,7 +243,7 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
         num_executions_per_iteration: numExecutionsPerIteration,
         execution_cost: executionCost,
         rescore_interval: rescoreInterval,
-        num_interpretations: numInterpretations,
+        num_extra_interpretations: numExtraInterpretations,
         num_extra_scores: numExtraScores,
         branch_prob: branchProb,
         num_proposals: numProposals,
@@ -584,8 +584,8 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         setIntegrationInterval={setIntegrationInterval}
                         rescoreInterval={rescoreInterval}
                         setRescoreInterval={setRescoreInterval}
-                        numInterpretations={numInterpretations}
-                        setNumInterpretations={setNumInterpretations}
+                        numExtraInterpretations={numExtraInterpretations}
+                        setNumExtraInterpretations={setNumExtraInterpretations}
                         branchProb={branchProb}
                         setBranchProb={setBranchProb}
                         numProposals={numProposals}

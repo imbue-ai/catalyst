@@ -430,7 +430,7 @@ class TestEvolveSolutionLoop(unittest.TestCase):
             workflow_inputs={
                 "num_strands": "2",
                 "num_proposals": "2",
-                "num_interpretations": "2",
+                "num_extra_interpretations": "2",
                 "num_parents": "2",
                 "rescore_interval": "2",
             },
@@ -482,7 +482,7 @@ class TestEvolveSolutionLoop(unittest.TestCase):
             env_folder="/tmp/env",
             workflow_inputs={
                 "num_proposals": "2",
-                "num_interpretations": "2",
+                "num_extra_interpretations": "2",
                 "num_parents": "1",
                 "num_extra_scores": "1",
                 "rescore_interval": "2",
@@ -529,7 +529,7 @@ class TestEvolveSolutionLoop(unittest.TestCase):
             run_step=mock_run_step,
             max_iterations=2,
             num_proposals=2,
-            num_interpretations=2,
+            num_extra_interpretations=2,
             num_parents=1,
             num_extra_scores=1,
             rescore_interval=2,
@@ -552,7 +552,7 @@ class TestEvolveSolutionLoop(unittest.TestCase):
             workflow_inputs={
                 "num_strands": "2",
                 "num_proposals": "2",
-                "num_interpretations": "2",
+                "num_extra_interpretations": "2",
                 "num_parents": "2",
                 "rescore_interval": "1",
             },
@@ -591,7 +591,7 @@ class TestEvolveSolutionLoop(unittest.TestCase):
             env_folder="/tmp/env",
             workflow_inputs={
                 "num_proposals": "2",
-                "num_interpretations": "2",
+                "num_extra_interpretations": "2",
                 "num_parents": "1",
                 "num_extra_scores": "1",
                 "rescore_interval": "1",
@@ -636,7 +636,7 @@ class TestEvolveSolutionLoop(unittest.TestCase):
             run_step=mock_run_step,
             max_iterations=2,
             num_proposals=2,
-            num_interpretations=2,
+            num_extra_interpretations=2,
             num_parents=1,
             num_extra_scores=1,
             rescore_interval=1,

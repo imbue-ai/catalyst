@@ -217,7 +217,7 @@ def run_evolve_solution_loop(
     run_step: Callable,
     max_iterations: int,
     num_proposals: int,
-    num_interpretations: int,
+    num_extra_interpretations: int,
     num_parents: int,
     num_extra_scores: int,
     rescore_interval: int,
@@ -393,7 +393,7 @@ def run_evolve_solution_loop(
             # 4. Sample interpretations
             interpret_theories = _sample_theories_helper(
                 task=task,
-                num_theories=num_interpretations,
+                num_theories=num_extra_interpretations,
                 purpose="interpret_results",
                 stage_name=f"{stage_prefix}sample-interpretations-{i}",
             )
@@ -572,7 +572,7 @@ def run_evolve_solution_loop(
             # D. Sample interpretations (from regular loop) and Interpret Results
             interpret_theories = _sample_theories_helper(
                 task=task,
-                num_theories=num_interpretations,
+                num_theories=num_extra_interpretations,
                 purpose="interpret_results",
                 stage_name=f"{stage_prefix}sample-interpretations-{i}",
             )

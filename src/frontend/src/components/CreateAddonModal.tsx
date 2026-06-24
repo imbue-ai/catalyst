@@ -186,8 +186,8 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
     setGenerateIntermediateResearchSummaries,
     rescoreInterval,
     setRescoreInterval,
-    numInterpretations,
-    setNumInterpretations,
+    numExtraInterpretations,
+    setNumExtraInterpretations,
     branchProb,
     setBranchProb,
     maxIterations,
@@ -261,7 +261,7 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
         execution_cost: (addonType === 'solve-goal-loop' || addonType === 'evolve-solution-loop') ? executionCost : undefined,
         integration_interval: addonType === 'solve-goal-loop' ? integrationInterval : undefined,
         rescore_interval: addonType === 'evolve-solution-loop' ? rescoreInterval : undefined,
-        num_interpretations: addonType === 'evolve-solution-loop' ? numInterpretations : undefined,
+        num_extra_interpretations: addonType === 'evolve-solution-loop' ? numExtraInterpretations : undefined,
         branch_prob: addonType === 'evolve-solution-loop' ? branchProb : undefined,
         num_proposals: addonType === 'evolve-solution-loop' ? numProposals : undefined,
       })
@@ -598,8 +598,8 @@ export function CreateAddonModal({ task, availableLiteratureIds, onClose, onCrea
                           setIntegrationInterval={setIntegrationInterval}
                           rescoreInterval={rescoreInterval}
                           setRescoreInterval={setRescoreInterval}
-                          numInterpretations={numInterpretations}
-                          setNumInterpretations={setNumInterpretations}
+                          numExtraInterpretations={numExtraInterpretations}
+                          setNumExtraInterpretations={setNumExtraInterpretations}
                           branchProb={branchProb}
                           setBranchProb={setBranchProb}
                           numProposals={numProposals}

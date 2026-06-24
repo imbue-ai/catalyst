@@ -287,7 +287,7 @@ class CreateAddonRequest(BaseModel):
     execution_cost: Optional[int] = None
     integration_interval: Optional[int] = None
     rescore_interval: Optional[int] = None
-    num_interpretations: Optional[int] = None
+    num_extra_interpretations: Optional[int] = None
     branch_prob: Optional[float] = None
     num_proposals: Optional[int] = None
 
@@ -321,7 +321,7 @@ def create_addon(task_id: str, req: CreateAddonRequest):
         execution_cost=req.execution_cost,
         integration_interval=req.integration_interval,
         rescore_interval=req.rescore_interval,
-        num_interpretations=req.num_interpretations,
+        num_extra_interpretations=req.num_extra_interpretations,
         branch_prob=req.branch_prob,
         num_proposals=req.num_proposals,
     )

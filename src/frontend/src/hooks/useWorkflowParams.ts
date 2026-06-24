@@ -16,7 +16,7 @@ import {
   DEFAULT_EXECUTION_COST,
   DEFAULT_INTEGRATION_INTERVAL,
   DEFAULT_RESCORE_INTERVAL,
-  DEFAULT_NUM_INTERPRETATIONS,
+  DEFAULT_NUM_EXTRA_INTERPRETATIONS,
   DEFAULT_BRANCH_PROB,
   DEFAULT_NUM_PROPOSALS
 } from '../constants'
@@ -36,7 +36,7 @@ export function useWorkflowParams() {
   const [executionCost, setExecutionCost] = useState(DEFAULT_EXECUTION_COST)
   const [integrationInterval, setIntegrationInterval] = useState(DEFAULT_INTEGRATION_INTERVAL)
   const [rescoreInterval, setRescoreInterval] = useState(DEFAULT_RESCORE_INTERVAL)
-  const [numInterpretations, setNumInterpretations] = useState(DEFAULT_NUM_INTERPRETATIONS)
+  const [numExtraInterpretations, setNumExtraInterpretations] = useState(DEFAULT_NUM_EXTRA_INTERPRETATIONS)
   const [branchProb, setBranchProb] = useState(DEFAULT_BRANCH_PROB)
   const [numProposals, setNumProposals] = useState(DEFAULT_NUM_PROPOSALS)
 
@@ -74,8 +74,8 @@ export function useWorkflowParams() {
     setIntegrationInterval,
     rescoreInterval,
     setRescoreInterval,
-    numInterpretations,
-    setNumInterpretations,
+    numExtraInterpretations,
+    setNumExtraInterpretations,
     branchProb,
     setBranchProb,
     numProposals,

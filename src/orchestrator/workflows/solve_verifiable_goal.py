@@ -18,7 +18,7 @@ from .common import (
     run_initialize_theories,
     DEFAULT_MAX_ITERATIONS,
     DEFAULT_RESCORE_INTERVAL,
-    DEFAULT_NUM_INTERPRETATIONS,
+    DEFAULT_NUM_EXTRA_INTERPRETATIONS,
     DEFAULT_NUM_PARENTS,
     DEFAULT_NUM_EXTRA_SCORES,
     DEFAULT_NUM_EXECUTIONS_PER_ITERATION,
@@ -175,7 +175,7 @@ class SolveVerifiableGoalWorkflow(Workflow):
 
         max_iterations = int(task.workflow_inputs.get("max_iterations", DEFAULT_MAX_ITERATIONS))
         num_proposals = int(task.workflow_inputs.get("num_proposals", DEFAULT_NUM_PROPOSALS))
-        num_interpretations = int(task.workflow_inputs.get("num_interpretations", DEFAULT_NUM_INTERPRETATIONS))
+        num_extra_interpretations = int(task.workflow_inputs.get("num_extra_interpretations", DEFAULT_NUM_EXTRA_INTERPRETATIONS))
         num_parents = int(task.workflow_inputs.get("num_parents", DEFAULT_NUM_PARENTS))
         num_extra_scores = int(task.workflow_inputs.get("num_extra_scores", DEFAULT_NUM_EXTRA_SCORES))
         rescore_interval = int(task.workflow_inputs.get("rescore_interval", DEFAULT_RESCORE_INTERVAL))
@@ -188,7 +188,7 @@ class SolveVerifiableGoalWorkflow(Workflow):
             run_step=run_step,
             max_iterations=max_iterations,
             num_proposals=num_proposals,
-            num_interpretations=num_interpretations,
+            num_extra_interpretations=num_extra_interpretations,
             num_parents=num_parents,
             num_extra_scores=num_extra_scores,
             rescore_interval=rescore_interval,

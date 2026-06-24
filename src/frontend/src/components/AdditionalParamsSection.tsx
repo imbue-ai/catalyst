@@ -71,8 +71,8 @@ interface AdditionalParamsSectionProps {
   rescoreInterval?: number;
   setRescoreInterval?: (v: number) => void;
 
-  numInterpretations?: number;
-  setNumInterpretations?: (v: number) => void;
+  numExtraInterpretations?: number;
+  setNumExtraInterpretations?: (v: number) => void;
 
   branchProb?: number;
   setBranchProb?: (v: number) => void;
@@ -153,8 +153,8 @@ export function AdditionalParamsSection({
   rescoreInterval,
   setRescoreInterval,
 
-  numInterpretations,
-  setNumInterpretations,
+  numExtraInterpretations,
+  setNumExtraInterpretations,
 
   branchProb,
   setBranchProb,
@@ -252,13 +252,13 @@ export function AdditionalParamsSection({
           </div>
         )}
 
-        {setNumInterpretations && numInterpretations !== undefined && (
+        {setNumExtraInterpretations && numExtraInterpretations !== undefined && (
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
-            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Interpretations</label>
+            <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Interpretations</label>
             <input
               type="number" min="1" max="100" required
-              value={numInterpretations}
-              onChange={e => setNumInterpretations(parseInt(e.target.value, 10))}
+              value={numExtraInterpretations}
+              onChange={e => setNumExtraInterpretations(parseInt(e.target.value, 10))}
               className={inputClass}
             />
           </div>

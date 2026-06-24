@@ -50,7 +50,7 @@ export interface Addon {
   execution_cost?: number;
   integration_interval?: number;
   rescore_interval?: number;
-  num_interpretations?: number;
+  num_extra_interpretations?: number;
   branch_prob?: number;
   num_proposals?: number;
 }

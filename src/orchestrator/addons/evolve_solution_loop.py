@@ -6,7 +6,7 @@ from ..workflows.common import (
     run_evolve_solution_loop,
     DEFAULT_MAX_ITERATIONS,
     DEFAULT_RESCORE_INTERVAL,
-    DEFAULT_NUM_INTERPRETATIONS,
+    DEFAULT_NUM_EXTRA_INTERPRETATIONS,
     DEFAULT_NUM_PARENTS,
     DEFAULT_NUM_EXTRA_SCORES,
     DEFAULT_NUM_EXECUTIONS_PER_ITERATION,
@@ -61,7 +61,7 @@ class EvolveSolutionLoopAddon(AddonHandler):
         num_executions_per_iteration = addon.num_executions_per_iteration if addon.num_executions_per_iteration is not None else DEFAULT_NUM_EXECUTIONS_PER_ITERATION
         execution_cost = addon.execution_cost if addon.execution_cost is not None else DEFAULT_EXECUTION_COST
         branch_prob = addon.branch_prob if addon.branch_prob is not None else DEFAULT_BRANCH_PROB
-        num_interpretations = addon.num_interpretations if addon.num_interpretations is not None else DEFAULT_NUM_INTERPRETATIONS
+        num_extra_interpretations = addon.num_extra_interpretations if addon.num_extra_interpretations is not None else DEFAULT_NUM_EXTRA_INTERPRETATIONS
 
         num_proposals = addon.num_proposals if addon.num_proposals is not None else DEFAULT_NUM_PROPOSALS
 
@@ -70,7 +70,7 @@ class EvolveSolutionLoopAddon(AddonHandler):
             run_step=run_step,
             max_iterations=max_iterations,
             num_proposals=num_proposals,
-            num_interpretations=num_interpretations,
+            num_extra_interpretations=num_extra_interpretations,
             num_parents=num_parents,
             num_extra_scores=num_extra_scores,
             rescore_interval=rescore_interval,
