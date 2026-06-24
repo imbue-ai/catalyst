@@ -58,7 +58,7 @@ This command will place the experiment description (`description.md`), Python sc
 1. **Context Checkout**: Run the `create_context` bash command above to retrieve the historical theory folder and new results.
 2. **Review Current Research State**: Read `<CONTEXT_DIR>/theory/theory.md` and additionally `<CONTEXT_DIR>/theory/interpretation_log.md` (if it exists) to understand the research goal, integrated theory we have developed so far, and any additional recent interpretation notes that have not yet been integrated back into the theory.
 3. **Locate and Review Results**:
-   - **Experiments**: Check `<CONTEXT_DIR>/results/experiments/<X_ID>/`. Read `description.md` and carefully inspect the generated files (plots, CSVs, logs, etc.).
+   - **Experiments**: Check `<CONTEXT_DIR>/results/experiments/<X_ID>/`. Read `description.md` and carefully inspect the generated files (plots, CSVs, logs, etc.). Start by reviewing `stderr.log` and `stdout.log` to check if any errors may have occurred.
    - **Literature Searches**: Check `<CONTEXT_DIR>/results/literature/<L_ID>/`. Read `summary.md` to find the summarized literature findings and search insights.
    - **Solution Candidates**: Check `<CONTEXT_DIR>/results/solutions/<U_ID>/`. Read `solution.md` (and any related files) to review the proposed solution candidate. The solution will have been validated through an experiment, mentioned in the `solution.md` file by its experiment ID (`X_...`). Please see the instructions above to obtain the cited experiment ID with its specific setup and results.
 4. **Draft Interpretations**: Draft a new section *for each new result ID* passed as input:
