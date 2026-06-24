@@ -11,6 +11,13 @@ from ..base import run_local_step_if_needed
 logger = logging.getLogger(__name__)
 
 
+APPROACH_PHILOSOPHIES = [
+    "We are taking a conservative research approach, focusing on well-established methods and incremental, well-vetted improvements.",
+    "We are taking a bold research approach, exploring novel ideas and high-risk, high-reward strategies. We prefer novelty over well-established methods, and are willing to take risks in order to achieve breakthroughs.",
+    "We are trying to utilize available literature and prior work as much as possible to inform our research, while still allowing for some original experimentation.",
+]
+
+
 def run_initialize_theories(task: Task) -> Optional[List[str]]:
     """Initializes starter theories for each strand of the workflow.
 
@@ -35,10 +42,13 @@ def run_initialize_theories(task: Task) -> Optional[List[str]]:
 
             # Create theory.md
             theory_file = os.path.join(output_dir, "theory.md")
+            philosophy = APPROACH_PHILOSOPHIES[idx % len(APPROACH_PHILOSOPHIES)]
             with open(theory_file, "w", encoding="utf-8") as f:
                 f.write(
                     "# Starter Theory\n**Research goal:** "
                     + goal.strip()
+                    + "\n\n**Approach philosophy:** "
+                    + philosophy
                     + "\n\nThis is a placeholder theory. No research has been conducted yet.\n"
                 )
 
