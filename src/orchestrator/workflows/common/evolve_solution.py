@@ -381,10 +381,6 @@ def run_evolve_solution_loop(
                     )
                     if ret_id:
                         result_ids.append(ret_id)
-                    else:
-                        raise Exception(
-                            f"execute-proposal-{i}-{idx + 1} did not return experiment_id, literature_id, or solution_id. Result: {res}"
-                        )
                 else:
                     raise Exception(
                         f"Failed to execute proposal {selected_proposals[idx]} in iteration {i}."
