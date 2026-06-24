@@ -19,6 +19,7 @@ You must select and propose one of three types of proposals based on your curren
 
 2. **Literature Search**: 
    - Use this to search existing literature to answer a specific question or explore a topic.
+   - Will perform an online search and download relevant papers when executed.
    - **Required Heading in `proposal.md`**: `# Literature Search Proposal: <title>`
    - **Output Files**: Only `proposal.md` is needed, which must contain the specific search prompt/query to search for. No `script.py` is needed. Also include the given theory ID in the `proposal.md`.
 
