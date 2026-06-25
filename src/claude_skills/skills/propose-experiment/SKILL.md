@@ -14,6 +14,7 @@ You must select and propose one of three types of proposals based on your curren
    - Propose a single, focused experiment that resolves a key knowledge gap, validates an assumption or hypothesis, or tests a promising optimization in the current theory / interpretation log.
    - At the very beginning of experimentation (i.e. if the current theory and interpretation log is still ~empty), it might be best to establish some baselines before trying to explore paths towards the goal.
    - Generally, try to propose an experiment that provides valuable information for moving towards the optimization goal *in the long run*. Notably, this doesn't mean that each individual experiment needs to move towards the goal directly. Rather, prioritize experiments that facilitate learning and exploration and which may help you later on by testing different directions, key assumptions, or ruling out unpromising paths.
+   - Everything else being equal, try to keep experiments efficient. For example, don't unnecessarily repeat previous configurations unless you have a good reason to do so.
    - **Required Heading in `proposal.md`**: `# Experiment Proposal: <title>`
    - **Output Files**: `proposal.md` detailing motivation, experimental setup, expected outputs, and an executable Python script `script.py` set up to run the experiment. Also include the given theory ID in the `proposal.md`.
 
