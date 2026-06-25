@@ -92,10 +92,10 @@ def main():
     except subprocess.TimeoutExpired:
         process.kill()
         exit_code = process.wait()
-        print(
-            f"Error: Experiment timed out after {timeout_secs} seconds.",
-            file=sys.stderr,
-        )
+        timeout_message = f"Error: Experiment timed out after {timeout_secs} seconds."
+        print(timeout_message, file=sys.stderr)
+        with open(stderr_log, "a") as f:
+            f.write(timeout_message + "\n")
         if not args.store_failures:
             sys.exit(124)  # 124 is a common exit code for timeout
         exit_code = 124
