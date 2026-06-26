@@ -941,12 +941,27 @@ def create_context(
             elif for_agent_type == "score-theory-solutions":
                 solutions_root = target_folder / "solutions"
                 solutions_root.mkdir(exist_ok=True)
+                theories_root = target_folder / "theories"
+                theories_root.mkdir(exist_ok=True)
                 for sol_id in from_solutions:
-                    if session.get_metadata("solution", sol_id):
+                    sol_meta = session.get_metadata("solution", sol_id)
+                    if sol_meta:
                         copy_artifact(
                             db_root / "solution" / sol_id,
                             solutions_root / sol_id,
                         )
+                        parent_t = sol_meta.get("parent_theory")
+                        if parent_t:
+                            if not (theories_root / parent_t).exists():
+                                if session.get_metadata("theory", parent_t):
+                                    copy_artifact(
+                                        db_root / "theory" / parent_t,
+                                        theories_root / parent_t,
+                                    )
+                                else:
+                                    raise ValueError(
+                                        f"Parent theory {parent_t!r} for solution {sol_id!r} not found or invisible"
+                                    )
                     else:
                         raise ValueError(f"Solution {sol_id!r} not found or invisible")
             else:
