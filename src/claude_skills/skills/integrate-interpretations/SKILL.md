@@ -71,7 +71,7 @@ Please maintain the following guidelines for the improved theory:
 *If* the input tells you to branch into two distinct theories, do this as follows:
 1. First create the regular updated theory as usual, and save it to the database (this will capture the current state of `<OUTPUT_DIR>/theory.md` at the time).
 2. If any of the new interpretations were contradictory or unclear, consider updating your second theory to express the opposite or alternative view.
-3. Then, most importantly, come up with a second distinct "Research Plan" that is fundamentally different from your first one. Be bold here, and explore less-common approaches. Try to come up with novel ideas that go outside of the obvious directions and which are significantly different from anything tried so far!
+3. Then, most importantly, come up with a second distinct "Research Plan" that is fundamentally different from your first one. Be bold here, and explore less-common approaches. Try to come up with novel ideas that go outside of the obvious directions and which are significantly different from anything tried so far! Consider going back to the drawing board, or taking big high-risk/high-reward bets, rather than just continuing with conservative, incremental steps.
 4. Once you have updated the theory in `<OUTPUT_DIR>/theory.md`, save the second theory to the database as well.
 
 ## Execution Steps
