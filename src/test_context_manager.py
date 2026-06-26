@@ -237,6 +237,10 @@ class TestContextManager(unittest.TestCase):
             # Basic sanity check: target folder should not be empty (unless initialize-theories)
             if agent != "initialize-theories":
                 self.assertTrue(any(target_folder.iterdir()))
+            if agent == "score-theory-solutions":
+                parent_theory_folder = target_folder / "theories" / t_id
+                self.assertTrue(parent_theory_folder.is_dir())
+                self.assertTrue((parent_theory_folder / "theory.md").exists())
 
     def test_transactions(self):
         """Verify transaction isolation and commit."""
