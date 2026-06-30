@@ -52,7 +52,7 @@ Follow the following steps carefully. Do not skip anything.
    - This script will output a JSON object `{<PARENT_THEORY_ID>: {"score": overall_score, "solution": solution_score, "verification_adherence": verification_adherence, "plan_novelty": plan_novelty_score}}`.
 8. **Save parent Theory Scores**: Aggregate the JSON outputs for all theories into a single dictionary, and run:
    ```bash
-   uv run python <SKILL_BASE_DIR>/scripts/context_manager.py rescore_theories '{<THEORY_ID_1>: <THEORY_1_SCORES_OBJECT>, <THEORY_ID_2>: <THEORY_2_SCORES_OBJECT>, ...}'
+   uv run python <SKILL_BASE_DIR>/scripts/context_manager.py rescore_theories --decay_rate 0.4 '{<THEORY_ID_1>: <THEORY_1_SCORES_OBJECT>, <THEORY_ID_2>: <THEORY_2_SCORES_OBJECT>, ...}'
    ```
    - This step is critical! If you don't save the scores to the database, all of your work will be lost!
 9. **Final Output**: Report the list of all solution/theory pairs, their ranks, their individual subscores (solution, verification_adherence and plan_novelty_score), and their final overall scores.

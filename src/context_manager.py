@@ -109,7 +109,7 @@ LOCK_FILENAME = ".lock"
 IGNORE_METADATA_PATTERN = shutil.ignore_patterns("metadata.json")
 
 POPULATION_FILENAME = "population.snapshot"
-SCORE_DECAY_RATE = 0.8
+DEFAULT_SCORE_DECAY_RATE = 0.2
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -1208,7 +1208,6 @@ def fetch_solution(target_folder: Path, solution_id: str) -> None:
         )
 
 
-
 def search_experiments(
     query: str | None = None,
     tags: list[str] | None = None,
@@ -1419,7 +1418,9 @@ def sample_theories(
         return results
 
 
-def rescore_theories(theory_scores: dict[str, dict[str, float]]) -> None:
+def rescore_theories(
+    theory_scores: dict[str, dict[str, float]], decay_rate: float
+) -> None:
     db_root = get_db_path()
     with DatabaseSession(db_root) as session:
         population = session.get_population()
@@ -1446,9 +1447,10 @@ def rescore_theories(theory_scores: dict[str, dict[str, float]]) -> None:
             )
 
         # Step 2: Decay the scores of all remaining organisms
+        decay_factor = 1.0 - decay_rate
         for organism, score in population.organisms:
             if organism.theory_id not in updated_theories:
-                score.score *= SCORE_DECAY_RATE
+                score.score *= decay_factor
 
         session.mark_population_modified()
 
@@ -1858,6 +1860,12 @@ def main(argv: list[str] | None = None) -> None:
         "rescore_theories", help="Submit updated scores for theories"
     )
     sp_rescore.add_argument(
+        "--decay_rate",
+        type=float,
+        default=DEFAULT_SCORE_DECAY_RATE,
+        help="Decay rate to apply to remaining theories.",
+    )
+    sp_rescore.add_argument(
         "theory_score_dict",
         help='Dictionary of theory IDs and their updated scores as a JSON object string (e.g. \'{"theory_id_1": {"score": 0.8, "subscore_1": 0.5, "subscore_2": 0.3}, "theory_id_2": {"score": 0.3, "subscore_1": 0.2, "subscore_2": 0.1} }\'). The score object for each theory must contain at least the `score` field for its overall score.',
     )
@@ -2070,7 +2078,7 @@ def main(argv: list[str] | None = None) -> None:
                 raise ValueError(
                     "theory_score_dict must be a JSON object mapping theory IDs to scores"
                 )
-            rescore_theories(theory_score_dict)
+            rescore_theories(theory_score_dict, decay_rate=args.decay_rate)
 
         elif args.command == "export_theory_population":
             export_theory_population(args.dest_file)

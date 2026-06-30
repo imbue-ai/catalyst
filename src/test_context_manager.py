@@ -381,6 +381,51 @@ class TestContextManager(unittest.TestCase):
         self.assertEqual(len(sampled), 1)
         self.assertIn(sampled[0], [t1, t2])
 
+    def test_rescore_decay(self):
+        """Verify that rescore_theories decays remaining theories correctly."""
+        self.run_cmd("init")
+
+        def store_t(content):
+            d = self.test_dir / f"t_{content.replace(' ', '_')}"
+            d.mkdir(parents=True, exist_ok=True)
+            (d / "theory.md").write_text(content)
+            return (
+                self.run_cmd(
+                    "store_results",
+                    "--from_agent_type",
+                    "write-theory",
+                    "--from_folder",
+                    str(d),
+                )
+                .stdout.strip()
+                .split()[-1]
+            )
+
+        t1 = store_t("Theory 1")
+        t2 = store_t("Theory 2")
+
+        # Set initial scores by rescoring them both
+        scores = {
+            t1: {"score": 1.0},
+            t2: {"score": 1.0},
+        }
+        self.run_cmd("rescore_theories", json.dumps(scores))
+
+        # Rescore only t1 with a default decay rate (0.2), which multiplies remaining (t2) by 1.0 - 0.2 = 0.8
+        self.run_cmd("rescore_theories", json.dumps({t1: {"score": 1.0}}))
+
+        res = self.run_cmd("list", "--type", "theory", "--sort_by", "score", "--json")
+        entries = {e["id"]: e["score"] for e in json.loads(res.stdout)}
+        self.assertAlmostEqual(entries[t2], 0.8)
+
+        # Rescore only t1 again, with an explicit decay_rate of 0.4, which multiplies remaining (t2) by 1.0 - 0.4 = 0.6
+        # t2's score becomes 0.8 * 0.6 = 0.48
+        self.run_cmd("rescore_theories", "--decay_rate", "0.4", json.dumps({t1: {"score": 1.0}}))
+
+        res = self.run_cmd("list", "--type", "theory", "--sort_by", "score", "--json")
+        entries = {e["id"]: e["score"] for e in json.loads(res.stdout)}
+        self.assertAlmostEqual(entries[t2], 0.48)
+
     def test_fetch_helpers(self):
         """Verify fetch_literature and fetch_experiment."""
         self.run_cmd("init")
