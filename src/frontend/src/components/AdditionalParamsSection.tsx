@@ -172,7 +172,7 @@ export function AdditionalParamsSection({
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Root Strands</label>
             <input
-              type="number" min="1" max="10" required
+              type="number" min="1" required
               value={numStrands}
               onChange={e => setNumStrands(parseInt(e.target.value, 10))}
               className={inputClass}
@@ -184,7 +184,7 @@ export function AdditionalParamsSection({
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Evolve Iterations</label>
             <input
-              type="number" min="0" max="100" required
+              type="number" min="0" required
               value={maxIterations}
               onChange={e => setMaxIterations(parseInt(e.target.value, 10))}
               className={inputClass}
@@ -196,7 +196,7 @@ export function AdditionalParamsSection({
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Number of Proposals</label>
             <input
-              type="number" min="1" max="20" required
+              type="number" min="1" required
               value={numProposals}
               onChange={e => setNumProposals(parseInt(e.target.value, 10))}
               className={inputClass}
@@ -208,7 +208,7 @@ export function AdditionalParamsSection({
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Num Parents</label>
             <input
-              type="number" min="1" max="10" required
+              type="number" min="1" required
               value={numParents}
               onChange={e => setNumParents(parseInt(e.target.value, 10))}
               className={inputClass}
@@ -220,7 +220,7 @@ export function AdditionalParamsSection({
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Executions per Iteration</label>
             <input
-              type="number" min="1" max="10" required
+              type="number" min="1" required
               value={numExecutionsPerIteration}
               onChange={e => setNumExecutionsPerIteration(parseInt(e.target.value, 10))}
               className={inputClass}
@@ -232,7 +232,7 @@ export function AdditionalParamsSection({
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Execution Cost</label>
             <input
-              type="number" min="1" max="5" required
+              type="number" min="1" required
               value={executionCost}
               onChange={e => setExecutionCost(parseInt(e.target.value, 10))}
               className={inputClass}
@@ -244,7 +244,7 @@ export function AdditionalParamsSection({
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Scoring Interval</label>
             <input
-              type="number" min="1" max="100" required
+              type="number" min="1" required
               value={rescoreInterval}
               onChange={e => setRescoreInterval(parseInt(e.target.value, 10))}
               className={inputClass}
@@ -256,7 +256,7 @@ export function AdditionalParamsSection({
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Interpretations</label>
             <input
-              type="number" min="1" max="100" required
+              type="number" min="1" required
               value={numExtraInterpretations}
               onChange={e => setNumExtraInterpretations(parseInt(e.target.value, 10))}
               className={inputClass}
@@ -268,7 +268,7 @@ export function AdditionalParamsSection({
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Scores</label>
             <input
-              type="number" min="0" max="100" required
+              type="number" min="0" required
               value={numExtraScores}
               onChange={e => setNumExtraScores(parseInt(e.target.value, 10))}
               className={inputClass}
@@ -314,7 +314,7 @@ export function AdditionalParamsSection({
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Number of Strands</label>
             <input
-              type="number" min="1" max="10" required
+              type="number" min="1" required
               value={numStrands}
               onChange={e => setNumStrands(parseInt(e.target.value, 10))}
               className={inputClass}
@@ -326,7 +326,7 @@ export function AdditionalParamsSection({
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Iterations</label>
             <input
-              type="number" min="0" max="100" required
+              type="number" min="0" required
               value={maxIterations}
               onChange={e => setMaxIterations(parseInt(e.target.value, 10))}
               className={inputClass}
@@ -338,7 +338,7 @@ export function AdditionalParamsSection({
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Executions per Iteration</label>
             <input
-              type="number" min="1" max="10" required
+              type="number" min="1" required
               value={numExecutionsPerIteration}
               onChange={e => setNumExecutionsPerIteration(parseInt(e.target.value, 10))}
               className={inputClass}
@@ -350,7 +350,7 @@ export function AdditionalParamsSection({
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Execution Cost</label>
             <input
-              type="number" min="1" max="5" required
+              type="number" min="1" required
               value={executionCost}
               onChange={e => setExecutionCost(parseInt(e.target.value, 10))}
               className={inputClass}
@@ -362,7 +362,7 @@ export function AdditionalParamsSection({
           <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
             <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Integration Interval</label>
             <input
-              type="number" min="1" max="10" required
+              type="number" min="1" required
               value={integrationInterval}
               onChange={e => setIntegrationInterval(parseInt(e.target.value, 10))}
               className={inputClass}
@@ -380,7 +380,7 @@ export function AdditionalParamsSection({
         <div className="col-span-1">
           <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Root Theories</label>
           <input
-            type="number" min="1" max="20" required
+            type="number" min="1" required
             value={numRootTheories}
             onChange={e => setNumRootTheories(parseInt(e.target.value, 10))}
             className={inputClass}
@@ -392,7 +392,7 @@ export function AdditionalParamsSection({
         <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
           <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Refinements</label>
           <input
-            type="number" min="0" max="10" required
+            type="number" min="0" required
             value={maxRefinements}
             onChange={e => setMaxRefinements(parseInt(e.target.value, 10))}
             className={inputClass}
@@ -404,7 +404,7 @@ export function AdditionalParamsSection({
         <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
           <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Max Iterations</label>
           <input
-            type="number" min="0" max="100" required
+            type="number" min="0" required
             value={maxIterations}
             onChange={e => setMaxIterations(parseInt(e.target.value, 10))}
             className={inputClass}
@@ -416,7 +416,7 @@ export function AdditionalParamsSection({
         <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
           <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Number of Strands</label>
           <input
-            type="number" min="1" max="10" required
+            type="number" min="1" required
             value={numStrands}
             onChange={e => setNumStrands(parseInt(e.target.value, 10))}
             className={inputClass}
@@ -428,7 +428,7 @@ export function AdditionalParamsSection({
         <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
           <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Executions per Iteration</label>
           <input
-            type="number" min="1" max="10" required
+            type="number" min="1" required
             value={numExecutionsPerIteration}
             onChange={e => setNumExecutionsPerIteration(parseInt(e.target.value, 10))}
             className={inputClass}
@@ -440,7 +440,7 @@ export function AdditionalParamsSection({
         <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
           <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Execution Cost</label>
           <input
-            type="number" min="1" max="5" required
+            type="number" min="1" required
             value={executionCost}
             onChange={e => setExecutionCost(parseInt(e.target.value, 10))}
             className={inputClass}
@@ -452,7 +452,7 @@ export function AdditionalParamsSection({
         <div className={useRestrictedWidths ? "w-full md:w-1/3" : "col-span-1"}>
           <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Integration Interval</label>
           <input
-            type="number" min="1" max="10" required
+            type="number" min="1" required
             value={integrationInterval}
             onChange={e => setIntegrationInterval(parseInt(e.target.value, 10))}
             className={inputClass}
@@ -466,7 +466,7 @@ export function AdditionalParamsSection({
             <div className="col-span-1">
               <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Evolve Iterations</label>
               <input
-                type="number" min="0" max="10" required
+                type="number" min="0" required
                 value={evolveIterations}
                 onChange={e => setEvolveIterations(parseInt(e.target.value, 10))}
                 className={inputClass}
@@ -477,7 +477,7 @@ export function AdditionalParamsSection({
             <div className="col-span-1">
               <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Num Parents</label>
               <input
-                type="number" min="1" max="10" required
+                type="number" min="1" required
                 value={numParents}
                 onChange={e => setNumParents(parseInt(e.target.value, 10))}
                 className={inputClass}
@@ -510,7 +510,7 @@ export function AdditionalParamsSection({
             <div className="col-span-1">
               <label className="block text-[10px] font-black mb-2 tracking-widest text-gray-400">Extra Scores</label>
               <input
-                type="number" min="0" max="10" required
+                type="number" min="0" required
                 value={numExtraScores}
                 onChange={e => setNumExtraScores(parseInt(e.target.value, 10))}
                 className={inputClass}
