@@ -133,6 +133,10 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
     setPowerWeight,
     adherenceWeight,
     setAdherenceWeight,
+    pastPerformanceWeight,
+    setPastPerformanceWeight,
+    futurePotentialWeight,
+    setFuturePotentialWeight,
     generateIntermediateResearchSummaries,
     setGenerateIntermediateResearchSummaries,
     numProposals,
@@ -274,7 +278,10 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
           correctness_weight: correctnessWeight,
           power_weight: powerWeight,
           adherence_weight: adherenceWeight
-        } : undefined,
+        } : (activeTab === 'solve-verifiable-goal' ? {
+          past_performance_weight: pastPerformanceWeight,
+          future_potential_weight: futurePotentialWeight
+        } : undefined),
         category_overrides: cleanOverridesForApi(categoryOverrides),
         file: selectedFile || undefined
       })
@@ -590,13 +597,18 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
                         setBranchProb={setBranchProb}
                         numProposals={numProposals}
                         setNumProposals={setNumProposals}
-                        showScoringWeights={isEvolve}
+                        showScoringWeights={isEvolve || activeTab === 'solve-verifiable-goal'}
+                        showVerifiableGoalScoringWeights={activeTab === 'solve-verifiable-goal'}
                         correctnessWeight={correctnessWeight}
                         setCorrectnessWeight={setCorrectnessWeight}
                         powerWeight={powerWeight}
                         setPowerWeight={setPowerWeight}
                         adherenceWeight={adherenceWeight}
                         setAdherenceWeight={setAdherenceWeight}
+                        pastPerformanceWeight={pastPerformanceWeight}
+                        setPastPerformanceWeight={setPastPerformanceWeight}
+                        futurePotentialWeight={futurePotentialWeight}
+                        setFuturePotentialWeight={setFuturePotentialWeight}
                         generateIntermediateResearchSummaries={generateIntermediateResearchSummaries}
                         setGenerateIntermediateResearchSummaries={setGenerateIntermediateResearchSummaries}
                       >

@@ -277,13 +277,13 @@ class TestMngrAgentRunner(unittest.TestCase):
         self.assertEqual(assistant_text, '{"score": 0.8}')
 
     def test_theory_scoring_weights_propagation(self):
-
-
         runner = ClaudeAgentRunner()
         weights = TheoryScoringWeights(
             correctness_weight=0.1,
             power_weight=0.5,
             adherence_weight=0.9,
+            past_performance_weight=0.8,
+            future_potential_weight=0.3,
         )
         common_env = runner.build_common_environment_variables(
             env_folder="/tmp",
@@ -294,6 +294,21 @@ class TestMngrAgentRunner(unittest.TestCase):
         self.assertEqual(common_env["CATALYST_SCORING_CORRECTNESS_WEIGHT"], "0.1")
         self.assertEqual(common_env["CATALYST_SCORING_POWER_WEIGHT"], "0.5")
         self.assertEqual(common_env["CATALYST_SCORING_ADHERENCE_WEIGHT"], "0.9")
+        self.assertEqual(common_env["CATALYST_SCORING_PAST_PERFORMANCE_WEIGHT"], "0.8")
+        self.assertEqual(common_env["CATALYST_SCORING_FUTURE_POTENTIAL_WEIGHT"], "0.3")
+
+        # Verify None values do not propagate env vars
+        empty_weights = TheoryScoringWeights()
+        common_env_empty = runner.build_common_environment_variables(
+            env_folder="/tmp",
+            tx_id="tx_123",
+            theory_scoring_weights=empty_weights,
+        )
+        self.assertNotIn("CATALYST_SCORING_CORRECTNESS_WEIGHT", common_env_empty)
+        self.assertNotIn("CATALYST_SCORING_POWER_WEIGHT", common_env_empty)
+        self.assertNotIn("CATALYST_SCORING_ADHERENCE_WEIGHT", common_env_empty)
+        self.assertNotIn("CATALYST_SCORING_PAST_PERFORMANCE_WEIGHT", common_env_empty)
+        self.assertNotIn("CATALYST_SCORING_FUTURE_POTENTIAL_WEIGHT", common_env_empty)
 
         # Verify validation bounds ge=0.0, le=1.0
         with self.assertRaises(ValidationError):
@@ -309,3 +324,14 @@ class TestMngrAgentRunner(unittest.TestCase):
                 power_weight=0.5,
                 adherence_weight=0.9,
             )
+
+        with self.assertRaises(ValidationError):
+            TheoryScoringWeights(
+                past_performance_weight=1.2,
+            )
+
+        with self.assertRaises(ValidationError):
+            TheoryScoringWeights(
+                future_potential_weight=-0.05,
+            )
+

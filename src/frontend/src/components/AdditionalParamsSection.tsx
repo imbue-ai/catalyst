@@ -52,6 +52,14 @@ interface AdditionalParamsSectionProps {
   adherenceWeight?: number;
   setAdherenceWeight?: (v: number) => void;
 
+  pastPerformanceWeight?: number;
+  setPastPerformanceWeight?: (v: number) => void;
+
+  futurePotentialWeight?: number;
+  setFuturePotentialWeight?: (v: number) => void;
+
+  showVerifiableGoalScoringWeights?: boolean;
+
   showGenerateIntermediateResearchSummaries?: boolean;
   generateIntermediateResearchSummaries?: boolean;
   setGenerateIntermediateResearchSummaries?: (v: boolean) => void;
@@ -134,6 +142,14 @@ export function AdditionalParamsSection({
   adherenceWeight,
   setAdherenceWeight,
 
+  pastPerformanceWeight,
+  setPastPerformanceWeight,
+
+  futurePotentialWeight,
+  setFuturePotentialWeight,
+
+  showVerifiableGoalScoringWeights,
+
   showGenerateIntermediateResearchSummaries,
   generateIntermediateResearchSummaries,
   setGenerateIntermediateResearchSummaries,
@@ -164,6 +180,95 @@ export function AdditionalParamsSection({
 }: AdditionalParamsSectionProps) {
   const inputClass = "w-full border-2 border-black p-2 outline-none text-sm font-bold bg-white"
   const selectClass = "w-full border-2 border-black p-2 outline-none text-sm font-bold bg-white cursor-pointer"
+
+  const renderScoringWeights = () => {
+    if (!showScoringWeights) return null;
+    return (
+      <div className="col-span-full border-t border-dashed border-gray-200 pt-6 mt-2">
+        <h4 className="text-xs font-black tracking-widest text-black mb-4">Theory Scoring Weights</h4>
+        {showVerifiableGoalScoringWeights ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {setPastPerformanceWeight && pastPerformanceWeight !== undefined && (
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black tracking-widest text-gray-400">Past Performance</label>
+                  <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{pastPerformanceWeight.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range" min="0" max="1" step="0.05"
+                  value={pastPerformanceWeight}
+                  onChange={e => setPastPerformanceWeight(parseFloat(e.target.value))}
+                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                />
+              </div>
+            )}
+
+            {setFuturePotentialWeight && futurePotentialWeight !== undefined && (
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black tracking-widest text-gray-400">Future Potential</label>
+                  <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{futurePotentialWeight.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range" min="0" max="1" step="0.05"
+                  value={futurePotentialWeight}
+                  onChange={e => setFuturePotentialWeight(parseFloat(e.target.value))}
+                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                />
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {setCorrectnessWeight && correctnessWeight !== undefined && (
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black tracking-widest text-gray-400">Correctness</label>
+                  <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{correctnessWeight.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range" min="0" max="1" step="0.05"
+                  value={correctnessWeight}
+                  onChange={e => setCorrectnessWeight(parseFloat(e.target.value))}
+                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                />
+              </div>
+            )}
+
+            {setPowerWeight && powerWeight !== undefined && (
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black tracking-widest text-gray-400">Explanatory and Predictive Power</label>
+                  <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{powerWeight.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range" min="0" max="1" step="0.05"
+                  value={powerWeight}
+                  onChange={e => setPowerWeight(parseFloat(e.target.value))}
+                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                />
+              </div>
+            )}
+
+            {setAdherenceWeight && adherenceWeight !== undefined && (
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black tracking-widest text-gray-400">Instruction Adherence</label>
+                  <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{adherenceWeight.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range" min="0" max="1" step="0.05"
+                  value={adherenceWeight}
+                  onChange={e => setAdherenceWeight(parseFloat(e.target.value))}
+                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
 
   if (showVerifiableGoalEvolveParams) {
     return (
@@ -302,6 +407,7 @@ export function AdditionalParamsSection({
             </label>
           </div>
         )}
+        {renderScoringWeights()}
         {children}
       </div>
     )
@@ -369,6 +475,7 @@ export function AdditionalParamsSection({
             />
           </div>
         )}
+        {renderScoringWeights()}
         {children}
       </div>
     )
@@ -550,57 +657,7 @@ export function AdditionalParamsSection({
         </div>
       )}
 
-      {showScoringWeights && (
-        <div className="col-span-full border-t border-dashed border-gray-200 pt-6 mt-2">
-          <h4 className="text-xs font-black tracking-widest text-black mb-4">Theory Scoring Weights</h4>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {setCorrectnessWeight && correctnessWeight !== undefined && (
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-[10px] font-black tracking-widest text-gray-400">Correctness</label>
-                  <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{correctnessWeight.toFixed(2)}</span>
-                </div>
-                <input
-                  type="range" min="0" max="1" step="0.05"
-                  value={correctnessWeight}
-                  onChange={e => setCorrectnessWeight(parseFloat(e.target.value))}
-                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
-                />
-              </div>
-            )}
-
-            {setPowerWeight && powerWeight !== undefined && (
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-[10px] font-black tracking-widest text-gray-400">Explanatory and Predictive Power</label>
-                  <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{powerWeight.toFixed(2)}</span>
-                </div>
-                <input
-                  type="range" min="0" max="1" step="0.05"
-                  value={powerWeight}
-                  onChange={e => setPowerWeight(parseFloat(e.target.value))}
-                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
-                />
-              </div>
-            )}
-
-            {setAdherenceWeight && adherenceWeight !== undefined && (
-              <div>
-                <div className="flex justify-between items-center mb-2">
-                  <label className="text-[10px] font-black tracking-widest text-gray-400">Instruction Adherence</label>
-                  <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{adherenceWeight.toFixed(2)}</span>
-                </div>
-                <input
-                  type="range" min="0" max="1" step="0.05"
-                  value={adherenceWeight}
-                  onChange={e => setAdherenceWeight(parseFloat(e.target.value))}
-                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
-                />
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+      {renderScoringWeights()}
       {children}
     </div>
   )

@@ -84,9 +84,12 @@ class Addon(BaseModel):
 
 
 class TheoryScoringWeights(BaseModel):
-    correctness_weight: float = Field(..., ge=0.0, le=1.0)
-    power_weight: float = Field(..., ge=0.0, le=1.0)
-    adherence_weight: float = Field(..., ge=0.0, le=1.0)
+    correctness_weight: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    power_weight: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    adherence_weight: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    past_performance_weight: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    future_potential_weight: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+
 
 
 class AgentSettings(BaseModel):

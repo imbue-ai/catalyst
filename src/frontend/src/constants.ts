@@ -26,6 +26,8 @@ export const DEFAULT_BRANCH_PROB = 0.5;
 export const DEFAULT_CORRECTNESS_WEIGHT = 0.9;
 export const DEFAULT_POWER_WEIGHT = 0.7;
 export const DEFAULT_ADHERENCE_WEIGHT = 0.5;
+export const DEFAULT_PAST_PERFORMANCE_WEIGHT = 0.8;
+export const DEFAULT_FUTURE_POTENTIAL_WEIGHT = 0.5;
 
 // Centralized regex for matching artifact IDs (format: [ELTRXPSOIU]_YYYYMMDD_HHMMSS_ffffff)
 export const ARTIFACT_ID_PATTERN = '[ELTRXPSOIU]_\\d{8}_\\d{6}_[a-f0-9]{6}';

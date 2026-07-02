@@ -11,6 +11,8 @@ import {
   DEFAULT_CORRECTNESS_WEIGHT,
   DEFAULT_POWER_WEIGHT,
   DEFAULT_ADHERENCE_WEIGHT,
+  DEFAULT_PAST_PERFORMANCE_WEIGHT,
+  DEFAULT_FUTURE_POTENTIAL_WEIGHT,
   DEFAULT_NUM_STRANDS,
   DEFAULT_NUM_EXECUTIONS_PER_ITERATION,
   DEFAULT_EXECUTION_COST,
@@ -43,6 +45,8 @@ export function useWorkflowParams() {
   const [correctnessWeight, setCorrectnessWeight] = useState(DEFAULT_CORRECTNESS_WEIGHT)
   const [powerWeight, setPowerWeight] = useState(DEFAULT_POWER_WEIGHT)
   const [adherenceWeight, setAdherenceWeight] = useState(DEFAULT_ADHERENCE_WEIGHT)
+  const [pastPerformanceWeight, setPastPerformanceWeight] = useState(DEFAULT_PAST_PERFORMANCE_WEIGHT)
+  const [futurePotentialWeight, setFuturePotentialWeight] = useState(DEFAULT_FUTURE_POTENTIAL_WEIGHT)
   const [generateIntermediateResearchSummaries, setGenerateIntermediateResearchSummaries] = useState(true)
 
   return {
@@ -86,6 +90,10 @@ export function useWorkflowParams() {
     setPowerWeight,
     adherenceWeight,
     setAdherenceWeight,
+    pastPerformanceWeight,
+    setPastPerformanceWeight,
+    futurePotentialWeight,
+    setFuturePotentialWeight,
     generateIntermediateResearchSummaries,
     setGenerateIntermediateResearchSummaries
   }

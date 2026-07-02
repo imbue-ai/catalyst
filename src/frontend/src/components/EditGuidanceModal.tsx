@@ -17,12 +17,17 @@ export function EditGuidanceModal({ onClose, onSave, initialGuidance, initialWei
   const [correctnessWeight, setCorrectnessWeight] = useState(initialWeights?.correctness_weight ?? 0.9)
   const [powerWeight, setPowerWeight] = useState(initialWeights?.power_weight ?? 0.7)
   const [adherenceWeight, setAdherenceWeight] = useState(initialWeights?.adherence_weight ?? 0.5)
+  const [pastPerformanceWeight, setPastPerformanceWeight] = useState(initialWeights?.past_performance_weight ?? 0.8)
+  const [futurePotentialWeight, setFuturePotentialWeight] = useState(initialWeights?.future_potential_weight ?? 0.5)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const handleSubmit = async () => {
     setIsSubmitting(true)
     try {
-      await onSave(guidance, {
+      await onSave(guidance, isVerifiableGoal ? {
+        past_performance_weight: pastPerformanceWeight,
+        future_potential_weight: futurePotentialWeight,
+      } : {
         correctness_weight: correctnessWeight,
         power_weight: powerWeight,
         adherence_weight: adherenceWeight,
@@ -41,7 +46,7 @@ export function EditGuidanceModal({ onClose, onSave, initialGuidance, initialWei
         <h2 className="text-2xl font-black tracking-tighter text-black mb-2">Provide Guidance</h2>
         <p className="text-xs font-bold text-gray-700 mb-2 leading-relaxed">
           Provide additional guidance to the agents within this task. E.g. direction to focus on, type of desired theory, literature to consider, etc.
-          {!isVerifiableGoal && " You can also adjust the component weights of the theory scores used in evolution-based workflows."}
+          You can also adjust the component weights of the theory scores used in evolution-based and verifiable-goal workflows.
         </p>
         <p className="text-xs font-bold text-gray-400 mb-6 tracking-tight leading-relaxed">
           Any changes will only apply to future steps that are not yet running.
@@ -87,7 +92,38 @@ export function EditGuidanceModal({ onClose, onSave, initialGuidance, initialWei
           }`}
         />
 
-        {!isVerifiableGoal && (
+        {isVerifiableGoal ? (
+          <div className="mb-8">
+            <h4 className="text-xs font-black tracking-widest text-black mb-4">Theory Scoring Weights</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black tracking-widest text-gray-400">Past Performance</label>
+                  <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{pastPerformanceWeight.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range" min="0" max="1" step="0.05"
+                  value={pastPerformanceWeight}
+                  onChange={e => setPastPerformanceWeight(parseFloat(e.target.value))}
+                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                />
+              </div>
+
+              <div>
+                <div className="flex justify-between items-center mb-2">
+                  <label className="text-[10px] font-black tracking-widest text-gray-400">Future Potential</label>
+                  <span className="text-xs font-black bg-black text-white px-2 py-0.5 rounded-sm">{futurePotentialWeight.toFixed(2)}</span>
+                </div>
+                <input
+                  type="range" min="0" max="1" step="0.05"
+                  value={futurePotentialWeight}
+                  onChange={e => setFuturePotentialWeight(parseFloat(e.target.value))}
+                  className="w-full h-1 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-black"
+                />
+              </div>
+            </div>
+          </div>
+        ) : (
           <div className="mb-8">
             <h4 className="text-xs font-black tracking-widest text-black mb-4">Theory Scoring Weights</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">

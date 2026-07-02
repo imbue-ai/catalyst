@@ -56,9 +56,11 @@ export interface Addon {
 }
 
 export interface TheoryScoringWeights {
-  correctness_weight: number;
-  power_weight: number;
-  adherence_weight: number;
+  correctness_weight?: number;
+  power_weight?: number;
+  adherence_weight?: number;
+  past_performance_weight?: number;
+  future_potential_weight?: number;
 }
 
 export interface Task {

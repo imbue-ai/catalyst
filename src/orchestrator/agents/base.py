@@ -73,15 +73,26 @@ class AgentRunner(ABC):
         if tx_id:
             env["CONTEXT_TRANSACTION_ID"] = tx_id
         if theory_scoring_weights is not None:
-            env["CATALYST_SCORING_CORRECTNESS_WEIGHT"] = str(
-                theory_scoring_weights.correctness_weight
-            )
-            env["CATALYST_SCORING_POWER_WEIGHT"] = str(
-                theory_scoring_weights.power_weight
-            )
-            env["CATALYST_SCORING_ADHERENCE_WEIGHT"] = str(
-                theory_scoring_weights.adherence_weight
-            )
+            if theory_scoring_weights.correctness_weight is not None:
+                env["CATALYST_SCORING_CORRECTNESS_WEIGHT"] = str(
+                    theory_scoring_weights.correctness_weight
+                )
+            if theory_scoring_weights.power_weight is not None:
+                env["CATALYST_SCORING_POWER_WEIGHT"] = str(
+                    theory_scoring_weights.power_weight
+                )
+            if theory_scoring_weights.adherence_weight is not None:
+                env["CATALYST_SCORING_ADHERENCE_WEIGHT"] = str(
+                    theory_scoring_weights.adherence_weight
+                )
+            if theory_scoring_weights.past_performance_weight is not None:
+                env["CATALYST_SCORING_PAST_PERFORMANCE_WEIGHT"] = str(
+                    theory_scoring_weights.past_performance_weight
+                )
+            if theory_scoring_weights.future_potential_weight is not None:
+                env["CATALYST_SCORING_FUTURE_POTENTIAL_WEIGHT"] = str(
+                    theory_scoring_weights.future_potential_weight
+                )
             env["CATALYST_EXPERIMENT_TIMEOUT_SECS"] = str(EXPERIMENT_TIMEOUT_SECS)
             env["CATALYST_EXPERIMENT_RLIMIT_AS"] = str(EXPERIMENT_RLIMIT_AS)
         return env
