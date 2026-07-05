@@ -63,6 +63,16 @@ These skills focus on a single statement (hypothesis, theorem, lemma, etc.) with
 - `/falsify-hypothesis`: Attempts to find logical or empirical evidence against a specific hypothesis within a theory.
 - `/refine-hypothesis`: Improves a specific hypothesis based on one or more falsification reports.
 
+### Solving Verifiable Goals
+These skills are utilized during the verifiable goal-solving workflows.
+
+- `/propose-experiment`: Designs and proposes the next step, which can be a data-gathering experiment, a literature search, or a concrete solution candidate.
+- `/execute-proposal`: Evaluates and executes/delegates a given proposal (running experiment scripts, invoking literature searches, or executing solution verification scripts).
+- `/interpret-result`: Interprets raw experiment outputs and verification results, translating findings into the interpretation log.
+- `/integrate-interpretations`: Reconciles recent logs and integrates interpretations back into the main theory. Supports branching into distinct alternative theories.
+- `/score-theory-solutions`: Evaluates, ranks, and scores solution candidates relative to the research goal, updating parent theory scores.
+- `/summarize-goal-progress`: Summarizes the overall progress and trajectory of the verifiable goal-solving task.
+
 ## Context Management
 
 The `context_manager.py` script is the core of Imbue Catalyst's data persistence. It manages the `.ai-scientist-db` directory.
@@ -84,5 +94,7 @@ All results are stored in the `.ai-scientist-db` directory:
 - `experiment/`: Descriptions and results of experiments.
 - `prediction/`: Predicted outcomes of experiments.
 - `summary/`: Research summary reports from the `summarize-research` skill.
+- `proposals/`: Proposed steps (experiments, searches, or solutions) with their `proposal.md` files.
+- `solutions/`: Candidate solution files and programmatic verification summaries (`solution.md`).
 
 Each entry is stored in a subdirectory named after its unique ID and contains a markdown file and a `metadata.json` file.

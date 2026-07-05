@@ -67,26 +67,59 @@ Imports an existing theory from a file into the system.
     1.  `summarize-title`: Summarizes the imported theory.
     2.  `import-theory`: Processes and stores the theory in the database.
 
+### `solve-verifiable-goal`
+Autonomously solves a given verifiable goal or optimizes a measurable metric using a population-based evolutionary process.
+- **Inputs**:
+    - `goal`: A detailed description of the verifiable goal to solve.
+    - `verification_instructions`: Instructions specifying how to programmatically evaluate and verify a solution candidate.
+    - `max_iterations`: The maximum number of evolution iterations (default: 20).
+    - `rescore_interval`: How frequently parent theories and solution candidates are rescored (default: 5).
+    - `generate_intermediate_research_summaries`: Whether to generate goal progress summaries after each iteration (default: true).
+- **Stages**:
+    1. `summarize-title`: Summarizes the research goal.
+    2. `summarize-goal-progress`: Sets up an initial overview of the goal and parameters.
+    3. `initialize-theories`: Generates starter theories detailing alternative strategies for achieving the goal.
+    4. `initialize-solutions`: Creates initial placeholder solution candidates.
+    5. `evolve-solution-loop`: Iteratively proposes next steps, executes proposals (experiments, literature searches, or solution verifications), interprets results, integrates insights into theories, and rescores/ranks theories and solutions.
+
+### `solve-verifiable-goal-multi-strand`
+Autonomously solves a verifiable research goal by running multiple parallel research strands that compete for experiment bandwidth and periodically integrate their findings.
+- **Inputs**:
+    - `goal`: A detailed description of the verifiable goal to solve.
+    - `verification_instructions`: Instructions specifying how to programmatically evaluate and verify a solution candidate.
+    - `num_strands`: The number of parallel research strands to maintain.
+    - `max_iterations`: The maximum number of iterations.
+    - `integration_interval`: Iteration interval for integrating separate research strands.
+- **Stages**:
+    1. `summarize-title`: Summarizes the research goal.
+    2. `initialize-theories`: Generates alternative starter theories.
+    3. `solve-goal-loop`: Runs parallel strands that independently perform proposal-execution-interpretation-integration cycles, periodically reconciling and merging findings.
+
 ## Add-on Steps
 
 Add-ons are individual steps that can be added to a task or run as part of a loop.
 
-| Add-on | Description | Inputs |
-| :--- | :--- | :--- |
-| `streamline-theory` | Simplifies or focuses a theory. | `theory_id`, `direction` (optional) |
-| `review-theory` | Critically evaluates a theory. | `theory_id` |
-| `refine-theory` | Updates a theory based on a review. | `theory_id`, `lit_review_id` (optional) |
-| `refinement-loop` | Runs review and refinement iteratively. | `theory_id`, `max_refinements`, `apply_expansions` |
-| `evolve-loop` | Runs a population-based evolution loop. | `evolve_iterations`, `num_parents`, `max_streamline_prob`, `write_different_prob`, `num_extra_scores`, `apply_expansions` |
-| `polish-theory` | Improves the writing and formatting of a theory. | `theory_id` |
-| `refine-hypothesis` | Refines a specific hypothesis within a theory. | `theory_id`, `lit_review_id` (optional) |
-| `falsify-hypothesis` | Attempts to find evidence against a hypothesis. | `theory_id`, `hypothesis_title` |
-| `suggest-expansions` | Suggests ways to expand the scope of a theory. | `theory_id` |
-| `expand-theory` | Expands a theory based on suggestions. | `theory_id`, `lit_review_id` (optional) |
-| `review-adherence` | Reviews a theory's adherence to guidance, constraints, and explanatory coverage. | `theory_id` |
-| `improve-adherence` | Updates and refines a theory based on adherence review findings. | `theory_id`, `review_id`, `lit_review_id` (optional) |
-| `streamline-theory-variations` | Generates multiple streamlined variations. | `theory_id` |
-| `edit-theory` | Directly edits a theory. | `theory_id` |
-| `score-theories` | Assigns scores and ranks to theories. | `theory_ids` |
-| `write-different-theory` | Writes a theory exploring a different approach than the provided previous theories. | `theory_ids`, `lit_review_id` (optional) |
-| `summarize-research` | Summarizes the current research status. | None |
+| Add-on | Description | Inputs | Applies To |
+| :--- | :--- | :--- | :--- |
+| `streamline-theory` | Simplifies or focuses a theory. | `theory_id`, `direction` (optional) | Theory Development |
+| `review-theory` | Critically evaluates a theory. | `theory_id` | Theory Development |
+| `refine-theory` | Updates a theory based on a review. | `theory_id`, `lit_review_id` (optional) | Theory Development |
+| `refinement-loop` | Runs review and refinement iteratively. | `theory_id`, `max_refinements`, `apply_expansions` | Theory Development |
+| `evolve-loop` | Runs a population-based evolution loop. | `evolve_iterations`, `num_parents`, `max_streamline_prob`, `write_different_prob`, `num_extra_scores`, `apply_expansions` | Theory Development |
+| `polish-theory` | Improves the writing and formatting of a theory. | `theory_id` | Theory Development |
+| `refine-hypothesis` | Refines a specific hypothesis within a theory. | `theory_id`, `lit_review_id` (optional) | Theory Development |
+| `falsify-hypothesis` | Attempts to find evidence against a hypothesis. | `theory_id`, `hypothesis_title` | Theory Development |
+| `suggest-expansions` | Suggests ways to expand the scope of a theory. | `theory_id` | Theory Development |
+| `expand-theory` | Expands a theory based on suggestions. | `theory_id`, `lit_review_id` (optional) | Theory Development |
+| `review-adherence` | Reviews a theory's adherence to guidance, constraints, and explanatory coverage. | `theory_id` | Theory Development |
+| `improve-adherence` | Updates and refines a theory based on adherence review findings. | `theory_id`, `review_id`, `lit_review_id` (optional) | Theory Development |
+| `streamline-theory-variations` | Generates multiple streamlined variations. | `theory_id` | Theory Development |
+| `edit-theory` | Directly edits a theory. | `theory_id` | Both Modalities |
+| `score-theories` | Assigns scores and ranks to theories. | `theory_ids` | Theory Development |
+| `write-different-theory` | Writes a theory exploring a different approach than the provided previous theories. | `theory_ids`, `lit_review_id` (optional) | Theory Development |
+| `summarize-research` | Summarizes the current research status. | None | Both Modalities |
+| `summarize-goal-progress` | Summarizes progress towards a verifiable goal. | None | Verifiable Goals |
+| `solve-goal-loop` | Runs parallel research strands to solve a verifiable goal. | `theory_ids`, `max_iterations`, `num_executions_per_iteration`, `execution_cost`, `integration_interval` | Verifiable Goals |
+| `evolve-solution-loop` | Runs a population-based evolutionary loop to optimize a solution candidate. | `max_iterations`, `num_parents`, `num_extra_scores`, `rescore_interval`, `num_executions_per_iteration`, `execution_cost`, `branch_prob`, `num_proposals` | Verifiable Goals |
+| `generate-solution` | Proposes and refines a new solution candidate based on active theories. | `theory_id` | Verifiable Goals |
+| `score-solutions` | Scores, ranks, and compares multiple solution candidates against the goal. | `solution_ids` | Verifiable Goals |

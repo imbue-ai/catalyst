@@ -4,41 +4,47 @@ A tool for semi-autonomous scientific research and discovery.
 
 ![Catalyst Logo](src/assets/catalyst-small.png)
 
-## What Imbue Catalyst Can Do
+### What Imbue Catalyst Can Do
 
-Imbue Catalyst provides three main workflows:
-1. Autonomously develop a theory to explain a given phenomenon
-2. Take a user-provided theory draft, fill in any gaps, and auto-correct mistakes and oversights
-3. A menu of pre-defined operations to choose from: Review a theory for correctness, propose corrections and refinements, perform experimental validations, etc.
+Imbue Catalyst supports two core research modalities:
+1. **Explaining Phenomena**: Autonomously develops a theory to explain an observed phenomenon. It also supports taking a user-provided theory draft, filling in gaps, and auto-correcting mistakes and oversights.
+2. **Verifiable Goal Solving/Optimization**: Autonomously solves a research goal that can be verified through code, or optimizes a measurable metric.
+
+In addition to these high-level workflows, Imbue Catalyst provides a menu of pre-defined manual operations (add-on steps) such as reviewing a theory for correctness, proposing refinements, or evaluating solution candidates.
 
 ### Suitable Problems
 
-Imbue Catalyst helps develop explanations for observable phenomena.
-
-Suitable problems for the autonomous theory development workflow are of the shape:
+#### 1. Explaining Phenomena
+This modality helps develop explanations for observable phenomena. Suitable problems are typically of the shape:
 * "When we do Y, we observe X. What is the mechanism that causes X?"
 * "We sometimes see X while doing Y. Under what conditions does X happen, and why?"
 * "Explain what happens when we do X."
 
 In short, it aims to answer "Why" questions that lead to testable predictions.
 
-The current implementation of Imbue Catalyst is designed to work for problems that can be understood through computational experiments and mathematical derivation. Our testing so far has been limited to problems in the field of machine learning / deep learning theory.
+The current implementation of Imbue Catalyst is designed to work for phenomena that can be understood through computational experiments and mathematical derivation. Our testing so far has been limited to phenomena in the field of machine learning / deep learning theory in particular.
 
 You will have a higher chance of success *if*:
 * The phenomenon is described precisely and with little room for interpretation
 * You're able to provide simplifying assumptions or limit the scope of the investigation upfront. E.g. "Only consider linear networks with the following loss function: ..."
-* The phenomenon can be reproduced and probed at through programmatic experimentation, i.e. reproduced by a piece of Python code that you can run on your computer.
-* You can describe the *shape* of the explanation that you are looking for. E.g. "I'm looking for an analytical explanation that makes exact predictions about property Y.", or "I'm looking for an empirically validated approximation that holds in the value range A-B.
+* The phenomenon can be reproduced and probed through programmatic experimentation (i.e. run by a Python script on your computer).
+* You can describe the *shape* of the explanation that you are looking for.
+
+#### 2. Verifiable Goal Solving/Optimization
+This modality is designed to find a concrete solution to a specified research goal that can be validated programmatically. Suitable problems are of the shape:
+* "Find a configuration or function that fulfils condition X under verification script Y."
+* "Find an implementation that maximizes metric X as measured by method Y."
+* "Optimize the training speed of model A without dropping accuracy below B."
 
 ### What Imbue Catalyst is Not a Good Fit For
 
 Imbue Catalyst is *not* a good fit for:
-* Optimization problems, e.g. "find the optimal hyperparameters for training this ANN", "discover a more optimal matrix multiplication algorithm", or "find a function that maximizes metric X"
+* Unstructured or unconstrained optimization problems that lack clear programmatic verification criteria (e.g. "make my model better" without a specified metric or verification script)
 * Problems with subjective or under-specified success criteria, e.g. "develop a theoretical framework for overfitting in deep learning"
 * Engineering problems, e.g. "build an operating system for microcontrollers", "design an efficient HTML rendering engine"
 * Problems that are significantly out of reach for the underlying base model, e.g. "Prove or disprove P=NP", "Unify quantum physics and general relativity into a practically testable theory of everything"
 * Problems that require experiments that can't be run on a computer (life sciences, psychology, experimental physics, etc.)
-* Problems that require significant computational resources to solve. Imbue Catalyst limits the runtime of any single experiment to 30 minutes by default (adjustable via `CATALYST_EXPERIMENT_TIMEOUT_SECS`). Furthermore, it presently does not particularly optimize for compute and/or experiment efficiency.
+* Problems that require significant computational resources to solve. Imbue Catalyst limits the runtime of any single experiment to 30 minutes by default (though this is adjustable via `CATALYST_EXPERIMENT_TIMEOUT_SECS`). Furthermore, only the verifiable goal workflows presently make any attempt to optimize for experiment efficiency at all.
 
 ### Why Choose Imbue Catalyst Over a Bare LLM Chat or Coding Agent?
 
@@ -46,8 +52,8 @@ Imbue Catalyst does not replace LLM Chat interfaces or off-the-shelf coding agen
 
 While Imbue Catalyst is built on top of those same LLMs, it adds unique techniques that allow it to produce results beyond the capabilities of the raw model and harness:
 
-* Imbue Catalyst implements adversarial review-refinement loops: One set of agents continuously improves the generated theory, while separate, independent agents are tasked with falsifying its statements and identifying its limits.
-* Imbue Catalyst deploys an evolution-inspired system to build a population of competing theories. The theories are repeatedly ranked against each other and checked against empirical data. The most promising theories are selected for further refinement.
+* Imbue Catalyst implements adversarial review-refinement loops: One set of agents continuously improves the generated theory or solution candidate, while separate, independent agents are tasked with falsifying its statements, identifying edge cases, and highlighting its limits.
+* Imbue Catalyst deploys an evolution-inspired system to build a population of competing theories or solution candidates. The candidates are repeatedly ranked against each other and checked against empirical data/verification scripts. The most promising candidates are selected for further refinement and branching.
 
 
 ## Getting Started
@@ -72,21 +78,21 @@ Token usage will be billed directly by the provider (Anthropic, Google, or OpenA
 Before using Imbue Catalyst, please familiarize yourself with the expected costs listed below. **The evolution-based workflows in particular are frequently composed of >100 subagents, and can incur significant token usage.**
 
 > [!TIP]
-> About 65% of tokens in a typical Develop Theory workflow are used for review & scoring steps, 25% for theory development, and 10% for miscellaneous. **You can reduce your cost by configuring "Step Type Model Overrides"**, and using the strongest model only for theory development steps. Review & scoring and miscellaneous steps can often work with a slightly weaker model without significantly impacting the quality of your results.
+> About 65% of tokens in a typical Develop Theory workflow are used for review & scoring steps, 25% for theory/solution development, and 10% for miscellaneous. **You can reduce your cost by configuring "Step Type Model Overrides"**, and using the strongest model only for development steps. Review & scoring and miscellaneous steps can often work with a slightly weaker model without significantly impacting the quality of your results.
 
 The costs shown below are rough estimates (order of magnitude), and will vary **significantly** depending on your research task. Even when using a subscription, extra charges may apply after you exhaust your plan's rate limits depending on your configuration (Anthropic Usage Credits, Gemini AI Credits etc.). **Please monitor your provider's spend dashboard to avoid unwanted surprises.**
 
-| Harness | Can use subscription plan? | Runs in sandbox | Model | Cost per "Develop Theory (Evolution)" | Cost per "Develop Theory (Linear)" | Cost per manual step |
-| -- | -- | -- | -- | -- | -- | -- |
-| **Claude Code**  | Yes, Max 20x recommended | Yes | Opus 4.8 | included in subscription (1-2 per week with Max 20x); ~$1,000 USD when using API billing | included in subscription (~5 per week with Max 20x); ~$200 USD when using API billing | included in subscription; ~$20 USD when using API billing |
-| | | | Sonnet 4.6 | included in subscription; ~$500 USD when using API billing | included in subscription; ~$100 USD when using API billing | included in subscription; ~$10 when using API billing |
-| | | | Haiku 4.5 | included in subscription; ~$150 when using API billing | included in subscription; ~$30 USD when using API billing | included in subscription; ~$3 USD when using API billing |
-| **Gemini CLI** | No | Yes | 3.5 Flash | ~$200 USD | ~$40 USD | ~$4 USD |
-| | | | 3.1 Pro | ~$300 USD | ~$60 USD | ~$6 USD |
-| | | | 3 Flash | ~$100 USD | ~$20 USD | ~$2 USD |
-| **Antigravity CLI** | Yes, AI Ultra recommended | [No](https://github.com/google-antigravity/antigravity-cli/issues/286) | 3.5 Flash | included in subscription; ~$200 USD when using API billing | included in subscription; ~$40 USD when using API billing | included in subscription; ~$4 USD when using API billing |
-| | | | 3.1 Pro | included in subscription; ~$300 USD when using API billing | included in subscription; ~$60 USD when using API billing | included in subscription; ~$6 USD when using API billing |
-| **Codex CLI** | Yes, Pro 20x recommended | Yes | GPT 5.5 | included in subscription; ~$500 USD when using API billing | included in subscription; ~$100 USD when using API billing | included in subscription; ~$10 USD when using API billing |
+| Harness | Can use subscription plan? | Runs in sandbox | Model | Cost per "Develop Theory (Evolution)" | Cost per "Solve Verifiable Goal (Evolution)" | Cost per "Develop Theory (Linear)" | Cost per manual step |
+| -- | -- | -- | -- | -- | -- | -- | -- |
+| **Claude Code**  | Yes, Max 20x recommended | Yes | Opus 4.8 | included in subscription; ~$1,000 USD when using API billing | included in subscription; ~$500 USD when using API billing | included in subscription; ~$200 USD when using API billing | included in subscription; ~$20 USD when using API billing |
+| | | | Sonnet 4.6 | included in subscription; ~$500 USD when using API billing | included in subscription; ~$250 USD when using API billing | included in subscription; ~$100 USD when using API billing | included in subscription; ~$10 when using API billing |
+| | | | Haiku 4.5 | included in subscription; ~$150 USD when using API billing | included in subscription; ~$75 USD when using API billing | included in subscription; ~$30 USD when using API billing | included in subscription; ~$3 USD when using API billing |
+| **Gemini CLI** | No | Yes | 3.5 Flash | ~$200 USD | ~$100 USD | ~$40 USD | ~$4 USD |
+| | | | 3.1 Pro | ~$300 USD | ~$150 USD | ~$60 USD | ~$6 USD |
+| | | | 3 Flash | ~$100 USD | ~$50 USD | ~$20 USD | ~$2 USD |
+| **Antigravity CLI** | Yes, AI Ultra recommended | [No](https://github.com/google-antigravity/antigravity-cli/issues/286) | 3.5 Flash | included in subscription; ~$200 USD when using API billing | included in subscription; ~$100 USD when using API billing | included in subscription; ~$40 USD when using API billing | included in subscription; ~$4 USD when using API billing |
+| | | | 3.1 Pro | included in subscription; ~$300 USD when using API billing | included in subscription; ~$150 USD when using API billing | included in subscription; ~$60 USD when using API billing | included in subscription; ~$6 USD when using API billing |
+| **Codex CLI** | Yes, Pro 20x recommended | Yes | GPT 5.5 | included in subscription; ~$500 USD when using API billing | included in subscription; ~$250 USD when using API billing | included in subscription; ~$100 USD when using API billing | included in subscription; ~$10 USD when using API billing |
 
 
 ## Further Documentation
@@ -101,7 +107,7 @@ Additional information can be found in the following guides:
 
 ## Contributors
 
-Catalyst is built by your friends at [Imbue](https://imbue.com):
+Imbue Catalyst is built by your friends at [Imbue](https://imbue.com):
 
 * [Daniel Mewes](https://github.com/danielmewes/)
 * [Catherine Kim](https://github.com/catherinek07/)

@@ -6,10 +6,10 @@ This guide provides a high-level overview of the Imbue Catalyst project and expl
 
 Imbue Catalyst is an automated system for generating, evaluating, and refining scientific theories. From a user's perspective, the system revolves around **Workflows**.
 
-- **Workflows**: You initiate a workflow by providing a scientific phenomenon or an initial idea. The orchestrator then manages a sequence of steps, often involving parallel execution of specialized agents (e.g., for literature review, exploration, or theory generation).
-- - **Add-on Steps**: In addition to standard workflows, you can manually extend any task by adding individual **Add-on Steps** (e.g., to specifically streamline or falsify a theory). This provides flexibility to guide the research process beyond the predefined workflow structures.
-- **Theories and Artifacts**: Each step in a workflow generates artifacts, such as literature reviews, exploration reports, and, most importantly, theories.
-- **Context Database**: All artifacts are stored in a persistent context database (`.ai-scientist-db`). This allows agents to reference previous work and enables the system to track the evolution of theories.
+- **Workflows**: You initiate a workflow by providing either a scientific phenomenon (for theory development) or a specific research goal and verification instructions (for verifiable goal solving). The orchestrator then manages a sequence of steps, often involving parallel execution of specialized agents (e.g., for literature review, exploration, theory generation, or solution execution).
+- **Add-on Steps**: In addition to standard workflows, you can manually extend any task by adding individual **Add-on Steps** (e.g., to specifically streamline a theory or generate/score a solution candidate). This provides flexibility to guide the research process beyond the predefined workflow structures.
+- **Theories, Solutions, and Artifacts**: Each step in a workflow generates artifacts, such as literature reviews, exploration reports, theories, or candidate solutions with corresponding verification logs.
+- **Context Database**: All artifacts are stored in a persistent context database (`.ai-scientist-db`). This allows agents to reference previous work and enables the system to track the evolution of theories and solutions.
 
 ## Environment Templates
 
@@ -56,6 +56,40 @@ In this walkthrough, we will utilize the "Develop a Theory" workflow to have Imb
 6. You can pause the research at any time and resume it later. Note that any currently running agents will need to start over when resuming a paused research task. Or you can click the "Add step" icon at the bottom of the workflow to add additional iterations and/or individual steps after the main workflow has completed.
    
    ![add step icon](quickstart_files/add_step_icon.png)
+
+
+## Walkthrough: Autonomous Verifiable Goal Optimization
+
+In this walkthrough, we will utilize the "Solve Verifiable Goal" workflow to autonomously optimize NanoGPT training, inspired by [Karpathy's Autoresearch](https://github.com/karpathy/autoresearch/).
+
+> [!IMPORTANT]
+> The `autoresearch` template uses [Modal](https://modal.com/) to run GPU training experiments. Make sure you have a Modal account set up, and have authenticated locally with the `modal` CLI tool. Secondly, accessing Modal at present does not work in sandboxed agents. You'll need to modify the Imbue Catalyst source code to disable sandboxing. E.g. for Claude Code, you need to edit `src/claude_skills/settings.json` and change the line `"enabled": true,` to `"enabled": false,` before you start the research task.
+
+1. Click the plus icon to start a new research project.
+   
+   ![plus icon](quickstart_files/start_research_plus.png)
+
+2. Select the "Solve Verifiable Goal (Evolution)" workflow. Then specify the research goal and verification instructions:
+   - **Verifiable Goal**: "Come up with improvements to the train.py setup (train.py provided as a starting point) to get the lowest possible val_bpb value."
+   - **Verification Instructions**: "Running the training script will output its val_bpb value at the end."
+   - **Template**: Select the "autoresearch" template.
+   - **Additional Parameters**: You can optionally increase the number of evolve iterations to 50. It can be more efficient to also increase the "scoring interval" to 10 in that case.
+   
+   ![start verifiable goal research](quickstart_files/start_research_verifiable_goal.png)
+
+3. Once launched, Imbue Catalyst initializes starting theories. It then enters an optimization loop:
+   - **Propose Next Step**: The agent designs and proposes regular data-gathering experiments, literature searches, or concrete solution candidates.
+   - **Execute Proposal**: The top proposals are automatically executed. For solution candidates, a verification script `script.py` is written and executed.
+   - **Interpret and Integrate**: The outputs/verification results are interpreted and compiled into logs, which are then integrated back into the active theories.
+   - **Score Candidates**: Solutions are periodically evaluated and ranked based on Goal Achievement, Verification Adherence, and the Novelty of their associated research plans.
+   
+   ![verifiable goal workflow](quickstart_files/verifiable_goal_workflow.png)
+
+4. Click on any step in the timeline to inspect its outputs. You can also click the "Solutions" tab to see any solution candidates proposed so far, together with their evaluation results.
+
+5. After the workflow completes, the highest-ranking solution candidates and their corresponding theory details will be available in the "Theory" tab and summarized in the "Summary" tab of the dashboard.
+   
+   ![summary tab](quickstart_files/summary_tab.png)
 
 
 ## Walkthrough: Manual Workflow
