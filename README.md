@@ -44,7 +44,7 @@ Imbue Catalyst is *not* a good fit for:
 * Engineering problems, e.g. "build an operating system for microcontrollers", "design an efficient HTML rendering engine"
 * Problems that are significantly out of reach for the underlying base model, e.g. "Prove or disprove P=NP", "Unify quantum physics and general relativity into a practically testable theory of everything"
 * Problems that require experiments that can't be run on a computer (life sciences, psychology, experimental physics, etc.)
-* Problems that require significant computational resources to solve. Imbue Catalyst limits the runtime of any single experiment to 30 minutes by default (though this is adjustable via `CATALYST_EXPERIMENT_TIMEOUT_SECS`). Furthermore, only the verifiable goal workflows presently make any attempt to optimize for experiment efficiency at all.
+* Problems that require significant computational resources to solve. Imbue Catalyst limits the runtime of any single experiment to 30 minutes by default (though this is adjustable via `CATALYST_EXPERIMENT_TIMEOUT_SECS`). Furthermore, only the verifiable goal workflows presently make any effort to optimize for experiment efficiency.
 
 ### Why Choose Imbue Catalyst Over a Bare LLM Chat or Coding Agent?
 
