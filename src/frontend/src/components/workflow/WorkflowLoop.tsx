@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { RotateCw, ChevronDown } from 'lucide-react'
 import * as api from '../../api'
 import { InnerStepCard, InnerParallelCard, CancelStepsButton, StepIndicator, formatStageName } from './shared'
+import { getStepsMap } from '../../utils'
 
 interface WorkflowLoopProps {
   name: string;
@@ -17,6 +18,7 @@ interface WorkflowLoopProps {
 }
 
 export function WorkflowLoop({ name, baseStages, iterationStructures, iterations, task, onSelect, selectedStage, onRetry, onRefresh, showConnector = true }: WorkflowLoopProps) {
+  const stepsMap = useMemo(() => getStepsMap(task.steps), [task.steps]);
   const [activeIteration, setActiveIteration] = useState(1)
   const [lastLatest, setLastLatest] = useState(0)
   const [showDropdown, setShowDropdown] = useState(false)
@@ -89,7 +91,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
 
   const getStepForIteration = (it: number, baseStage: string) => {
     const stage = `${baseStage}-${it}`
-    return task.steps.find(s => s.stage === stage)
+    return stepsMap[stage]
   }
 
   // Pre-calculate stages to cancel and overall status
@@ -109,13 +111,13 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
       }
     }
 
-    const innerSteps = stages.map(stage => task.steps.find(s => s.stage === stage)).filter(Boolean)
+    const innerSteps = stages.map(stage => stepsMap[stage]).filter(Boolean)
 
-    const hasRunning = stages.some(stage => task.current_stage === stage && (!task.steps.find(s => s.stage === stage) || ['running', 'waiting'].includes(task.steps.find(s => s.stage === stage)?.status || ''))) || innerSteps.some(s => s?.status === 'running' || s?.status === 'waiting')
+    const hasRunning = stages.some(stage => task.current_stage === stage && (!stepsMap[stage] || ['running', 'waiting'].includes(stepsMap[stage]?.status || ''))) || innerSteps.some(s => s?.status === 'running' || s?.status === 'waiting')
     const hasFailed = innerSteps.some(s => s?.status === 'failed')
     const hasPaused = innerSteps.some(s => s?.status === 'paused')
-    const allCompleted = stages.length > 0 && stages.every(stage => task.steps.find(s => s.stage === stage)?.status === 'completed')
-    const allCanceled = stages.length > 0 && stages.every(stage => task.steps.find(s => s.stage === stage)?.status === 'canceled')
+    const allCompleted = stages.length > 0 && stages.every(stage => stepsMap[stage]?.status === 'completed')
+    const allCanceled = stages.length > 0 && stages.every(stage => stepsMap[stage]?.status === 'canceled')
 
     const status = allCompleted ? 'completed' :
       hasFailed ? 'failed' :
@@ -124,7 +126,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
             allCanceled ? 'canceled' : 'upcoming'
 
     return { stagesToCancel: stages, overallStatus: status }
-  }, [task, iterations, iterationStructures, baseStages])
+  }, [task, stepsMap, iterations, iterationStructures, baseStages])
 
   const activeStructure = iterationStructures ? iterationStructures[activeIteration.toString()] : null;
 
@@ -230,7 +232,7 @@ export function WorkflowLoop({ name, baseStages, iterationStructures, iterations
           {activeStructure ? (
             activeStructure.map((item: any, idx: number) => {
               if (item.type === 'step') {
-                const step = task.steps.find(s => s.stage === item.stage)
+                const step = stepsMap[item.stage]
                 const isRunning = step?.status === 'running' || step?.status === 'waiting' || (task.current_stage === item.stage && !step)
                 return (
                   <InnerStepCard

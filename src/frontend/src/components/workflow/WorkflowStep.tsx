@@ -2,6 +2,7 @@ import React from 'react'
 import { Terminal, RefreshCw } from 'lucide-react'
 import * as api from '../../api'
 import { StepIndicator, formatStageName } from './shared'
+import { getStepsMap } from '../../utils'
 
 interface WorkflowStepProps {
   stage: string;
@@ -14,7 +15,8 @@ interface WorkflowStepProps {
 }
 
 export const WorkflowStep = React.memo(({ stage, task, onSelect, isSelected, onRetry, isPlaceholder, showConnector = true }: WorkflowStepProps) => {
-  const step = task.steps.find(s => s.stage === stage)
+  const stepsMap = React.useMemo(() => getStepsMap(task.steps), [task.steps]);
+  const step = stepsMap[stage];
   const isRunning = step?.status === 'running' || step?.status === 'waiting' || (task.current_stage === stage && !step)
   
   return (
@@ -67,8 +69,10 @@ export const WorkflowStep = React.memo(({ stage, task, onSelect, isSelected, onR
     </div>
   )
 }, (prev, next) => {
-  const prevStep = prev.task.steps.find(s => s.stage === prev.stage);
-  const nextStep = next.task.steps.find(s => s.stage === next.stage);
+  const prevStepsMap = getStepsMap(prev.task.steps);
+  const nextStepsMap = getStepsMap(next.task.steps);
+  const prevStep = prevStepsMap[prev.stage];
+  const nextStep = nextStepsMap[next.stage];
   
   return prev.stage === next.stage &&
          prev.isSelected === next.isSelected &&

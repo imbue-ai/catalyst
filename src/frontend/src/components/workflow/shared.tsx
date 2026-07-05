@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Loader2, RefreshCw, XCircle, LayoutGrid } from 'lucide-react'
 import * as api from '../../api'
+import { getStepsMap } from '../../utils'
 
 export function StepIndicator({ status, isRunning }: { status: string | undefined, isRunning: boolean }) {
   return (
@@ -141,7 +142,8 @@ export const InnerParallelCard = React.memo(({ name, stages, task, selectedStage
       </div>
       <div className="grid grid-cols-2 gap-2">
         {stages.map(stage => {
-          const step = task.steps.find(s => s.stage === stage)
+          const stepsMap = getStepsMap(task.steps);
+          const step = stepsMap[stage]
           const isRunning = step?.status === 'running' || (task.current_stage === stage && !step)
           return (
             <InnerStepCard
@@ -160,8 +162,10 @@ export const InnerParallelCard = React.memo(({ name, stages, task, selectedStage
     </div>
   )
 }, (prev, next) => {
-  const prevStepStatuses = prev.stages.map(s => prev.task.steps.find(st => st.stage === s)?.status).join(',');
-  const nextStepStatuses = next.stages.map(s => next.task.steps.find(st => st.stage === s)?.status).join(',');
+  const prevStepsMap = getStepsMap(prev.task.steps);
+  const nextStepsMap = getStepsMap(next.task.steps);
+  const prevStepStatuses = prev.stages.map(s => prevStepsMap[s]?.status).join(',');
+  const nextStepStatuses = next.stages.map(s => nextStepsMap[s]?.status).join(',');
 
   return prev.name === next.name &&
     prev.selectedStage === next.selectedStage &&

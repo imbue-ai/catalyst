@@ -23,6 +23,7 @@ import { EditGuidanceModal } from './EditGuidanceModal'
 const SummaryTab = lazy(() => import('./SummaryTab').then(m => ({ default: m.SummaryTab })))
 import { HarnessSettings } from './HarnessSettings'
 import { CategoryOverridesSettings } from './CategoryOverridesSettings'
+import { getStepsMap } from '../utils'
 
 
 interface TaskDetailProps {
@@ -42,6 +43,8 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
   const [showGuidanceModal, setShowGuidanceModal] = useState(false)
   const [pendingGuidanceAppend, setPendingGuidanceAppend] = useState<string | null>(null)
   const copyTimeoutRef = useRef<number | null>(null)
+
+  const stepsMap = useMemo(() => getStepsMap(task.steps), [task.steps]);
 
   // Edit Settings states & refs
   const [showSettingsPanel, setShowSettingsPanel] = useState(false)
@@ -484,7 +487,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                     <div className="bg-black text-white p-1 rounded-sm"><Workflow size={16} /></div>
                     <span className="font-black text-xs tracking-widest">{formatStageName(selectedStage)}</span>
                   </div>
-                  {['failed', 'paused', 'pending', 'waiting'].includes(task.steps.find(s => s.stage === selectedStage)?.status || 'pending') && (
+                  {['failed', 'paused', 'pending', 'waiting'].includes(stepsMap[selectedStage]?.status || 'pending') && (
                     <button
                       disabled={isProcessing}
                       onClick={async () => {
@@ -507,7 +510,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
 
                 <div className="flex-1 overflow-y-auto p-6 custom-scrollbar space-y-8 pb-20">
                   {(() => {
-                    const step = task.steps.find(s => s.stage === selectedStage);
+                    const step = stepsMap[selectedStage];
                     if (!step) {
                       return (
                         <div className="text-center mt-10 text-gray-400 text-[10px] font-black tracking-widest">
