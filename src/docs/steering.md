@@ -1,6 +1,6 @@
 # Mid-Research Steering
 
-You can provide additional steering to influence the research direction of your Catalyst agents at any time.
+You can provide additional steering to influence the research direction of your Imbue Catalyst agents at any time.
 
 ## How Steering Works
 

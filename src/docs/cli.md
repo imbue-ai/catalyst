@@ -1,8 +1,8 @@
 # CLI Agent Usage
 
-This document explains how to use Catalyst skills within a CLI agent (e.g., Claude Code, Codex CLI).
+This document explains how to use Imbue Imbue Catalyst skills within a CLI agent (e.g., Claude Code, Codex CLI).
 
-This is a more manual alternative to using the Catalyst graphical user interface.
+This is a more manual alternative to using the Imbue Catalyst graphical user interface.
 
 ## Environment Setup
 
@@ -21,7 +21,7 @@ Then, launch your preferred CLI agent in the environment's target directory.
 
 ## Data Ingestion
 
-Most Catalyst skills operate on a **Theory ID**. To get existing data into the system, use the `import-theory` skill.
+Most Imbue Catalyst skills operate on a **Theory ID**. To get existing data into the system, use the `import-theory` skill.
 
 1.  Place your theory file (in `.tex`, `.pdf`, or `.md` format) in a location accessible to the agent.
 2.  Invoke the `/import-theory` skill with the path to the file.
@@ -29,7 +29,7 @@ Most Catalyst skills operate on a **Theory ID**. To get existing data into the s
 
 ## Available Skills
 
-Catalyst skills can be invoked directly by a CLI agent. They are grouped below by their primary operation mode.
+Imbue Catalyst skills can be invoked directly by a CLI agent. They are grouped below by their primary operation mode.
 
 ### Initial Generation and Import ("Other")
 These skills are typically used to start a new project or bring external data into the system.
@@ -65,9 +65,9 @@ These skills focus on a single statement (hypothesis, theorem, lemma, etc.) with
 
 ## Context Management
 
-The `context_manager.py` script is the core of Catalyst's data persistence. It manages the `.ai-scientist-db` directory.
+The `context_manager.py` script is the core of Imbue Catalyst's data persistence. It manages the `.ai-scientist-db` directory.
 
-All Catalyst skills will internally utilize the context manager to retrieve context (such as an existing theory), and store their results. The context database is immutable: Once a result has been stored, it cannot be changed. This means that each change that a Catalyst skill makes to a theory will result in a brand new theory ID.
+All Imbue Catalyst skills will internally utilize the context manager to retrieve context (such as an existing theory), and store their results. The context database is immutable: Once a result has been stored, it cannot be changed. This means that each change that a Imbue Catalyst skill makes to a theory will result in a brand new theory ID.
 
 - **Storage**: Skills use `context_manager.py store_results` to save their outputs (theories, reviews, experiments, etc.) into the database.
 - **Context Assembly**: Skills use `context_manager.py create_context` to assemble required artifacts from the database into the agent's current working folder.

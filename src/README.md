@@ -1,4 +1,4 @@
-# Catalyst
+# Imbue Catalyst
 
 A tool for autonomous scientific research.
 
@@ -8,11 +8,11 @@ For more detailed information, please see the following guides:
 
 - [Quickstart Guide](docs/quickstart.md): An overview of the system structure and environment templates.
 - [Workflows and Add-ons](docs/workflow.md): A reference for all primary workflows and individual add-on steps.
-- [CLI Agent Usage](docs/cli.md): Instructions for using Catalyst skills directly within a CLI agent.
+- [CLI Agent Usage](docs/cli.md): Instructions for using Imbue Catalyst skills directly within a CLI agent.
 
 ## Architecture
 
-- **Agent Skills:** The main functionality of Catalyst is implemented through a set of Agent skills that each perform different steps of the research process.
+- **Agent Skills:** The main functionality of Imbue Catalyst is implemented through a set of Agent skills that each perform different steps of the research process.
 - **Backend (Python + FastAPI):** Manages the research lifecycle using multi-threading.
 - **Agent Layer:** Spawns `gemini`, `claude`, `codex`, or `agy` CLI processes in headless mode, or `claude` / `agy` inside a `mngr`-managed tmux session you can attach to live (the `mngr-claude` / `mngr-antigravity` variants). JSON outputs and session IDs captured for traceability either way.
 - **Frontend (React + TypeScript):** A dashboard for starting research tasks, monitoring progress in real-time, and inspecting the data exchange at each step.
@@ -62,9 +62,9 @@ The system can be configured using the following environment variables:
 
 ## Inspecting past mngr sessions
 
-For tasks created with the `mngr-claude` / `mngr-antigravity` frameworks, `mngr` keeps each step's session around after it stops. Catalyst runs them under a dedicated host_dir at `~/.mngr-catalyst/` (separate from your main `~/.mngr/`), so every `mngr` command below needs the `MNGR_HOST_DIR=~/.mngr-catalyst` prefix. You can also `export MNGR_HOST_DIR=~/.mngr-catalyst` once per shell.
+For tasks created with the `mngr-claude` / `mngr-antigravity` frameworks, `mngr` keeps each step's session around after it stops. Imbue Catalyst runs them under a dedicated host_dir at `~/.mngr-catalyst/` (separate from your main `~/.mngr/`), so every `mngr` command below needs the `MNGR_HOST_DIR=~/.mngr-catalyst` prefix. You can also `export MNGR_HOST_DIR=~/.mngr-catalyst` once per shell.
 
-- `MNGR_HOST_DIR=~/.mngr-catalyst uv run mngr list --include 'labels["app"] == "catalyst"'` lists Catalyst's mngr-backed agents that haven't been destroyed yet.
+- `MNGR_HOST_DIR=~/.mngr-catalyst uv run mngr list --include 'labels["app"] == "catalyst"'` lists Imbue Catalyst's mngr-backed agents that haven't been destroyed yet.
 - `MNGR_HOST_DIR=~/.mngr-catalyst uv run mngr transcript <session_id>` prints the recorded turn.
 - `MNGR_HOST_DIR=~/.mngr-catalyst uv run mngr connect <session_id>` re-attaches to the tmux session (and restarts it if it had stopped).
 
