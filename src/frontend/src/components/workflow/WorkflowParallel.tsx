@@ -1,6 +1,8 @@
 import { LayoutGrid } from 'lucide-react'
+import { useMemo } from 'react'
 import * as api from '../../api'
 import { StepIndicator, InnerStepCard, CancelStepsButton, formatStageName } from './shared'
+import { getStepsMap } from '../../utils'
 
 interface WorkflowParallelProps {
   name: string;
@@ -14,11 +16,12 @@ interface WorkflowParallelProps {
 }
 
 export function WorkflowParallel({ name, stages, task, onSelect, selectedStage, onRetry, onRefresh, showConnector = true }: WorkflowParallelProps) {
+  const stepsMap = useMemo(() => getStepsMap(task.steps), [task.steps]);
 
   // Determine overall status
-  const innerSteps = stages.map(stage => task.steps.find(s => s.stage === stage))
+  const innerSteps = stages.map(stage => stepsMap[stage])
 
-  const hasRunning = stages.some(stage => task.current_stage === stage && (!task.steps.find(s => s.stage === stage) || ['running', 'waiting'].includes(task.steps.find(s => s.stage === stage)?.status || ''))) || innerSteps.some(s => s?.status === 'running' || s?.status === 'waiting')
+  const hasRunning = stages.some(stage => task.current_stage === stage && (!stepsMap[stage] || ['running', 'waiting'].includes(stepsMap[stage]?.status || ''))) || innerSteps.some(s => s?.status === 'running' || s?.status === 'waiting')
   const hasFailed = innerSteps.some(s => s?.status === 'failed')
   const hasPaused = innerSteps.some(s => s?.status === 'paused')
   const allCompleted = innerSteps.length > 0 && innerSteps.every(s => s?.status === 'completed')
@@ -57,7 +60,7 @@ export function WorkflowParallel({ name, stages, task, onSelect, selectedStage, 
 
         <div className="grid grid-cols-2 gap-4">
           {stages.map((stage, idx) => {
-            const step = task.steps.find(s => s.stage === stage)
+            const step = stepsMap[stage]
             const isRunning = step?.status === 'running' || step?.status === 'waiting' || (task.current_stage === stage && !step)
 
             return (
