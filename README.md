@@ -1,19 +1,19 @@
-# Catalyst AI Scientist
+# Imbue Catalyst AI Scientist
 
 A tool for semi-autonomous scientific research and discovery.
 
 ![Catalyst Logo](src/assets/catalyst-small.png)
 
-## What Catalyst Can Do
+## What Imbue Catalyst Can Do
 
-Catalyst provides three main workflows:
+Imbue Catalyst provides three main workflows:
 1. Autonomously develop a theory to explain a given phenomenon
 2. Take a user-provided theory draft, fill in any gaps, and auto-correct mistakes and oversights
 3. A menu of pre-defined operations to choose from: Review a theory for correctness, propose corrections and refinements, perform experimental validations, etc.
 
 ### Suitable Problems
 
-Catalyst helps develop explanations for observable phenomena.
+Imbue Catalyst helps develop explanations for observable phenomena.
 
 Suitable problems for the autonomous theory development workflow are of the shape:
 * "When we do Y, we observe X. What is the mechanism that causes X?"
@@ -22,7 +22,7 @@ Suitable problems for the autonomous theory development workflow are of the shap
 
 In short, it aims to answer "Why" questions that lead to testable predictions.
 
-The current implementation of Catalyst is designed to work for problems that can be understood through computational experiments and mathematical derivation. Our testing so far has been limited to problems in the field of machine learning / deep learning theory.
+The current implementation of Imbue Catalyst is designed to work for problems that can be understood through computational experiments and mathematical derivation. Our testing so far has been limited to problems in the field of machine learning / deep learning theory.
 
 You will have a higher chance of success *if*:
 * The phenomenon is described precisely and with little room for interpretation
@@ -30,29 +30,29 @@ You will have a higher chance of success *if*:
 * The phenomenon can be reproduced and probed at through programmatic experimentation, i.e. reproduced by a piece of Python code that you can run on your computer.
 * You can describe the *shape* of the explanation that you are looking for. E.g. "I'm looking for an analytical explanation that makes exact predictions about property Y.", or "I'm looking for an empirically validated approximation that holds in the value range A-B.
 
-### What Catalyst is Not a Good Fit For
+### What Imbue Catalyst is Not a Good Fit For
 
-Catalyst is *not* a good fit for:
+Imbue Catalyst is *not* a good fit for:
 * Optimization problems, e.g. "find the optimal hyperparameters for training this ANN", "discover a more optimal matrix multiplication algorithm", or "find a function that maximizes metric X"
 * Problems with subjective or under-specified success criteria, e.g. "develop a theoretical framework for overfitting in deep learning"
 * Engineering problems, e.g. "build an operating system for microcontrollers", "design an efficient HTML rendering engine"
 * Problems that are significantly out of reach for the underlying base model, e.g. "Prove or disprove P=NP", "Unify quantum physics and general relativity into a practically testable theory of everything"
 * Problems that require experiments that can't be run on a computer (life sciences, psychology, experimental physics, etc.)
-* Problems that require significant computational resources to solve. Catalyst limits the runtime of any single experiment to 30 minutes by default (adjustable via `CATALYST_EXPERIMENT_TIMEOUT_SECS`). Furthermore, it presently does not particularly optimize for compute and/or experiment efficiency.
+* Problems that require significant computational resources to solve. Imbue Catalyst limits the runtime of any single experiment to 30 minutes by default (adjustable via `CATALYST_EXPERIMENT_TIMEOUT_SECS`). Furthermore, it presently does not particularly optimize for compute and/or experiment efficiency.
 
-### Why Choose Catalyst Over a Bare LLM Chat or Coding Agent?
+### Why Choose Imbue Catalyst Over a Bare LLM Chat or Coding Agent?
 
-Catalyst does not replace LLM Chat interfaces or off-the-shelf coding agents. Those remain a better fit for interactive, conversational exploration of a topic, and for any problems that don't fit the criteria mentioned above.
+Imbue Catalyst does not replace LLM Chat interfaces or off-the-shelf coding agents. Those remain a better fit for interactive, conversational exploration of a topic, and for any problems that don't fit the criteria mentioned above.
 
-While Catalyst is built on top of those same LLMs, it adds unique techniques that allow it to produce results beyond the capabilities of the raw model and harness:
+While Imbue Catalyst is built on top of those same LLMs, it adds unique techniques that allow it to produce results beyond the capabilities of the raw model and harness:
 
-* Catalyst implements adversarial review-refinement loops: One set of agents continuously improves the generated theory, while separate, independent agents are tasked with falsifying its statements and identifying its limits.
-* Catalyst deploys an evolution-inspired system to build a population of competing theories. The theories are repeatedly ranked against each other and checked against empirical data. The most promising theories are selected for further refinement.
+* Imbue Catalyst implements adversarial review-refinement loops: One set of agents continuously improves the generated theory, while separate, independent agents are tasked with falsifying its statements and identifying its limits.
+* Imbue Catalyst deploys an evolution-inspired system to build a population of competing theories. The theories are repeatedly ranked against each other and checked against empirical data. The most promising theories are selected for further refinement.
 
 
 ## Getting Started
 
-1. Before using Catalyst, carefully review the "Supported Models & Estimated Costs" section below.
+1. Before using Imbue Catalyst, carefully review the "Supported Models & Estimated Costs" section below.
 2. `git clone https://github.com/imbue-ai/catalyst.git && cd catalyst`
 3. `git checkout stable` to use the stable branch
 4. Install [prerequisites](src/README.md#prerequisites)
@@ -61,7 +61,7 @@ While Catalyst is built on top of those same LLMs, it adds unique techniques tha
 
 ## Supported Models & Estimated Costs
 
-Catalyst utilizes an existing agentic harness installed on your system. It currently supports the following harnesses:
+Imbue Catalyst utilizes an existing agentic harness installed on your system. It currently supports the following harnesses:
 * Claude Code (either via `claude -p` or via [mngr](https://github.com/imbue-ai/mngr))
 * Gemini CLI (via `gemini -p`)
 * Antigravity CLI (via `agy -p`)
@@ -69,7 +69,7 @@ Catalyst utilizes an existing agentic harness installed on your system. It curre
 
 Token usage will be billed directly by the provider (Anthropic, Google, or OpenAI), based on the harness' existing authentication.
 
-Before using Catalyst, please familiarize yourself with the expected costs listed below. **The evolution-based workflows in particular are frequently composed of >100 subagents, and can incur significant token usage.**
+Before using Imbue Catalyst, please familiarize yourself with the expected costs listed below. **The evolution-based workflows in particular are frequently composed of >100 subagents, and can incur significant token usage.**
 
 > [!TIP]
 > About 65% of tokens in a typical Develop Theory workflow are used for review & scoring steps, 25% for theory development, and 10% for miscellaneous. **You can reduce your cost by configuring "Step Type Model Overrides"**, and using the strongest model only for theory development steps. Review & scoring and miscellaneous steps can often work with a slightly weaker model without significantly impacting the quality of your results.
