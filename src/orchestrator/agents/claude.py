@@ -31,6 +31,7 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
         )  # The experiment timeout in milliseconds plus a 5 minute safety buffer.
         env["CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR"] = "1"
         env["CLAUDE_CODE_DISABLE_BACKGROUND_TASKS"] = "1"
+        env["CLAUDE_CODE_DISABLE_AUTO_MEMORY"] = "1"
         env["BASH_DEFAULT_TIMEOUT_MS"] = str(bash_timeout_ms)
         env["BASH_MAX_TIMEOUT_MS"] = str(bash_timeout_ms)
 
