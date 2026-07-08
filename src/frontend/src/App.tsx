@@ -116,10 +116,12 @@ function App() {
     }
   }
 
-  const fetchSelectedTaskDetails = async (id: string) => {
+  const fetchSelectedTaskDetails = async (id: string, guard?: { active: boolean }) => {
     try {
       const detail = await api.getTask(id)
-      setSelectedTaskDetails(detail)
+      if (!guard || guard.active) {
+        setSelectedTaskDetails(detail)
+      }
     } catch (e) {
       console.error(e)
     }
@@ -133,26 +135,29 @@ function App() {
   }
 
   useEffect(() => {
+    const guard = { active: true }
+
+    // Initial load
+    fetchTasks()
     if (selectedTaskId) {
       setSelectedTaskDetails(null)
-      fetchSelectedTaskDetails(selectedTaskId)
+      fetchSelectedTaskDetails(selectedTaskId, guard)
     } else {
       setSelectedTaskDetails(null)
     }
-  }, [selectedTaskId])
 
-  useEffect(() => {
-    fetchTasks()
-    if (selectedTaskId) {
-      fetchSelectedTaskDetails(selectedTaskId)
-    }
+    // Polling interval
     const interval = setInterval(() => {
       fetchTasks()
       if (selectedTaskId) {
-        fetchSelectedTaskDetails(selectedTaskId)
+        fetchSelectedTaskDetails(selectedTaskId, guard)
       }
     }, 2000)
-    return () => clearInterval(interval)
+
+    return () => {
+      guard.active = false
+      clearInterval(interval)
+    }
   }, [selectedTaskId])
 
   const handleDelete = async () => {
