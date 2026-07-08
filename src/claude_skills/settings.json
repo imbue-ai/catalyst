@@ -17,7 +17,8 @@
   "permissions": {
     "allow": [
       "WebSearch(*)",
-      "WebFetch(*)"
+      "WebFetch(*)",
+      "Bash(*)"
     ]
   },
   "hooks": {
