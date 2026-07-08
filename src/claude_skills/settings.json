@@ -14,6 +14,12 @@
       ]
     }
   },
+  "permissions": {
+    "allow": [
+      "WebSearch(*)",
+      "WebFetch(*)"
+    ]
+  },
   "hooks": {
     "Stop": [
       {
