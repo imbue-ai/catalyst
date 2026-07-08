@@ -35,6 +35,8 @@ class MngrClaudeAgentRunner(MngrAgentRunner):
                 # rather than letting `cd` calls in one tool invocation drift
                 # the cwd for the next one. Matches the direct claude runner.
                 "CLAUDE_BASH_MAINTAIN_PROJECT_WORKING_DIR": "1",
+                # Disable auto memory
+                "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
                 # Bump bash timeouts well past Claude Code's defaults so a
                 # long-running experiment doesn't get killed mid-step.
                 "BASH_DEFAULT_TIMEOUT_MS": str(bash_timeout_ms),
