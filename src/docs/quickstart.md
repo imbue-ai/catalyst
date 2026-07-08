@@ -63,7 +63,7 @@ In this walkthrough, we will utilize the "Develop a Theory" workflow to have Imb
 In this walkthrough, we will utilize the "Solve Verifiable Goal" workflow to autonomously optimize NanoGPT training, inspired by [Karpathy's Autoresearch](https://github.com/karpathy/autoresearch/).
 
 > [!IMPORTANT]
-> The `autoresearch` template uses [Modal](https://modal.com/) to run GPU training experiments. Make sure you have a Modal account set up, and have authenticated locally with the `modal` CLI tool. Secondly, accessing Modal at present does not work in sandboxed agents. You'll need to modify the Imbue Catalyst source code to disable sandboxing. E.g. for Claude Code, you need to edit `src/claude_skills/settings.json` and change the line `"enabled": true,` to `"enabled": false,` before you start the research task.
+> The `autoresearch` template uses [Modal](https://modal.com/) to run GPU training experiments. Make sure you have a Modal account set up, and have authenticated locally with the `modal` CLI tool.
 
 1. Click the plus icon to start a new research project.
    
@@ -73,7 +73,7 @@ In this walkthrough, we will utilize the "Solve Verifiable Goal" workflow to aut
    - **Verifiable Goal**: "Come up with improvements to the train.py setup (train.py provided as a starting point) to get the lowest possible val_bpb value."
    - **Verification Instructions**: "Running the training script will output its val_bpb value at the end."
    - **Template**: Select the "autoresearch" template.
-   - **Additional Parameters**: You can optionally increase the number of evolve iterations to 50. It can be more efficient to also increase the "scoring interval" to 10 in that case.
+   - **Additional Parameters**: Optionally: increase the number of evolve iterations to 50 and the "scoring interval" to 10. You can always run more iterations later by adding an add-on step to the workflow.
    
    ![start verifiable goal research](quickstart_files/start_research_verifiable_goal.png)
 
