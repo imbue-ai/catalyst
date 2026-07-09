@@ -90,12 +90,12 @@ This command will place the solution candidate description (`solution.md`) and a
    - For a **Solution Candidate**, the `script.py` script must contain a *verification* of your solution. You must read the `verification_instructions.txt` file in the current working directory to understand the verification process, and follow those instructions to write the verification `script.py`.
    - The script must hard-code all parameters and not rely on command-line arguments or environment variables.
    - It must write all outputs (such as plots, logs, and metrics) directly to its current working directory.
-7. **Store Results**: Persist the proposal files to the database. You must include the appropriate `--metadata proposal_type=<type>` (where `<type>` is `experiment`, `literature-search`, or `solution-candidate`) so the context manager records the correct metadata tag:
+7. **Store Results**: Persist the proposal files to the database. You must include the appropriate `--metadata proposal_type:<type>` (where `<type>` is `experiment`, `literature-search`, or `solution-candidate`) so the context manager records the correct metadata tag:
    ```bash
    uv run python <SKILL_BASE_DIR>/scripts/context_manager.py store_results \
        --from_agent_type propose-experiment \
        --from_folder <OUTPUT_DIR> \
        --parent_theory <T_ID> \
-       --metadata proposal_type=<type>
+       --metadata proposal_type:<type>
    ```
    Note down the returned proposal ID (e.g., `O_20260616_123456_abcdef`) as the result of this skill.

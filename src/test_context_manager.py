@@ -124,7 +124,9 @@ class TestContextManager(unittest.TestCase):
                 # For interpret-result, it updates in-place, returning the parent_theory_id
                 self.assertEqual(new_id, parent_theory_id)
                 # Verify that interpretation_log.md is successfully updated
-                target_log = self.db_path / "theory" / parent_theory_id / "interpretation_log.md"
+                target_log = (
+                    self.db_path / "theory" / parent_theory_id / "interpretation_log.md"
+                )
                 self.assertTrue(target_log.exists())
                 self.assertEqual(target_log.read_text(), f"Content for {agent_type}")
             else:
@@ -175,20 +177,25 @@ class TestContextManager(unittest.TestCase):
         t_parent_id = store_simple(
             "interpret-result", "theory", "interpretation_log.md", parent=t_id
         )
-        prop_id = store_simple(
-            "propose-experiment", "proposal", "proposal.md"
-        )
+        prop_id = store_simple("propose-experiment", "proposal", "proposal.md")
 
         # Store a solution with parent_theory
         d_sol = self.test_dir / "seed_solution"
         d_sol.mkdir(parents=True, exist_ok=True)
         (d_sol / "solution.md").write_text("Seed solution")
-        sol_id = self.run_cmd(
-            "store_results",
-            "--from_agent_type", "execute-proposal",
-            "--from_folder", str(d_sol),
-            "--parent_theory", t_id,
-        ).stdout.strip().split()[-1]
+        sol_id = (
+            self.run_cmd(
+                "store_results",
+                "--from_agent_type",
+                "execute-proposal",
+                "--from_folder",
+                str(d_sol),
+                "--parent_theory",
+                t_id,
+            )
+            .stdout.strip()
+            .split()[-1]
+        )
 
         target_agents = [
             ("write-theory", {"--from_exploration": e_id, "--from_literature": l_id}),
@@ -211,7 +218,10 @@ class TestContextManager(unittest.TestCase):
             ("streamline-theory", {"--from_theory": t_id}),
             ("edit-theory", {"--from_theory": t_id}),
             ("write-different-theory", {"--from_theory": t_id}),
-            ("interpret-result", {"--from_theory": t_parent_id, "--from_experiment": x_id}),
+            (
+                "interpret-result",
+                {"--from_theory": t_parent_id, "--from_experiment": x_id},
+            ),
             ("integrate-interpretations", {"--from_theory": t_id}),
             ("propose-experiment", {"--from_theory": t_parent_id}),
             ("rank-proposals", {"--from_proposal": prop_id}),
@@ -300,7 +310,7 @@ class TestContextManager(unittest.TestCase):
             "--from_folder",
             str(src_dir),
             "--metadata",
-            "tags=quantum,gravity,test",
+            "tags:quantum,gravity,test",
         )
 
         # Search by tag
@@ -420,7 +430,9 @@ class TestContextManager(unittest.TestCase):
 
         # Rescore only t1 again, with an explicit decay_rate of 0.4, which multiplies remaining (t2) by 1.0 - 0.4 = 0.6
         # t2's score becomes 0.8 * 0.6 = 0.48
-        self.run_cmd("rescore_theories", "--decay_rate", "0.4", json.dumps({t1: {"score": 1.0}}))
+        self.run_cmd(
+            "rescore_theories", "--decay_rate", "0.4", json.dumps({t1: {"score": 1.0}})
+        )
 
         res = self.run_cmd("list", "--type", "theory", "--sort_by", "score", "--json")
         entries = {e["id"]: e["score"] for e in json.loads(res.stdout)}
@@ -562,12 +574,12 @@ class TestContextManager(unittest.TestCase):
             return res.stdout.strip().split()[-1]
 
         # Seed theories
-        t1 = store_t("T1") # Will have score 0.9, is_leaf_node=True
-        t2 = store_t("T2") # Will have score 0.1, is_leaf_node=False
-        t3 = store_t("T3") # Will have score 0.0, is_leaf_node=True
-        t4 = store_t("T4") # Will have score 0.0, is_leaf_node=False (has child t7)
-        t5 = store_t("T5") # Will have score None, is_leaf_node=True
-        t6 = store_t("T6") # Will have score None, is_leaf_node=False (has child t8)
+        t1 = store_t("T1")  # Will have score 0.9, is_leaf_node=True
+        t2 = store_t("T2")  # Will have score 0.1, is_leaf_node=False
+        t3 = store_t("T3")  # Will have score 0.0, is_leaf_node=True
+        t4 = store_t("T4")  # Will have score 0.0, is_leaf_node=False (has child t7)
+        t5 = store_t("T5")  # Will have score None, is_leaf_node=True
+        t6 = store_t("T6")  # Will have score None, is_leaf_node=False (has child t8)
 
         # Store children to make t4 and t6 non-leaf nodes
         t7 = store_t("T7", parent=t4)
@@ -642,7 +654,9 @@ class TestContextManager(unittest.TestCase):
         # 4. Test storing summarize-research results (summary.md)
         summary_src = self.test_dir / "summary_src"
         summary_src.mkdir(parents=True, exist_ok=True)
-        (summary_src / "summary.md").write_text("# Research Summary Report\nThis is a summary.")
+        (summary_src / "summary.md").write_text(
+            "# Research Summary Report\nThis is a summary."
+        )
 
         res_store = self.run_cmd(
             "store_results",
@@ -698,9 +712,9 @@ class TestContextManager(unittest.TestCase):
             return res.stdout.strip().split()[-1]
 
         # 1. Store theories
-        t1 = store_t("T1") # score 0.9, no solution
-        t2 = store_t("T2") # score 0.85, has solution
-        t3 = store_t("T3") # score 0.7, has solution
+        t1 = store_t("T1")  # score 0.9, no solution
+        t2 = store_t("T2")  # score 0.85, has solution
+        t3 = store_t("T3")  # score 0.7, has solution
 
         # 2. Rescore them
         scores = {
@@ -738,7 +752,9 @@ class TestContextManager(unittest.TestCase):
         # 5. Test storing summarize-goal-progress results (summary.md)
         summary_src = self.test_dir / "goal_summary_src"
         summary_src.mkdir(parents=True, exist_ok=True)
-        (summary_src / "summary.md").write_text("# Goal Progress Summary\nThis is a progress summary.")
+        (summary_src / "summary.md").write_text(
+            "# Goal Progress Summary\nThis is a progress summary."
+        )
 
         res_store = self.run_cmd(
             "store_results",
@@ -819,4 +835,3 @@ class TestContextManager(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-

@@ -1585,7 +1585,7 @@ def main(argv: list[str] | None = None) -> None:
         "--metadata",
         action="append",
         default=[],
-        metavar="KEY=VALUE",
+        metavar="KEY:VALUE",
         help="Extra metadata key-value pair (repeatable)",
     )
 
@@ -1896,11 +1896,11 @@ def main(argv: list[str] | None = None) -> None:
         elif args.command == "store_results":
             extra: dict[str, str] = {}
             for item in args.metadata:
-                if "=" not in item:
+                if ":" not in item:
                     raise ValueError(
-                        f"Invalid --metadata format {item!r}: expected KEY=VALUE"
+                        f"Invalid --metadata format {item!r}: expected KEY:VALUE"
                     )
-                k, v = item.split("=", 1)
+                k, v = item.split(":", 1)
                 extra[k] = v
 
             new_id = store_results(
