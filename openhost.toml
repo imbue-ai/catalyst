@@ -1,0 +1,18 @@
+[app]
+name = "imbue-catalyst"
+version = "0.1.0"
+description = "AI-driven scientific research agent"
+
+[runtime.container]
+image = "Dockerfile"
+port = 8139
+
+[routing]
+health_check = "/api/harnesses"
+
+[resources]
+memory_mb = 16384
+cpu_cores = 4.0
+
+[data]
+app_data = true

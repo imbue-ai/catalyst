@@ -819,8 +819,23 @@ def export_artifact(task_id: str, artifact_id: str):
     )
 
 
+# Serve frontend static files if the build directory exists
+frontend_dist_dir = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "frontend", "dist")
+)
+if os.path.exists(frontend_dist_dir):
+    from fastapi.staticfiles import StaticFiles
+    logger.info(f"[SERVER] Mounting static frontend from {frontend_dist_dir}")
+    app.mount("/", StaticFiles(directory=frontend_dist_dir, html=True), name="static")
+else:
+    logger.warning(f"[SERVER] Frontend dist directory not found at {frontend_dist_dir}. Frontend will not be served.")
+
+
 if __name__ == "__main__":
     import uvicorn
 
+    host = os.environ.get("CATALYST_HOST", "localhost")
     port = int(os.environ.get("CATALYST_BACKEND_PORT", 8139))
-    uvicorn.run(app, host="localhost", port=port)
+    logger.info(f"[SERVER] Starting server on {host}:{port}")
+    uvicorn.run(app, host=host, port=port)
+
