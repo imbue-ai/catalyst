@@ -71,27 +71,29 @@ def get_full_structure(workflow, task: Task) -> List[Dict[str, Any]]:
 
 
 def _orchestrate_task(task_id: str):
-    task = get_task(task_id)
-    if not task:
-        return
+    lock = get_task_lock(task_id)
+    with lock:
+        task = get_task(task_id)
+        if not task:
+            return
 
-    # If already running, don't start another one
-    if task.status == TaskStatus.RUNNING:
-        return
+        # If already running, don't start another one
+        if task.status == TaskStatus.RUNNING:
+            return
 
-    workflow = get_workflow(task.workflow_name)
-    if not workflow:
-        logger.error(f"[ORCHESTRATOR] Unknown workflow: {task.workflow_name}")
-        task.status = TaskStatus.FAILED
+        workflow = get_workflow(task.workflow_name)
+        if not workflow:
+            logger.error(f"[ORCHESTRATOR] Unknown workflow: {task.workflow_name}")
+            task.status = TaskStatus.FAILED
+            update_task(task)
+            return
+
+        is_resume = task.status in [TaskStatus.PAUSED, TaskStatus.FAILED]
+        logger.info(
+            f"[ORCHESTRATOR] Orchestrating task {task_id[:8]} via {workflow.name} (Resume: {is_resume})"
+        )
+        task.status = TaskStatus.RUNNING
         update_task(task)
-        return
-
-    is_resume = task.status in [TaskStatus.PAUSED, TaskStatus.FAILED]
-    logger.info(
-        f"[ORCHESTRATOR] Orchestrating task {task_id[:8]} via {workflow.name} (Resume: {is_resume})"
-    )
-    task.status = TaskStatus.RUNNING
-    update_task(task)
 
     try:
         # Global per-task concurrency limit

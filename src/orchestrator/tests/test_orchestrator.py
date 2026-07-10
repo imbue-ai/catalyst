@@ -74,3 +74,20 @@ class TestOrchestrator(OrchestratorTestCase):
         
         self.assertEqual(self.task.status, TaskStatus.COMPLETED)
         mock_workflow.run.assert_called_once()
+
+    @patch("orchestrator.orchestrator.get_workflow")
+    @patch("orchestrator.orchestrator.get_task")
+    @patch("orchestrator.orchestrator.update_task")
+    def test_orchestrate_task_already_running(self, mock_update, mock_get_task, mock_get_workflow):
+        running_task = self.task.model_copy(deep=True)
+        running_task.status = TaskStatus.RUNNING
+        mock_get_task.return_value = running_task
+        
+        mock_workflow = MagicMock()
+        mock_get_workflow.return_value = mock_workflow
+        
+        _orchestrate_task(self.task.id)
+        
+        # It should return early and not get/run the workflow
+        mock_get_workflow.assert_not_called()
+
