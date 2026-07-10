@@ -42,8 +42,14 @@ harnesses_cache: Dict[str, Dict[str, Any]] = {
         "display_name": "Codex CLI (codex exec)",
         "available": False,
         "help_message": "Checking framework availability...",
-        "models": ["gpt-5.5", "gpt-5.4-mini"],
-        "effort_options": ["minimal", "low", "medium", "high", "xhigh"],
+        "models": [
+            "gpt-5.6-sol",
+            "gpt-5.6-terra",
+            "gpt-5.6-luna",
+            "gpt-5.5",
+            "gpt-5.4-mini",
+        ],
+        "effort_options": ["low", "medium", "high", "xhigh", "max"],
     },
     "gemini": {
         "name": "gemini",
