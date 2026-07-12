@@ -75,6 +75,10 @@ echo "Running 'npm install' in frontend directory..."
 (cd frontend && npm install --no-audit --no-fund)
 echo ""
 
+echo "Running 'npm run build' to build the frontend..."
+(cd frontend && npm run build)
+echo ""
+
 echo "Populating template blobs: 'uv run --project \"$(pwd)\" --directory ../templates python download_blobs.py'..."
 uv run --project "$(pwd)" --directory ../templates python download_blobs.py
 echo ""
@@ -83,43 +87,22 @@ echo "======================================"
 echo "Starting services..."
 echo "======================================"
 
-# Start the backend in the background
-echo "Starting backend server (uv run python server.py)..."
-uv run python server.py &
-BACKEND_PID=$!
-
-# Function to cleanly shut down backend when the script exits
-cleanup() {
-    echo ""
-    echo "Shutting down..."
-    echo "Stopping backend (PID: $BACKEND_PID)..."
-    kill $BACKEND_PID 2>/dev/null || true
-    wait $BACKEND_PID 2>/dev/null || true
-    echo "Shutdown complete."
-}
-
-# Trap EXIT, INT, TERM to run cleanup
-trap cleanup EXIT INT TERM
-
-echo "Backend and frontend are starting up..."
-echo ""
-
-# Wait briefly to let servers bind their ports, then open browser
+# Wait briefly to let backend bind its port, then open browser
 (
     sleep 2
-    FRONTEND_PORT=${CATALYST_FRONTEND_PORT:-8939}
-    echo "Frontend URL: http://localhost:${FRONTEND_PORT}"
+    PORT=${CATALYST_PORT:-8139}
+    echo "Application URL: http://localhost:${PORT}"
     echo "Opening browser..."
     if command -v xdg-open &> /dev/null; then
-        xdg-open http://localhost:${FRONTEND_PORT} &> /dev/null
+        xdg-open http://localhost:${PORT} &> /dev/null
     elif command -v open &> /dev/null; then
-        open http://localhost:${FRONTEND_PORT} &> /dev/null
+        open http://localhost:${PORT} &> /dev/null
     elif command -v python3 &> /dev/null; then
-        python3 -m webbrowser http://localhost:${FRONTEND_PORT} &> /dev/null
+        python3 -m webbrowser http://localhost:${PORT} &> /dev/null
     fi
 ) &
 
-# Run the frontend in the foreground
-# This takes over the terminal so you can see logs and stop it with Ctrl+C
-echo "Starting frontend (npm run dev)..."
-cd frontend && npm run dev
+# Run the backend in the foreground
+echo "Starting backend server (uv run python server.py)..."
+uv run python server.py
+

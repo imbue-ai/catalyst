@@ -56,7 +56,7 @@ class EndpointFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         if record.args and len(record.args) >= 5:
             method, status = record.args[1], record.args[4]
-            if method == "GET" and status == 200:
+            if method == "GET" and status in (200, 304, "200", "304"):
                 return False
         return True
 
@@ -835,7 +835,7 @@ if __name__ == "__main__":
     import uvicorn
 
     host = os.environ.get("CATALYST_HOST", "localhost")
-    port = int(os.environ.get("CATALYST_BACKEND_PORT", 8139))
+    port = int(os.environ.get("CATALYST_PORT", 8139))
     logger.info(f"[SERVER] Starting server on {host}:{port}")
     uvicorn.run(app, host=host, port=port)
 
