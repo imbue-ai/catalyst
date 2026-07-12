@@ -32,7 +32,7 @@ From the root `src` directory:
 ./run.sh
 ```
 
-The dashboard will be available at `http://localhost:8939`.
+The dashboard will be available at `http://localhost:8139`.
 
 ## Configuration
 
@@ -42,8 +42,7 @@ The system can be configured using the following environment variables:
 - `CATALYST_MAX_CONCURRENCY_PER_TASK`: The maximum number of concurrent agent steps per task. Defaults to `3`. Some steps (e.g. `review-theory`) will consume more than one unit, as they utilize subagents internally.
 - `CATALYST_EXPERIMENT_TIMEOUT_SECS`: Maximum duration for a single experiment run by a research agent, in seconds. Defaults to `1800` (30 minutes).
 - `CATALYST_EXPERIMENT_RLIMIT_AS`: Maximum virtual memory that a single experiment can allocate, in bytes. Defaults to `12884901888` (12 GiB).
-- `CATALYST_BACKEND_PORT`: The TCP port on which the backend server runs. Defaults to `8139`.
-- `CATALYST_FRONTEND_PORT`: The TCP port on which the frontend web dashboard runs. Defaults to `8939`.
+- `CATALYST_PORT`: The TCP port on which the server runs. Defaults to `8139`.
 
 ## Usage
 

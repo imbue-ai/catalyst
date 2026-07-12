@@ -1,5 +1,5 @@
-const backendPort = (import.meta.env as any).CATALYST_BACKEND_PORT || "8139";
-export const API_BASE_URL = import.meta.env.VITE_API_URL || `http://localhost:${backendPort}`;
+const backendPort = (import.meta.env as any).CATALYST_PORT || "8139";
+export const API_BASE_URL = import.meta.env.VITE_API_URL || (import.meta.env.PROD ? "" : `http://localhost:${backendPort}`);
 const API_BASE = `${API_BASE_URL}/api`;
 
 export interface AgentSettings {

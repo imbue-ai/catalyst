@@ -56,7 +56,7 @@ class EndpointFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
         if record.args and len(record.args) >= 5:
             method, status = record.args[1], record.args[4]
-            if method == "GET" and status == 200:
+            if method == "GET" and status in (200, 304, "200", "304"):
                 return False
         return True
 
@@ -819,8 +819,23 @@ def export_artifact(task_id: str, artifact_id: str):
     )
 
 
+# Serve frontend static files if the build directory exists
+frontend_dist_dir = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "frontend", "dist")
+)
+if os.path.exists(frontend_dist_dir):
+    from fastapi.staticfiles import StaticFiles
+    logger.info(f"[SERVER] Mounting static frontend from {frontend_dist_dir}")
+    app.mount("/", StaticFiles(directory=frontend_dist_dir, html=True), name="static")
+else:
+    logger.warning(f"[SERVER] Frontend dist directory not found at {frontend_dist_dir}. Frontend will not be served.")
+
+
 if __name__ == "__main__":
     import uvicorn
 
-    port = int(os.environ.get("CATALYST_BACKEND_PORT", 8139))
-    uvicorn.run(app, host="localhost", port=port)
+    host = os.environ.get("CATALYST_HOST", "localhost")
+    port = int(os.environ.get("CATALYST_PORT", 8139))
+    logger.info(f"[SERVER] Starting server on {host}:{port}")
+    uvicorn.run(app, host=host, port=port)
+
