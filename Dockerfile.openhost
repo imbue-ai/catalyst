@@ -62,7 +62,15 @@ EXPOSE 8139
 # Configure environment variables for OpenHost runtime
 ENV CATALYST_HOST=0.0.0.0
 ENV CATALYST_PORT=8139
-ENV CATALYST_PATH=/data/app_data/catalyst
+ENV CATALYST_PATH=/data/app_data/imbue-catalyst
+
+# Create persistent directories and symlinks for agent credentials
+RUN mkdir -p /data/app_data/imbue-catalyst/claude \
+             /data/app_data/imbue-catalyst/gemini \
+             /data/app_data/imbue-catalyst/codex \
+    && ln -sf /data/app_data/imbue-catalyst/claude /root/.claude \
+    && ln -sf /data/app_data/imbue-catalyst/gemini /root/.gemini \
+    && ln -sf /data/app_data/imbue-catalyst/codex /root/.codex
 
 WORKDIR /app/src
 CMD ["uv", "run", "python", "server.py"]

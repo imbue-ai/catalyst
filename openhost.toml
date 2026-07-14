@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "AI-driven scientific research agent"
 
 [runtime.container]
-image = "Dockerfile"
+image = "Dockerfile.openhost"
 port = 8139
 
 [routing]
