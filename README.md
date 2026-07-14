@@ -94,7 +94,7 @@ The costs shown below are rough estimates (order of magnitude), and will vary **
 | | | | 3.1 Pro | included in subscription; ~$300 USD when using API billing | included in subscription; ~$150 USD when using API billing | included in subscription; ~$60 USD when using API billing | included in subscription; ~$6 USD when using API billing |
 | **Codex CLI** | Yes, Pro 20x recommended | Yes | GPT 5.5 | included in subscription; ~$500 USD when using API billing | included in subscription; ~$250 USD when using API billing | included in subscription; ~$100 USD when using API billing | included in subscription; ~$10 USD when using API billing |
 
-*[1] Subject to change - Please check your model provider's terms of service.*
+*[1] Subject to change - Please check your model provider's terms.*
 
 ## Further Documentation
 
