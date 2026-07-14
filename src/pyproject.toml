@@ -28,7 +28,7 @@ shallow-mlps = "shallow_mlps.cli:main"
 
 [tool.uv]
 exclude-newer = "2 week"
-exclude-newer-package = { imbue-mngr = "2026-06-09", imbue-mngr-claude = "2026-06-09", imbue-mngr-antigravity = "2026-06-09", imbue-mngr-wait = "2026-06-09", imbue-common = "2026-06-09", concurrency-group = "2026-06-09", resource-guards = "2026-06-09" }
+exclude-newer-package = { imbue-mngr = "2026-06-09T07:00:00Z", imbue-mngr-claude = "2026-06-09T07:00:00Z", imbue-mngr-antigravity = "2026-06-09T07:00:00Z", imbue-mngr-wait = "2026-06-09T07:00:00Z", imbue-common = "2026-06-09T07:00:00Z", concurrency-group = "2026-06-09T07:00:00Z", resource-guards = "2026-06-09T07:00:00Z" }
 
 [tool.uv.sources]
 darwinian-evolver = { path = "../darwinian_evolver", editable = true }

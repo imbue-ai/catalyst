@@ -12,13 +12,13 @@ exclude-newer = "0001-01-01T00:00:00Z" # This has no effect and is included for 
 exclude-newer-span = "P2W"
 
 [options.exclude-newer-package]
-imbue-mngr-claude = "2026-06-10T07:00:00Z"
-concurrency-group = "2026-06-10T07:00:00Z"
-resource-guards = "2026-06-10T07:00:00Z"
-imbue-mngr = "2026-06-10T07:00:00Z"
-imbue-mngr-antigravity = "2026-06-10T07:00:00Z"
-imbue-mngr-wait = "2026-06-10T07:00:00Z"
-imbue-common = "2026-06-10T07:00:00Z"
+imbue-mngr-claude = "2026-06-09T07:00:00Z"
+concurrency-group = "2026-06-09T07:00:00Z"
+resource-guards = "2026-06-09T07:00:00Z"
+imbue-mngr = "2026-06-09T07:00:00Z"
+imbue-mngr-antigravity = "2026-06-09T07:00:00Z"
+imbue-mngr-wait = "2026-06-09T07:00:00Z"
+imbue-common = "2026-06-09T07:00:00Z"
 
 [[package]]
 name = "annotated-doc"
