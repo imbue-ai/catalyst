@@ -29,10 +29,12 @@ RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:${PATH}"
 
 # Install common agent CLIs (Claude Code, Antigravity CLI, Codex CLI, and Gemini CLI)
-RUN curl -fsSL https://claude.ai/install.sh | bash \
+RUN printf '#!/bin/sh\nexec "$@"\n' > /usr/local/bin/sudo && chmod +x /usr/local/bin/sudo \
+    && curl -fsSL https://claude.ai/install.sh | bash \
     && curl -fsSL https://antigravity.google/cli/install.sh | bash \
     && curl -fsSL https://chatgpt.com/codex/install.sh | sh \
-    && npm install -g @google/gemini-cli
+    && npm install -g @google/gemini-cli \
+    && rm -f /usr/local/bin/sudo
 
 # Copy python packaging files for better caching
 COPY src/pyproject.toml src/uv.lock ./src/
