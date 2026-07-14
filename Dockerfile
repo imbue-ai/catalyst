@@ -1,5 +1,5 @@
 # Stage 1: Build the frontend static files
-FROM node:20-slim AS frontend-builder
+FROM docker.io/library/node:20-slim AS frontend-builder
 WORKDIR /app/frontend
 COPY src/frontend/package*.json ./
 RUN npm install
@@ -7,7 +7,7 @@ COPY src/frontend/ ./
 RUN npm run build
 
 # Stage 2: Final runtime image
-FROM python:3.12-slim
+FROM docker.io/library/python:3.12-slim
 WORKDIR /app
 
 # Install system dependencies, curl, and Node.js
