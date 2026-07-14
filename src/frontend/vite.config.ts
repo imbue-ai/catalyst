@@ -5,7 +5,7 @@ const frontendPort = process.env.CATALYST_FRONTEND_PORT
   ? parseInt(process.env.CATALYST_FRONTEND_PORT, 10)
   : 8939;
 
-const backendPort = process.env.CATALYST_BACKEND_PORT || "8139";
+const backendPort = process.env.CATALYST_PORT || "8139";
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -14,6 +14,6 @@ export default defineConfig({
     port: frontendPort,
   },
   define: {
-    'import.meta.env.CATALYST_BACKEND_PORT': JSON.stringify(backendPort),
+    'import.meta.env.CATALYST_PORT': JSON.stringify(backendPort),
   },
 })
