@@ -58,7 +58,7 @@ EXPOSE 8139
 
 # Configure environment variables for OpenHost runtime
 ENV CATALYST_HOST=0.0.0.0
-ENV CATALYST_BACKEND_PORT=8139
+ENV CATALYST_PORT=8139
 ENV CATALYST_PATH=/data/app_data/catalyst
 
 WORKDIR /app/src
