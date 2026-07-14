@@ -82,7 +82,7 @@ Before using Imbue Catalyst, please familiarize yourself with the expected costs
 
 The costs shown below are rough estimates (order of magnitude), and will vary **significantly** depending on your research task. Even when using a subscription, extra charges may apply after you exhaust your plan's rate limits depending on your configuration (Anthropic Usage Credits, Gemini AI Credits etc.). **Please monitor your provider's spend dashboard to avoid unwanted surprises.**
 
-| Harness | Can use subscription plan? | Runs in sandbox | Model | Cost per "Develop Theory (Evolution)" | Cost per "Solve Verifiable Goal (Evolution)" | Cost per "Develop Theory (Linear)" | Cost per manual step |
+| Harness | Can use subscription plan? [1] | Runs in sandbox | Model | Cost per "Develop Theory (Evolution)" | Cost per "Solve Verifiable Goal (Evolution)" | Cost per "Develop Theory (Linear)" | Cost per manual step |
 | -- | -- | -- | -- | -- | -- | -- | -- |
 | **Claude Code**  | Yes, Max 20x recommended | Yes | Opus 4.8 | included in subscription; ~$1,000 USD when using API billing | included in subscription; ~$500 USD when using API billing | included in subscription; ~$200 USD when using API billing | included in subscription; ~$20 USD when using API billing |
 | | | | Sonnet 4.6 | included in subscription; ~$500 USD when using API billing | included in subscription; ~$250 USD when using API billing | included in subscription; ~$100 USD when using API billing | included in subscription; ~$10 when using API billing |
@@ -94,6 +94,7 @@ The costs shown below are rough estimates (order of magnitude), and will vary **
 | | | | 3.1 Pro | included in subscription; ~$300 USD when using API billing | included in subscription; ~$150 USD when using API billing | included in subscription; ~$60 USD when using API billing | included in subscription; ~$6 USD when using API billing |
 | **Codex CLI** | Yes, Pro 20x recommended | Yes | GPT 5.5 | included in subscription; ~$500 USD when using API billing | included in subscription; ~$250 USD when using API billing | included in subscription; ~$100 USD when using API billing | included in subscription; ~$10 USD when using API billing |
 
+*[1] Subject to change - Please check your model provider's terms of service.*
 
 ## Further Documentation
 
