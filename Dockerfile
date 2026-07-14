@@ -40,10 +40,11 @@ COPY darwinian_evolver /app/darwinian_evolver
 
 # Sync dependencies using uv
 WORKDIR /app/src
-RUN uv sync --frozen
+RUN uv sync --frozen --no-install-project
 
 # Copy the rest of the source directories
 COPY src/ /app/src
+RUN uv sync --frozen
 COPY templates /app/templates
 
 # Pre-download large template reference blobs during image build to optimize startup time
