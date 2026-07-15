@@ -75,7 +75,6 @@ EXPOSE 8139
 # Configure environment variables for OpenHost runtime
 ENV CATALYST_HOST=0.0.0.0
 ENV CATALYST_PORT=8141
-ENV CATALYST_PATH=$OPENHOST_APP_DATA_DIR/imbue-catalyst
 
 WORKDIR /app
 RUN chmod +x /app/openhost/start.sh
