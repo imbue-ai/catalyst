@@ -187,7 +187,13 @@ async def pty_ws(websocket: WebSocket, command: str):
 
 @app.get("/openhost/health")
 async def openhost_health():
-    return {"status": "ok"}
+    try:
+        # Verify that the Catalyst backend is up and responsive before returning ok
+        await client.request("HEAD", "/", timeout=5.0)
+        return {"status": "ok"}
+    except Exception as e:
+        logger.error(f"OpenHost Health Check Failed: Catalyst backend on port {CATALYST_PORT} is not responsive: {e}")
+        return Response(content="Catalyst backend is not running or responsive", status_code=503)
 
 # Mount the static openhost admin panel directly
 frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "frontend", "dist"))
