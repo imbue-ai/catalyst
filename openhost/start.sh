@@ -9,7 +9,7 @@ export ADMIN_PORT=8139
 
 # Ensure we have a clean environment variables for Catalyst
 export CATALYST_HOST=0.0.0.0
-export CATALYST_PATH=$OPENHOST_APP_DATA_DIR/imbue-catalyst
+export CATALYST_PATH=$OPENHOST_APP_DATA_DIR
 
 echo "=== OpenHost Gateway Startup Shell ==="
 
