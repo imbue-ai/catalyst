@@ -25,6 +25,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     ca-certificates \
     procps \
+    bubblewrap \
+    socat \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js 20 from NodeSource (required for Gemini CLI and other node integrations)
