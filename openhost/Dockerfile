@@ -73,7 +73,6 @@ COPY --from=admin-frontend-builder /app/admin-frontend/dist /app/openhost/fronte
 EXPOSE 8139
 
 # Configure environment variables for OpenHost runtime
-ENV CATALYST_HOST=0.0.0.0
 ENV CATALYST_PORT=8141
 
 WORKDIR /app
