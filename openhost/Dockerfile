@@ -1,4 +1,4 @@
-# Stage 1: Build the frontend static files
+# Stage 1: Build the main frontend static files
 FROM docker.io/library/node:20-slim AS frontend-builder
 WORKDIR /app/frontend
 COPY src/frontend/package*.json ./
@@ -6,7 +6,15 @@ RUN npm install
 COPY src/frontend/ ./
 RUN npm run build
 
-# Stage 2: Final runtime image
+# Stage 2: Build the openhost admin frontend
+FROM docker.io/library/node:20-slim AS admin-frontend-builder
+WORKDIR /app/admin-frontend
+COPY openhost/frontend/package*.json ./
+RUN npm install
+COPY openhost/frontend/ ./
+RUN npm run build
+
+# Stage 3: Final runtime image
 FROM docker.io/library/python:3.12-slim
 WORKDIR /app
 
@@ -53,16 +61,22 @@ COPY templates /app/templates
 WORKDIR /app/templates
 RUN python3 download_blobs.py
 
-# Copy the pre-built frontend files into the correct backend location to serve them
+# Copy the pre-built main frontend files into the correct backend location to serve them
 COPY --from=frontend-builder /app/frontend/dist /app/src/frontend/dist
 
-# Expose backend port
+# Copy the openhost python server and start script
+COPY openhost/ /app/openhost
+# Copy the pre-built openhost admin frontend
+COPY --from=admin-frontend-builder /app/admin-frontend/dist /app/openhost/frontend/dist
+
+# Expose backend gateway port
 EXPOSE 8139
 
 # Configure environment variables for OpenHost runtime
 ENV CATALYST_HOST=0.0.0.0
-ENV CATALYST_PORT=8139
+ENV CATALYST_PORT=8141
 ENV CATALYST_PATH=$OPENHOST_APP_DATA_DIR/imbue-catalyst
 
-WORKDIR /app/src
-CMD ["uv", "run", "python", "server.py"]
+WORKDIR /app
+RUN chmod +x /app/openhost/start.sh
+CMD ["/app/openhost/start.sh"]
