@@ -4,11 +4,11 @@ version = "0.1.0"
 description = "AI-driven scientific research agent"
 
 [runtime.container]
-image = "Dockerfile.openhost"
+image = "openhost/Dockerfile"
 port = 8139
 
 [routing]
-health_check = "/api/harnesses"
+health_check = "/openhost/health"
 
 [resources]
 memory_mb = 16384
@@ -16,3 +16,7 @@ cpu_cores = 4.0
 
 [data]
 app_data = true
+
+[[links]]
+name = "Agent harness auth"
+path = "/openhost/"

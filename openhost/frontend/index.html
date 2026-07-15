@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Imbue Catalyst Agent Harness Management</title>
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+<body class="admin-body">
+
+  <main class="main-content">
+    <h1 class="page-title">Imbue Catalyst agent harness management</h1>
+
+    <!-- Harness Table -->
+    <table class="harness-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Hint</th>
+          <th>Auth</th>
+        </tr>
+      </thead>
+      <tbody id="harnesses-tbody">
+        <tr class="loading-row">
+          <td colspan="4">Loading agent harnesses...</td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Clean, minimalist modal -->
+  <div id="auth-modal" class="modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <span id="modal-title" class="modal-title">auth_terminal.sh</span>
+        <div class="modal-actions">
+          <button id="copy-btn" class="simple-btn">Copy</button>
+          <button id="paste-btn" class="simple-btn">Paste</button>
+          <button id="reset-terminal-btn" class="simple-btn">Restart Session</button>
+          <button id="close-modal-text-btn" class="simple-btn btn-danger">Exit</button>
+        </div>
+      </div>
+      
+      <div class="instruction-banner">
+        <span>This is a live terminal connection to authenticate the client. Complete the interactive steps inside.</span>
+      </div>
+
+      <div class="terminal-viewport">
+        <div id="terminal-container"></div>
+        <div id="terminal-loader" class="loader-overlay">
+          <span>Connecting...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+/* Minimalist, Clean, OpenHost-like stylesheet (Pure CSS) */
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body.admin-body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  background-color: #ffffff;
+  color: #000000;
+  line-height: 1.5;
+  padding: 2.5rem;
+}
+
+.main-content {
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 2rem;
+  color: #000000;
+}
+
+/* Minimalist Table */
+.harness-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1rem;
+  font-size: 0.9rem;
+}
+
+.harness-table th,
+.harness-table td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border: 1px solid #ccc;
+}
+
+.harness-table th {
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: #334155;
+}
+
+.harness-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.loading-row td {
+  text-align: center;
+  color: #64748b;
+  padding: 2rem;
+}
+
+/* Availability Status */
+.status-text {
+  font-weight: 600;
+}
+
+.status-text.active {
+  color: #16a34a; /* Green */
+}
+
+.status-text.inactive {
+  color: #dc2626; /* Red */
+}
+
+/* Buttons matching the OpenHost app screenshots */
+.simple-btn {
+  font-family: inherit;
+  font-size: 0.85rem;
+  padding: 0.375rem 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  background-color: #ffffff;
+  color: #000000;
+  cursor: pointer;
+  transition: background-color 0.1s, border-color 0.1s;
+}
+
+.simple-btn:hover:not(:disabled) {
+  background-color: #f1f5f9;
+  border-color: #94a3b8;
+}
+
+.simple-btn:active:not(:disabled) {
+  background-color: #e2e8f0;
+}
+
+.simple-btn:disabled {
+  color: #94a3b8;
+  border-color: #e2e8f0;
+  background-color: #f8fafc;
+  cursor: not-allowed;
+}
+
+.simple-btn.btn-danger {
+  border-color: #f87171;
+  color: #dc2626;
+}
+
+.simple-btn.btn-danger:hover {
+  background-color: #fef2f2;
+  border-color: #dc2626;
+}
+
+/* Modal Overlay */
+.modal {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease-out;
+}
+
+.modal.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Centered modal container */
+.modal-container {
+  background-color: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  width: calc(100% - 2rem);
+  max-width: 50rem;
+  height: 70vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+/* Modal Header styling */
+.modal-header {
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e2e8f0;
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.modal-title {
+  font-family: inherit;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+/* Banner */
+.instruction-banner {
+  background-color: #f0fdf4;
+  border-bottom: 1px solid #bbf7d0;
+  color: #16a34a;
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+}
+
+/* Terminal Viewport (black background, white text) */
+.terminal-viewport {
+  flex: 1;
+  background-color: #000000;
+  position: relative;
+  overflow: hidden;
+  padding: 0.5rem;
+}
+
+#terminal-container {
+  width: 100%;
+  height: 100%;
+}
+
+/* Simple Loader */
+.loader-overlay {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.85);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-family: monospace;
+  pointer-events: none;
+}
