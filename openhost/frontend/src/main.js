@@ -8,6 +8,8 @@ const modal = document.getElementById('auth-modal');
 const modalTitle = document.getElementById('modal-title');
 const closeModalTextBtn = document.getElementById('close-modal-text-btn');
 const resetTerminalBtn = document.getElementById('reset-terminal-btn');
+const copyBtn = document.getElementById('copy-btn');
+const pasteBtn = document.getElementById('paste-btn');
 const terminalContainer = document.getElementById('terminal-container');
 const terminalLoader = document.getElementById('terminal-loader');
 
@@ -244,12 +246,38 @@ resetTerminalBtn.addEventListener('click', () => {
   }
 });
 
-// Close modal if clicked outside container
-modal.addEventListener('click', (e) => {
-  if (e.target === modal) {
-    closeAuthTerminal();
+// Copy selected terminal text to clipboard
+copyBtn.addEventListener('click', async () => {
+  if (term) {
+    const selection = term.getSelection();
+    if (selection) {
+      try {
+        await navigator.clipboard.writeText(selection);
+        const originalText = copyBtn.textContent;
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => {
+          copyBtn.textContent = originalText;
+        }, 1000);
+      } catch (err) {
+        console.error('Failed to copy to clipboard:', err);
+      }
+    }
   }
 });
+
+// Paste clipboard text into the terminal session
+pasteBtn.addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (text && socket && socket.readyState === WebSocket.OPEN) {
+      socket.send(text);
+    }
+  } catch (err) {
+    console.error('Failed to read from clipboard:', err);
+  }
+});
+
+// Modal can only be closed via the explicit 'Exit' button to avoid accidental closures during text selection.
 
 // Initial load
 loadHarnesses();
