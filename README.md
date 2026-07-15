@@ -7,7 +7,7 @@ A tool for semi-autonomous scientific research and discovery.
 ### What Imbue Catalyst Can Do
 
 Imbue Catalyst supports two core research modalities:
-1. **Explaining Phenomena**: Autonomously develops a theory to explain an observed phenomenon. It also supports taking a user-provided theory draft, filling in gaps, and auto-correcting mistakes and oversights.
+1. **Explaining Phenomena**: Autonomously develops a theory to explain an observed phenomenon. It also supports taking a user-provided theory draft, filling in gaps, and auto-correcting mistakes.
 2. **Verifiable Goal Solving/Optimization**: Autonomously solves a research goal that can be verified through code, or optimizes a measurable metric.
 
 In addition to these high-level workflows, Imbue Catalyst provides a menu of pre-defined manual operations (add-on steps) such as reviewing a theory for correctness, proposing refinements, or evaluating solution candidates.
