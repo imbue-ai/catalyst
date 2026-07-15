@@ -17,6 +17,7 @@ function App() {
   const [isBackendDown, setIsBackendDown] = useState(false)
   const prevTasksRef = useRef<api.TaskShallow[]>([])
   const [selectedTaskDetails, setSelectedTaskDetails] = useState<api.Task | null>(null)
+  const [taskError, setTaskError] = useState<string | null>(null)
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme');
@@ -121,9 +122,14 @@ function App() {
       const detail = await api.getTask(id)
       if (!guard || guard.active) {
         setSelectedTaskDetails(detail)
+        setTaskError(null)
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e)
+      if (!guard || guard.active) {
+        setSelectedTaskDetails(null)
+        setTaskError(e.message || "Failed to load task details")
+      }
     }
   }
 
@@ -141,9 +147,11 @@ function App() {
     fetchTasks()
     if (selectedTaskId) {
       setSelectedTaskDetails(null)
+      setTaskError(null)
       fetchSelectedTaskDetails(selectedTaskId, guard)
     } else {
       setSelectedTaskDetails(null)
+      setTaskError(null)
     }
 
     // Polling interval
@@ -265,7 +273,20 @@ function App() {
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto bg-white flex flex-col relative">
           {selectedTaskId ? (
-            selectedTaskDetails ? (
+            taskError ? (
+              <div className="flex-1 flex flex-col items-center justify-center p-20 text-center">
+                <h2 className="text-2xl font-black tracking-tighter mb-2">Task Not Found</h2>
+                <p className="text-gray-400 max-w-sm text-sm mb-6">
+                  {taskError}
+                </p>
+                <button
+                  onClick={() => { window.location.hash = ''; }}
+                  className="px-6 py-3 bg-black text-white font-bold text-xs tracking-widest hover:bg-gray-800 transition-colors"
+                >
+                  Back to Dashboard
+                </button>
+              </div>
+            ) : selectedTaskDetails ? (
               <TaskDetail
                 key={selectedTaskDetails.id}
                 task={selectedTaskDetails}
