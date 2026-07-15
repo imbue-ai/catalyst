@@ -1,6 +1,6 @@
-import { Terminal } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
-import 'xterm/css/xterm.css';
+import { Terminal } from '@xterm/xterm';
+import { FitAddon } from '@xterm/addon-fit';
+import '@xterm/xterm/css/xterm.css';
 
 // DOM Elements
 const grid = document.getElementById('harnesses-grid');
@@ -214,16 +214,16 @@ function renderHarnesses(harnesses) {
     
     // Create card element
     const card = document.createElement('div');
-    card.className = `glass-card p-6 rounded-2xl flex flex-col justify-between ${brand === 'agy' || brand === 'claude' ? 'glow-teal' : 'glow-purple'}`;
+    card.className = `glass-card ${brand === 'agy' || brand === 'claude' ? 'glow-teal' : 'glow-purple'}`;
     
     // Status Badge HTML
     const statusBadge = isAvailable
-      ? `<span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20">
-          <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+      ? `<span class="harness-status-badge active">
+          <span class="status-dot green pulsing"></span>
           Active
          </span>`
-      : `<span class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-800 text-slate-400 text-xs font-semibold border border-slate-700/50">
-          <span class="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+      : `<span class="harness-status-badge inactive">
+          <span class="status-dot grey"></span>
           Unavailable
          </span>`;
 
@@ -231,8 +231,8 @@ function renderHarnesses(harnesses) {
     let modelsHTML = '';
     if (h.models && h.models.length > 0) {
       modelsHTML = `
-        <div class="mt-4">
-          <p class="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Supported Models</p>
+        <div class="harness-models-container">
+          <p class="harness-models-label">Supported Models</p>
           <div class="details-list">
             ${h.models.map(m => `<span class="tag-badge">${m}</span>`).join('')}
           </div>
@@ -242,15 +242,15 @@ function renderHarnesses(harnesses) {
 
     // Help message or warning
     const helpMessageHTML = h.help_message
-      ? `<p class="text-xs text-slate-400 mt-2 bg-slate-950/30 border border-slate-800/40 p-2.5 rounded-lg leading-relaxed">${h.help_message}</p>`
-      : `<p class="text-xs text-slate-500 mt-2 italic leading-relaxed">Harness is healthy and authorized for execution.</p>`;
+      ? `<p class="harness-help-message">${h.help_message}</p>`
+      : `<p class="harness-help-message healthy">Harness is healthy and authorized for execution.</p>`;
 
     // Button HTML
     let actionButtonHTML = '';
     if (authCmd) {
       actionButtonHTML = `
-        <button class="auth-btn mt-6" data-command="${authCmd}" data-display="${h.display_name}">
-          <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <button class="auth-btn" data-command="${authCmd}" data-display="${h.display_name}">
+          <svg class="harness-brand-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
           </svg>
           Authenticate Client
@@ -258,7 +258,7 @@ function renderHarnesses(harnesses) {
       `;
     } else {
       actionButtonHTML = `
-        <button class="auth-btn mt-6" disabled>
+        <button class="auth-btn" disabled>
           No CLI Auth Required
         </button>
       `;
@@ -266,14 +266,14 @@ function renderHarnesses(harnesses) {
 
     card.innerHTML = `
       <div>
-        <div class="flex items-center justify-between gap-4 mb-4 border-b border-slate-800/40 pb-4">
-          <div class="flex items-center gap-3">
-            <div class="w-12 h-12 rounded-xl bg-slate-950 flex items-center justify-center border border-slate-800/60">
+        <div class="harness-card-header">
+          <div class="harness-header-left">
+            <div class="harness-icon-wrapper">
               ${getBrandIcon(h.name)}
             </div>
-            <div>
-              <h3 class="font-bold text-base text-white tracking-tight">${h.display_name}</h3>
-              <p class="text-[10px] text-slate-500 font-mono mt-0.5">ID: ${h.name}</p>
+            <div class="harness-title-wrapper">
+              <h3>${h.display_name}</h3>
+              <p class="harness-id">ID: ${h.name}</p>
             </div>
           </div>
           ${statusBadge}
