@@ -17,6 +17,6 @@ cpu_cores = 4.0
 [data]
 app_data = true
 
-[links]
+[[links]]
 name = "Agent harness auth"
 path = "/openhost"
