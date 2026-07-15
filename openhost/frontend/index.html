@@ -3,108 +3,51 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Catalyst OpenHost Admin</title>
-  <!-- Google Fonts for premium typography -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Outfit:wght@300;400;600;700;800&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <title>Imbue Catalyst Agent Harness Management</title>
   <link rel="stylesheet" href="./src/style.css">
 </head>
 <body class="admin-body">
 
-  <!-- Background Glowing Orbs -->
-  <div class="glow-orb orb-top-left"></div>
-  <div class="glow-orb orb-bottom-right"></div>
+  <main class="main-content">
+    <h1 class="page-title">Imbue Catalyst agent harness management</h1>
 
-  <!-- Header -->
-  <header class="main-header">
-    <div class="header-container">
-      <div class="header-logo-group">
-        <div class="logo-icon-wrapper">
-          <svg class="logo-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
-          </svg>
-        </div>
-        <div class="logo-text-wrapper">
-          <h1 class="logo-title">CATALYST</h1>
-          <p class="logo-subtitle">OpenHost Administration</p>
+    <!-- Harness Table -->
+    <table class="harness-table">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Status</th>
+          <th>Hint</th>
+          <th>Auth</th>
+        </tr>
+      </thead>
+      <tbody id="harnesses-tbody">
+        <tr class="loading-row">
+          <td colspan="4">Loading agent harnesses...</td>
+        </tr>
+      </tbody>
+    </table>
+  </main>
+
+  <!-- Clean, minimalist modal -->
+  <div id="auth-modal" class="modal">
+    <div class="modal-container">
+      <div class="modal-header">
+        <span id="modal-title" class="modal-title">auth_terminal.sh</span>
+        <div class="modal-actions">
+          <button id="reset-terminal-btn" class="simple-btn">Restart Session</button>
+          <button id="close-modal-text-btn" class="simple-btn btn-danger">Exit</button>
         </div>
       </div>
       
-      <!-- Connection Status Badge -->
-      <div class="connection-status-badge">
-        <span class="status-dot green pulsing"></span>
-        <span>Gateway Connected</span>
-      </div>
-    </div>
-  </header>
-
-  <!-- Main Content Container -->
-  <main class="main-content">
-    <!-- Intro Hero Section -->
-    <div class="hero-section">
-      <h2 class="hero-title">Agent Harness Management</h2>
-      <p class="hero-description">
-        Monitor your active AI agent execution harnesses and authenticate them instantly. Keeping your local client configurations authorized ensures seamless workspace agent execution.
-      </p>
-    </div>
-
-    <!-- Harness Grid (populated dynamically) -->
-    <div id="harnesses-grid" class="harnesses-grid">
-      <!-- Loading Skeleton Cards -->
-      <div class="skeleton-card"></div>
-      <div class="skeleton-card"></div>
-      <div class="skeleton-card"></div>
-      <div class="skeleton-card"></div>
-    </div>
-  </main>
-
-  <!-- Sliding Terminal / Auth Modal Drawer -->
-  <div id="auth-modal" class="modal">
-    <div id="modal-container" class="modal-container">
-      <!-- Window Title Bar -->
-      <div class="window-titlebar">
-        <div class="titlebar-left">
-          <div class="window-dots">
-            <button id="close-modal-btn" class="window-dot dot-red">×</button>
-            <div class="window-dot dot-yellow"></div>
-            <div class="window-dot dot-green"></div>
-          </div>
-          <span class="divider">|</span>
-          <span id="modal-title" class="window-title">auth_terminal.sh</span>
-        </div>
-        
-        <!-- Action Buttons -->
-        <div class="titlebar-actions">
-          <button id="reset-terminal-btn" class="action-btn btn-secondary">
-            <svg class="action-btn-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 1121.21 4.89M9 11l3-3m0 0l3 3m-3-3v12" />
-            </svg>
-            Restart Session
-          </button>
-          <button id="close-modal-text-btn" class="action-btn btn-danger">
-            Exit
-          </button>
-        </div>
-      </div>
-
-      <!-- Quick Instructions banner -->
       <div class="instruction-banner">
-        <svg class="info-icon" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        <span class="instruction-text">This is a live virtual terminal forwarded to the docker container. Complete the interactive authentication steps shown inside.</span>
+        <span>This is a live terminal connection to authenticate the client. Complete the interactive steps inside.</span>
       </div>
 
-      <!-- Terminal viewport -->
       <div class="terminal-viewport">
-        <!-- Terminal Container -->
-        <div id="terminal-container" class="terminal-container-inner"></div>
-        
-        <!-- Big Loading Overlay -->
+        <div id="terminal-container"></div>
         <div id="terminal-loader" class="loader-overlay">
-          <div class="spinner"></div>
-          <p class="loader-text">Establishing local pty connection...</p>
+          <span>Connecting...</span>
         </div>
       </div>
     </div>
