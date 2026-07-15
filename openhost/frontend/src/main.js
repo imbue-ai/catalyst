@@ -118,7 +118,7 @@ function connectWebSocket(command) {
 function openAuthTerminal(command, displayName) {
   const commandTexts = {
     'agy': 'agy',
-    'codex': 'codex login',
+    'codex': 'codex login --device-auth',
     'gemini': 'gemini',
     'claude': 'claude auth login'
   };

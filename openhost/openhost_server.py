@@ -51,7 +51,7 @@ async def pty_ws(websocket: WebSocket, command: str):
     
     cmd_map = {
         "agy": ["agy"],
-        "codex": ["codex", "login"],
+        "codex": ["codex", "login", "--device-auth"],
         "gemini": ["gemini"],
         "claude": ["claude", "auth", "login"],
     }
@@ -150,6 +150,12 @@ async def pty_ws(websocket: WebSocket, command: str):
         for task in pending:
             task.cancel()
             
+        # Unregister reader synchronously before closing the file descriptor!
+        try:
+            loop.remove_reader(fd)
+        except Exception:
+            pass
+
         # Cleanup
         try:
             os.close(fd)
@@ -160,6 +166,21 @@ async def pty_ws(websocket: WebSocket, command: str):
             os.kill(pid, signal.SIGTERM)
         except OSError:
             pass
+            
+        # Reap child process asynchronously to prevent zombie processes
+        async def reap_child():
+            try:
+                for _ in range(20):
+                    res_pid, _ = os.waitpid(pid, os.WNOHANG)
+                    if res_pid == pid:
+                        return
+                    await asyncio.sleep(0.1)
+                os.kill(pid, signal.SIGKILL)
+                os.waitpid(pid, 0)
+            except OSError:
+                pass
+                
+        asyncio.create_task(reap_child())
             
         logger.info(f"PTY connection for command {command} closed.")
 
