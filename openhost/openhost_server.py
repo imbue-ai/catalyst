@@ -3,6 +3,7 @@ import pty
 import fcntl
 import termios
 import struct
+import signal
 import json
 import asyncio
 import logging
@@ -15,6 +16,8 @@ import httpx
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("openhost_server")
+# Suppress noisy HTTP requests logs from httpx proxy client
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 app = FastAPI(title="OpenHost Admin & Proxy Gateway")
 
@@ -154,11 +157,15 @@ async def pty_ws(websocket: WebSocket, command: str):
             pass
         try:
             # Kill process group / child process gracefully first
-            os.kill(pid, termios.SIGTERM)
+            os.kill(pid, signal.SIGTERM)
         except OSError:
             pass
             
         logger.info(f"PTY connection for command {command} closed.")
+
+@app.get("/openhost/health")
+async def openhost_health():
+    return {"status": "ok"}
 
 # Mount the static openhost admin panel directly
 frontend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "frontend", "dist"))

@@ -116,7 +116,13 @@ function connectWebSocket(command) {
 
 // Open modal and connect terminal
 function openAuthTerminal(command, displayName) {
-  modalTitle.textContent = `${command}_auth.sh`;
+  const commandTexts = {
+    'agy': 'agy',
+    'codex': 'codex login',
+    'gemini': 'gemini',
+    'claude': 'claude auth login'
+  };
+  modalTitle.textContent = commandTexts[command] || command;
   modal.classList.add('open');
   
   // Make sure terminal is initialized and fitted
@@ -188,11 +194,11 @@ function renderHarnesses(harnesses) {
     
     // Status text
     const statusText = isAvailable
-      ? `<span class="status-text active">yes</span>`
-      : `<span class="status-text inactive">no</span>`;
+      ? `<span class="status-text active">ok</span>`
+      : `<span class="status-text inactive">configuration required</span>`;
 
-    // Hint text
-    const hintText = h.help_message || '';
+    // Hint text (only shown if not ok)
+    const hintText = !isAvailable ? (h.help_message || '') : '';
 
     // Action button
     let actionButtonHTML = '';
