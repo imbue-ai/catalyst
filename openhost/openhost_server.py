@@ -16,8 +16,9 @@ import httpx
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("openhost_server")
-# Suppress noisy HTTP requests logs from httpx proxy client
+# Suppress noisy HTTP requests logs from httpx proxy client and uvicorn access logs
 logging.getLogger("httpx").setLevel(logging.WARNING)
+logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
 
 app = FastAPI(title="OpenHost Admin & Proxy Gateway")
 
@@ -235,4 +236,4 @@ if __name__ == "__main__":
     import uvicorn
     admin_port = int(os.environ.get("ADMIN_PORT", 8139))
     logger.info(f"Starting OpenHost Admin gateway on port {admin_port}")
-    uvicorn.run(app, host="0.0.0.0", port=admin_port)
+    uvicorn.run(app, host="0.0.0.0", port=admin_port, access_log=False)
