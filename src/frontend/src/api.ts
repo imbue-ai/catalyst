@@ -148,6 +148,10 @@ export const listTasks = async (): Promise<TaskShallow[]> => {
 
 export async function getTask(id: string): Promise<Task> {
   const res = await fetch(`${API_BASE}/tasks/${id}`);
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.detail || "Task not found");
+  }
   return res.json();
 }
 
