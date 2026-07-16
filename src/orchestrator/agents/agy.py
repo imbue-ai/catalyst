@@ -42,9 +42,10 @@ class AgyAgentRunner(BaseCliAgentRunner):
         cmd = [
             "agy",
             # Antigravity sandboxing is currently unreliable:
-            # With `-p`, bypassSandbox requests appear to be auto-approved. At the same time, we're unable to allow-list network access upfront.
+            # With `--dangerously-skip-permissions`, bypassSandbox requests are auto-approved. At the same time, we're unable to allow-list network access upfront.
             # Hence, we run without sandboxing for the time being until agy has more mature sandbox configuration options.
             # "--sandbox",
+            "--dangerously-skip-permissions",
             "--print-timeout",
             f"{AGENT_TIMEOUT_SECS}s",
             "--add-dir",
