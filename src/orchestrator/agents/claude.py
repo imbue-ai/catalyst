@@ -1,6 +1,8 @@
+import json
 import os
 import shlex
 import logging
+import threading
 from typing import Dict, Any, Optional, Tuple, Callable
 
 from .base import EXPERIMENT_TIMEOUT_SECS, parse_json_result, write_claude_settings
@@ -10,6 +12,8 @@ logger = logging.getLogger(__name__)
 
 
 class ClaudeAgentRunner(BaseCliAgentRunner):
+    _ack_lock = threading.Lock()
+
     def __init__(self, disable_sandboxing: bool = False) -> None:
         super().__init__()
         self.disable_sandboxing = disable_sandboxing
@@ -26,7 +30,9 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
         on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
-        write_claude_settings(env_folder, self.disable_sandboxing, include_stop_hook=False)
+        write_claude_settings(
+            env_folder, self.disable_sandboxing, include_stop_hook=False
+        )
 
         env = os.environ.copy()
         env.pop("VIRTUAL_ENV", None)
@@ -40,6 +46,8 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
         env["CLAUDE_CODE_DISABLE_AUTO_MEMORY"] = "1"
         env["BASH_DEFAULT_TIMEOUT_MS"] = str(bash_timeout_ms)
         env["BASH_MAX_TIMEOUT_MS"] = str(bash_timeout_ms)
+
+        self._acknowledge_trust(abs_env_folder)
 
         cmd = [
             "claude",
@@ -138,3 +146,33 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
 
         except Exception as e:
             return None, None, f"Claude execution error: {str(e)}"
+
+    def _acknowledge_trust(self, env_folder_abs: str) -> None:
+        with self._ack_lock:
+            try:
+                ack_path = os.path.expanduser("~/.claude.json")
+                os.makedirs(os.path.dirname(ack_path), exist_ok=True)
+
+                if os.path.exists(ack_path):
+                    with open(ack_path, "r") as f:
+                        try:
+                            data = json.load(f)
+                        except json.JSONDecodeError:
+                            data = {}
+                else:
+                    data = {}
+
+                projects_data = data.get("projects", {})
+
+                if env_folder_abs not in projects_data:
+                    projects_data[env_folder_abs] = {}
+                if not projects_data[env_folder_abs].get("hasTrustDialogAccepted"):
+                    projects_data[env_folder_abs]["hasTrustDialogAccepted"] = True
+
+                    data["projects"] = projects_data
+                    with open(ack_path, "w") as f:
+                        json.dump(data, f, indent=2)
+            except Exception as e:
+                logger.warning(
+                    f"Failed to acknowledge trust dialog for {env_folder_abs}: {e}"
+                )
