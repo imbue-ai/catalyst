@@ -50,11 +50,11 @@ class WeightedSemaphore:
         return self._Context(self, weight)
 
 
-def start_task(task: Task):
+def start_task(task: Task, disable_sandboxing: bool = False):
     logger.info(
         f"[ORCHESTRATOR] Starting task {task.id[:8]}: {task.workflow_inputs.get('summary', '')[:50]}..."
     )
-    thread = threading.Thread(target=_orchestrate_task, args=(task.id,))
+    thread = threading.Thread(target=_orchestrate_task, args=(task.id, disable_sandboxing))
     thread.daemon = True
     thread.start()
 
@@ -70,7 +70,7 @@ def get_full_structure(workflow, task: Task) -> List[Dict[str, Any]]:
     return structure
 
 
-def _orchestrate_task(task_id: str):
+def _orchestrate_task(task_id: str, disable_sandboxing: bool = False):
     lock = get_task_lock(task_id)
     with lock:
         task = get_task(task_id)
@@ -151,7 +151,7 @@ def _orchestrate_task(task_id: str):
                         step.status = StepStatus.RUNNING
                     update_task(current_task)
 
-                res = _run_step_core(t, stage, prompt, category)
+                res = _run_step_core(t, stage, prompt, category, disable_sandboxing=disable_sandboxing)
                 # Update structure after each step to reflect progress
                 t.workflow_structure = get_full_structure(workflow, t)
                 update_task(t)
@@ -187,7 +187,7 @@ def _orchestrate_task(task_id: str):
         update_task(task)
 
 
-def _run_step_core(task: Task, stage: str, prompt: str, category: StepCategory) -> Any:
+def _run_step_core(task: Task, stage: str, prompt: str, category: StepCategory, disable_sandboxing: bool = False) -> Any:
     # This core function assumes the step is already created and in RUNNING state
     lock = get_task_lock(task.id)
     step = None
@@ -223,7 +223,7 @@ def _run_step_core(task: Task, stage: str, prompt: str, category: StepCategory) 
         if override.effort is not None:
             effort = override.effort
 
-    runner = get_agent_runner(framework)
+    runner = get_agent_runner(framework, disable_sandboxing=disable_sandboxing)
     if not runner:
         error = f"No agent runner found for framework: {framework}"
         with lock:

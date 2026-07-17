@@ -3,6 +3,7 @@ import re
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Dict, Optional, Tuple
 import os
+import threading
 from context_manager import DEFAULT_DB_DIR
 from ..models import TheoryScoringWeights
 
@@ -125,3 +126,63 @@ class AgentRunner(ABC):
         runners ignore it.
         """
         pass
+
+
+_claude_settings_lock = threading.Lock()
+
+
+def write_claude_settings(
+    env_folder: str, disable_sandboxing: bool, include_stop_hook: bool
+) -> None:
+    """Dynamically writes or updates the .claude/settings.json file inside env_folder."""
+    settings_dir = os.path.join(os.path.abspath(env_folder), ".claude")
+    os.makedirs(settings_dir, exist_ok=True)
+    settings_path = os.path.join(settings_dir, "settings.json")
+
+    # 1. Build the expected settings dict
+    if disable_sandboxing:
+        sandbox_config = {"enabled": False}
+    else:
+        sandbox_config = {
+            "enabled": True,
+            "failIfUnavailable": True,
+            "allowUnsandboxedCommands": False,
+            "network": {"allowedDomains": ["*"]},
+            "filesystem": {"allowWrite": ["~/.mngr-catalyst/agents"]},
+        }
+
+    new_settings = {
+        "sandbox": sandbox_config,
+        "permissions": {"allow": ["WebSearch(*)", "WebFetch(*)", "Bash(*)"]},
+    }
+
+    if include_stop_hook:
+        new_settings["hooks"] = {
+            "Stop": [
+                {
+                    "hooks": [
+                        {
+                            "type": "command",
+                            "command": '[ -z "${MNGR_AGENT_STATE_DIR:-}" ] && exit 0; [ -n "${MNGR_CLAUDE_SUBAGENT_PROXY_CHILD:-}" ] && exit 0; mkdir -p "$MNGR_AGENT_STATE_DIR/events/mngr/turn_complete" && printf \'{"timestamp":"%s","event_id":"turn_end-%s","type":"turn_end","source":"mngr/turn_complete"}\\n\' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(uuidgen 2>/dev/null || od -An -N16 -tx1 /dev/urandom | tr -d \' \\n\')" >> "$MNGR_AGENT_STATE_DIR/events/mngr/turn_complete/events.jsonl"',
+                        }
+                    ]
+                }
+            ]
+        }
+
+    # 2. Acquire the process-level thread lock and system-level file lock
+    with _claude_settings_lock:
+        # Read existing settings and check if they are identical
+        existing_settings = None
+        if os.path.exists(settings_path):
+            with open(settings_path, "r", encoding="utf-8") as f:
+                existing_settings = json.load(f)
+
+        # If current state of file is already up to date, it should not be rewritten
+        if existing_settings != new_settings:
+            # Write to a temp file in the same directory first, then rename it
+            temp_settings_path = settings_path + ".tmp"
+            with open(temp_settings_path, "w", encoding="utf-8") as f:
+                json.dump(new_settings, f, indent=2)
+                f.write("\n")
+            os.replace(temp_settings_path, settings_path)

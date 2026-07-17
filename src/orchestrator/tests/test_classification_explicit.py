@@ -160,7 +160,7 @@ class TestExplicitClassification(unittest.TestCase):
 
         # Case 1: Active override for StepCategory.THEORY_WRITING (complete override)
         _run_step_core(task, stage="test-stage", prompt="Write something", category=StepCategory.THEORY_WRITING)
-        mock_get_agent_runner.assert_called_with("claude")
+        mock_get_agent_runner.assert_called_with("claude", disable_sandboxing=False)
         mock_runner.run.assert_called_with(
             task_id=task.id,
             prompt="Write something",
@@ -177,7 +177,7 @@ class TestExplicitClassification(unittest.TestCase):
         mock_get_agent_runner.reset_mock()
         mock_runner.run.reset_mock()
         _run_step_core(task, stage="test-stage", prompt="Review this", category=StepCategory.REVIEW)
-        mock_get_agent_runner.assert_called_with("gemini") # falls back to task framework
+        mock_get_agent_runner.assert_called_with("gemini", disable_sandboxing=False) # falls back to task framework
         mock_runner.run.assert_called_with(
             task_id=task.id,
             prompt="Review this",
@@ -194,7 +194,7 @@ class TestExplicitClassification(unittest.TestCase):
         mock_get_agent_runner.reset_mock()
         mock_runner.run.reset_mock()
         _run_step_core(task, stage="test-stage", prompt="Misc work", category=StepCategory.MISC)
-        mock_get_agent_runner.assert_called_with("gemini") # falls back
+        mock_get_agent_runner.assert_called_with("gemini", disable_sandboxing=False) # falls back
         mock_runner.run.assert_called_with(
             task_id=task.id,
             prompt="Misc work",

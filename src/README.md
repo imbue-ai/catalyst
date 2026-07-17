@@ -43,21 +43,7 @@ The system can be configured using the following environment variables:
 - `CATALYST_EXPERIMENT_TIMEOUT_SECS`: Maximum duration for a single experiment run by a research agent, in seconds. Defaults to `1800` (30 minutes).
 - `CATALYST_EXPERIMENT_RLIMIT_AS`: Maximum virtual memory that a single experiment can allocate, in bytes. Defaults to `12884901888` (12 GiB).
 - `CATALYST_PORT`: The TCP port on which the server runs. Defaults to `8139`.
-
-## Usage
-
-1. **Start a Task:** Click "NEW TASK" in the dashboard.
-2. **Configure:**
-   - **Phenomenon:** The scientific topic to investigate.
-   - **Framework:** Choose between Gemini CLI, Antigravity CLI, Claude Code, Codex CLI, or the `mngr-` variants of Claude Code / Antigravity CLI (which run inside a `mngr`-managed tmux session you can attach to live).
-   - **Model:** Choose a model identifier from the dropdown or enter one manually.
-3. **Monitor:** The dashboard polls the backend every 2 seconds to update the timeline.
-4. **Inspect:** Click any completed or running step in the timeline to view the raw inputs, JSON outputs, and the **Session ID**.
-5. **Recover:** If you want to see the detailed agent logs or manually intervene, use the session ID provided in the inspection panel (where supported):
-   - For Gemini: `gemini --resume <session_id>`
-   - For Claude: `claude --resume <session_id>`
-   - For Codex: `codex resume <session_id>`
-   - For `mngr-claude` / `mngr-antigravity`: `MNGR_HOST_DIR=~/.mngr-catalyst uv run mngr connect <session_id>` (attaches a terminal to the agent's tmux session, running or stopped)
+- `CATALYST_DISABLE_SANDBOXING`: Set to a truthy value (`1`, `true`, `yes`) to disable agent sandboxing and approve all agent permission requests. Only use if you're running Catalyst within an outer VM or on a system that doesn't contain important data.
 
 ## Inspecting past mngr sessions
 

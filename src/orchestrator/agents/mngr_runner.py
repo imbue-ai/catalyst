@@ -66,8 +66,8 @@ _POST_TURN_END_SECONDS = 10.0
 # `~/.mngr` so Catalyst's agents don't mix in and the runner's `mngr` calls
 # aren't blocked by stale fields in the user's profile settings (e.g.
 # `plugins.kanpan.column_order`).
-# If you change this, also update claude_skills/settings.json to allow sandbox access to the
-# events dir under this path (used by the Claude stop hook).
+# If you change this, also update the dynamic write_claude_settings configuration in base.py to
+# allow sandbox access to the events dir under this path (used by the Claude stop hook).
 MNGR_HOST_DIR = os.path.expanduser("~/.mngr-catalyst")
 
 
@@ -152,6 +152,7 @@ class MngrAgentRunner(AgentRunner):
     transcript_source: str
     # Strategy for detecting "this turn finished" -- see TurnCompletion.
     turn_completion: TurnCompletion
+    disable_sandboxing: bool = False
     # Static CLI args appended after `--` on every `mngr create`. Use this
     # for flags the agent always wants (e.g. agy's "--sandbox").
     agent_args: Tuple[str, ...] = ()
