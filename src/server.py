@@ -108,13 +108,19 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Imbue Catalyst Orchestrator", lifespan=lifespan)
 
-# Enable CORS for the React frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Enable CORS for the React frontend only if configured via environment variable.
+# By default (without CORS), browsers typically enforce a same-origin policy.
+if os.environ.get("CATALYST_ALLOW_ORIGINS"):
+    allowed_origins = os.environ.get("CATALYST_ALLOW_ORIGINS", "").split(",")
+    logger.info(
+        f"[SERVER] CATALYST_ALLOW_ORIGINS is enabled. Allowing the following origins: {allowed_origins}"
+    )
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=allowed_origins,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 @app.get("/api/harnesses", response_model=List[HarnessInfo])
@@ -825,10 +831,13 @@ frontend_dist_dir = os.path.abspath(
 )
 if os.path.exists(frontend_dist_dir):
     from fastapi.staticfiles import StaticFiles
+
     logger.info(f"[SERVER] Mounting static frontend from {frontend_dist_dir}")
     app.mount("/", StaticFiles(directory=frontend_dist_dir, html=True), name="static")
 else:
-    logger.warning(f"[SERVER] Frontend dist directory not found at {frontend_dist_dir}. Frontend will not be served.")
+    logger.warning(
+        f"[SERVER] Frontend dist directory not found at {frontend_dist_dir}. Frontend will not be served."
+    )
 
 
 if __name__ == "__main__":
@@ -838,4 +847,3 @@ if __name__ == "__main__":
     port = int(os.environ.get("CATALYST_PORT", 8139))
     logger.info(f"[SERVER] Starting server on {host}:{port}")
     uvicorn.run(app, host=host, port=port)
-
