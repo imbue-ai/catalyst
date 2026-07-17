@@ -12,14 +12,6 @@ export CATALYST_HOST=0.0.0.0
 export CATALYST_PATH=$OPENHOST_APP_DATA_DIR
 export CATALYST_DISABLE_SANDBOXING=1  # Sandboxing is currently incompatible with OpenHost VMs, but also less necessary.
 
-# Create persistent directories and symlinks for agent credentials
-mkdir -p $OPENHOST_APP_DATA_DIR/harness_configs/claude \
-             $OPENHOST_APP_DATA_DIR/harness_configs/gemini \
-             $OPENHOST_APP_DATA_DIR/harness_configs/codex \
-    && ln -sf $OPENHOST_APP_DATA_DIR/harness_configs/claude $HOME/.claude \
-    && ln -sf $OPENHOST_APP_DATA_DIR/harness_configs/gemini $HOME/.gemini \
-    && ln -sf $OPENHOST_APP_DATA_DIR/harness_configs/codex $HOME/.codex
-
 echo "=== OpenHost Gateway Startup Shell ==="
 
 # PID of background Catalyst server
