@@ -68,6 +68,8 @@ async def pty_ws(websocket: WebSocket, command: str):
     pid, fd = pty.fork()
     if pid == 0:
         # Child process
+        # Set default terminal size in the child process to guarantee non-zero size before execvp
+        set_pty_size(0, 24, 80)
         os.environ["TERM"] = "xterm-256color"
         try:
             os.execvp(cmd[0], cmd)
