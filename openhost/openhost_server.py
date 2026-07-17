@@ -64,24 +64,12 @@ async def pty_ws(websocket: WebSocket, command: str):
         
     cmd = cmd_map[command]
     
-    # Create synchronization pipe to coordinate startup size initialization
-    r, w = os.pipe()
-    
     # Fork pseudo-terminal
     pid, fd = pty.fork()
     if pid == 0:
         # Child process
-        os.close(w)
-        try:
-            os.read(r, 1)  # Block until parent has set terminal size and closed w
-        except Exception:
-            pass
-        finally:
-            try:
-                os.close(r)
-            except Exception:
-                pass
-                
+        # Set default terminal size in the child process to guarantee non-zero size before execvp
+        set_pty_size(0, 24, 80)
         os.environ["TERM"] = "xterm-256color"
         try:
             os.execvp(cmd[0], cmd)
@@ -90,14 +78,8 @@ async def pty_ws(websocket: WebSocket, command: str):
             os._exit(1)
     else:
         # Parent process
-        os.close(r)
         # Set default terminal size
         set_pty_size(fd, 24, 80)
-        # Unblock child by closing the write pipe
-        try:
-            os.close(w)
-        except Exception:
-            pass
         
         # Set fd to non-blocking
         flags = fcntl.fcntl(fd, fcntl.F_GETFL)
