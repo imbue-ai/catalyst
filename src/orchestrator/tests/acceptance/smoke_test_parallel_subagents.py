@@ -22,7 +22,6 @@ Usage (from src/):
 
 import json
 import os
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -53,19 +52,6 @@ PROMPT = (
 def main() -> int:
     runner = MngrClaudeAgentRunner()
     with tempfile.TemporaryDirectory(prefix="catalyst-parallel-") as env_folder:
-        src_settings = os.path.join(
-            os.path.dirname(
-                os.path.dirname(
-                    os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-                )
-            ),
-            "claude_skills",
-            "settings.json",
-        )
-        dst_claude = os.path.join(env_folder, ".claude")
-        os.makedirs(dst_claude, exist_ok=True)
-        shutil.copy2(src_settings, os.path.join(dst_claude, "settings.json"))
-
         print(f"Running parallel-subagents smoke task in {env_folder}", flush=True)
         statuses: list[str] = []
         captured_name: dict[str, str | None] = {"name": None}

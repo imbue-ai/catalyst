@@ -15,6 +15,10 @@ logger = logging.getLogger(__name__)
 class GeminiAgentRunner(BaseCliAgentRunner):
     _ack_lock = threading.Lock()
 
+    def __init__(self, disable_sandboxing: bool = False) -> None:
+        super().__init__()
+        self.disable_sandboxing = disable_sandboxing
+
     def run(
         self,
         task_id: str,
@@ -46,11 +50,14 @@ class GeminiAgentRunner(BaseCliAgentRunner):
             "gemini",
             "--approval-mode",
             "yolo",
-            "--sandbox",
+        ]
+        if not self.disable_sandboxing:
+            cmd.append("--sandbox")
+        cmd.extend([
             "--skip-trust",
             "--output-format",
             "stream-json",
-        ]
+        ])
         if model:
             cmd.extend(["--model", model])
         cmd.extend(["-p", prompt])

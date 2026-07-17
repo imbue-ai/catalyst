@@ -51,6 +51,9 @@ from context_manager import PREFIX_TO_CATEGORY, CATEGORY_MD_MAP, DEFAULT_DB_DIR
 logging.basicConfig(level=logging.INFO, format="%(levelname)-9s %(message)s")
 logger = logging.getLogger(__name__)
 
+CATALYST_DISABLE_SANDBOXING = os.environ.get("CATALYST_DISABLE_SANDBOXING", "").lower() in ("1", "true", "yes")
+
+
 
 class EndpointFilter(logging.Filter):
     def filter(self, record: logging.LogRecord) -> bool:
@@ -270,7 +273,7 @@ def create_task(request: str = Form(...), file: Optional[UploadFile] = File(None
         )
 
     add_task(task)
-    start_task(task)
+    start_task(task, disable_sandboxing=CATALYST_DISABLE_SANDBOXING)
     return task
 
 
@@ -343,7 +346,7 @@ def create_addon(task_id: str, req: CreateAddonRequest):
     update_task(task)
 
     if task.status != TaskStatus.RUNNING:
-        start_task(task)
+        start_task(task, disable_sandboxing=CATALYST_DISABLE_SANDBOXING)
 
     return task
 
@@ -439,7 +442,7 @@ def resume_task(task_id: str):
     if task.status == TaskStatus.RUNNING:
         return task
 
-    start_task(task)
+    start_task(task, disable_sandboxing=CATALYST_DISABLE_SANDBOXING)
     return task
 
 

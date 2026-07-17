@@ -12,6 +12,10 @@ logger = logging.getLogger(__name__)
 
 
 class AgyAgentRunner(BaseCliAgentRunner):
+    def __init__(self, disable_sandboxing: bool = False) -> None:
+        super().__init__()
+        self.disable_sandboxing = disable_sandboxing
+
     def run(
         self,
         task_id: str,
@@ -41,16 +45,17 @@ class AgyAgentRunner(BaseCliAgentRunner):
 
         cmd = [
             "agy",
-            # Antigravity sandboxing is currently unreliable:
-            # With `--dangerously-skip-permissions`, bypassSandbox requests are auto-approved. At the same time, we're unable to allow-list network access upfront.
-            # Hence, we run without sandboxing for the time being until agy has more mature sandbox configuration options.
-            # "--sandbox",
             "--dangerously-skip-permissions",
             "--print-timeout",
             f"{AGENT_TIMEOUT_SECS}s",
             "--add-dir",
             abs_env_folder,
         ]
+        # Antigravity sandboxing is currently unreliable:
+        # With `--dangerously-skip-permissions`, bypassSandbox requests are auto-approved. At the same time, we're unable to allow-list network access upfront.
+        # Hence, we run without sandboxing for the time being until agy has more mature sandbox configuration options.
+        # if not self.disable_sandboxing:
+        #     cmd.append("--sandbox")
         if model:
             # Model name is the same string as returned by `agy models` (NOT the API model name).
             cmd.extend(["--model", model])
