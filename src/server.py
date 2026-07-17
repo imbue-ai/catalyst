@@ -108,13 +108,15 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Imbue Catalyst Orchestrator", lifespan=lifespan)
 
-# Enable CORS for the React frontend
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Enable CORS for the React frontend only if configured via environment variable
+if os.environ.get("CATALYST_ALLOW_ANY_ORIGIN", "false").lower() in ("true", "1", "yes"):
+    logger.info("[SERVER] CATALYST_ALLOW_ANY_ORIGIN is enabled. Allowing all origins for CORS.")
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 @app.get("/api/harnesses", response_model=List[HarnessInfo])
