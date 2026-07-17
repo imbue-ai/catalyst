@@ -1,4 +1,5 @@
-from orchestrator.agents.base import EXPERIMENT_TIMEOUT_SECS
+from typing import Dict, Any, Optional, Tuple, Callable
+from orchestrator.agents.base import EXPERIMENT_TIMEOUT_SECS, write_claude_settings
 
 from .mngr_runner import MngrAgentRunner, TurnCompletion
 
@@ -8,7 +9,7 @@ from .mngr_runner import MngrAgentRunner, TurnCompletion
 
 
 class MngrClaudeAgentRunner(MngrAgentRunner):
-    def __init__(self) -> None:
+    def __init__(self, disable_sandboxing: bool = False) -> None:
         bash_timeout_ms = (
             EXPERIMENT_TIMEOUT_SECS * 1000 + 5 * 60 * 1000
         )  # The experiment timeout in milliseconds plus a 5 minute safety buffer.
@@ -18,6 +19,7 @@ class MngrClaudeAgentRunner(MngrAgentRunner):
             framework="mngr-claude",
             transcript_source="claude/common_transcript",
             turn_completion=TurnCompletion.STOP_HOOK,
+            disable_sandboxing=disable_sandboxing,
             model_flag="--model",
             effort_flag="--effort",
             extra_env={
@@ -42,4 +44,29 @@ class MngrClaudeAgentRunner(MngrAgentRunner):
                 "BASH_DEFAULT_TIMEOUT_MS": str(bash_timeout_ms),
                 "BASH_MAX_TIMEOUT_MS": str(bash_timeout_ms),
             },
+        )
+
+    def run(
+        self,
+        task_id: str,
+        prompt: str,
+        env_folder: str,
+        stage: str,
+        common_environment_variables: Dict[str, str],
+        model: Optional[str] = None,
+        effort: Optional[str] = None,
+        on_session_id: Optional[Callable[[str], None]] = None,
+        on_status: Optional[Callable[[str], None]] = None,
+    ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
+        write_claude_settings(env_folder, self.disable_sandboxing, include_stop_hook=True)
+        return super().run(
+            task_id=task_id,
+            prompt=prompt,
+            env_folder=env_folder,
+            stage=stage,
+            common_environment_variables=common_environment_variables,
+            model=model,
+            effort=effort,
+            on_session_id=on_session_id,
+            on_status=on_status,
         )

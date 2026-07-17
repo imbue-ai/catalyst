@@ -8,17 +8,17 @@ from .mngr_claude import MngrClaudeAgentRunner
 from .mngr_antigravity import MngrAntigravityAgentRunner
 
 
-def get_agent_runner(framework: str) -> Optional[AgentRunner]:
+def get_agent_runner(framework: str, disable_sandboxing: bool = False) -> Optional[AgentRunner]:
     if framework == "gemini":
-        return GeminiAgentRunner()
+        return GeminiAgentRunner(disable_sandboxing=disable_sandboxing)
     if framework == "claude":
-        return ClaudeAgentRunner()
+        return ClaudeAgentRunner(disable_sandboxing=disable_sandboxing)
     if framework == "codex":
-        return CodexAgentRunner()
+        return CodexAgentRunner(disable_sandboxing=disable_sandboxing)
     if framework == "agy":
-        return AgyAgentRunner()
+        return AgyAgentRunner(disable_sandboxing=disable_sandboxing)
     if framework == "mngr-claude":
-        return MngrClaudeAgentRunner()
+        return MngrClaudeAgentRunner(disable_sandboxing=disable_sandboxing)
     if framework == "mngr-antigravity":
-        return MngrAntigravityAgentRunner()
+        return MngrAntigravityAgentRunner(disable_sandboxing=disable_sandboxing)
     return None

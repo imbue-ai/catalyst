@@ -10,6 +10,10 @@ logger = logging.getLogger(__name__)
 
 
 class CodexAgentRunner(BaseCliAgentRunner):
+    def __init__(self, disable_sandboxing: bool = False) -> None:
+        super().__init__()
+        self.disable_sandboxing = disable_sandboxing
+
     def run(
         self,
         task_id: str,
@@ -31,19 +35,34 @@ class CodexAgentRunner(BaseCliAgentRunner):
         cmd = [
             "codex",
             "exec",
-            "--sandbox",
-            "workspace-write",
-            "--skip-git-repo-check",
-            "--ignore-user-config",
-            "--ignore-rules",
-            "--json",
-            "-c",
-            "sandbox_workspace_write.network_access=true",
-            "-c",
-            f"agents.job_max_runtime_seconds={AGENT_TIMEOUT_SECS}",
-            "-c",
-            "agents.max_threads=50",
         ]
+        if not self.disable_sandboxing:
+            cmd.extend(
+                [
+                    "--sandbox",
+                    "workspace-write",
+                    "-c",
+                    "sandbox_workspace_write.network_access=true",
+                ]
+            )
+        else:
+            cmd.append("--dangerously-bypass-approvals-and-sandbox")
+        cmd.extend(
+            [
+                "--skip-git-repo-check",
+                "--ignore-user-config",
+                "--ignore-rules",
+                "--json",
+            ]
+        )
+        cmd.extend(
+            [
+                "-c",
+                f"agents.job_max_runtime_seconds={AGENT_TIMEOUT_SECS}",
+                "-c",
+                "agents.max_threads=50",
+            ]
+        )
         if model:
             cmd.extend(["--model", model])
         if effort:

@@ -3,13 +3,17 @@ import shlex
 import logging
 from typing import Dict, Any, Optional, Tuple, Callable
 
-from .base import EXPERIMENT_TIMEOUT_SECS, parse_json_result
+from .base import EXPERIMENT_TIMEOUT_SECS, parse_json_result, write_claude_settings
 from .cli_base import BaseCliAgentRunner
 
 logger = logging.getLogger(__name__)
 
 
 class ClaudeAgentRunner(BaseCliAgentRunner):
+    def __init__(self, disable_sandboxing: bool = False) -> None:
+        super().__init__()
+        self.disable_sandboxing = disable_sandboxing
+
     def run(
         self,
         task_id: str,
@@ -22,6 +26,8 @@ class ClaudeAgentRunner(BaseCliAgentRunner):
         on_session_id: Optional[Callable[[str], None]] = None,
         on_status: Optional[Callable[[str], None]] = None,
     ) -> Tuple[Optional[Dict[str, Any]], Optional[str], Optional[str]]:
+        write_claude_settings(env_folder, self.disable_sandboxing, include_stop_hook=False)
+
         env = os.environ.copy()
         env.pop("VIRTUAL_ENV", None)
         env.update(common_environment_variables)

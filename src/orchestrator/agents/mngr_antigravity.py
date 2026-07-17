@@ -2,12 +2,13 @@ from .mngr_runner import MngrAgentRunner, TurnCompletion
 
 
 class MngrAntigravityAgentRunner(MngrAgentRunner):
-    def __init__(self) -> None:
+    def __init__(self, disable_sandboxing: bool = False) -> None:
         super().__init__(
             agent_type="antigravity",
             framework="mngr-antigravity",
             transcript_source="antigravity/common_transcript",
             turn_completion=TurnCompletion.WAITING_STATE,
+            disable_sandboxing=disable_sandboxing,
             # `--sandbox` is *intentionally* omitted here even though the
             # direct `agy` runner sets it. agy bug #36 (combining
             # `--dangerously-skip-permissions` with `--sandbox` is broken)
