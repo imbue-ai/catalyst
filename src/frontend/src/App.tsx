@@ -299,7 +299,11 @@ function App() {
               <TaskDetailSkeleton />
             )
           ) : isAnyTaskRunning ? (
-            <GameOfLife />
+            <GameOfLife
+              useHighLifeRules={tasks.some(
+                t => t.status === 'running' && (t.workflow_name === 'develop-theory' || t.workflow_name === 'solve-verifiable-goal')
+              )}
+            />
           ) : (
             <div className="flex-1 flex flex-col items-center justify-center p-20 text-center">
               <h2 className="text-2xl font-black tracking-tighter mb-2">Ready for Discovery</h2>

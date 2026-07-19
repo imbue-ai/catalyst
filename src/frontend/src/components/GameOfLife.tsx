@@ -19,7 +19,7 @@ const TAGLINES = [
   "Applying genetic algorithms to raw curiosity."
 ];
 
-export function GameOfLife() {
+export function GameOfLife({ useHighLifeRules = false }: { useHighLifeRules?: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [taglineIndex, setTaglineIndex] = useState(0);
 
@@ -98,7 +98,7 @@ export function GameOfLife() {
           }
           if (grid[i][j] === 1 && (neighbors < 2 || neighbors > 3)) {
             newGrid[i][j] = 0;
-          } else if (grid[i][j] === 0 && neighbors === 3) {
+          } else if (grid[i][j] === 0 && (neighbors === 3 || (useHighLifeRules && neighbors === 6))) {
             newGrid[i][j] = 1;
           }
           aliveCount += newGrid[i][j];
@@ -159,7 +159,7 @@ export function GameOfLife() {
       window.removeEventListener('resize', resize);
       cancelAnimationFrame(animationFrameId);
     };
-  }, []);
+  }, [useHighLifeRules]);
 
   return (
     <div className="flex-1 w-full h-full relative overflow-hidden flex flex-col items-center justify-center bg-white">
