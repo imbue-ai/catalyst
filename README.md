@@ -2,11 +2,11 @@
 
 A tool for semi-autonomous scientific research and discovery.
 
-See our blog posts:
--> [Automating AI model research with evolution](https://imbue.com/blog/2026-07-20-imbue-catalyst-nanochat)
--> [Autonomous theory discovery](https://imbue.com/blog/2026-07-20-imbue-catalyst-theory-discovery)
-
 ![Catalyst Logo](src/assets/catalyst-small.png)
+
+Check out our blog posts about Imbue Catalyst:
+* [Automating AI model research with evolution](https://imbue.com/blog/2026-07-20-imbue-catalyst-nanochat)
+* [Autonomous theory discovery](https://imbue.com/blog/2026-07-20-imbue-catalyst-theory-discovery)
 
 ### What Imbue Catalyst Can Do
 
