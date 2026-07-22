@@ -24,6 +24,11 @@ parser.add_argument(
     default="Theory Evolution Graph",
     help="Title for the top of the graph.",
 )
+parser.add_argument(
+    "--generational",
+    action="store_true",
+    help="Organize the X axis by generation instead of iteration number.",
+)
 args = parser.parse_args()
 
 # Read the data
@@ -43,9 +48,45 @@ for idx, row in df.iterrows():
             G.add_edge(inp, node, generator=row["Generator"])
 
 
+def get_generations(G):
+    generations = {}
+    visited = set()
+
+    def compute_gen(node):
+        if node in generations:
+            return generations[node]
+        if node in visited:
+            return 0
+        visited.add(node)
+        preds = list(G.predecessors(node))
+        if not preds:
+            gen = 0
+        else:
+            gen = max(compute_gen(p) for p in preds) + 1
+        visited.remove(node)
+        generations[node] = gen
+        return gen
+
+    for node in G.nodes():
+        compute_gen(node)
+    return generations
+
+
+if args.generational:
+    generations = get_generations(G)
+    nodes_by_x = {}
+    for idx, row in df.iterrows():
+        node = row["Theory"]
+        gen = generations.get(node, 0)
+        nodes_by_x.setdefault(gen, []).append(node)
+    nodes_by_iter = nodes_by_x
+
+
 def get_total_length(G, pos_mapping):
     total = 0.0
     for u, v in G.edges():
+        if u not in pos_mapping or v not in pos_mapping:
+            continue
         x1, y1 = pos_mapping[u]
         x2, y2 = pos_mapping[v]
         total += math.sqrt((x1 - x2) ** 2 + (y1 - y2) ** 2)
@@ -122,6 +163,8 @@ ax = fig.add_axes([0.04, 0.08, 0.87, 0.80])
 
 # Draw edges
 for u, v, d in G.edges(data=True):
+    if u not in pos or v not in pos:
+        continue
     gen = d["generator"]
     x1, y1 = pos[u]
     x2, y2 = pos[v]
@@ -216,6 +259,8 @@ highest_score_idx = df["Final score"].idxmax()
 # Draw nodes
 for idx, row in df.iterrows():
     node = row["Theory"]
+    if node not in pos:
+        continue
     score = row["Final score"]
     color = cmap(norm(score))
     is_correct = row["Correct idea?"] == "y"
@@ -249,14 +294,28 @@ for idx, row in df.iterrows():
 plt.title(args.title, fontsize=16, fontweight="bold", pad=25)
 ax = plt.gca()
 ax.xaxis.set_visible(True)
-ax.set_xticks(list(nodes_by_iter.keys()))
-ax.set_xticklabels(
-    ["Initial" if i == 0 else f"Iteration {i}" for i in nodes_by_iter.keys()], fontsize=12, fontweight="bold"
-)
+sorted_keys = sorted(nodes_by_iter.keys())
+ax.set_xticks(sorted_keys)
+if args.generational:
+    ax.set_xticklabels(
+        [f"Generation {i}" for i in sorted_keys], fontsize=12, fontweight="bold"
+    )
+else:
+    ax.set_xticklabels(
+        ["Initial" if i == 0 else f"Iteration {i}" for i in sorted_keys], fontsize=12, fontweight="bold"
+    )
 ax.tick_params(axis="x", which="both", bottom=True, labelbottom=True)
-max_iter = max(nodes_by_iter.keys()) if nodes_by_iter else 0
-plt.xlim(-0.5, max_iter + 0.5)
-plt.ylim(-1.6, 1.6)
+max_val = max(sorted_keys) if sorted_keys else 0
+plt.xlim(-0.5, max_val + 0.5)
+
+# Calculate dynamic y-axis scaling based on maximum number of nodes in a given column
+all_y = [coords[1] for coords in pos.values()]
+min_y = min(all_y) if all_y else -1.0
+max_y = max(all_y) if all_y else 1.0
+y_lim_min = min(-1.6, min_y - 0.3)
+y_lim_max = max(1.6, max_y + 0.3)
+plt.ylim(y_lim_min, y_lim_max)
+
 plt.grid(True, axis="x", linestyle="--", alpha=0.7)
 ax.yaxis.set_visible(False)
 
