@@ -37,6 +37,7 @@ interface TaskDetailProps {
 export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh, isBackendDown }: TaskDetailProps) {
   const [selectedStage, setSelectedStage] = useState<string | null>(null)
   const [activeRightTab, setActiveRightTab] = useState<'summary' | 'stepDetails' | 'topTheories' | 'experiments' | 'solutions'>('summary')
+  const [mobileTab, setMobileTab] = useState<'workflow' | 'details'>('workflow')
   const [isProcessing, setIsProcessing] = useState(false)
   const [copied, setCopied] = useState(false)
   const [showAddonModal, setShowAddonModal] = useState(false)
@@ -176,6 +177,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
   const handleSelectStage = useCallback((stage: string) => {
     setSelectedStage(stage)
     setActiveRightTab('stepDetails')
+    setMobileTab('details')
   }, [])
 
   const handleCancel = async () => {
@@ -209,84 +211,87 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
   return (
     <div className="flex flex-col h-full">
       {/* Task Header */}
-      <div className="p-8 border-b border-black bg-white sticky top-0 z-10">
-        <div className="flex justify-between items-start gap-8">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <StatusBadge status={task.status} />
-              <span className="text-[10px] text-gray-400 font-bold tracking-widest">Research Session: {task.id.split('-')[0]}</span>
-            </div>
-            <h2 className="text-4xl font-black tracking-tighter leading-tight">{task.title || "Initializing..."}</h2>
+      <div className="p-4 sm:p-8 border-b border-black bg-white sticky top-0 z-10 relative">
+        <div className="w-full">
+          <div className="flex items-center gap-3 mb-2 flex-wrap">
+            <StatusBadge status={task.status} />
+            <span className="text-[10px] text-gray-400 font-bold tracking-widest">Research Session: {task.id.split('-')[0]}</span>
           </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="bg-gray-100 p-3 flex items-center gap-2 text-[10px] font-bold">
-              <Folder size={14} /> {task.env_folder}
-            </div>
-            <div className="relative" ref={settingsPanelRef}>
-              <button
-                onClick={() => setShowSettingsPanel(!showSettingsPanel)}
-                className="bg-gray-100 p-3 flex items-center gap-2 text-[10px] font-bold hover:bg-gray-200 transition-colors cursor-pointer select-none border-0"
-              >
-                <Cpu size={14} /> {task.framework} {task.model ? `[${task.model}${task.effort ? ` (${task.effort})` : ''}]` : (task.effort && `[(${task.effort})]`)}
-                <ChevronDown size={12} className={`ml-1 transition-transform ${showSettingsPanel ? 'rotate-180' : ''}`} />
-              </button>
+          <h2 className="text-2xl sm:text-4xl font-black tracking-tighter leading-tight break-words">{task.title || "Initializing..."}</h2>
+        </div>
 
-              {showSettingsPanel && (
-                <div className="absolute right-0 top-full mt-2 w-[400px] bg-white border-2 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 text-left">
-                  <h4 className="font-black text-xs tracking-widest text-black mb-3">Update Settings</h4>
+        {/* Floating Metadata Labels */}
+        <div className="hidden sm:flex items-center gap-2 absolute top-4 right-4 sm:top-8 sm:right-8 z-10">
+          <div className="bg-gray-100 p-2.5 sm:p-3 flex items-center gap-2 text-[10px] font-bold max-w-[200px] lg:max-w-[300px] overflow-hidden shadow-sm">
+            <Folder size={14} className="shrink-0" />
+            <span className="truncate">{task.env_folder}</span>
+          </div>
+          <div className="relative" ref={settingsPanelRef}>
+            <button
+              onClick={() => setShowSettingsPanel(!showSettingsPanel)}
+              className="bg-gray-100 p-2.5 sm:p-3 flex items-center gap-2 text-[10px] font-bold hover:bg-gray-200 transition-colors cursor-pointer select-none border-0 shadow-sm"
+            >
+              <Cpu size={14} /> {task.framework} {task.model ? `[${task.model}${task.effort ? ` (${task.effort})` : ''}]` : (task.effort && `[(${task.effort})]`)}
+              <ChevronDown size={12} className={`ml-1 transition-transform ${showSettingsPanel ? 'rotate-180' : ''}`} />
+            </button>
 
-                  <HarnessSettings
-                    framework={editFramework}
-                    model={editModel}
-                    effort={editEffort}
-                    harnesses={harnesses}
-                    onChange={(updates) => {
-                      if (updates.framework !== undefined) setEditFramework(updates.framework)
-                      if (updates.model !== undefined) setEditModel(updates.model)
-                      if (updates.effort !== undefined) setEditEffort(updates.effort)
-                    }}
-                    isCompact={true}
-                    forceVertical={true}
-                  />
+            {showSettingsPanel && (
+              <div className="absolute right-0 top-full mt-2 w-[calc(100vw-2rem)] max-w-[400px] bg-white border-2 border-black p-4 shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] z-50 text-left">
+                <h4 className="font-black text-xs tracking-widest text-black mb-3">Update Settings</h4>
 
-                  <CategoryOverridesSettings
-                    overrides={editCategoryOverrides}
-                    onChange={setEditCategoryOverrides}
-                    harnesses={harnesses}
-                    forceVertical={true}
-                  />
+                <HarnessSettings
+                  framework={editFramework}
+                  model={editModel}
+                  effort={editEffort}
+                  harnesses={harnesses}
+                  onChange={(updates) => {
+                    if (updates.framework !== undefined) setEditFramework(updates.framework)
+                    if (updates.model !== undefined) setEditModel(updates.model)
+                    if (updates.effort !== undefined) setEditEffort(updates.effort)
+                  }}
+                  isCompact={true}
+                  forceVertical={true}
+                />
 
-                  {/* Action buttons */}
-                  <div className="flex gap-2 pt-4">
-                    <button
-                      onClick={handleSaveSettings}
-                      disabled={isUpdatingSettings}
-                      className="flex-1 bg-black text-white py-2 text-[10px] font-black tracking-widest hover:bg-gray-800 transition-colors disabled:opacity-50"
-                    >
-                      {isUpdatingSettings ? 'Saving...' : 'Save'}
-                    </button>
-                    <button
-                      onClick={() => setShowSettingsPanel(false)}
-                      disabled={isUpdatingSettings}
-                      className="flex-1 border border-black text-black py-2 text-[10px] font-black tracking-widest hover:bg-gray-50 transition-colors disabled:opacity-50"
-                    >
-                      Cancel
-                    </button>
-                  </div>
+                <CategoryOverridesSettings
+                  overrides={editCategoryOverrides}
+                  onChange={setEditCategoryOverrides}
+                  harnesses={harnesses}
+                  forceVertical={true}
+                />
+
+                {/* Action buttons */}
+                <div className="flex gap-2 pt-4">
+                  <button
+                    onClick={handleSaveSettings}
+                    disabled={isUpdatingSettings}
+                    className="flex-1 bg-black text-white py-2 text-[10px] font-black tracking-widest hover:bg-gray-800 transition-colors disabled:opacity-50"
+                  >
+                    {isUpdatingSettings ? 'Saving...' : 'Save'}
+                  </button>
+                  <button
+                    onClick={() => setShowSettingsPanel(false)}
+                    disabled={isUpdatingSettings}
+                    className="flex-1 border border-black text-black py-2 text-[10px] font-black tracking-widest hover:bg-gray-50 transition-colors disabled:opacity-50"
+                  >
+                    Cancel
+                  </button>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
 
-        <p className="mt-4 text-xs text-gray-500 font-bold leading-relaxed whitespace-pre-wrap line-clamp-6 overflow-hidden">{task.workflow_inputs.summary}</p>
+        <div className="hidden sm:block mt-4">
+          <p className="text-xs text-gray-500 font-bold leading-relaxed whitespace-pre-wrap line-clamp-6 overflow-hidden">{task.workflow_inputs.summary}</p>
+        </div>
 
-        <div className="mt-6 flex gap-3 items-center">
+        <div className="mt-6 flex flex-wrap gap-2 sm:gap-3 items-center">
           {task.status === 'running' ? (
             <button
               disabled={isProcessing}
               onClick={handleCancel}
-              className="bg-gray-500 text-white px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-600 transition-colors disabled:opacity-50"
+              className="bg-gray-500 text-white px-3 sm:px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-600 transition-colors disabled:opacity-50"
             >
               {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Square size={12} fill="white" />}
               Pause Research
@@ -295,7 +300,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             <button
               disabled={isProcessing}
               onClick={handleResume}
-              className="bg-black text-white px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-800 transition-colors disabled:opacity-50"
+              className="bg-black text-white px-3 sm:px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-800 transition-colors disabled:opacity-50"
             >
               {isProcessing ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} fill="white" />}
               Resume Research
@@ -308,7 +313,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
               setPendingGuidanceAppend(null);
               setShowGuidanceModal(true);
             }}
-            className="border-2 border-black text-black px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+            className="border-2 border-black text-black px-3 sm:px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
           >
             <Compass size={12} /> Provide Guidance
           </button>
@@ -317,7 +322,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             <button
               disabled={isProcessing}
               onClick={handleDeleteTempFiles}
-              className="border-2 border-black text-black px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+              className="border-2 border-black text-black px-3 sm:px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               <BrushCleaning size={12} /> Clean Temp Files
             </button>
@@ -327,7 +332,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             <button
               disabled={isProcessing}
               onClick={() => onDeleteRequest(task.id)}
-              className="border-2 border-red-600 text-red-600 px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-red-50 transition-colors disabled:opacity-50"
+              className="border-2 border-red-600 text-red-600 px-3 sm:px-4 py-2 text-[10px] font-black tracking-widest flex items-center gap-2 hover:bg-red-50 transition-colors disabled:opacity-50"
             >
               <Trash2 size={12} /> Delete Research
             </button>
@@ -335,9 +340,29 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
         </div>
       </div>
 
-      <div className="flex-1 flex overflow-hidden">
+      {/* Mobile View Switcher */}
+      <div className="xl:hidden flex border-b-2 border-black bg-white shrink-0">
+        <button
+          onClick={() => setMobileTab('workflow')}
+          className={`flex-1 py-2.5 text-[10px] font-black tracking-widest text-center border-r border-black transition-colors ${
+            mobileTab === 'workflow' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'
+          }`}
+        >
+          Workflow
+        </button>
+        <button
+          onClick={() => setMobileTab('details')}
+          className={`flex-1 py-2.5 text-[10px] font-black tracking-widest text-center transition-colors ${
+            mobileTab === 'details' ? 'bg-black text-white' : 'text-black hover:bg-gray-100'
+          }`}
+        >
+          Artifacts
+        </button>
+      </div>
+
+      <div className="flex-1 flex flex-col xl:flex-row overflow-hidden">
         {/* Timeline */}
-        <div className="w-1/2 p-8 overflow-y-auto border-r border-gray-100">
+        <div className={`w-full xl:w-1/2 p-4 sm:p-8 overflow-y-auto border-r border-gray-100 ${mobileTab === 'workflow' ? 'block' : 'hidden xl:block'}`}>
           <div className="flex items-center justify-between mb-8">
             <h3 className="font-black text-xs tracking-widest flex items-center gap-2">
               Workflow
@@ -415,11 +440,11 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
         </div>
 
         {/* Right Panel Tabs & Content */}
-        <div className="w-1/2 flex flex-col h-full border-l border-black bg-gray-50/50">
-          <div className="flex border-b-2 border-black bg-white">
+        <div className={`w-full xl:w-1/2 flex flex-col h-full border-l border-black bg-gray-50/50 ${mobileTab === 'details' ? 'block' : 'hidden xl:block'}`}>
+          <div className="flex border-b-2 border-black bg-white overflow-x-auto whitespace-nowrap custom-scrollbar shrink-0">
             <button
               onClick={() => setActiveRightTab('summary')}
-              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'summary'
+              className={`px-4 sm:px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black shrink-0 ${activeRightTab === 'summary'
                 ? 'bg-black text-white'
                 : 'text-black hover:bg-gray-100'
                 }`}
@@ -428,7 +453,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             </button>
             <button
               onClick={() => setActiveRightTab('stepDetails')}
-              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'stepDetails'
+              className={`px-4 sm:px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black shrink-0 ${activeRightTab === 'stepDetails'
                 ? 'bg-black text-white'
                 : 'text-black hover:bg-gray-100'
                 }`}
@@ -437,7 +462,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             </button>
             <button
               onClick={() => setActiveRightTab('topTheories')}
-              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'topTheories'
+              className={`px-4 sm:px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black shrink-0 ${activeRightTab === 'topTheories'
                 ? 'bg-black text-white'
                 : 'text-black hover:bg-gray-100'
                 }`}
@@ -446,7 +471,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             </button>
             <button
               onClick={() => setActiveRightTab('experiments')}
-              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'experiments'
+              className={`px-4 sm:px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black shrink-0 ${activeRightTab === 'experiments'
                 ? 'bg-black text-white'
                 : 'text-black hover:bg-gray-100'
                 }`}
@@ -455,7 +480,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
             </button>
             <button
               onClick={() => setActiveRightTab('solutions')}
-              className={`px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black ${activeRightTab === 'solutions'
+              className={`px-4 sm:px-6 py-3 text-[10px] font-black tracking-widest transition-colors border-r border-black shrink-0 ${activeRightTab === 'solutions'
                 ? 'bg-black text-white'
                 : 'text-black hover:bg-gray-100'
                 }`}

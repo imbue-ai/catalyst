@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Plus, Folder, Activity, Sun, Moon } from 'lucide-react'
+import { Plus, Folder, Activity, Sun, Moon, Menu, X } from 'lucide-react'
 import * as api from './api'
 import { StatusBadge } from './components/StatusBadge'
 import { TaskDetail } from './components/TaskDetail'
@@ -15,6 +15,7 @@ function App() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null)
   const [deleteInput, setDeleteInput] = useState('')
   const [isBackendDown, setIsBackendDown] = useState(false)
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const prevTasksRef = useRef<api.TaskShallow[]>([])
   const [selectedTaskDetails, setSelectedTaskDetails] = useState<api.Task | null>(null)
   const [taskError, setTaskError] = useState<string | null>(null)
@@ -71,7 +72,10 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const handleHashChange = () => setCurrentHash(window.location.hash)
+    const handleHashChange = () => {
+      setCurrentHash(window.location.hash)
+      setMobileSidebarOpen(false)
+    }
     window.addEventListener('hashchange', handleHashChange)
     return () => window.removeEventListener('hashchange', handleHashChange)
   }, [])
@@ -187,17 +191,47 @@ function App() {
   const isAnyTaskRunning = tasks.some(t => t.status === 'running')
 
   return (
-    <div className="min-h-screen bg-white text-black font-mono selection:bg-black selection:text-white relative">
+    <div className="min-h-screen bg-white text-black font-mono selection:bg-black selection:text-white relative flex flex-col h-screen overflow-hidden">
       {isBackendDown && (
         <div className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[2px] pointer-events-none transition-all duration-300" />
       )}
 
-      {/* Sidebar */}
-      <div className="flex h-screen overflow-hidden">
-        <aside className="w-96 border-r border-black flex flex-col bg-white">
+      {/* Mobile Top Header */}
+      <header className="xl:hidden border-b border-black bg-white p-3 flex items-center justify-between shrink-0 z-30">
+        <button
+          onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
+          className="p-2 border border-black bg-gray-50 hover:bg-gray-100 flex items-center justify-center transition-colors"
+          aria-label="Toggle Navigation"
+        >
+          {mobileSidebarOpen ? <X size={18} /> : <Menu size={18} />}
+        </button>
+        <div
+          className="h-6 cursor-pointer flex items-center"
+          onClick={() => { window.location.hash = ''; setMobileSidebarOpen(false); }}
+        >
+          <img src="/catalyst-small.png" alt="Catalyst" className="h-full w-auto object-contain" />
+        </div>
+        <div className="w-9" />
+      </header>
+
+      <div className="flex flex-1 overflow-hidden relative">
+        {/* Mobile Backdrop */}
+        {mobileSidebarOpen && (
           <div
-            className="p-6 border-b border-black flex items-center justify-center cursor-pointer"
-            onClick={() => { window.location.hash = ''; }}
+            className="xl:hidden fixed inset-0 bg-black/50 z-30 transition-opacity"
+            onClick={() => setMobileSidebarOpen(false)}
+          />
+        )}
+
+        {/* Sidebar */}
+        <aside
+          className={`fixed xl:relative inset-y-0 left-0 z-40 w-full sm:w-80 xl:w-96 border-r border-black flex flex-col bg-white transition-transform duration-300 ${
+            mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full xl:translate-x-0'
+          }`}
+        >
+          <div
+            className="p-6 border-b border-black flex items-center justify-center cursor-pointer hidden xl:flex"
+            onClick={() => { window.location.hash = ''; setMobileSidebarOpen(false); }}
             title="Return to Home"
           >
             <img
@@ -212,7 +246,7 @@ function App() {
               <Activity size={12} /> Current Research
             </div>
             <button
-              onClick={() => setShowCreate(true)}
+              onClick={() => { setShowCreate(true); setMobileSidebarOpen(false); }}
               className="hover:scale-110 transition-transform p-1 bg-black text-white rounded-full"
               title="New Research Task"
             >
@@ -230,6 +264,7 @@ function App() {
               <a
                 key={task.id}
                 href={`#/task/${task.id}`}
+                onClick={() => setMobileSidebarOpen(false)}
                 className={`group p-4 border-b border-black block cursor-pointer transition-all ${selectedTaskId === task.id ? 'bg-black text-white' : 'hover:bg-gray-50'}`}
               >
                 <div className="flex justify-between items-start mb-2 gap-2">
