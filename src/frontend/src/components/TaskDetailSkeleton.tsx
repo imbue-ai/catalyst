@@ -11,25 +11,25 @@ export function TaskDetailSkeleton() {
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-white animate-pulse">
       {/* Header Skeleton */}
-      <div className="p-8 border-b-2 border-black bg-white">
-        <div className="flex justify-between items-start gap-8">
-          <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
+      <div className="p-4 sm:p-8 border-b-2 border-black bg-white">
+        <div className="flex flex-col md:flex-row justify-between items-start gap-4 md:gap-8">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-2 flex-wrap">
               {/* StatusBadge skeleton */}
               <div className="h-5 w-16 bg-gray-200 rounded animate-pulse" />
               {/* Research Session text skeleton */}
               <div className="h-3 w-36 bg-gray-100 rounded animate-pulse" />
             </div>
             {/* Title Skeleton */}
-            <div className="h-10 w-96 bg-gray-200 rounded animate-pulse" />
+            <div className="h-8 sm:h-10 w-full max-w-sm bg-gray-200 rounded animate-pulse" />
           </div>
           {/* Metadata labels skeleton */}
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="bg-gray-100 p-3 flex items-center gap-2">
+          <div className="hidden sm:flex flex-wrap items-center gap-2 shrink-0">
+            <div className="bg-gray-100 p-2.5 sm:p-3 flex items-center gap-2">
               <Folder size={14} className="text-gray-300" />
               <div className="h-3 w-24 bg-gray-200 rounded animate-pulse" />
             </div>
-            <div className="bg-gray-100 p-3 flex items-center gap-2">
+            <div className="bg-gray-100 p-2.5 sm:p-3 flex items-center gap-2">
               <Cpu size={14} className="text-gray-300" />
               <div className="h-3 w-32 bg-gray-200 rounded animate-pulse" />
             </div>
@@ -37,23 +37,23 @@ export function TaskDetailSkeleton() {
         </div>
 
         {/* Summary Description Skeleton */}
-        <div className="mt-4 space-y-2 max-w-2xl">
+        <div className="mt-4 space-y-2 max-w-2xl hidden sm:block">
           <div className="h-3 w-full bg-gray-100 rounded animate-pulse" />
           <div className="h-3 w-11/12 bg-gray-100 rounded animate-pulse" />
           <div className="h-3 w-4/5 bg-gray-100 rounded animate-pulse" />
         </div>
 
         {/* Buttons Skeleton */}
-        <div className="mt-6 flex gap-3 items-center">
+        <div className="mt-6 flex flex-wrap gap-2 sm:gap-3 items-center">
           <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
           <div className="h-8 w-36 bg-gray-200 rounded animate-pulse" />
         </div>
       </div>
 
       {/* Main split skeleton */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col xl:flex-row overflow-hidden">
         {/* Timeline Column Skeleton */}
-        <div className="w-1/2 p-8 overflow-y-auto border-r border-gray-100 flex flex-col">
+        <div className="w-full xl:w-1/2 p-4 sm:p-8 overflow-y-auto border-r border-gray-100 flex flex-col">
           <div className="h-4 w-24 bg-gray-200 rounded mb-8" />
           
           <div className="space-y-8 flex-1 relative pl-6 border-l border-dashed border-gray-200 ml-3">
@@ -71,22 +71,22 @@ export function TaskDetailSkeleton() {
         </div>
 
         {/* Right Panel Skeleton */}
-        <div className="w-1/2 flex flex-col h-full border-l border-black bg-gray-50/50">
+        <div className="w-full xl:w-1/2 hidden xl:flex flex-col h-full border-l border-black bg-gray-50/50">
           {/* Tabs skeleton */}
-          <div className="flex border-b-2 border-black bg-white">
-            <div className="px-6 py-3 border-r border-black">
+          <div className="flex border-b-2 border-black bg-white overflow-x-auto whitespace-nowrap custom-scrollbar">
+            <div className="px-4 sm:px-6 py-3 border-r border-black shrink-0">
               <div className="h-3 w-16 bg-gray-200 rounded" />
             </div>
-            <div className="px-6 py-3 border-r border-black">
+            <div className="px-4 sm:px-6 py-3 border-r border-black shrink-0">
               <div className="h-3 w-12 bg-gray-200 rounded" />
             </div>
-            <div className="px-6 py-3 border-r border-black">
+            <div className="px-4 sm:px-6 py-3 border-r border-black shrink-0">
               <div className="h-3 w-16 bg-gray-200 rounded" />
             </div>
           </div>
 
           {/* Details body skeleton */}
-          <div className="flex-1 p-6 flex flex-col gap-4">
+          <div className="flex-1 p-4 sm:p-6 flex flex-col gap-4">
             <div className="h-10 bg-white border border-gray-200 p-4 rounded flex items-center gap-3">
               <Workflow size={16} className="text-gray-300" />
               <div className="h-3 w-24 bg-gray-200 rounded" />

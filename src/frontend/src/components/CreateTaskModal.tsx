@@ -295,47 +295,47 @@ export function CreateTaskModal({ onClose, onCreated, isBackendDown }: CreateTas
   const isImport = activeTab === 'import-theory'
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-      <div className="bg-white border-2 border-black p-8 w-full max-w-6xl shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col h-[1200px] max-h-[90vh]">
-        <div className="flex justify-between items-center mb-8 shrink-0">
-          <h2 className="text-2xl font-black tracking-tighter">Start Research</h2>
-          <button onClick={onClose} className="hover:rotate-90 transition-transform">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 z-50">
+      <div className="bg-white border-2 border-black p-4 sm:p-8 w-full max-w-6xl shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] sm:shadow-[12px_12px_0px_0px_rgba(0,0,0,1)] flex flex-col h-[1200px] max-h-[95vh] sm:max-h-[90vh]">
+        <div className="flex justify-between items-center mb-6 sm:mb-8 shrink-0">
+          <h2 className="text-xl sm:text-2xl font-black tracking-tighter">Start Research</h2>
+          <button onClick={onClose} className="hover:rotate-90 transition-transform p-1">
             <XCircle size={24} />
           </button>
         </div>
 
         <form onSubmit={handleCreate} className="flex-1 flex flex-col min-h-0">
-          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar pr-4 flex flex-col gap-10 pb-4">
+          <div ref={scrollContainerRef} className="flex-1 overflow-y-auto custom-scrollbar pr-2 sm:pr-4 flex flex-col gap-8 sm:gap-10 pb-4">
 
             {/* STEP 1: Input Type */}
             <div>
               <h3 className="text-sm font-black mb-4">Step 1: I have a...</h3>
-              <div className="flex flex-col md:flex-row gap-4">
-                <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'goal' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <label className={`border-2 p-3 sm:p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'goal' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
                   <div className="flex items-center gap-3">
                     <input type="radio" checked={inputCategory === 'goal'} onChange={() => handleCategoryChange('goal')} />
-                    <Goal size={18} className="text-gray-600" />
+                    <Goal size={18} className="text-gray-600 shrink-0" />
                     <span className="font-black text-sm">Verifiable Goal</span>
                   </div>
                 </label>
-                <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'phenomenon' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
+                <label className={`border-2 p-3 sm:p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'phenomenon' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
                   <div className="flex items-center gap-3">
                     <input type="radio" checked={inputCategory === 'phenomenon'} onChange={() => handleCategoryChange('phenomenon')} />
-                    <Sparkles size={18} className="text-gray-600" />
+                    <Sparkles size={18} className="text-gray-600 shrink-0" />
                     <span className="font-black text-sm">Phenomenon to Explain</span>
                   </div>
                 </label>
-                <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'idea' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
+                <label className={`border-2 p-3 sm:p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'idea' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
                   <div className="flex items-center gap-3">
                     <input type="radio" checked={inputCategory === 'idea'} onChange={() => handleCategoryChange('idea')} />
-                    <Lightbulb size={18} className="text-gray-600" />
+                    <Lightbulb size={18} className="text-gray-600 shrink-0" />
                     <span className="font-black text-sm">Theory Idea</span>
                   </div>
                 </label>
-                <label className={`flex-1 border-2 p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'draft' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
+                <label className={`border-2 p-3 sm:p-4 cursor-pointer transition-colors flex flex-col justify-center ${inputCategory === 'draft' ? 'border-black bg-gray-50 shadow-[4px_4px_0px_0px_rgba(0,0,0,1)]' : 'border-gray-200 hover:border-gray-400'}`}>
                   <div className="flex items-center gap-3">
                     <input type="radio" checked={inputCategory === 'draft'} onChange={() => handleCategoryChange('draft')} />
-                    <FileText size={18} className="text-gray-600" />
+                    <FileText size={18} className="text-gray-600 shrink-0" />
                     <span className="font-black text-sm">Existing Theory Draft</span>
                   </div>
                 </label>

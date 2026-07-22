@@ -301,45 +301,45 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
   const rehypePlugins = useMemo(() => [rehypeSlug, [rehypeKatex, { strict: 'ignore' }]], []);
 
   return createPortal(
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4 sm:p-8 print:static print:bg-transparent print:p-0 print:block" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-2 sm:p-4 md:p-8 print:static print:bg-transparent print:p-0 print:block" onClick={onClose}>
       <div
         className="bg-white w-full h-full max-w-7xl rounded-sm border-2 border-black shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] flex flex-col overflow-hidden print:border-none print:shadow-none print:max-w-none print:overflow-visible print:h-auto print:block print:w-full"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-6 py-4 border-b-2 border-black bg-gray-50 print:hidden">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b-2 border-black bg-gray-50 print:hidden">
+          <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             {(hasPreviousArtifact || selectedFile) && (
               <button
                 onClick={() => window.history.back()}
-                className="p-1 hover:bg-gray-200 rounded transition-colors"
+                className="p-1 hover:bg-gray-200 rounded transition-colors shrink-0"
                 title="Go Back"
               >
-                <ArrowLeft size={20} strokeWidth={3} />
+                <ArrowLeft size={18} strokeWidth={3} />
               </button>
             )}
-            <span className="font-black text-sm tracking-widest">{artifactId}</span>
+            <span className="font-black text-xs sm:text-sm tracking-widest truncate">{artifactId}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <button
               onClick={handleExport}
               disabled={exporting || loading}
               className="p-1 hover:bg-gray-200 rounded transition-colors disabled:opacity-50"
               title="Export as ZIP"
             >
-              {exporting ? <Loader2 size={20} strokeWidth={3} className="animate-spin" /> : <Download size={20} strokeWidth={3} />}
+              {exporting ? <Loader2 size={18} strokeWidth={3} className="animate-spin" /> : <Download size={18} strokeWidth={3} />}
             </button>
             <button
               onClick={() => window.print()}
               className="p-1 hover:bg-gray-200 rounded transition-colors"
               title="Print Artifact"
             >
-              <Printer size={20} strokeWidth={3} />
+              <Printer size={18} strokeWidth={3} />
             </button>
             <button
               onClick={onClose}
               className="p-1 hover:bg-gray-200 rounded transition-colors"
             >
-              <X size={20} strokeWidth={3} />
+              <X size={18} strokeWidth={3} />
             </button>
           </div>
         </div>
@@ -347,7 +347,7 @@ export function ArtifactViewerModal({ taskId, artifactId, onClose }: ArtifactVie
         <div className="flex-1 flex overflow-hidden print:block print:overflow-visible">
           {/* Sidebar */}
           {(toc.length > 0 || filteredFiles.length > 0) && !loading && !error && (
-            <div className="w-64 border-r-2 border-black bg-gray-50 flex flex-col print:hidden flex-shrink-0">
+            <div className="hidden xl:flex w-64 border-r-2 border-black bg-gray-50 flex-col print:hidden flex-shrink-0">
               {/* Table of Contents */}
               {toc.length > 0 && (
                 <div className={`${filteredFiles.length > 0 ? 'h-2/3 border-b-2 border-black' : 'h-full'} flex flex-col overflow-hidden`}>
