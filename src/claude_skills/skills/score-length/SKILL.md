@@ -5,7 +5,7 @@ argument-hint: "the theory ID to score (e.g. T_20260414_143100_d4e5f6). Optional
 user-invocable: false
 ---
 
-Your task is to assess the length of a given theory based on its content.
+This skill explains how to assess and score the length of a given theory based on its content.
 
 Besides the theory to score, you may optionally be given a STANDARD_LENGTH value. The default STANDARD_LENGTH, if not specified, is 7000 words.
 

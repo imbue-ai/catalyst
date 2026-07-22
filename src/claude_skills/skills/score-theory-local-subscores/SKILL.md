@@ -32,7 +32,7 @@ The execution steps below involve several numeric calculations. Always use `uv r
 You will invoke a sequence of different skills in order to score the given theory according to different criteria. Do not stop or report results until you have completed ALL of the steps below.
 
 1. **Context Checkout**: Run the bash command above to obtain the theory and review files using `context_manager.py`.
-2. **Score Length**: Invoke the `score-length` skill to obtain a length score for the theory.
-3. **Score Guidance Adherence**: Invoke the `score-guidance-adherence` skill to obtain a guidance adherence score for the theory.
-4. **Score Soundness**: Invoke the `score-soundness` skill to obtain a soundness score for the theory.
+2. **Score Length**: Invoke the `score-length` skill and follow its instructions to obtain a length score for the theory.
+3. **Score Guidance Adherence**: Invoke the `score-guidance-adherence` skill and follow its instructions to obtain a guidance adherence score for the theory.
+4. **Score Soundness**: Invoke the `score-soundness` skill and follow its instructions to obtain a soundness score for the theory.
 5. **Final Output**: Report the theory ID together with each score value (length score, guidance adherence score, and soundness score). Do not include any additional commentary in your output.

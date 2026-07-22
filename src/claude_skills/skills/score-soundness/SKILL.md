@@ -5,7 +5,7 @@ argument-hint: "the theory ID to score (e.g. T_20260414_143100_d4e5f6)"
 user-invocable: false
 ---
 
-Your task is to assess the mathematical soundness of a given theory based on its existing falsification reports.
+This skill explains how to assess and score the mathematical soundness of a given theory based on its existing falsification reports.
 
 ## Soundness Score Execution Steps
 1. **Understand the Theory**: If you haven't yet, carefully read the `theory.md` file to understand the theory that you are scoring.

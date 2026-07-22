@@ -5,7 +5,7 @@ argument-hint: "the theory ID to score (e.g. T_20260414_143100_d4e5f6)"
 user-invocable: false
 ---
 
-Your task is to assess how well a given theory adheres to the provided user guidance.
+This skill explains how to assess and score how well a given theory adheres to the provided user guidance.
 
 ## Guidance Adherence Score Execution Steps
 1. **Check Guidance**: User guidance can come from two places: a) the file `phenomenon.txt`, and/or b) the file `GUIDANCE.txt`, both in the current working directory. Zero, one, or both of the files might exist. Check which one(s) exists, and read them to determine whether the user has provided any specific guidance on what kind of theory they're looking for. 
