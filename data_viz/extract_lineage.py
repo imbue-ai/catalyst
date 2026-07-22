@@ -4,7 +4,7 @@ import argparse
 import pandas as pd
 
 
-def extract_lineage(json_file, task_id, output_csv):
+def extract_lineage(json_file, task_id, output_csv, population_file=None):
     try:
         with open(json_file, "r") as f:
             data = json.load(f)
@@ -14,6 +14,27 @@ def extract_lineage(json_file, task_id, output_csv):
     except json.JSONDecodeError:
         print(f"Error: Failed to parse JSON from '{json_file}'.")
         return
+
+    population_scores = {}
+    if population_file:
+        try:
+            with open(population_file, "r") as f:
+                pop_data = json.load(f)
+        except FileNotFoundError:
+            print(f"Error: Population file '{population_file}' not found.")
+            return
+        except json.JSONDecodeError:
+            print(f"Error: Failed to parse JSON from '{population_file}'.")
+            return
+
+        organisms = pop_data.get("population", {}).get("organisms", [])
+        for org in organisms:
+            o_info = org.get("organism")
+            if isinstance(o_info, dict):
+                tid = o_info.get("theory_id")
+                eval_res = org.get("evaluation_result")
+                if tid and isinstance(eval_res, dict) and "score" in eval_res:
+                    population_scores[tid] = eval_res["score"]
 
     # Check structure of the JSON
     tasks = data.get("tasks", []) if isinstance(data, dict) else []
@@ -83,7 +104,10 @@ def extract_lineage(json_file, task_id, output_csv):
     for tid, info in sorted(theories.items(), key=lambda x: (x[1]["Iteration"], x[0])):
         sc = scores_map.get(tid, [])
         initial_score = sc[0] if len(sc) > 0 else ""
-        final_score = sc[-1] if len(sc) > 0 else ""
+        if population_file:
+            final_score = population_scores.get(tid, sc[-1] if len(sc) > 0 else "")
+        else:
+            final_score = sc[-1] if len(sc) > 0 else ""
 
         records.append(
             {
@@ -105,9 +129,10 @@ def extract_lineage(json_file, task_id, output_csv):
     print(
         f"Successfully extracted lineage to '{output_csv}' ({len(records)} theories)."
     )
-    print(
-        "WARNING: Final score is based on the last score-theories step, not the actual score from the population. Hence, it does not consider score decay."
-    )
+    if not population_file:
+        print(
+            "WARNING: Final score is based on the last score-theories step, not the actual score from the population. Hence, it does not consider score decay."
+        )
 
 
 if __name__ == "__main__":
@@ -122,6 +147,15 @@ if __name__ == "__main__":
         default="extracted_lineage.csv",
         help="Path to save the output CSV.",
     )
+    parser.add_argument(
+        "--population",
+        help="Path to the population JSON file (optional).",
+    )
     args = parser.parse_args()
 
-    extract_lineage(args.json_file, args.task_id, args.output)
+    extract_lineage(
+        args.json_file,
+        args.task_id,
+        args.output,
+        population_file=args.population,
+    )
