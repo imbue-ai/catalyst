@@ -84,7 +84,7 @@ def stop_running_catalyst():
         logger.info(f"Terminating tracked Catalyst process PID {catalyst_process.pid}...")
         try:
             catalyst_process.terminate()
-            catalyst_process.wait(timeout=5)
+            catalyst_process.wait(timeout=60)
         except Exception as e:
             logger.warning(f"Error terminating tracked process: {e}")
             if catalyst_process.poll() is None:

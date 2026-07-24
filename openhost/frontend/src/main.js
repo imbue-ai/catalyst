@@ -453,7 +453,7 @@ if (restartCatalystBtn) {
       setRestartStatus('Catalyst is restarting, waiting for server to come back online...', 'info');
 
       let attempts = 0;
-      const maxAttempts = 20;
+      const maxAttempts = 75;
       let online = false;
 
       while (attempts < maxAttempts) {
