@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Imbue Catalyst Agent Harness Management</title>
+  <title>Imbue Catalyst admin</title>
   <link rel="stylesheet" href="./src/style.css">
 </head>
 <body class="admin-body">
 
   <main class="main-content">
-    <h1 class="page-title">Imbue Catalyst agent harness management</h1>
+    <h1 class="page-title">Imbue Catalyst admin</h1>
 
     <!-- Harness Table -->
     <table class="harness-table">
@@ -27,6 +27,54 @@
         </tr>
       </tbody>
     </table>
+
+    <!-- Environment Variables Section -->
+    <section class="section-container">
+      <h2 class="section-title">Environment Variables</h2>
+      <p class="section-description">
+        Configure environment variables used when starting the Catalyst backend server (server.py).
+      </p>
+
+      <div id="env-warning-banner" class="warning-banner hidden">
+        <span>OPENHOST_APP_DATA_DIR is not set in the server environment. Persistent storage is disabled.</span>
+      </div>
+
+      <div class="env-controls-bar">
+        <div class="preset-control">
+          <label for="default-env-select" class="control-label">Add default variable:</label>
+          <select id="default-env-select" class="simple-select">
+            <option value="">-- Select a default variable --</option>
+            <option value="CATALYST_MAX_CONCURRENCY_PER_TASK">CATALYST_MAX_CONCURRENCY_PER_TASK (Max concurrent steps, default: 3)</option>
+            <option value="CATALYST_EXPERIMENT_TIMEOUT_SECS">CATALYST_EXPERIMENT_TIMEOUT_SECS (Experiment timeout in seconds, default: 1800)</option>
+            <option value="CATALYST_EXPERIMENT_RLIMIT_AS">CATALYST_EXPERIMENT_RLIMIT_AS (Max virtual memory in bytes, default: 12884901888)</option>
+          </select>
+        </div>
+        <button id="add-custom-env-btn" class="simple-btn">+ Add Custom Variable</button>
+      </div>
+
+      <table class="env-table">
+        <thead>
+          <tr>
+            <th style="width: 40%;">Variable Name</th>
+            <th style="width: 45%;">Value</th>
+            <th style="width: 15%;">Action</th>
+          </tr>
+        </thead>
+        <tbody id="env-vars-tbody">
+          <tr class="loading-row">
+            <td colspan="3">Loading environment variables...</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- Restart Catalyst Button below Environment Variable Section -->
+      <div class="restart-container">
+        <button id="restart-catalyst-btn" class="simple-btn btn-primary">
+          Restart Catalyst
+        </button>
+        <span id="restart-status" class="restart-status hidden"></span>
+      </div>
+    </section>
   </main>
 
   <!-- Clean, minimalist modal -->

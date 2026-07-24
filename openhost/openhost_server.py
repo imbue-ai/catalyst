@@ -7,10 +7,14 @@ import signal
 import json
 import asyncio
 import logging
-from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect
+import subprocess
+import time
+from typing import Optional, Dict
+from fastapi import FastAPI, Request, Response, WebSocket, WebSocketDisconnect, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 import httpx
 
 # Configure logging
@@ -37,7 +41,147 @@ CATALYST_URL = f"http://127.0.0.1:{CATALYST_PORT}"
 # Create httpx async client for proxying with no timeout to support long running queries
 client = httpx.AsyncClient(base_url=CATALYST_URL, timeout=None)
 
+# Process handle for spawned Catalyst backend server
+catalyst_process: Optional[subprocess.Popen] = None
+
+def get_env_file_path() -> Optional[str]:
+    app_data_dir = os.environ.get("OPENHOST_APP_DATA_DIR")
+    if not app_data_dir:
+        logger.warning("OPENHOST_APP_DATA_DIR environment variable is not set. Environment variables will not be loaded or persisted.")
+        return None
+    os.makedirs(app_data_dir, exist_ok=True)
+    return os.path.join(app_data_dir, "env_vars.json")
+
+def load_env_vars() -> Dict[str, str]:
+    path = get_env_file_path()
+    if path and os.path.exists(path):
+        try:
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+                if isinstance(data, dict):
+                    return {str(k): str(v) for k, v in data.items()}
+        except Exception as e:
+            logger.error(f"Failed to load env_vars.json from {path}: {e}")
+    return {}
+
+def save_env_vars(env_dict: Dict[str, str]) -> Dict[str, str]:
+    path = get_env_file_path()
+    if not path:
+        logger.warning("Cannot save env_vars.json because OPENHOST_APP_DATA_DIR is not set.")
+        return env_dict
+    clean_dict = {str(k).strip(): str(v) for k, v in env_dict.items() if str(k).strip()}
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump(clean_dict, f, indent=2)
+    except Exception as e:
+        logger.error(f"Failed to save env_vars.json to {path}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to save environment variables: {e}")
+    return clean_dict
+
+def stop_running_catalyst():
+    global catalyst_process
+    if catalyst_process and catalyst_process.poll() is None:
+        logger.info(f"Terminating tracked Catalyst process PID {catalyst_process.pid}...")
+        try:
+            catalyst_process.terminate()
+            catalyst_process.wait(timeout=5)
+        except Exception as e:
+            logger.warning(f"Error terminating tracked process: {e}")
+            if catalyst_process.poll() is None:
+                catalyst_process.kill()
+        catalyst_process = None
+
+    # Search for any process running server.py using psutil or pgrep fallback
+    current_pid = os.getpid()
+    try:
+        import psutil
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                if proc.pid == current_pid:
+                    continue
+                cmdline = proc.info.get('cmdline') or []
+                if any('server.py' in arg for arg in cmdline) and not any('openhost_server.py' in arg for arg in cmdline):
+                    logger.info(f"Found running Catalyst server.py process PID {proc.pid}, terminating...")
+                    proc.terminate()
+                    try:
+                        proc.wait(timeout=5)
+                    except psutil.TimeoutExpired:
+                        proc.kill()
+            except (psutil.NoSuchProcess, psutil.AccessDenied):
+                pass
+    except ImportError:
+        try:
+            out = subprocess.check_output(["pgrep", "-f", "server.py"], text=True)
+            for line in out.strip().splitlines():
+                try:
+                    pid = int(line.strip())
+                    if pid != current_pid:
+                        logger.info(f"Found server.py process PID {pid}, sending SIGTERM...")
+                        os.kill(pid, signal.SIGTERM)
+                except (ValueError, ProcessLookupError, PermissionError):
+                    pass
+        except Exception:
+            pass
+
+
+def start_catalyst_server():
+    global catalyst_process
+    env = os.environ.copy()
+    custom_env = load_env_vars()
+    env.update(custom_env)
+
+    env["CATALYST_PORT"] = os.environ.get("CATALYST_PORT", "8141")
+
+    src_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "src"))
+    if not os.path.exists(src_dir):
+        src_dir = os.getcwd()
+
+    cmd = ["uv", "run", "python", "server.py"]
+    logger.info(f"Spawning Catalyst server.py in {src_dir} with env overrides: {list(custom_env.keys())}")
+
+    catalyst_process = subprocess.Popen(
+        cmd,
+        cwd=src_dir,
+        env=env,
+    )
+    logger.info(f"Catalyst server.py started with PID {catalyst_process.pid}")
+
+def restart_catalyst_server():
+    stop_running_catalyst()
+    time.sleep(1)
+    start_catalyst_server()
+
+class EnvVarsRequest(BaseModel):
+    env: Dict[str, str]
+
+@app.get("/openhost/api/env")
+async def get_env_endpoint():
+    env_vars = load_env_vars()
+    return {
+        "env": env_vars,
+        "openhost_app_data_dir_set": bool(os.environ.get("OPENHOST_APP_DATA_DIR"))
+    }
+
+@app.post("/openhost/api/env")
+async def save_env_endpoint(req: EnvVarsRequest):
+    saved = save_env_vars(req.env)
+    return {"status": "ok", "env": saved}
+
+@app.post("/openhost/api/restart")
+async def restart_endpoint(req: Optional[EnvVarsRequest] = None):
+    if req and req.env is not None:
+        save_env_vars(req.env)
+
+    logger.info("Restart request received. Restarting Catalyst backend server...")
+    try:
+        restart_catalyst_server()
+        return {"status": "ok", "message": "Catalyst backend server restart initiated"}
+    except Exception as e:
+        logger.error(f"Failed to restart Catalyst server: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to restart Catalyst server: {e}")
+
 def set_pty_size(fd, rows, cols):
+
     """Set the window size of a pseudo-terminal descriptor."""
     try:
         size = struct.pack("HHHH", rows, cols, 0, 0)

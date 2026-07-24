@@ -279,8 +279,216 @@ pasteBtn.addEventListener('click', async () => {
 
 // Modal can only be closed via the explicit 'Exit' button to avoid accidental closures during text selection.
 
+// Environment Variables Section Logic
+const defaultEnvSelect = document.getElementById('default-env-select');
+const addCustomEnvBtn = document.getElementById('add-custom-env-btn');
+const envVarsTbody = document.getElementById('env-vars-tbody');
+const restartCatalystBtn = document.getElementById('restart-catalyst-btn');
+const restartStatus = document.getElementById('restart-status');
+const envWarningBanner = document.getElementById('env-warning-banner');
+
+const DEFAULT_ENV_DEFAULTS = {
+  'CATALYST_MAX_CONCURRENCY_PER_TASK': '3',
+  'CATALYST_EXPERIMENT_TIMEOUT_SECS': '1800',
+  'CATALYST_EXPERIMENT_RLIMIT_AS': '12884901888'
+};
+
+let envVarsList = []; // Array of { key: string, value: string }
+
+async function loadEnvVars() {
+  try {
+    const res = await fetch('/openhost/api/env');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+
+    if (data.openhost_app_data_dir_set === false) {
+      if (envWarningBanner) envWarningBanner.classList.remove('hidden');
+    } else {
+      if (envWarningBanner) envWarningBanner.classList.add('hidden');
+    }
+
+    const envMap = data.env || {};
+    envVarsList = Object.entries(envMap).map(([k, v]) => ({ key: k, value: String(v) }));
+    renderEnvVars();
+  } catch (err) {
+    console.error('Error fetching environment variables:', err);
+    if (envVarsTbody) {
+      envVarsTbody.innerHTML = `
+        <tr class="loading-row">
+          <td colspan="3" style="color: #dc2626; font-weight: 600;">
+            Failed to load environment variables.
+          </td>
+        </tr>
+      `;
+    }
+  }
+}
+
+function renderEnvVars() {
+  if (!envVarsTbody) return;
+  envVarsTbody.innerHTML = '';
+
+  if (envVarsList.length === 0) {
+    envVarsTbody.innerHTML = `
+      <tr class="loading-row">
+        <td colspan="3">No environment variables configured yet. Select a default variable or add a custom variable above.</td>
+      </tr>
+    `;
+    return;
+  }
+
+  envVarsList.forEach((item, index) => {
+    const row = document.createElement('tr');
+
+    const keyTd = document.createElement('td');
+    const keyInput = document.createElement('input');
+    keyInput.type = 'text';
+    keyInput.className = 'env-key-input';
+    keyInput.placeholder = 'e.g. MY_ENV_VAR';
+    keyInput.value = item.key;
+    keyInput.addEventListener('input', (e) => {
+      envVarsList[index].key = e.target.value;
+    });
+    keyTd.appendChild(keyInput);
+
+    const valTd = document.createElement('td');
+    const valInput = document.createElement('input');
+    valInput.type = 'text';
+    valInput.className = 'env-val-input';
+    valInput.placeholder = 'Value';
+    valInput.value = item.value;
+    valInput.addEventListener('input', (e) => {
+      envVarsList[index].value = e.target.value;
+    });
+    valTd.appendChild(valInput);
+
+    const actionTd = document.createElement('td');
+    const removeBtn = document.createElement('button');
+    removeBtn.className = 'simple-btn btn-danger';
+    removeBtn.textContent = 'Remove';
+    removeBtn.addEventListener('click', () => {
+      envVarsList.splice(index, 1);
+      renderEnvVars();
+    });
+    actionTd.appendChild(removeBtn);
+
+    row.appendChild(keyTd);
+    row.appendChild(valTd);
+    row.appendChild(actionTd);
+
+    envVarsTbody.appendChild(row);
+  });
+}
+
+function getEnvPayload() {
+  const envObj = {};
+  envVarsList.forEach(item => {
+    const k = item.key.trim();
+    if (k) {
+      envObj[k] = item.value;
+    }
+  });
+  return envObj;
+}
+
+if (defaultEnvSelect) {
+  defaultEnvSelect.addEventListener('change', (e) => {
+    const selectedKey = e.target.value;
+    if (!selectedKey) return;
+
+    const existingIndex = envVarsList.findIndex(item => item.key.trim() === selectedKey);
+    const defaultValue = DEFAULT_ENV_DEFAULTS[selectedKey] || '';
+
+    if (existingIndex >= 0) {
+      envVarsList[existingIndex].value = defaultValue;
+    } else {
+      envVarsList.push({ key: selectedKey, value: defaultValue });
+    }
+
+    defaultEnvSelect.value = '';
+    renderEnvVars();
+  });
+}
+
+if (addCustomEnvBtn) {
+  addCustomEnvBtn.addEventListener('click', () => {
+    envVarsList.push({ key: '', value: '' });
+    renderEnvVars();
+    const inputs = envVarsTbody.querySelectorAll('.env-key-input');
+    if (inputs.length > 0) {
+      inputs[inputs.length - 1].focus();
+    }
+  });
+}
+
+function setRestartStatus(message, type) {
+  if (!restartStatus) return;
+  restartStatus.textContent = message;
+  restartStatus.className = `restart-status ${type}`;
+  restartStatus.classList.remove('hidden');
+}
+
+if (restartCatalystBtn) {
+  restartCatalystBtn.addEventListener('click', async () => {
+    const envPayload = getEnvPayload();
+
+    restartCatalystBtn.disabled = true;
+    setRestartStatus('Saving environment variables and restarting Catalyst...', 'info');
+
+    try {
+      const saveRes = await fetch('/openhost/api/env', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ env: envPayload })
+      });
+      if (!saveRes.ok) throw new Error(`Failed to save env vars: HTTP ${saveRes.status}`);
+
+      const restartRes = await fetch('/openhost/api/restart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ env: envPayload })
+      });
+      if (!restartRes.ok) throw new Error(`Failed to trigger restart: HTTP ${restartRes.status}`);
+
+      setRestartStatus('Catalyst is restarting, waiting for server to come back online...', 'info');
+
+      let attempts = 0;
+      const maxAttempts = 20;
+      let online = false;
+
+      while (attempts < maxAttempts) {
+        await new Promise(r => setTimeout(r, 1000));
+        attempts++;
+        try {
+          const healthRes = await fetch('/openhost/health');
+          if (healthRes.ok) {
+            online = true;
+            break;
+          }
+        } catch (e) {
+          // Expected while server is restarting
+        }
+      }
+
+      if (online) {
+        setRestartStatus('Catalyst restarted successfully!', 'success');
+        loadHarnesses();
+      } else {
+        setRestartStatus('Restart requested, but Catalyst health check timed out. Check server logs.', 'error');
+      }
+    } catch (err) {
+      console.error('Error restarting Catalyst:', err);
+      setRestartStatus(`Restart failed: ${err.message}`, 'error');
+    } finally {
+      restartCatalystBtn.disabled = false;
+    }
+  });
+}
+
 // Initial load
 loadHarnesses();
+loadEnvVars();
 
 // Polling interval (refresh harnesses list every 5 seconds)
 setInterval(loadHarnesses, 5000);
+
