@@ -88,40 +88,11 @@ def stop_running_catalyst():
         except Exception as e:
             logger.warning(f"Error terminating tracked process: {e}")
             if catalyst_process.poll() is None:
-                catalyst_process.kill()
-        catalyst_process = None
-
-    # Search for any process running server.py using psutil or pgrep fallback
-    current_pid = os.getpid()
-    try:
-        import psutil
-        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-            try:
-                if proc.pid == current_pid:
-                    continue
-                cmdline = proc.info.get('cmdline') or []
-                if any('server.py' in arg for arg in cmdline) and not any('openhost_server.py' in arg for arg in cmdline):
-                    logger.info(f"Found running Catalyst server.py process PID {proc.pid}, terminating...")
-                    proc.terminate()
-                    try:
-                        proc.wait(timeout=5)
-                    except psutil.TimeoutExpired:
-                        proc.kill()
-            except (psutil.NoSuchProcess, psutil.AccessDenied):
-                pass
-    except ImportError:
-        try:
-            out = subprocess.check_output(["pgrep", "-f", "server.py"], text=True)
-            for line in out.strip().splitlines():
                 try:
-                    pid = int(line.strip())
-                    if pid != current_pid:
-                        logger.info(f"Found server.py process PID {pid}, sending SIGTERM...")
-                        os.kill(pid, signal.SIGTERM)
-                except (ValueError, ProcessLookupError, PermissionError):
+                    catalyst_process.kill()
+                except Exception:
                     pass
-        except Exception:
-            pass
+        catalyst_process = None
 
 
 def start_catalyst_server():
@@ -150,6 +121,17 @@ def restart_catalyst_server():
     stop_running_catalyst()
     time.sleep(1)
     start_catalyst_server()
+
+@app.on_event("startup")
+async def startup_event():
+    logger.info("OpenHost Gateway starting. Spawning Catalyst backend server...")
+    start_catalyst_server()
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    logger.info("OpenHost Gateway shutting down. Terminating Catalyst backend server...")
+    stop_running_catalyst()
+
 
 class EnvVarsRequest(BaseModel):
     env: Dict[str, str]
