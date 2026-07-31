@@ -440,7 +440,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
         </div>
 
         {/* Right Panel Tabs & Content */}
-        <div className={`w-full xl:w-1/2 flex flex-col h-full border-l border-black bg-gray-50/50 ${mobileTab === 'details' ? 'block' : 'hidden xl:block'}`}>
+        <div className={`w-full xl:w-1/2 flex flex-col h-full border-l border-black bg-gray-50/50 ${mobileTab === 'details' ? 'flex' : 'hidden xl:flex'}`}>
           <div className="flex border-b-2 border-black bg-white overflow-x-auto whitespace-nowrap custom-scrollbar shrink-0">
             <button
               onClick={() => setActiveRightTab('summary')}
