@@ -557,7 +557,7 @@ export function TaskDetail({ task, viewingArtifactId, onDeleteRequest, onRefresh
                           } else if (task.framework === 'claude') {
                             cmd = `cd "${task.env_folder}" && claude --resume ${step.session_id}`;
                           } else {
-                            cmd = `cd "${task.env_folder}" && agy --resume ${step.session_id}`;
+                            cmd = `cd "${task.env_folder}" && agy --conversation ${step.session_id}`;
                           }
                           const comment = isMngr
                             ? "# Attach to this agent's tmux session (restarts it if stopped)"

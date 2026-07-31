@@ -1,12 +1,10 @@
 import os
 import shlex
 import logging
-import subprocess
 from typing import Dict, Any, Optional, Tuple, Callable
 
 from .base import AGENT_TIMEOUT_SECS, parse_json_result
-from .cli_base import BaseCliAgentRunner, make_subprocess_cancellable
-from ..state import register_cancellable, unregister_cancellable
+from .cli_base import BaseCliAgentRunner
 
 logger = logging.getLogger(__name__)
 
@@ -46,6 +44,8 @@ class AgyAgentRunner(BaseCliAgentRunner):
         cmd = [
             "agy",
             "--dangerously-skip-permissions",
+            "--output-format",
+            "stream-json",
             "--print-timeout",
             f"{AGENT_TIMEOUT_SECS}s",
             "--add-dir",
@@ -64,26 +64,54 @@ class AgyAgentRunner(BaseCliAgentRunner):
         logger.debug(f"[AGENT] Starting Antigravity for task {task_id[:8]}")
         logger.debug(f"[AGENT] Executing in folder {abs_env_folder}: {shlex.join(cmd)}")
 
+        last_result_obj = {}
+        current_step_index = None
+        current_step_text = ""
+
+        def handle_event(data: Dict[str, Any]):
+            nonlocal current_step_index, current_step_text
+
+            if data.get("event") == "result":
+                last_result_obj["data"] = data.get("result", {})
+
+            step_update = data.get("step_update", {})
+            if step_update:
+                step_index = step_update.get("step_index")
+                if step_index != current_step_index:
+                    current_step_index = step_index
+                    current_step_text = ""
+
+                if on_status:
+                    status_text = None
+                    step_type = step_update.get("step_type")
+                    if step_type == "tool":
+                        tool_name = step_update.get("tool_name") or step_update.get("tool_info", {}).get("name")
+                        if tool_name == "run_command":
+                            cmd_line = step_update.get("tool_info", {}).get("parameters", {}).get("CommandLine")
+                            if cmd_line:
+                                status_text = f"Running command: {cmd_line}"
+                            else:
+                                status_text = "Running command"
+                        elif tool_name:
+                            status_text = f"Using tool: {tool_name}"
+                    elif step_type == "agent_response":
+                        text_delta = step_update.get("text_delta")
+                        if text_delta:
+                            current_step_text += text_delta
+                            status_text = current_step_text
+
+                    if status_text:
+                        on_status(status_text)
+
         try:
-            process = subprocess.Popen(
+            stdout, session_id, returncode, full_output = self._execute_cmd(
+                task_id,
                 cmd,
-                cwd=abs_env_folder,
-                env=env,
-                stdin=subprocess.DEVNULL,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-                close_fds=True,
-                start_new_session=True,
+                abs_env_folder,
+                env,
+                on_session_id,
+                handle_event,
             )
-            cancellable = make_subprocess_cancellable(process, label="agy")
-            register_cancellable(task_id, cancellable)
-            try:
-                stdout_data, _ = process.communicate()
-                returncode = process.returncode
-            finally:
-                unregister_cancellable(task_id, cancellable)
 
             logger.debug(
                 f"[AGENT] [{task_id[:8]}] Antigravity finished with exit code {returncode}"
@@ -92,23 +120,23 @@ class AgyAgentRunner(BaseCliAgentRunner):
             if returncode != 0:
                 # 143 = SIGTERM, 137 = SIGKILL, -15 = SIGTERM, -9 = SIGKILL
                 if returncode in [143, 137, -15, -9]:
-                    return None, None, "Agent was interrupted/paused."
+                    return None, session_id, "Agent was interrupted/paused."
 
-                stdout_tail = stdout_data[-500:]
+                stdout_tail = "".join(full_output)[-500:]
                 return (
                     None,
-                    None,
+                    session_id,
                     f"Antigravity failed with exit code {returncode}. Last output: {stdout_tail}",
                 )
 
-            agent_raw_result = stdout_data
+            agent_raw_result = last_result_obj.get("data", {}).get("response", "")
             data = parse_json_result(agent_raw_result)
             if data:
-                return data, None, None
+                return data, session_id, None
 
             return (
                 None,
-                None,
+                session_id,
                 f"Could not parse JSON output from Antigravity result string. Preview: {str(agent_raw_result)[:800]}...",
             )
 

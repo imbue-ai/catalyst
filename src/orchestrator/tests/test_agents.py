@@ -112,13 +112,20 @@ class TestAgents(unittest.TestCase):
     @patch("orchestrator.agents.cli_base.unregister_cancellable")
     @patch("subprocess.Popen")
     def test_agy_runner(self, mock_popen, mock_unreg, mock_reg):
-
+        statuses = []
+        captured_session_ids = []
 
         mock_process = MagicMock()
-        mock_process.communicate.return_value = (
-            'Random setup output...\n```json\n{"theory_id": "T3"}\n```\n',
-            None,
-        )
+        mock_process.stdout.readline.side_effect = [
+            '{"event":"init","conversation_id":"agy_sid_789"}\n',
+            '{"event":"step_update","step_update":{"step_index":1,"step_type":"tool","tool_name":"run_command","tool_info":{"parameters":{"CommandLine":"echo hello"}}}}\n',
+            '{"event":"step_update","step_update":{"step_index":2,"step_type":"tool","tool_name":"list_dir","tool_info":{"parameters":{"DirectoryPath":"/tmp"}}}}\n',
+            '{"event":"step_update","step_update":{"step_index":3,"step_type":"agent_response","text_delta":"The"}}\n',
+            '{"event":"step_update","step_update":{"step_index":3,"step_type":"agent_response","text_delta":" result is ```json\\n{\\"theory_id\\": \\"T3\\"}\\n```"}}\n',
+            '{"event":"result","result":{"conversation_id":"agy_sid_789","status":"SUCCESS","response":"```json\\n{\\"theory_id\\": \\"T3\\"}\\n```"}}\n',
+            "",
+        ]
+        mock_process.wait.return_value = 0
         mock_process.returncode = 0
         mock_popen.return_value = mock_process
 
@@ -134,10 +141,17 @@ class TestAgents(unittest.TestCase):
             stage="t1-stage",
             common_environment_variables=common_env,
             model="Gemini 3.5 Flash (Low)",
+            on_session_id=lambda sid: captured_session_ids.append(sid),
+            on_status=lambda st: statuses.append(st),
         )
 
         self.assertIsNone(error)
-        self.assertIsNone(session_id)
+        self.assertEqual(session_id, "agy_sid_789")
+        self.assertEqual(captured_session_ids, ["agy_sid_789"])
+        self.assertIn("Running command: echo hello", statuses)
+        self.assertIn("Using tool: list_dir", statuses)
+        self.assertIn("The", statuses)
+        self.assertIn('The result is ```json\n{"theory_id": "T3"}\n```', statuses)
         self.assertEqual(data, {"theory_id": "T3"})
 
         # Verify tx_id propagation
@@ -145,18 +159,15 @@ class TestAgents(unittest.TestCase):
         env = kwargs["env"]
         self.assertEqual(env["CONTEXT_TRANSACTION_ID"], "tx_101")
 
-        # Verify command flags, including --model. Model name matches
-        # agy's in-session `/model` menu; passed through as a single
-        # argv element so spaces / parens survive without shell-quoting
-        # concerns.
+        # Verify command flags, including --output-format stream-json and --model
         cmd = args[0]
         self.assertIn("agy", cmd)
-        # Sandboxing is currently disabled for Antigravity CLI. Re-enable eventually.
         self.assertNotIn("--sandbox", cmd)
+        self.assertIn("--output-format", cmd)
+        self.assertEqual(cmd[cmd.index("--output-format") + 1], "stream-json")
         self.assertIn("--print-timeout", cmd)
         self.assertIn("--model", cmd)
         self.assertEqual(cmd[cmd.index("--model") + 1], "Gemini 3.5 Flash (Low)")
-        # --model lives before -p so the prompt remains the last arg.
         self.assertLess(cmd.index("--model"), cmd.index("-p"))
 
 

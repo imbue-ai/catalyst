@@ -89,11 +89,18 @@ class BaseCliAgentRunner(AgentRunner):
                         if not session_id:
                             if "session_id" in data:
                                 session_id = data["session_id"]
+                            elif "conversation_id" in data:
+                                session_id = data["conversation_id"]
                             elif "thread_id" in data:
                                 session_id = data["thread_id"]
                                 logger.debug(
                                     f"[AGENT] [{task_id[:8]}] Detected session ID from thread_id: {session_id}"
                                 )
+                            elif "conversation_id" in data.get("step_update", {}):
+                                session_id = data["step_update"]["conversation_id"]
+                            elif "conversation_id" in data.get("result", {}):
+                                session_id = data["result"]["conversation_id"]
+
                             if session_id and on_session_id:
                                 try:
                                     on_session_id(session_id)
