@@ -37,6 +37,9 @@ Your `summary.md` file MUST be formatted exactly as follows:
 ```
 # Research Summary Report
 
+## Status
+[🟡, 🔴, or 🟢 depending on whether the research goal has been achieved, plus one sentence to summarize the overall status towards the goal (may include a key metric).] 
+
 ## Best Solution Candidate
 - **Parent Theory ID**: [Theory ID, e.g., T_...]
 - **Solution ID**: [Solution ID, e.g., U_...]
