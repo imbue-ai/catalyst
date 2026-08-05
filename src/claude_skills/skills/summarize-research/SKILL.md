@@ -35,7 +35,7 @@ uv run python <SKILL_BASE_DIR>/scripts/context_manager.py create_context --for_a
 Your `summary.md` file MUST be formatted exactly as follows:
 
 ```
-# Research Summary Report
+# Research Status
 
 ## Top Theories
 
