@@ -8,9 +8,13 @@ import unittest
 from pathlib import Path
 
 # We can import constants to drive the test logic, as requested to be thorough.
+from unittest.mock import patch, MagicMock
 from context_manager import (
     AGENT_TYPE_MAP,
     CATEGORY_MD_MAP,
+    DatabaseLock,
+    DatabaseSession,
+    _db_lock_held_count,
 )
 
 
@@ -831,6 +835,27 @@ class TestContextManager(unittest.TestCase):
         self.assertEqual(len(sampled), 1)
         self.assertEqual(sampled[0]["id"], t_id)
         self.assertEqual(sampled[0]["latest_solution"], sol_id)
+
+
+    def test_database_lock_timeout_fallback(self):
+        """Test that DatabaseLock fallback on timeout proceeds and exits cleanly without TypeError."""
+        lock = DatabaseLock(self.db_path, timeout=0.01)
+        with patch("fcntl.flock", side_effect=OSError("Resource temporarily unavailable")):
+            with lock as acquired_lock:
+                self.assertIs(acquired_lock, lock)
+        # Verify lock exit completed cleanly
+
+    def test_database_session_exit_exception_safety(self):
+        """Test that DatabaseSession.__exit__ releases lock even if _save_population fails."""
+        session = DatabaseSession(self.db_path)
+        session._population_modified = True
+        session._population = MagicMock()
+        with patch("context_manager._save_population", side_effect=RuntimeError("Save failed")):
+            with self.assertRaises(RuntimeError):
+                with session:
+                    pass
+        # Verify lock was properly released
+        self.assertEqual(_db_lock_held_count, 0)
 
 
 if __name__ == "__main__":

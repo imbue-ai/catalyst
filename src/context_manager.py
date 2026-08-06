@@ -178,6 +178,8 @@ class DatabaseLock:
                         f"Warning: Could not acquire database lock within {self.timeout}s. Proceeding anyway.",
                         file=sys.stderr,
                     )
+                    _db_lock_held_count += 1
+                    return self
                 time.sleep(0.1)
 
     def __exit__(self, *_exc: object) -> None:
@@ -224,13 +226,15 @@ class DatabaseSession:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:
-        if (
-            exc_type is None
-            and self._population_modified
-            and self._population is not None
-        ):
-            _save_population(self._population, self.db_root / POPULATION_FILENAME)
-        self._lock.__exit__(exc_type, exc_val, exc_tb)
+        try:
+            if (
+                exc_type is None
+                and self._population_modified
+                and self._population is not None
+            ):
+                _save_population(self._population, self.db_root / POPULATION_FILENAME)
+        finally:
+            self._lock.__exit__(exc_type, exc_val, exc_tb)
 
     def is_visible(self, data: dict) -> bool:
         """Return True if the object is committed or staged for the current transaction."""
