@@ -5,22 +5,28 @@ import tempfile
 import shutil
 import orchestrator.state
 
+
 class OrchestratorTestCase(unittest.TestCase):
     def setUp(self):
         # Create a temp directory for catalyst research path
         self.catalyst_dir = tempfile.mkdtemp()
-        self.patcher_cat = patch("orchestrator.state.get_catalyst_path", return_value=self.catalyst_dir)
+        self.patcher_cat = patch(
+            "orchestrator.state.get_catalyst_path", return_value=self.catalyst_dir
+        )
         self.patcher_cat.start()
 
         # Create a temp file for state
         self.state_fd, self.state_path = tempfile.mkstemp(suffix=".json")
+        os.write(self.state_fd, b"{}")
         os.close(self.state_fd)
-        
+
         # Patch _get_state_file in orchestrator.state
         # We patch it where it is used.
-        self.patcher = patch("orchestrator.state._get_state_file", return_value=self.state_path)
+        self.patcher = patch(
+            "orchestrator.state._get_state_file", return_value=self.state_path
+        )
         self.patcher.start()
-        
+
         # Reset in-memory state globals in orchestrator.state
         orchestrator.state._state_cache = None
         orchestrator.state._last_written_json = None
