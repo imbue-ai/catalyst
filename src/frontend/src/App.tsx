@@ -60,7 +60,12 @@ function App() {
   const toggleDarkMode = () => {
     setIsDarkMode(prev => {
       const next = !prev;
-      localStorage.setItem('theme', next ? 'dark' : 'light');
+      const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (next === systemDark) {
+        localStorage.removeItem('theme');
+      } else {
+        localStorage.setItem('theme', next ? 'dark' : 'light');
+      }
       return next;
     });
   };
@@ -298,7 +303,13 @@ function App() {
             <button
               onClick={toggleDarkMode}
               className="p-1 hover:bg-gray-100 rounded transition-colors text-black flex items-center justify-center cursor-pointer"
-              title={isDarkMode ? "Switch to Light Mode" : "Switch to Dark Mode"}
+              title={(() => {
+                const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+                const nextIsSystem = (!isDarkMode) === systemDark;
+                return isDarkMode
+                  ? (nextIsSystem ? "Switch to Light Mode (System Default)" : "Switch to Light Mode")
+                  : (nextIsSystem ? "Switch to Dark Mode (System Default)" : "Switch to Dark Mode");
+              })()}
             >
               {isDarkMode ? <Sun size={12} /> : <Moon size={12} />}
             </button>
