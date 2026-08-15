@@ -262,7 +262,9 @@ def _check_agy() -> tuple[bool, Optional[str], List[str]]:
                 continue
             if any(0x2800 <= ord(c) <= 0x28FF for c in line):
                 continue
-            agy_models.append(line)
+            parts = line.split()
+            if parts:
+                agy_models.append(parts[0])
 
     return True, None, agy_models
 

@@ -185,7 +185,7 @@ class TestHarness(unittest.TestCase):
             if args == ["agy", "--version"]:
                 return 0, "1.0.5", ""
             if args == ["agy", "models"]:
-                return 0, "model-a\nmodel-b\n", ""
+                return 0, "model-a extra_info\nmodel-b\tmore_info\n", ""
             return 0, "", ""
 
         mock_which.return_value = "/usr/bin/cmd"
