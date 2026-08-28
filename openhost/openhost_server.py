@@ -80,18 +80,32 @@ def save_env_vars(env_dict: Dict[str, str]) -> Dict[str, str]:
 
 def stop_running_catalyst():
     global catalyst_process
-    if catalyst_process and catalyst_process.poll() is None:
-        logger.info(f"Terminating tracked Catalyst process PID {catalyst_process.pid}...")
+    if catalyst_process is not None:
+        pgid = None
         try:
-            catalyst_process.terminate()
-            catalyst_process.wait(timeout=60)
-        except Exception as e:
-            logger.warning(f"Error terminating tracked process: {e}")
-            if catalyst_process.poll() is None:
-                try:
-                    catalyst_process.kill()
-                except Exception:
-                    pass
+            pgid = os.getpgid(catalyst_process.pid)
+        except OSError:
+            pass
+
+        if catalyst_process.poll() is None:
+            logger.info(f"Terminating tracked Catalyst process PID {catalyst_process.pid} (PGID {pgid})...")
+            try:
+                if pgid is not None:
+                    os.killpg(pgid, signal.SIGTERM)
+                else:
+                    catalyst_process.terminate()
+                catalyst_process.wait(timeout=60)
+            except Exception as e:
+                logger.warning(f"Error terminating tracked process: {e}")
+                if catalyst_process.poll() is None:
+                    try:
+                        if pgid is not None:
+                            os.killpg(pgid, signal.SIGKILL)
+                        else:
+                            catalyst_process.kill()
+                        catalyst_process.wait(timeout=10)
+                    except Exception as e_kill:
+                        logger.warning(f"Error killing/waiting on process after timeout: {e_kill}")
         catalyst_process = None
 
 
@@ -114,6 +128,7 @@ def start_catalyst_server():
         cmd,
         cwd=src_dir,
         env=env,
+        start_new_session=True,
     )
     logger.info(f"Catalyst server.py started with PID {catalyst_process.pid}")
 
@@ -122,10 +137,32 @@ def restart_catalyst_server():
     time.sleep(1)
     start_catalyst_server()
 
+async def zombie_reaper_loop():
+    while True:
+        try:
+            global catalyst_process
+            if catalyst_process is not None:
+                ret = catalyst_process.poll()
+                if ret is not None:
+                    logger.warning(f"Catalyst process PID {catalyst_process.pid} exited with code {ret}")
+            
+            # Reap any adopted/orphaned child processes (important when running as PID 1 in container)
+            while True:
+                try:
+                    r_pid, _ = os.waitpid(-1, os.WNOHANG)
+                    if r_pid <= 0:
+                        break
+                except (ChildProcessError, OSError):
+                    break
+        except Exception as e:
+            logger.debug(f"Error in zombie reaper loop: {e}")
+        await asyncio.sleep(2.0)
+
 @app.on_event("startup")
 async def startup_event():
     logger.info("OpenHost Gateway starting. Spawning Catalyst backend server...")
     start_catalyst_server()
+    asyncio.create_task(zombie_reaper_loop())
 
 @app.on_event("shutdown")
 async def shutdown_event():
