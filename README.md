@@ -117,3 +117,7 @@ Imbue Catalyst is built by your friends at [Imbue](https://imbue.com):
 * [Daniel Mewes](https://github.com/danielmewes/)
 * [Catherine Kim](https://github.com/catherinek07/)
 * [Evan Ryan Gunter](https://github.com/evgunter)
+
+## License
+
+Imbue's original Catalyst code and Cloud in a Bottle integration are licensed under the [MIT License](LICENSE). Git submodules carry their own license files. Third-party code, dependencies, datasets, and reference materials retain their own licenses and attribution.
